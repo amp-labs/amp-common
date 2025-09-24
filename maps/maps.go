@@ -1,10 +1,10 @@
-package utils
+package maps
 
 import (
 	"strings"
 )
 
-// CaseInsensitiveMap is a map that allows case-sensitive and case-insensitive key lookups.
+// CaseInsensitiveMap is a maps that allows case-sensitive and case-insensitive key lookups.
 type CaseInsensitiveMap[V any] struct {
 	cs map[string]*stringMapEntry[V] // case-sensitive lookups (case-sensitive key -> value)
 	ci map[string]*stringMapEntry[V] // case-insensitive lookups (case-insensitive key -> value)
@@ -16,7 +16,7 @@ type stringMapEntry[A any] struct {
 	value A
 }
 
-// Add adds a key-value pair to the map.
+// Add adds a key-value pair to the maps.
 func (s *CaseInsensitiveMap[V]) Add(key string, value V) {
 	if s.cs == nil {
 		s.cs = make(map[string]*stringMapEntry[V])
@@ -37,14 +37,14 @@ func (s *CaseInsensitiveMap[V]) Add(key string, value V) {
 	s.kl[strings.ToLower(key)] = key
 }
 
-// AddAll adds multiple key-value pairs to the map.
+// AddAll adds multiple key-value pairs to the maps.
 func (s *CaseInsensitiveMap[V]) AddAll(keyValueMap map[string]V) {
 	for key, value := range keyValueMap {
 		s.Add(key, value)
 	}
 }
 
-// Remove removes a key-value pair from the map by doing a case-insensitive lookup.
+// Remove removes a key-value pair from the maps by doing a case-insensitive lookup.
 func (s *CaseInsensitiveMap[V]) Remove(key string) {
 	ciKey := strings.ToLower(key)
 	csKey := s.kl[ciKey]
@@ -58,14 +58,14 @@ func (s *CaseInsensitiveMap[V]) Remove(key string) {
 	}
 }
 
-// RemoveAll removes multiple key-value pairs from the map.
+// RemoveAll removes multiple key-value pairs from the maps.
 func (s *CaseInsensitiveMap[V]) RemoveAll(keys ...string) {
 	for _, key := range keys {
 		s.Remove(key)
 	}
 }
 
-// Get retrieves a value from the map by key. The caseSensitive parameter
+// Get retrieves a value from the maps by key. The caseSensitive parameter
 // determines whether the key lookup is case-sensitive or case-insensitive.
 // nolint:ireturn
 func (s *CaseInsensitiveMap[V]) Get(key string, caseSensitive bool) (string, V, bool) {
@@ -90,7 +90,7 @@ func (s *CaseInsensitiveMap[V]) Get(key string, caseSensitive bool) (string, V, 
 	return entry.key, entry.value, true
 }
 
-// GetAll returns all case-sensitive key-value pairs in the map.
+// GetAll returns all case-sensitive key-value pairs in the maps.
 func (s *CaseInsensitiveMap[V]) GetAll() map[string]V {
 	if s.cs == nil {
 		return nil
@@ -105,19 +105,19 @@ func (s *CaseInsensitiveMap[V]) GetAll() map[string]V {
 	return out
 }
 
-// Clear removes all key-value pairs from the map.
+// Clear removes all key-value pairs from the maps.
 func (s *CaseInsensitiveMap[V]) Clear() {
 	s.cs = make(map[string]*stringMapEntry[V])
 	s.ci = make(map[string]*stringMapEntry[V])
 	s.kl = make(map[string]string)
 }
 
-// Size returns the number of key-value pairs in the map.
+// Size returns the number of key-value pairs in the maps.
 func (s *CaseInsensitiveMap[V]) Size() int {
 	return len(s.cs)
 }
 
-// Keys returns all keys in the map.
+// Keys returns all keys in the maps.
 func (s *CaseInsensitiveMap[V]) Keys() []string {
 	keys := make([]string, 0, len(s.cs))
 
@@ -128,7 +128,7 @@ func (s *CaseInsensitiveMap[V]) Keys() []string {
 	return keys
 }
 
-// Values returns all values in the map.
+// Values returns all values in the maps.
 func (s *CaseInsensitiveMap[V]) Values() []V {
 	values := make([]V, 0, len(s.cs))
 
@@ -139,7 +139,7 @@ func (s *CaseInsensitiveMap[V]) Values() []V {
 	return values
 }
 
-// ContainsKey checks if a key exists in the map. The caseSensitive parameter
+// ContainsKey checks if a key exists in the maps. The caseSensitive parameter
 // determines whether the key lookup is case-sensitive or case-insensitive.
 func (s *CaseInsensitiveMap[V]) ContainsKey(key string, caseSensitive bool) (bool, string) {
 	if caseSensitive {
@@ -157,12 +157,12 @@ func (s *CaseInsensitiveMap[V]) ContainsKey(key string, caseSensitive bool) (boo
 	return false, key
 }
 
-// IsEmpty checks if the map is empty.
+// IsEmpty checks if the maps is empty.
 func (s *CaseInsensitiveMap[V]) IsEmpty() bool {
 	return len(s.cs) == 0
 }
 
-// Clone creates a copy of the map.
+// Clone creates a copy of the maps.
 func (s *CaseInsensitiveMap[V]) Clone() *CaseInsensitiveMap[V] {
 	if s == nil {
 		return nil
@@ -184,14 +184,14 @@ func (s *CaseInsensitiveMap[V]) Clone() *CaseInsensitiveMap[V] {
 	return out
 }
 
-// Merge merges another map into the map.
+// Merge merges another maps into the maps.
 func (s *CaseInsensitiveMap[V]) Merge(other *CaseInsensitiveMap[V]) {
 	for key, value := range other.cs {
 		s.Add(key, value.value)
 	}
 }
 
-// MergeAll merges multiple maps into the map.
+// MergeAll merges multiple maps into the maps.
 func (s *CaseInsensitiveMap[V]) MergeAll(others ...*CaseInsensitiveMap[V]) {
 	for _, other := range others {
 		for key, value := range other.GetAll() {
@@ -200,7 +200,7 @@ func (s *CaseInsensitiveMap[V]) MergeAll(others ...*CaseInsensitiveMap[V]) {
 	}
 }
 
-// Filter returns a new map with key-value pairs that satisfy the predicate.
+// Filter returns a new maps with key-value pairs that satisfy the predicate.
 func (s *CaseInsensitiveMap[V]) Filter(predicate func(string, V) bool) *CaseInsensitiveMap[V] {
 	values := make(map[string]V)
 

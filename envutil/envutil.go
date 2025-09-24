@@ -220,7 +220,7 @@ func GzipLevel(key string, opts ...Option[int]) Reader[int] {
 	})
 }
 
-// Many returns a map of Readers for the given environment variable keys.
+// Many returns a maps of Readers for the given environment variable keys.
 func Many(keys ...string) map[string]Reader[string] {
 	if len(keys) == 0 {
 		return nil
@@ -235,7 +235,7 @@ func Many(keys ...string) map[string]Reader[string] {
 	return out
 }
 
-// VarMap returns a map of Readers for the given environment variable keys.
+// VarMap returns a maps of Readers for the given environment variable keys.
 // All variables are treated as optional, and if they are missing, it means
 // they were never set in the environment. Enforcement is done by the caller.
 func VarMap(keys ...string) Reader[map[string]string] {

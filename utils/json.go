@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// ToJSONMap converts a struct to a map with JSON-like keys.
+// ToJSONMap converts a struct to a maps with JSON-like keys.
 func ToJSONMap(input any) (map[string]any, error) {
 	jsonBytes, err := json.Marshal(input)
 	if err != nil {

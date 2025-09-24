@@ -29,7 +29,7 @@ func SplitString(sep string) func(string) ([]string, error) {
 	}
 }
 
-// Keyify represents a transformer that converts the given slice of strings to a map
+// Keyify represents a transformer that converts the given slice of strings to a maps
 // where the keys are the strings in the slice. The values are empty structs. This
 // is basically just a very cheap way to create a set.
 func Keyify(strs []string) (map[string]struct{}, error) {

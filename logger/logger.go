@@ -261,7 +261,7 @@ func WithRequestId(ctx context.Context, requestId string) context.Context {
 	return context.WithValue(ctx, contextKey("request_id"), requestId)
 }
 
-func getRequestId(ctx context.Context) (string, bool) { //nolint:contextcheck
+func GetRequestId(ctx context.Context) (string, bool) { //nolint:contextcheck
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -336,7 +336,7 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 		"subsystem", GetSubsystem(ctx),
 		"pod", hostname.Get())
 
-	requestId, found := getRequestId(ctx)
+	requestId, found := GetRequestId(ctx)
 	if found {
 		logger = logger.With("request-id", requestId)
 	}

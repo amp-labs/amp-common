@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sort"
 
+	"facette.io/natsort"
 	"github.com/amp-labs/amp-common/compare"
 	"github.com/amp-labs/amp-common/hashing"
 )
@@ -224,6 +225,14 @@ func (s *StringSet) SortedEntries() []string {
 	items := s.Entries()
 
 	sort.Strings(items)
+
+	return items
+}
+
+func (s *StringSet) NaturalSortedEntries() []string {
+	items := s.Entries()
+
+	natsort.Sort(items)
 
 	return items
 }

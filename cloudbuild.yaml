@@ -5,11 +5,15 @@ steps:
       - '-c'
       - |
         # Basic setup
+        # Basic setup
         set -euo pipefail
         CB_ROOT_DIR="$(pwd)"
 
         gcloud secrets versions access latest --secret=github-ops-ssh-key > /root/.ssh/id_ed25519-ops
         chmod 600 /root/.ssh/id_ed25519-ops
+
+        gcloud secrets versions access latest --secret=github-amp-common-ssh-key > /root/.ssh/id_ed25519-common
+        chmod 600 /root/.ssh/id_ed25519-common
 
         cat <<EOF > /root/.ssh/config
         Host github-server
@@ -20,7 +24,7 @@ steps:
         Host github.com
           HostName github.com
           User git
-          IdentityFile ~/.ssh/id_ed25519
+          IdentityFile ~/.ssh/id_ed25519-common
         EOF
 
         export BRANCH_NAME=${BRANCH_NAME}
@@ -50,8 +54,6 @@ steps:
 
         # Update the dependency
         git checkout -B "auto/amp-common-update-to-${COMMIT_SHA}"
-
-        ssh-keygen -y -f /root/.ssh/id_ed25519
 
         go get "github.com/amp-labs/amp-common@${COMMIT_SHA}"
         go mod tidy || true

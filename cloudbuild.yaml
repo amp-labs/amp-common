@@ -8,13 +8,12 @@ steps:
         set -euo pipefail
         CB_ROOT_DIR="$(pwd)"
 
-        # Set up SSH key
-        mkdir -p /root/.ssh
+        gcloud secrets versions access latest --secret=github-ops-ssh-key > /root/.ssh/id_ed25519-ops
+        chmod 600 /root/.ssh/id_ed25519-ops
 
-        gcloud secrets versions access latest --secret=github-ops-ssh-key > /root/.ssh/id_ed25519
-        chmod 700 /root/.ssh
-        chmod 600 /root/.ssh/id_ed25519
-        ssh-keygen -y -f /root/.ssh/id_ed25519
+        eval $(ssh-agent -s)
+        ssh-add /root/.ssh/id_ed25519-ops
+        ssh-add /root/.ssh/id_ed25519
 
         export BRANCH_NAME=${BRANCH_NAME}
         export PROJECT_ID=${PROJECT_ID}

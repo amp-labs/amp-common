@@ -18,7 +18,7 @@ jobs:
       - name: Generate go code
         run: go generate ./...
       - name: Lint Go code
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           skip-cache: true
           version: v1.64.3

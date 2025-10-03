@@ -3,6 +3,8 @@ package simultaneously
 import (
 	"context"
 	"errors"
+	"fmt"
+	"runtime/debug"
 	"sync"
 
 	"github.com/amp-labs/amp-common/utils"
@@ -21,6 +23,9 @@ func Do(maxConcurrent int, f ...func(ctx context.Context) error) error {
 //
 // The maxConcurrent parameter is used to limit the number of functions that run at the same time.
 // If maxConcurrent is less than 1, all functions will run at the same time.
+//
+// Panics that occur within the callback functions are automatically recovered and converted to errors.
+// This prevents a single panicking function from crashing the entire process.
 func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.Context) error) error {
 	// We'll wrap the context for this function so we can cancel it
 	ctx, cancel := context.WithCancel(ctx)
@@ -69,6 +74,7 @@ func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.
 	// 3. If the function returns an error, send it to the error channel
 	// 4. If the function returns nil, send a signal to the done channel
 	// 5. Put the semaphore back
+	// 6. Recover from any panics and convert them to errors
 	invoker := func(callerFn func(context.Context) error) {
 		<-sem // take one out (will block if empty)
 
@@ -76,6 +82,24 @@ func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.
 			sem <- struct{}{} // put it back
 
 			waitGroup.Done()
+		}()
+
+		// Recover from panics and convert them to errors
+		defer func() {
+			if r := recover(); r != nil {
+				var err error
+				if e, ok := r.(error); ok {
+					err = fmt.Errorf("panic recovered: %w\n%s", e, debug.Stack())
+				} else {
+					err = fmt.Errorf("panic recovered: %v\n%s", r, debug.Stack())
+				}
+
+				// Cancel the context to stop other functions
+				cancelOnce.Do(cancel)
+
+				// Send the panic as an error
+				errorChan <- err
+			}
 		}()
 
 		// If the context is already canceled, don't bother running the function

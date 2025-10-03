@@ -98,7 +98,7 @@ func TestLoadConfigFromEnv_DefaultValues(t *testing.T) { //nolint:paralleltest
 	_ = os.Unsetenv("OTEL_SERVICE_VERSION")
 	_ = os.Unsetenv("ENVIRONMENT")
 
-	config, err := LoadConfigFromEnv("dev")
+	config, err := LoadConfigFromEnv("test")
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}

@@ -41,6 +41,8 @@ linters:
     - tenv
     # Sometimes it's useful to return nil, nil
     - nilnil
+    # Disabled as requested
+    - tagliatelle
 linters-settings:
   # See https://golangci-lint.run/usage/linters#revive
   revive:
@@ -73,5 +75,12 @@ issues:
     - text: "don't use ALL_CAPS in Go names"
       linters:
         - revive
+    - text: "cloud.google.com/go/pubsub.*is deprecated: Please use cloud.google.com/go/pubsub/v2"
+      linters:
+        - staticcheck
   exclude-dirs:
+    - openapi
+    - scripts
     - tmp
+    - playground
+    - testrun

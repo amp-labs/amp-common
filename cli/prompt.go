@@ -9,6 +9,8 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
+var errEmptyInput = errors.New("you must enter something")
+
 func PromptConfirm(label string) (bool, error) {
 	prompt := promptui.Prompt{
 		Label:     label,
@@ -16,6 +18,7 @@ func PromptConfirm(label string) (bool, error) {
 		Stdin:     os.Stdin,
 		Stdout:    os.Stdout,
 	}
+
 	_, err := prompt.Run()
 	if err != nil {
 		if errors.Is(err, promptui.ErrAbort) {
@@ -33,7 +36,7 @@ func PromptString(label string) (string, error) {
 		Label: label,
 		Validate: func(s string) error {
 			if len(s) == 0 {
-				return errors.New("you must enter something")
+				return errEmptyInput
 			}
 
 			return nil

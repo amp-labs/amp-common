@@ -10,6 +10,9 @@ import (
 	"github.com/amp-labs/amp-common/utils"
 )
 
+// ErrPanicRecovered is the base error for panic recovery.
+var ErrPanicRecovered = errors.New("panic recovered")
+
 // Do runs the given functions in parallel and returns the first error encountered.
 // See SimultaneouslyCtx for more information.
 func Do(maxConcurrent int, f ...func(ctx context.Context) error) error {
@@ -89,9 +92,9 @@ func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.
 			if r := recover(); r != nil {
 				var err error
 				if e, ok := r.(error); ok {
-					err = fmt.Errorf("panic recovered: %w\n%s", e, debug.Stack())
+					err = fmt.Errorf("%w: %w\n%s", ErrPanicRecovered, e, debug.Stack())
 				} else {
-					err = fmt.Errorf("panic recovered: %v\n%s", r, debug.Stack())
+					err = fmt.Errorf("%w: %v\n%s", ErrPanicRecovered, r, debug.Stack())
 				}
 
 				// Cancel the context to stop other functions

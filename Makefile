@@ -1,33 +1,37 @@
+.PHONY: all
+all:
+	echo "No default target."
+
+# ====================
+# Formatting & linting
+# ====================
+.PHONY: lint
+lint:
+	golangci-lint run -c .golangci.yml
+
+# Run a few autoformatters and print out unfixable errors
+# PRE-REQUISITES: install linters, see https://ampersand.slab.com/posts/engineering-onboarding-guide-environment-set-up-9v73t3l8#huik9-install-linters
+# If you're curious, run `golangci-lint help linters` to see which linters have auto-fix enabled by golangci-lint.
+# For ones that do not have auto-fix enabled by golangci-lint (e.g. wsl and gci), we add the fix commands manually to this list.
+# For the wsl CLI, we manually run it against select repos, since it does not read from .golangci.yml and therefore cannot ignore directories.
 .PHONY: fix
 fix:
-	wsl --allow-cuddle-declarations --fix ./... && \
+	wsl --allow-cuddle-declarations --allow-trailing-comment --fix ./api/... ./temporal/... ./messenger/... ./scribe/... ./shared/... ./dbTesting/... && \
 		gci write . && \
 		golangci-lint run -c .golangci.yml --fix
+
+.PHONY: fix-markdown
+fix-markdown:
+	markdownlint --fix .
 
 .PHONY: fix/sort
 fix/sort:
 	make fix | grep "" | sort
 
-# Fix specific files passed as arguments
-# Usage: make fix-files FILES="cmd/listen.go cmd/trigger.go"
-fix-files:
-	@if [ -z "$(FILES)" ]; then \
-		echo "Usage: make fix-files FILES=\"file1.go file2.go ...\""; \
-		echo "Example: make fix-files FILES=\"cmd/login.go cmd/logout.go\""; \
-		exit 1; \
-	fi
-	@echo "Fixing files: $(FILES)"
-	gci write $(FILES)
-	@for file in $(FILES); do \
-		echo "Formatting $$file..."; \
-		gofmt -w $$file; \
-	done
-	@echo "Running go vet on packages containing the files..."
-	@for file in $(FILES); do \
-		dir=$$(dirname $$file); \
-		echo "Vetting package ./$$dir/..."; \
-		go vet ./$$dir/... || true; \
-	done
+# Alias for fix
+.PHONY: format
+format: fix
+
 
 .PHONY: test
 test:

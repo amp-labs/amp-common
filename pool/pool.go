@@ -224,7 +224,7 @@ func (g *poolImpl[C]) loop() {
 				var remainder []poolObject[C]
 
 				for _, obj := range objectPool {
-					age := time.Now().Sub(obj.lastTouched)
+					age := time.Since(obj.lastTouched)
 					if age < ci.minIdle {
 						remainder = append(remainder, obj)
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -153,7 +154,8 @@ func status(err error) (int, error) {
 				return code, nil
 			}
 
-			return code, errors.New(string(exitErr.Stderr))
+			// Dynamic error wraps command stderr for debugging
+			return code, fmt.Errorf("command failed: %s", string(exitErr.Stderr)) //nolint:err113
 		}
 	}
 

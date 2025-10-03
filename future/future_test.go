@@ -10,6 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	errTest      = errors.New("test error")
+	errOriginal  = errors.New("original error")
+	errTransform = errors.New("transform error")
+	errInner     = errors.New("inner error")
+	errSource    = errors.New("source error")
+)
+
 func TestNew_Success(t *testing.T) {
 	t.Parallel()
 
@@ -28,18 +36,16 @@ func TestNew_Success(t *testing.T) {
 func TestNew_Error(t *testing.T) {
 	t.Parallel()
 
-	expectedErr := errors.New("test error")
-
 	fut, promise := New[int]()
 
 	go func() {
-		promise.Failure(expectedErr)
+		promise.Failure(errTest)
 	}()
 
 	result, err := fut.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, errTest, err)
 	assert.Equal(t, 0, result)
 }
 
@@ -74,16 +80,14 @@ func TestGo_Success(t *testing.T) {
 func TestGo_Error(t *testing.T) {
 	t.Parallel()
 
-	expectedErr := errors.New("test error")
-
 	fut := Go(func() (int, error) {
-		return 0, expectedErr
+		return 0, errTest
 	})
 
 	result, err := fut.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, errTest, err)
 	assert.Equal(t, 0, result)
 }
 
@@ -105,9 +109,7 @@ func TestGo_Panic(t *testing.T) {
 func TestGoContext_Success(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
-	fut := GoContext(ctx, func(_ context.Context) (string, error) {
+	fut := GoContext(t.Context(), func(_ context.Context) (string, error) {
 		return "hello", nil
 	})
 
@@ -120,7 +122,7 @@ func TestGoContext_Success(t *testing.T) {
 func TestGoContext_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	fut := GoContext(ctx, func(ctx context.Context) (string, error) {
 		<-ctx.Done()
@@ -147,7 +149,7 @@ func TestAwaitContext_Timeout(t *testing.T) {
 		return 42, nil
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
 	defer cancel()
 
 	result, err := fut.AwaitContext(ctx)
@@ -164,7 +166,7 @@ func TestAwaitContext_Success(t *testing.T) {
 		return 42, nil
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
 	defer cancel()
 
 	result, err := fut.AwaitContext(ctx)
@@ -193,10 +195,8 @@ func TestMap_Success(t *testing.T) {
 func TestMap_OriginalError(t *testing.T) {
 	t.Parallel()
 
-	expectedErr := errors.New("original error")
-
 	fut := Go(func() (int, error) {
-		return 0, expectedErr
+		return 0, errOriginal
 	})
 
 	mapped := Map(fut, func(val int) (int, error) {
@@ -206,27 +206,25 @@ func TestMap_OriginalError(t *testing.T) {
 	result, err := mapped.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, errOriginal, err)
 	assert.Equal(t, 0, result)
 }
 
 func TestMap_TransformError(t *testing.T) {
 	t.Parallel()
 
-	transformErr := errors.New("transform error")
-
 	fut := Go(func() (int, error) {
 		return 21, nil
 	})
 
 	mapped := Map(fut, func(_ int) (int, error) {
-		return 0, transformErr
+		return 0, errTransform
 	})
 
 	result, err := mapped.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, transformErr, err)
+	assert.Equal(t, errTransform, err)
 	assert.Equal(t, 0, result)
 }
 
@@ -252,10 +250,8 @@ func TestFlatMap_Success(t *testing.T) {
 func TestFlatMap_OriginalError(t *testing.T) {
 	t.Parallel()
 
-	expectedErr := errors.New("original error")
-
 	fut := Go(func() (int, error) {
-		return 0, expectedErr
+		return 0, errOriginal
 	})
 
 	flatMapped := FlatMap(fut, func(val int) *Future[int] {
@@ -267,14 +263,12 @@ func TestFlatMap_OriginalError(t *testing.T) {
 	result, err := flatMapped.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, errOriginal, err)
 	assert.Equal(t, 0, result)
 }
 
 func TestFlatMap_InnerError(t *testing.T) {
 	t.Parallel()
-
-	innerErr := errors.New("inner error")
 
 	fut := Go(func() (int, error) {
 		return 21, nil
@@ -282,14 +276,14 @@ func TestFlatMap_InnerError(t *testing.T) {
 
 	flatMapped := FlatMap(fut, func(_ int) *Future[int] {
 		return Go(func() (int, error) {
-			return 0, innerErr
+			return 0, errInner
 		})
 	})
 
 	result, err := flatMapped.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, innerErr, err)
+	assert.Equal(t, errInner, err)
 	assert.Equal(t, 0, result)
 }
 
@@ -319,14 +313,12 @@ func TestCombine_Success(t *testing.T) {
 func TestCombine_OneError(t *testing.T) {
 	t.Parallel()
 
-	expectedErr := errors.New("test error")
-
 	fut1 := Go(func() (int, error) {
 		return 1, nil
 	})
 
 	fut2 := Go(func() (int, error) {
-		return 0, expectedErr
+		return 0, errTest
 	})
 
 	fut3 := Go(func() (int, error) {
@@ -338,21 +330,19 @@ func TestCombine_OneError(t *testing.T) {
 	results, err := combined.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, errTest, err)
 	assert.Nil(t, results)
 }
 
 func TestCombineNoShortCircuit_Mixed(t *testing.T) {
 	t.Parallel()
 
-	expectedErr := errors.New("test error")
-
 	fut1 := Go(func() (int, error) {
 		return 1, nil
 	})
 
 	fut2 := Go(func() (int, error) {
-		return 0, expectedErr
+		return 0, errTest
 	})
 
 	fut3 := Go(func() (int, error) {
@@ -365,7 +355,7 @@ func TestCombineNoShortCircuit_Mixed(t *testing.T) {
 
 	// When there are errors, Await returns zero value and the error
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), expectedErr.Error())
+	assert.Contains(t, err.Error(), errTest.Error())
 	assert.Nil(t, results)
 }
 
@@ -434,7 +424,7 @@ func TestAwaitContext_Idempotent(t *testing.T) {
 		return "hello", nil
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Call AwaitContext multiple times
 	result1, err1 := fut.AwaitContext(ctx)
@@ -457,7 +447,7 @@ func TestMixedReads_Idempotent(t *testing.T) {
 		return 99, nil
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Mix different read operations
 	result1, err1 := fut.Await()
@@ -487,7 +477,7 @@ func TestConcurrentAwait(t *testing.T) {
 	results := make(chan int, numGoroutines)
 	errors := make(chan error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
 			val, err := fut.Await()
 			results <- val
@@ -496,7 +486,7 @@ func TestConcurrentAwait(t *testing.T) {
 	}
 
 	// Collect all results
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		result := <-results
 		err := <-errors
 
@@ -517,27 +507,27 @@ func TestConcurrentMixedReads(t *testing.T) {
 	const numGoroutines = 10
 	done := make(chan bool, numGoroutines)
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Mix of Await and AwaitContext calls
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		go func() {
 			val, err := fut.Await()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, "concurrent", val)
 			done <- true
 		}()
 
 		go func() {
 			val, err := fut.AwaitContext(ctx)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, "concurrent", val)
 			done <- true
 		}()
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		<-done
 	}
 }
@@ -545,14 +535,12 @@ func TestConcurrentMixedReads(t *testing.T) {
 func TestNewError(t *testing.T) {
 	t.Parallel()
 
-	expectedErr := errors.New("test error")
-
-	fut := NewError[int](expectedErr)
+	fut := NewError[int](errTest)
 
 	result, err := fut.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, errTest, err)
 	assert.Equal(t, 0, result)
 }
 
@@ -589,13 +577,11 @@ func TestMap_NilFunction(t *testing.T) {
 func TestMapContext_Success(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	fut := Go(func() (int, error) {
 		return 21, nil
 	})
 
-	mapped := MapContext(ctx, fut, func(ctx context.Context, val int) (int, error) {
+	mapped := MapContext(t.Context(), fut, func(ctx context.Context, val int) (int, error) {
 		return val * 2, nil
 	})
 
@@ -608,7 +594,7 @@ func TestMapContext_Success(t *testing.T) {
 func TestMapContext_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	fut := Go(func() (int, error) {
 		time.Sleep(50 * time.Millisecond)
@@ -633,34 +619,29 @@ func TestMapContext_ContextCancellation(t *testing.T) {
 func TestMapContext_PropagatesError(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	expectedErr := errors.New("source error")
-
 	fut := Go(func() (int, error) {
-		return 0, expectedErr
+		return 0, errSource
 	})
 
-	mapped := MapContext(ctx, fut, func(ctx context.Context, val int) (int, error) {
+	mapped := MapContext(t.Context(), fut, func(ctx context.Context, val int) (int, error) {
 		return val * 2, nil
 	})
 
 	result, err := mapped.Await()
 
 	require.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, errSource, err)
 	assert.Equal(t, 0, result)
 }
 
 func TestFlatMapContext_Success(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	fut := Go(func() (int, error) {
 		return 21, nil
 	})
 
-	flatMapped := FlatMapContext(ctx, fut, func(val int) *Future[int] {
+	flatMapped := FlatMapContext(t.Context(), fut, func(val int) *Future[int] {
 		return Go(func() (int, error) {
 			return val * 2, nil
 		})
@@ -675,7 +656,7 @@ func TestFlatMapContext_Success(t *testing.T) {
 func TestFlatMapContext_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	fut := Go(func() (int, error) {
 		time.Sleep(50 * time.Millisecond)
@@ -702,8 +683,6 @@ func TestFlatMapContext_ContextCancellation(t *testing.T) {
 func TestCombineContext_Success(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	fut1 := Go(func() (int, error) {
 		return 1, nil
 	})
@@ -716,7 +695,7 @@ func TestCombineContext_Success(t *testing.T) {
 		return 3, nil
 	})
 
-	combined := CombineContext(ctx, fut1, fut2, fut3)
+	combined := CombineContext(t.Context(), fut1, fut2, fut3)
 
 	results, err := combined.Await()
 
@@ -727,7 +706,7 @@ func TestCombineContext_Success(t *testing.T) {
 func TestCombineContext_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	fut1 := Go(func() (int, error) {
 		time.Sleep(10 * time.Millisecond)
@@ -757,9 +736,7 @@ func TestCombineContext_ContextCancellation(t *testing.T) {
 func TestCombineContext_EmptyFutures(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
-	combined := CombineContext[int](ctx)
+	combined := CombineContext[int](t.Context())
 
 	results, err := combined.Await()
 
@@ -769,8 +746,6 @@ func TestCombineContext_EmptyFutures(t *testing.T) {
 
 func TestCombineContextNoShortCircuit_Success(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
 
 	fut1 := Go(func() (int, error) {
 		return 1, nil
@@ -784,7 +759,7 @@ func TestCombineContextNoShortCircuit_Success(t *testing.T) {
 		return 3, nil
 	})
 
-	combined := CombineContextNoShortCircuit(ctx, fut1, fut2, fut3)
+	combined := CombineContextNoShortCircuit(t.Context(), fut1, fut2, fut3)
 
 	results, err := combined.Await()
 
@@ -795,34 +770,31 @@ func TestCombineContextNoShortCircuit_Success(t *testing.T) {
 func TestCombineContextNoShortCircuit_WithErrors(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-	expectedErr := errors.New("test error")
-
 	fut1 := Go(func() (int, error) {
 		return 1, nil
 	})
 
 	fut2 := Go(func() (int, error) {
-		return 0, expectedErr
+		return 0, errTest
 	})
 
 	fut3 := Go(func() (int, error) {
 		return 3, nil
 	})
 
-	combined := CombineContextNoShortCircuit(ctx, fut1, fut2, fut3)
+	combined := CombineContextNoShortCircuit(t.Context(), fut1, fut2, fut3)
 
 	results, err := combined.Await()
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), expectedErr.Error())
+	assert.Contains(t, err.Error(), errTest.Error())
 	assert.Nil(t, results)
 }
 
 func TestCombineContextNoShortCircuit_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	fut1 := Go(func() (int, error) {
 		time.Sleep(10 * time.Millisecond)

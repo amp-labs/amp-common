@@ -1,0 +1,31 @@
+name: Go Report Card
+on: [push]
+jobs:
+  report_card:
+    runs-on:
+      group: Ampersand Private
+    steps:
+      - uses: actions/checkout@v5
+
+      # Setup SSH key for private repositories
+      - name: Setup SSH key for private repos
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.AMP_COMMON_SSH_KEY }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.24.6"
+
+      - name: Configure Go for private modules
+        run: |
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/amp-labs/*
+      - name: Generate go code
+        run: go generate ./...
+      - name: Clone go report card
+        run: git clone https://github.com/gojp/goreportcard.git
+      - name: Build go report card
+        run: cd goreportcard && go build -o goreportcard-cli ./cmd/goreportcard-cli/main.go && make install && cp -f goreportcard-cli /usr/local/bin/goreportcard-cli && cd .. && rm -rf goreportcard
+      - name: Run go report card
+        run: goreportcard-cli -v

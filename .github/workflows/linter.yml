@@ -1,0 +1,34 @@
+name: Linter
+on:
+  push:
+    branches:
+      - main
+  pull_request: {}
+jobs:
+  lint:
+    runs-on:
+      group: Ampersand Private
+    steps:
+      - uses: actions/checkout@v5
+
+      # Setup SSH key for private repositories
+      - name: Setup SSH key for private repos
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.AMP_COMMON_SSH_KEY }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.24.6"
+
+      - name: Configure Go for private modules
+        run: |
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/amp-labs/*
+      - name: Generate go code
+        run: go generate ./...
+      - name: Lint Go code
+        uses: golangci/golangci-lint-action@v6
+        with:
+          skip-cache: true
+          version: v1.64.3

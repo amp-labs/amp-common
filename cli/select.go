@@ -22,6 +22,7 @@ func MultiSelect(label string, choices ...string) ([]string, error) {
 	names := allNames.SortedEntries()
 
 	selections := set.NewStringSet(hashing.Sha256)
+
 	names = append([]string{"[Done]"}, names...)
 
 again:
@@ -37,6 +38,7 @@ again:
 			}
 
 			n := names[index]
+
 			return strings.HasPrefix(n, input)
 		},
 	}
@@ -58,11 +60,13 @@ again:
 		names = allNames.SortedEntries()
 		if len(names) > 0 {
 			names = append([]string{"[Done]"}, names...)
+
 			goto again
 		}
 	}
 
 	var choicesOut []string
+
 	for _, c := range choices {
 		contains, err := selections.Contains(c)
 		if err != nil {

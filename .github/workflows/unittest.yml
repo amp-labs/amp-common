@@ -1,0 +1,48 @@
+name: Unit Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request: {}
+jobs:
+  build:
+    runs-on:
+      group: Ampersand Private
+    steps:
+      # Predefined action from marketplace. Clones the source code.
+      - uses: actions/checkout@v5
+
+      # Setup SSH key for private repositories
+      - name: Setup SSH key for private repos
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.AMP_COMMON_SSH_KEY }}
+
+      # Predefined action from marketplace. Installs go on the system.
+      - name: Set up go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.24.6"
+
+      - name: Configure Go for private modules
+        run: |
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+          go env -w GOPRIVATE=github.com/amp-labs/*
+      # Run go generate
+      - name: Generate
+        run: go generate ./...
+      # Run tests
+      - name: Unit Tests
+        env:
+          SKIP_FLAKY_TESTS: "true"
+          RUNNING_ENV: "test"
+        run: go test -v $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+      - name: Coverage Check
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          config: ./.testcoverage.yml
+          profile: cover.out
+          local-prefix: github.com/amp-labs/server
+          threshold-file: 0
+          threshold-package: 0
+          threshold-total: 0

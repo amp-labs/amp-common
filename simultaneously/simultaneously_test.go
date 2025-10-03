@@ -12,10 +12,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	errTestPanic = errors.New("test error panic")
+	errTest      = errors.New("test error")
+)
+
 func TestDoCtx_RecoversPanic(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(context.Background(), 2,
+	err := DoCtx(t.Context(), 2,
 		func(ctx context.Context) error {
 			panic("intentional panic for testing")
 		},
@@ -30,17 +35,15 @@ func TestDoCtx_RecoversPanic(t *testing.T) {
 func TestDoCtx_RecoversPanicError(t *testing.T) {
 	t.Parallel()
 
-	testErr := errors.New("test error panic")
-
-	err := DoCtx(context.Background(), 2,
+	err := DoCtx(t.Context(), 2,
 		func(ctx context.Context) error {
-			panic(testErr)
+			panic(errTestPanic)
 		},
 	)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "panic recovered")
-	assert.ErrorIs(t, err, testErr)
+	require.ErrorIs(t, err, errTestPanic)
 	assert.Contains(t, err.Error(), "simultaneously_test.go") // stack trace should be present
 }
 
@@ -49,10 +52,11 @@ func TestDoCtx_MixedSuccessAndPanic(t *testing.T) {
 
 	var successCount atomic.Int32
 
-	err := DoCtx(context.Background(), 3,
+	err := DoCtx(t.Context(), 3,
 		func(ctx context.Context) error {
 			successCount.Add(1)
 			time.Sleep(10 * time.Millisecond)
+
 			return nil
 		},
 		func(ctx context.Context) error {
@@ -62,6 +66,7 @@ func TestDoCtx_MixedSuccessAndPanic(t *testing.T) {
 		func(ctx context.Context) error {
 			successCount.Add(1)
 			time.Sleep(10 * time.Millisecond)
+
 			return nil
 		},
 	)
@@ -78,7 +83,7 @@ func TestDoCtx_MixedSuccessAndPanic(t *testing.T) {
 func TestDoCtx_MultiplePanics(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(context.Background(), 3,
+	err := DoCtx(t.Context(), 3,
 		func(ctx context.Context) error {
 			panic("panic 1")
 		},
@@ -106,10 +111,11 @@ func TestDoCtx_PanicDoesNotAffectOtherGoroutines(t *testing.T) {
 
 	var completed atomic.Int32
 
-	err := DoCtx(context.Background(), 10,
+	err := DoCtx(t.Context(), 10,
 		func(ctx context.Context) error {
 			time.Sleep(50 * time.Millisecond)
 			completed.Add(1)
+
 			return nil
 		},
 		func(ctx context.Context) error {
@@ -119,11 +125,13 @@ func TestDoCtx_PanicDoesNotAffectOtherGoroutines(t *testing.T) {
 		func(ctx context.Context) error {
 			time.Sleep(50 * time.Millisecond)
 			completed.Add(1)
+
 			return nil
 		},
 		func(ctx context.Context) error {
 			time.Sleep(50 * time.Millisecond)
 			completed.Add(1)
+
 			return nil
 		},
 	)
@@ -138,17 +146,20 @@ func TestDoCtx_SuccessfulExecution(t *testing.T) {
 
 	var counter atomic.Int32
 
-	err := DoCtx(context.Background(), 3,
+	err := DoCtx(t.Context(), 3,
 		func(ctx context.Context) error {
 			counter.Add(1)
+
 			return nil
 		},
 		func(ctx context.Context) error {
 			counter.Add(1)
+
 			return nil
 		},
 		func(ctx context.Context) error {
 			counter.Add(1)
+
 			return nil
 		},
 	)
@@ -160,11 +171,9 @@ func TestDoCtx_SuccessfulExecution(t *testing.T) {
 func TestDoCtx_ErrorReturnedInsteadOfPanic(t *testing.T) {
 	t.Parallel()
 
-	testErr := errors.New("test error")
-
-	err := DoCtx(context.Background(), 2,
+	err := DoCtx(t.Context(), 2,
 		func(ctx context.Context) error {
-			return testErr
+			return errTest
 		},
 		func(ctx context.Context) error {
 			return nil
@@ -172,7 +181,7 @@ func TestDoCtx_ErrorReturnedInsteadOfPanic(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.ErrorIs(t, err, testErr)
+	require.ErrorIs(t, err, errTest)
 	// Should not contain panic recovery message since this was a normal error
 	assert.NotContains(t, err.Error(), "panic recovered")
 }
@@ -180,10 +189,11 @@ func TestDoCtx_ErrorReturnedInsteadOfPanic(t *testing.T) {
 func TestDoCtx_PanicWithNilValue(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(context.Background(), 1,
+	err := DoCtx(t.Context(), 1,
 		func(ctx context.Context) error {
 			var nilPtr *string
 			_ = *nilPtr // This will panic with nil pointer dereference
+
 			return nil
 		},
 	)
@@ -210,9 +220,10 @@ func TestDo_RecoversPanic(t *testing.T) {
 func TestDoCtx_PanicWithStackTrace(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(context.Background(), 1,
+	err := DoCtx(t.Context(), 1,
 		func(ctx context.Context) error {
 			helper()
+
 			return nil
 		},
 	)
@@ -224,7 +235,7 @@ func TestDoCtx_PanicWithStackTrace(t *testing.T) {
 	assert.Contains(t, err.Error(), "simultaneously_test.go")
 }
 
-// Helper function for testing stack traces
+// Helper function for testing stack traces.
 func helper() {
 	panic("helper function panic")
 }
@@ -234,7 +245,7 @@ func TestDoCtx_ContextCancellationAfterPanic(t *testing.T) {
 
 	var canceledCount atomic.Int32
 
-	err := DoCtx(context.Background(), 5,
+	err := DoCtx(t.Context(), 5,
 		func(ctx context.Context) error {
 			// Panic immediately
 			panic("early panic")
@@ -242,26 +253,29 @@ func TestDoCtx_ContextCancellationAfterPanic(t *testing.T) {
 		func(ctx context.Context) error {
 			// This should potentially be canceled
 			time.Sleep(100 * time.Millisecond)
+
 			if ctx.Err() != nil {
 				canceledCount.Add(1)
+
 				return ctx.Err()
 			}
+
 			return nil
 		},
 		func(ctx context.Context) error {
 			// This should potentially be canceled
 			time.Sleep(100 * time.Millisecond)
+
 			if ctx.Err() != nil {
 				canceledCount.Add(1)
+
 				return ctx.Err()
 			}
+
 			return nil
 		},
 	)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "panic recovered")
-
-	// Some functions should have been canceled after the panic
-	// (though timing may vary)
 }

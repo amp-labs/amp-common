@@ -1,0 +1,21 @@
+name: On call approval override
+on:
+  issue_comment:
+    types: [created, edited]
+jobs:
+  auto-approve:
+    runs-on:
+      group: Ampersand Private
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/on-call-override')
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Approve PR
+        run: |
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}/reviews" \
+            -d '{"event":"APPROVE"}'
+      - name: Notify Slack
+        run: |
+          curl -X POST -H 'Content-type: application/json' ${{ secrets.SLACK_WEBHOOK_URL }} \
+          --data '{"text":"Pull Request #${{ github.event.issue.number }} has been auto-approved due to an /on-call-override."}'

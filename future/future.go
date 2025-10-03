@@ -39,6 +39,13 @@ import (
 	"github.com/amp-labs/amp-common/utils"
 )
 
+var (
+	// ErrNilFuture is returned when a nil future is provided to a function.
+	ErrNilFuture = errors.New("nil future provided to Map")
+	// ErrNilFunction is returned when a nil function is provided to a function.
+	ErrNilFunction = errors.New("nil function provided to Map")
+)
+
 // Future represents the read-only side of an asynchronous computation.
 // It provides methods to await the result of a computation that may not yet be complete.
 //
@@ -145,7 +152,7 @@ func Go[T any](fn func() (T, error)) *Future[T] {
 //   - Automatically cancels the context when the goroutine completes
 //   - Catches panics and converts them to errors
 //
-// The child context allows the async operation to be cancelled independently and ensures
+// The child context allows the async operation to be canceled independently and ensures
 // proper cleanup when the computation finishes.
 //
 // Example:
@@ -158,20 +165,22 @@ func Go[T any](fn func() (T, error)) *Future[T] {
 //
 // Design notes:
 //   - A nil context is automatically replaced with context.Background()
-//   - The child context (goCtx) is cancelled in defer to prevent context leaks
+//   - The child context (goCtx) is canceled in defer to prevent context leaks
 //   - The cancel is called even on panic to ensure cleanup
 //   - The parent context can still cancel the child via the usual context mechanisms
-func GoContext[T any](ctx context.Context, fn func(context.Context) (T, error)) *Future[T] {
+//
+//nolint:contextcheck // GoContext intentionally creates a new cancellable context for the goroutine
+func GoContext[T any](parentCtx context.Context, operation func(context.Context) (T, error)) *Future[T] {
 	future, promise := New[T]()
 
 	// Ensure we always have a valid context
-	if ctx == nil {
-		ctx = context.Background()
+	if parentCtx == nil {
+		parentCtx = context.Background()
 	}
 
 	// Create a child context that we can cancel when the goroutine completes
 	// This prevents context leaks and allows independent cancellation
-	goCtx, cancel := context.WithCancel(ctx)
+	goCtx, cancel := context.WithCancel(parentCtx)
 
 	go func() {
 		defer func() {
@@ -188,7 +197,7 @@ func GoContext[T any](ctx context.Context, fn func(context.Context) (T, error)) 
 		}()
 
 		// Execute user's function with the child context
-		value, err := fn(goCtx)
+		value, err := operation(goCtx)
 
 		promise.Complete(value, err)
 	}()
@@ -223,13 +232,13 @@ func (f *Future[T]) Await() (T, error) { //nolint:ireturn
 	return f.result.Get()
 }
 
-// AwaitContext blocks until the future completes or the context is cancelled.
+// AwaitContext blocks until the future completes or the context is canceled.
 //
 // This is the context-aware version of Await, allowing for timeouts and cancellation.
 //
 // Behavior:
 //   - Returns the result if the future completes first
-//   - Returns context.Canceled/DeadlineExceeded if context is cancelled first
+//   - Returns context.Canceled/DeadlineExceeded if context is canceled first
 //   - If future is already complete, returns result immediately (ignoring context state)
 //   - If ctx is nil, behaves like Await()
 //   - Safe for concurrent use by multiple goroutines
@@ -261,7 +270,7 @@ func (f *Future[T]) AwaitContext(ctx context.Context) (T, error) { //nolint:iret
 	// Race the context cancellation against future completion
 	select {
 	case <-ctx.Done():
-		// Context was cancelled/timed out before completion
+		// Context was canceled/timed out before completion
 		var zero T
 
 		return zero, ctx.Err()
@@ -323,14 +332,14 @@ func NewError[T any](err error) *Future[T] {
 //   - Returns a pre-failed future if inputs are invalid (nil checks)
 //   - Uses Go() internally, so transformation happens in a separate goroutine
 //   - Error propagation is automatic - no need for manual if err != nil checks
-func Map[A, B any](fut *Future[A], fn func(A) (B, error)) *Future[B] {
+func Map[A, B any](fut *Future[A], transformFunc func(A) (B, error)) *Future[B] {
 	// Input validation - return pre-failed futures for invalid inputs
 	if fut == nil {
-		return NewError[B](errors.New("nil future provided to Map"))
+		return NewError[B](ErrNilFuture)
 	}
 
-	if fn == nil {
-		return NewError[B](errors.New("nil function provided to Map"))
+	if transformFunc == nil {
+		return NewError[B](ErrNilFunction)
 	}
 
 	// Create a new future that awaits the original and transforms the result
@@ -345,7 +354,7 @@ func Map[A, B any](fut *Future[A], fn func(A) (B, error)) *Future[B] {
 		}
 
 		// Apply the transformation function to the successful value
-		return fn(val)
+		return transformFunc(val)
 	})
 }
 
@@ -368,14 +377,16 @@ func Map[A, B any](fut *Future[A], fn func(A) (B, error)) *Future[B] {
 //	user, err := userFuture.AwaitContext(ctx)
 //
 // Design note: Uses GoContext internally to respect the context throughout the operation.
-func MapContext[A, B any](ctx context.Context, fut *Future[A], fn func(context.Context, A) (B, error)) *Future[B] {
+func MapContext[A, B any](
+	ctx context.Context, fut *Future[A], transformFunc func(context.Context, A) (B, error),
+) *Future[B] {
 	// Input validation
 	if fut == nil {
-		return NewError[B](errors.New("nil future provided to Map"))
+		return NewError[B](ErrNilFuture)
 	}
 
-	if fn == nil {
-		return NewError[B](errors.New("nil function provided to Map"))
+	if transformFunc == nil {
+		return NewError[B](ErrNilFunction)
 	}
 
 	// Create a context-aware future that awaits and transforms
@@ -390,7 +401,7 @@ func MapContext[A, B any](ctx context.Context, fut *Future[A], fn func(context.C
 		}
 
 		// Apply transformation with context
-		return fn(ctx, val)
+		return transformFunc(ctx, val)
 	})
 }
 
@@ -542,7 +553,7 @@ func Combine[T any](futures ...*Future[T]) *Future[[]T] {
 // Behavior:
 //   - Checks context before awaiting each future
 //   - Short-circuits on context cancellation OR first error
-//   - Returns context.Canceled or context.DeadlineExceeded if cancelled
+//   - Returns context.Canceled or context.DeadlineExceeded if canceled
 //
 // Example:
 //
@@ -560,7 +571,7 @@ func Combine[T any](futures ...*Future[T]) *Future[[]T] {
 //	}
 //
 // Design note: The context check happens between awaits to allow early exit if
-// the context is cancelled while waiting for slow futures.
+// the context is canceled while waiting for slow futures.
 func CombineContext[T any](ctx context.Context, futures ...*Future[T]) *Future[[]T] {
 	future, promise := New[[]T]()
 
@@ -574,7 +585,7 @@ func CombineContext[T any](ctx context.Context, futures ...*Future[T]) *Future[[
 		results := make([]T, 0, len(futures))
 
 		for _, fut := range futures {
-			// Check if context was cancelled before awaiting next future
+			// Check if context was canceled before awaiting next future
 			if !utils.IsContextAlive(ctx) {
 				promise.Failure(ctx.Err())
 
@@ -681,7 +692,7 @@ func CombineNoShortCircuit[T any](futures ...*Future[T]) *Future[[]T] {
 //
 // Behavior:
 //   - Checks context before each future await
-//   - If context is cancelled, immediately returns context error (does NOT wait for remaining futures)
+//   - If context is canceled, immediately returns context error (does NOT wait for remaining futures)
 //   - If context stays alive, waits for ALL futures and joins all errors
 //
 // NOTE: Unlike CombineNoShortCircuit, this DOES short-circuit on context cancellation

@@ -18,10 +18,6 @@ jobs:
         with:
           go-version: "1.24.6"
 
-      - name: Configure Go for private modules
-        run: |
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
-          go env -w GOPRIVATE=github.com/amp-labs/*
       # Run go generate
       - name: Generate
         run: go generate ./...

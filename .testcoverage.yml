@@ -1,0 +1,32 @@
+# (mandatory)
+# Path to coverprofile file (output of `go test -coverprofile` command)
+profile: cover.out
+
+# (optional)
+# When specified reported file paths will not contain local prefix in the output
+local-prefix: "github.com/amp-labs/amp-common"
+
+# Holds coverage thresholds percentages, values should be in range [0-100]
+threshold:
+  # (optional; default 0)
+  # The minimum coverage that each file should have
+  file: 0
+
+  # (optional; default 0)
+  # The minimum coverage that each package should have
+  package: 0
+
+  # (optional; default 0)
+  # The minimum total coverage project should have
+  total: 0
+
+# Holds regexp rules which will exclude matched files or packages from coverage statistics
+exclude:
+  # Exclude files or packages matching their paths
+  paths:
+    - \.pb\.go$    # excludes all protobuf generated files
+    - scripts/.*   # excludes all files in scripts directory
+
+# NOTES:
+# - symbol `/` in all path regexps will be replaced by
+#   current OS file path separator to properly work on Windows

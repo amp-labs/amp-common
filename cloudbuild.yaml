@@ -11,9 +11,12 @@ steps:
         gcloud secrets versions access latest --secret=github-ops-ssh-key > /root/.ssh/id_ed25519-ops
         chmod 600 /root/.ssh/id_ed25519-ops
 
-        eval $(ssh-agent -s)
-        ssh-add /root/.ssh/id_ed25519-ops
-        ssh-add /root/.ssh/id_ed25519
+        cat <<EOF > /root/.ssh/config
+        Host github-server
+          HostName github.com
+          User git
+          IdentityFile ~/.ssh/id_ed25519-ops
+        EOF
 
         export BRANCH_NAME=${BRANCH_NAME}
         export PROJECT_ID=${PROJECT_ID}
@@ -29,7 +32,7 @@ steps:
 
         # Clone server repo (we'll be updating this)
         ssh-keyscan -t rsa github.com >> /root/.ssh/known_hosts
-        git clone --depth=1 git@github.com:amp-labs/server.git -b main
+        git clone --depth=1 git@github-server:amp-labs/server.git -b main
 
         # Close old PRs
         cd server

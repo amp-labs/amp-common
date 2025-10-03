@@ -16,6 +16,11 @@ steps:
           HostName github.com
           User git
           IdentityFile ~/.ssh/id_ed25519-ops
+
+        Host github.com
+          HostName github.com
+          User git
+          IdentityFile ~/.ssh/id_ed25519
         EOF
 
         export BRANCH_NAME=${BRANCH_NAME}

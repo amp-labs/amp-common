@@ -11,12 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Setup SSH key for private repositories
-      - name: Setup SSH key for private repos
-        uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.AMP_COMMON_SSH_KEY }}
-
       - uses: actions/setup-go@v6
         with:
           go-version: "1.24.6"

@@ -12,12 +12,6 @@ jobs:
       # Predefined action from marketplace. Clones the source code.
       - uses: actions/checkout@v5
 
-      # Setup SSH key for private repositories
-      - name: Setup SSH key for private repos
-        uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.AMP_COMMON_SSH_KEY }}
-
       # Predefined action from marketplace. Installs go on the system.
       - name: Set up go
         uses: actions/setup-go@v6

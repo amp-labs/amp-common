@@ -46,6 +46,8 @@ steps:
         # Update the dependency
         git checkout -B "auto/amp-common-update-to-${COMMIT_SHA}"
 
+        ssh-keygen -y -f /root/.ssh/id_ed25519
+
         go get "github.com/amp-labs/amp-common@${COMMIT_SHA}"
         go mod tidy || true
         git add go.mod go.sum

@@ -1012,7 +1012,7 @@ func TestToChannelContext_NilContext(t *testing.T) {
 	})
 
 	// nil context should behave like regular Await (no cancellation)
-	ch := fut.ToChannelContext(nil)
+	ch := fut.ToChannelContext(nil) //nolint:staticcheck
 
 	result := <-ch
 

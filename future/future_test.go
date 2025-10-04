@@ -821,3 +821,205 @@ func TestCombineContextNoShortCircuit_ContextCancellation(t *testing.T) {
 	assert.Contains(t, err.Error(), context.Canceled.Error())
 	assert.Nil(t, results)
 }
+
+func TestToChannel_Success(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 42, nil
+	})
+
+	ch := fut.ToChannel()
+
+	result := <-ch
+
+	require.NoError(t, result.Error)
+	assert.Equal(t, 42, result.Value)
+
+	// Channel should be closed after receiving the result
+	_, ok := <-ch
+	assert.False(t, ok, "channel should be closed")
+}
+
+func TestToChannel_Error(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 0, errTest
+	})
+
+	ch := fut.ToChannel()
+
+	result := <-ch
+
+	require.Error(t, result.Error)
+	assert.Equal(t, errTest, result.Error)
+	assert.Equal(t, 0, result.Value)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "channel should be closed")
+}
+
+func TestToChannel_SelectStatement(t *testing.T) {
+	t.Parallel()
+
+	fut1 := Go(func() (int, error) {
+		time.Sleep(10 * time.Millisecond)
+
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		time.Sleep(20 * time.Millisecond)
+
+		return 2, nil
+	})
+
+	ch1 := fut1.ToChannel()
+	ch2 := fut2.ToChannel()
+
+	// Should receive from ch1 first
+	select {
+	case result := <-ch1:
+		require.NoError(t, result.Error)
+		assert.Equal(t, 1, result.Value)
+	case <-ch2:
+		t.Fatal("received from ch2 before ch1")
+	}
+
+	// Then receive from ch2
+	result := <-ch2
+	require.NoError(t, result.Error)
+	assert.Equal(t, 2, result.Value)
+}
+
+func TestToChannelContext_Success(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 42, nil
+	})
+
+	ch := fut.ToChannelContext(t.Context())
+
+	result := <-ch
+
+	require.NoError(t, result.Error)
+	assert.Equal(t, 42, result.Value)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "channel should be closed")
+}
+
+func TestToChannelContext_Error(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 0, errTest
+	})
+
+	ch := fut.ToChannelContext(t.Context())
+
+	result := <-ch
+
+	require.Error(t, result.Error)
+	assert.Equal(t, errTest, result.Error)
+	assert.Equal(t, 0, result.Value)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "channel should be closed")
+}
+
+func TestToChannelContext_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	fut := Go(func() (int, error) {
+		time.Sleep(100 * time.Millisecond)
+
+		return 42, nil
+	})
+
+	ch := fut.ToChannelContext(ctx)
+
+	// Cancel context immediately
+	cancel()
+
+	result := <-ch
+
+	require.Error(t, result.Error)
+	assert.Equal(t, context.Canceled, result.Error)
+	assert.Equal(t, 0, result.Value)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "channel should be closed")
+}
+
+func TestToChannelContext_ContextTimeout(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
+	defer cancel()
+
+	fut := Go(func() (int, error) {
+		time.Sleep(100 * time.Millisecond)
+
+		return 42, nil
+	})
+
+	ch := fut.ToChannelContext(ctx)
+
+	result := <-ch
+
+	require.Error(t, result.Error)
+	assert.Equal(t, context.DeadlineExceeded, result.Error)
+	assert.Equal(t, 0, result.Value)
+}
+
+func TestToChannelContext_SelectStatement(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+
+	fut := Go(func() (int, error) {
+		time.Sleep(10 * time.Millisecond)
+
+		return 42, nil
+	})
+
+	ch := fut.ToChannelContext(ctx)
+
+	select {
+	case result := <-ch:
+		require.NoError(t, result.Error)
+		assert.Equal(t, 42, result.Value)
+	case <-ctx.Done():
+		t.Fatal("context canceled before future completed")
+	}
+}
+
+func TestToChannelContext_NilContext(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 42, nil
+	})
+
+	// nil context should behave like regular Await (no cancellation)
+	ch := fut.ToChannelContext(nil)
+
+	result := <-ch
+
+	require.NoError(t, result.Error)
+	assert.Equal(t, 42, result.Value)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "channel should be closed")
+}

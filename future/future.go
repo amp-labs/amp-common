@@ -280,6 +280,37 @@ func (f *Future[T]) AwaitContext(ctx context.Context) (T, error) { //nolint:iret
 	}
 }
 
+// ToChannel returns a channel that will receive the result when the future completes.
+//
+// This allows integration with select statements and channel-based workflows.
+func (f *Future[T]) ToChannel() <-chan try.Try[T] {
+	ch := make(chan try.Try[T], 1)
+
+	go func() {
+		val, err := f.Await()
+		ch <- try.Try[T]{Value: val, Error: err}
+		close(ch)
+	}()
+
+	return ch
+}
+
+// ToChannelContext is the context-aware version of Channel.
+//
+// This allows waiting for the future result with context support, enabling
+// cancellation and timeouts when using the channel in select statements.
+func (f *Future[T]) ToChannelContext(ctx context.Context) <-chan try.Try[T] {
+	ch := make(chan try.Try[T], 1)
+
+	go func() {
+		val, err := f.AwaitContext(ctx)
+		ch <- try.Try[T]{Value: val, Error: err}
+		close(ch)
+	}()
+
+	return ch
+}
+
 // NewError creates a Future that is already completed with the given error.
 //
 // This is a convenience function for creating pre-failed futures, which is useful for:

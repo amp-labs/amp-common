@@ -30,7 +30,7 @@ func TestEnsureContext(t *testing.T) {
 
 		result := EnsureContext(nil, nil, nil)
 		assert.NotNil(t, result)
-		assert.Equal(t, t.Context(), result)
+		assert.Equal(t, context.Background(), result) //nolint:usetesting
 	})
 
 	t.Run("handles empty input", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestEnsureContext(t *testing.T) {
 
 		result := EnsureContext()
 		assert.NotNil(t, result)
-		assert.Equal(t, t.Context(), result)
+		assert.Equal(t, context.Background(), result) //nolint:usetesting
 	})
 
 	t.Run("returns single non-nil context", func(t *testing.T) {

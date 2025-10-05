@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/amp-labs/amp-common/channels"
 	"github.com/amp-labs/amp-common/logger"
 	"github.com/amp-labs/amp-common/try"
-	"github.com/amp-labs/amp-common/utils"
 )
 
 const (
@@ -88,7 +88,7 @@ func informCallerOfPanic[Request, Response any](
 	}
 
 	// Close the channel
-	utils.CloseChannelIgnorePanic(msg.ResponseChan)
+	channels.CloseChannelIgnorePanic(msg.ResponseChan)
 }
 
 func (a *Actor[Request, Response]) runProcessor(
@@ -169,7 +169,7 @@ func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth i
 
 				// Due to a race this might already be closed.
 				// If it is, we don't want to panic.
-				utils.CloseChannelIgnorePanic(ref.inbox)
+				channels.CloseChannelIgnorePanic(ref.inbox)
 
 				ref.dead = true
 			case <-ticker.C:
@@ -226,7 +226,7 @@ func (r *Ref[Request, Response]) Stop() {
 		return
 	}
 
-	utils.CloseChannelIgnorePanic(r.inbox)
+	channels.CloseChannelIgnorePanic(r.inbox)
 	r.dead = true
 }
 
@@ -300,7 +300,7 @@ func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //
 		Request:      request,
 		ResponseChan: ch,
 	}); err != nil {
-		utils.CloseChannelIgnorePanic(ch)
+		channels.CloseChannelIgnorePanic(ch)
 
 		var zero Response
 
@@ -333,7 +333,7 @@ func (r *Ref[Request, Response]) RequestCtx(ctx context.Context, request Request
 		Request:      request,
 		ResponseChan: msgChan,
 	}); err != nil {
-		utils.CloseChannelIgnorePanic(msgChan)
+		channels.CloseChannelIgnorePanic(msgChan)
 
 		var zero Response
 

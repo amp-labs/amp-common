@@ -1,5 +1,21 @@
 package channels
 
+// CloseChannelIgnorePanic closes a channel like normal.
+// However, if the channel has already been closed,
+// it will suppress the resulting panic.
+func CloseChannelIgnorePanic[T any](ch chan<- T) {
+	if ch == nil {
+		return
+	}
+
+	defer func() {
+		// Recover from panic if the channel is already closed
+		_ = recover()
+	}()
+
+	close(ch)
+}
+
 // InfiniteChan creates a channel with infinite buffering.
 // It returns a send-only channel and a receive-only channel.
 // The send-only channel can be used to send values without blocking.

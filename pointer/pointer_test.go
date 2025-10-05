@@ -136,7 +136,7 @@ func TestValue(t *testing.T) {
 		val, ok := Value(ptr)
 
 		assert.True(t, ok)
-		assert.Equal(t, true, val)
+		assert.True(t, val)
 	})
 
 	t.Run("nil struct pointer", func(t *testing.T) {

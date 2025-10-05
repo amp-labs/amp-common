@@ -1,40 +1,22 @@
-# amp-common
+# CLAUDE.md
 
-This repository contains shared Go libraries and utilities used across Ampersand projects. It provides a collection of reusable packages for common functionality like actor models, object pooling, concurrent execution, environment variable parsing, telemetry, and more.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Overview
 
-`amp-common` is a Go library (not a standalone application) that provides shared utilities and packages. It uses Go 1.24.6 and is published as `github.com/amp-labs/amp-common`.
+`amp-common` is a Go library repository containing shared utilities and packages used across Ampersand projects. This is not a standalone application but a collection of reusable Go packages.
 
-## Prerequisites
-
-* **Go 1.24.6+**
-* **SSH Key Setup**: This project uses private GitHub repositories. You need to set up SSH authentication:
-  1. Ensure you have an SSH key configured for GitHub access to private amp-labs repositories
-  2. Configure git to use SSH for GitHub:
-     ```bash
-     git config --global url."git@github.com:".insteadOf "https://github.com/"
-     ```
-  3. Set the GOPRIVATE environment variable (add to your shell profile):
-     ```bash
-     export GOPRIVATE=github.com/amp-labs/*
-     ```
-
-## Development
+## Commands
 
 ### Testing
-
 ```bash
-make test              # Run all tests
-go test -v ./...       # Run tests with verbose output
-go test -v -run TestName ./package-name  # Run a specific test
+make test       # Run all tests
+go test -v ./...  # Run tests with verbose output
 ```
 
 ### Linting and Formatting
-
 ```bash
-make fix               # Run all formatters and linters with auto-fix
-make fix/sort          # Same as fix but with sorted output
+make fix        # Run all formatters and linters with auto-fix
 ```
 
 The linting stack includes:
@@ -42,21 +24,26 @@ The linting stack includes:
 - `gci` - Go import formatter
 - `golangci-lint` - Comprehensive Go linter (configured via `.golangci.yml`)
 
-## Core Packages
+### Running a Single Test
+```bash
+go test -v -run TestName ./package-name
+```
 
-### Concurrency & Actor Model
+## Architecture
+
+### Core Packages
 
 **`actor`** - Actor model implementation with message passing
-- Generic `Actor[Request, Response]` with concurrent message processing
+- Provides generic `Actor[Request, Response]` with concurrent message processing
 - Actors have mailboxes (channels) and process messages sequentially
-- Includes Prometheus metrics for monitoring
-- Methods: `Send`, `SendCtx`, `Request`, `RequestCtx`, `Publish`, `PublishCtx`
-- Graceful panic recovery
+- Includes Prometheus metrics for monitoring actor performance
+- `Ref` type provides methods: `Send`, `SendCtx`, `Request`, `RequestCtx`, `Publish`, `PublishCtx`
+- Actors can panic-recover gracefully and notify callers of failures
 
 **`pool`** - Generic object pooling with lifecycle management
 - Thread-safe pool for any `io.Closer` objects
 - Dynamic growth, configurable idle cleanup
-- Prometheus metrics for monitoring
+- Includes Prometheus metrics for pool monitoring
 - Uses channels and semaphores for concurrency control
 
 **`simultaneously`** - Parallel execution utility
@@ -65,15 +52,11 @@ The linting stack includes:
 - Automatic panic recovery with stack traces
 - Semaphore-based concurrency limiting
 
-### Configuration & Environment
-
 **`envutil`** - Type-safe environment variable parsing
 - Fluent API with `Reader[T]` type for chaining operations
 - Built-in support for: strings, ints, bools, durations, URLs, UUIDs, file paths, etc.
 - Options pattern: `Default()`, `Required()`, `Validate()`, etc.
 - Example: `envutil.Int("PORT", envutil.Default(8080)).Value()`
-
-### Observability
 
 **`telemetry`** - OpenTelemetry tracing integration
 - `Initialize(ctx, config)` - Set up OTLP tracing
@@ -84,8 +67,6 @@ The linting stack includes:
 **`logger`** - Structured logging utilities
 - Built on Go's `slog` package
 - Integrates with OpenTelemetry context
-
-### CLI & Commands
 
 **`cli`** - CLI utilities for terminal interaction
 - Banner/divider generation with Unicode box drawing
@@ -129,10 +110,25 @@ The linting stack includes:
 
 ## Dependency Management
 
-This is a Go module (`github.com/amp-labs/amp-common`). When changes are pushed to `main`, Cloud Build automatically:
-1. Creates a PR in the `server` repository to update the `amp-common` dependency
+This repository is a Go module (`github.com/amp-labs/amp-common`). It uses Go 1.24.6.
+
+### Private Dependencies
+
+The codebase uses private GitHub repositories. When working with this code:
+- Set `GOPRIVATE="github.com/amp-labs/*"`
+- SSH authentication is required for private repos
+
+### Updating Dependencies
+
+When changes are pushed to `main`, Cloud Build automatically:
+1. Creates a PR in the `server` repository to update `amp-common` dependency
 2. Closes old auto-update PRs
 3. Auto-merges the new PR
+
+## Testing Philosophy
+
+- Tests use `github.com/stretchr/testify` for assertions
+- Package `debug` is for local debugging only and should not be imported in production code
 
 ## Linter Configuration
 
@@ -148,49 +144,9 @@ Special rules:
 - Variable naming accepts both "Id" and "ID" (via revive)
 - Short variable names allowed within 15 lines (via varnamelen)
 
-## Testing Philosophy
-
-- Tests use `github.com/stretchr/testify` for assertions
-- Package `debug` is for local debugging only and should not be imported in production code
-
 ## Prometheus Metrics
 
 Many packages expose Prometheus metrics:
-- **Actor**: message counts, processing time, panics, queue depth
-- **Pool**: object counts, creation/close events, errors
+- Actor: message counts, processing time, panics, queue depth
+- Pool: object counts, creation/close events, errors
 - Metrics use subsystem labels for multi-tenancy
-
-## Troubleshooting
-
-### SSH Authentication Issues
-
-If you encounter errors like `Permission denied (publickey)` or module download failures:
-
-1. **Verify your SSH key is added to GitHub** and has access to amp-labs repositories
-
-2. **Test GitHub SSH connection**:
-   ```bash
-   ssh -T git@github.com
-   ```
-   You should see: `Hi username! You've successfully authenticated...`
-
-3. **Verify Go environment**:
-   ```bash
-   go env GOPRIVATE  # Should show: github.com/amp-labs/*
-   ```
-
-4. **Test module access**:
-   ```bash
-   go list -m github.com/amp-labs/amp-common
-   ```
-
-### Common Issues
-
-**Problem:** Module download fails with authentication errors
-- **Solution:** Ensure `git config --global url."git@github.com:".insteadOf "https://github.com/"` is set
-
-**Problem:** IDE shows "module not found" errors
-- **Solution:** Restart your IDE after setting environment variables, ensure SSH key is loaded
-
-**Problem:** Tests fail to import private dependencies
-- **Solution:** Verify `GOPRIVATE` is set in your environment and SSH authentication is working

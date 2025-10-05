@@ -8,6 +8,10 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
+// MultiSelect displays an interactive multi-selection menu where users can choose multiple items.
+// The user can search/filter choices by typing, select items one at a time, and choose "[Done]" when finished.
+// Returns the selected items in their original order from the choices slice.
+// Returns nil if no choices are provided.
 func MultiSelect(label string, choices ...string) ([]string, error) {
 	if len(choices) == 0 {
 		return nil, nil

@@ -11,6 +11,9 @@ import (
 
 var errEmptyInput = errors.New("you must enter something")
 
+// PromptConfirm displays a yes/no confirmation prompt to the user.
+// Returns true if the user confirms (presses 'y' or Enter), false if they decline ('n').
+// If the user aborts (Ctrl+C), returns (false, nil).
 func PromptConfirm(label string) (bool, error) {
 	prompt := promptui.Prompt{
 		Label:     label,
@@ -31,6 +34,8 @@ func PromptConfirm(label string) (bool, error) {
 	return true, nil
 }
 
+// PromptString displays a text input prompt and requires non-empty input.
+// Returns an error if the user provides empty input.
 func PromptString(label string) (string, error) {
 	prompt := promptui.Prompt{
 		Label: label,
@@ -48,6 +53,8 @@ func PromptString(label string) (string, error) {
 	return prompt.Run()
 }
 
+// PromptInt displays a text input prompt and validates that the input is a valid integer.
+// Returns the parsed integer value or an error if parsing fails.
 func PromptInt(label string) (int, error) {
 	prompt := promptui.Prompt{
 		Label: label,
@@ -76,6 +83,8 @@ func PromptInt(label string) (int, error) {
 	return int(val), nil
 }
 
+// PromptStringEmptyOk displays a text input prompt that allows empty input.
+// Unlike PromptString, this function accepts empty strings as valid input.
 func PromptStringEmptyOk(label string) (string, error) {
 	prompt := promptui.Prompt{
 		Label:  label,

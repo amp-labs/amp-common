@@ -9,14 +9,15 @@ import (
 )
 
 var (
-	ErrBadEnvVar     = errors.New("error parsing environment variable")
+	// ErrBadEnvVar is returned when an environment variable cannot be parsed.
+	ErrBadEnvVar = errors.New("error parsing environment variable")
+	// ErrEnvVarMissing is returned when a required environment variable is not set.
 	ErrEnvVarMissing = errors.New("missing environment variable")
 )
 
-// Reader is a type that represents a value read from an environment variable.
-// It is used to provide a more ergonomic way to handle environment variables.
-// It is a wrapper around the value, and it provides a way to handle errors and
-// missing values, as well as transformations.
+// Reader represents a parsed environment variable value with error handling.
+// It provides a fluent API for working with environment variables, including
+// type conversions, defaults, validation, and graceful error handling.
 type Reader[A any] struct {
 	key     string
 	present bool
@@ -25,13 +26,12 @@ type Reader[A any] struct {
 	value A
 }
 
-// Key returns the key of the environment variable.
+// Key returns the environment variable name.
 func (e Reader[A]) Key() string {
 	return e.key
 }
 
-// Value returns the value of the environment variable, or an error if the value
-// is missing or if there was an error parsing it.
+// Value returns the parsed value or an error if missing or invalid.
 func (e Reader[A]) Value() (A, error) { //nolint:ireturn
 	if e.err != nil {
 		return e.value, fmt.Errorf("%w %s: %w (given value is %v)", ErrBadEnvVar, e.key, e.err, e.value)
@@ -44,8 +44,7 @@ func (e Reader[A]) Value() (A, error) { //nolint:ireturn
 	return e.value, e.err
 }
 
-// ValueOrPanic returns the value of the environment variable, or panics if the
-// value is missing or if there was an error parsing it.
+// ValueOrPanic returns the value or panics if missing or invalid.
 func (e Reader[A]) ValueOrPanic() A { //nolint:ireturn
 	value, err := e.Value()
 	if err != nil {
@@ -55,8 +54,7 @@ func (e Reader[A]) ValueOrPanic() A { //nolint:ireturn
 	return value
 }
 
-// ValueOrFatal returns the value of the environment variable, or exits the
-// program if the value is missing or if there was an error parsing it.
+// ValueOrFatal returns the value or exits the program (os.Exit(1)) if missing or invalid.
 func (e Reader[A]) ValueOrFatal() A { //nolint:ireturn
 	value, err := e.Value()
 	if err != nil {
@@ -67,9 +65,8 @@ func (e Reader[A]) ValueOrFatal() A { //nolint:ireturn
 	return value
 }
 
-// ValueOrElseFunc returns the value of the environment variable, or the result
-// of the given function if the value is missing or if there was an error parsing it.
-// It's useful if the fallback value is expensive to compute.
+// ValueOrElseFunc returns the value or calls f() if missing or invalid.
+// Useful when the fallback value is expensive to compute.
 func (e Reader[A]) ValueOrElseFunc(f func() A) A { //nolint:ireturn
 	if e.present && e.err == nil {
 		return e.value
@@ -78,9 +75,8 @@ func (e Reader[A]) ValueOrElseFunc(f func() A) A { //nolint:ireturn
 	return f()
 }
 
-// ValueOrElseFuncErr returns the value of the environment variable, or the result
-// of the given function if the value is missing or if there was an error parsing it.
-// It's useful if the fallback value is expensive to compute and may return an error.
+// ValueOrElseFuncErr returns the value or calls f() if missing or invalid.
+// Like ValueOrElseFunc but allows the fallback function to return an error.
 func (e Reader[A]) ValueOrElseFuncErr(f func() (A, error)) (A, error) { //nolint:ireturn
 	if e.present && e.err == nil {
 		return e.value, nil
@@ -89,8 +85,8 @@ func (e Reader[A]) ValueOrElseFuncErr(f func() (A, error)) (A, error) { //nolint
 	return f()
 }
 
-// ValueOrElse returns the value of the environment variable, or a default value
-// if the value is missing or if there was an error parsing it.
+// ValueOrElse returns the value or a default if missing or invalid.
+// Logs a warning if there was a parsing error.
 func (e Reader[A]) ValueOrElse(v A) A { //nolint:ireturn
 	if e.present && e.err == nil {
 		return e.value
@@ -104,25 +100,24 @@ func (e Reader[A]) ValueOrElse(v A) A { //nolint:ireturn
 	return v
 }
 
-// DoWithValue calls the given function with the value of the environment variable
-// if the value is present and there was no error reading it.
+// DoWithValue calls f with the value if present and valid, otherwise does nothing.
 func (e Reader[A]) DoWithValue(f func(A)) {
 	if e.present && e.err == nil {
 		f(e.value)
 	}
 }
 
-// HasValue returns true if the environment variable was set, and false otherwise.
+// HasValue returns true if the variable is present and valid.
 func (e Reader[A]) HasValue() bool {
 	return e.present && e.err == nil
 }
 
-// HasError returns true if an error occurred when reading the environment variable.
+// HasError returns true if a parsing error occurred.
 func (e Reader[A]) HasError() bool {
 	return e.err != nil
 }
 
-// String returns a string representation of the Reader.
+// String returns a string representation of the Reader for debugging.
 func (e Reader[A]) String() string {
 	if e.present && e.err == nil {
 		return fmt.Sprintf("%s=%v", e.key, e.value)
@@ -135,14 +130,13 @@ func (e Reader[A]) String() string {
 	return e.key + "=<not set>"
 }
 
-// Error returns the error that occurred when reading the environment variable, if any.
+// Error returns the parsing error, if any.
 func (e Reader[A]) Error() error {
 	return e.err
 }
 
-// WithErrorIfMissing returns a new Reader with the given error if the original
-// Reader has no value. If the original Reader has a value, it is returned as is.
-// Also if the original reader already has an error, that error is returned as is.
+// WithErrorIfMissing returns a new Reader with err if the value is missing.
+// If the value is present or already has an error, returns the Reader unchanged.
 func (e Reader[A]) WithErrorIfMissing(err error) Reader[A] { //nolint:ireturn
 	if e.present || e.err != nil {
 		return e
@@ -155,8 +149,8 @@ func (e Reader[A]) WithErrorIfMissing(err error) Reader[A] { //nolint:ireturn
 	}
 }
 
-// WithDefault returns a new Reader with the given default value if the original
-// Reader has no value. If the original Reader has a value, it is returned as is.
+// WithDefault returns a new Reader with v as the value if missing.
+// If the value is present, returns the Reader unchanged.
 func (e Reader[A]) WithDefault(v A) Reader[A] { //nolint:ireturn
 	if e.present {
 		return e
@@ -170,8 +164,7 @@ func (e Reader[A]) WithDefault(v A) Reader[A] { //nolint:ireturn
 	}
 }
 
-// WithFallback returns a new Reader with the given fallback Reader if the original
-// Reader has no value. If the original Reader has a value, it is returned as is.
+// WithFallback returns v if this Reader has no value, otherwise returns this Reader.
 func (e Reader[A]) WithFallback(v Reader[A]) Reader[A] { //nolint:ireturn
 	if e.present {
 		return e
@@ -180,14 +173,14 @@ func (e Reader[A]) WithFallback(v Reader[A]) Reader[A] { //nolint:ireturn
 	return v
 }
 
-// Map returns a new Reader with the value transformed by the given function.
-// Less flexible than Map (type is restricted), but slightly more convenient.
+// Map transforms the value using f, preserving the same type.
+// Convenience wrapper around the package-level Map function.
 func (e Reader[A]) Map(f func(A) (A, error)) Reader[A] { //nolint:ireturn
 	return Map(e, f)
 }
 
-// Map returns a new Reader with the value transformed by the given function.
-// This can translate types, so it is more flexible than Reader.Map.
+// Map transforms a Reader's value from type A to type B using function f.
+// Returns a new Reader with the transformed value, preserving errors and missing state.
 func Map[A any, B any](env Reader[A], f func(A) (B, error)) Reader[B] {
 	if !env.present || env.err != nil {
 		return Reader[B]{

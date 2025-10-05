@@ -9,6 +9,8 @@ import (
 	"github.com/rs/dnscache"
 )
 
+// dnsResolver is a package-level DNS cache resolver used to reduce DNS lookup overhead.
+// It is initialized once and shared across all transports that enable DNS caching.
 var dnsResolver *dnscache.Resolver
 
 func init() {

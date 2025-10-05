@@ -1,3 +1,10 @@
+// Package cli provides terminal interaction utilities including banners, dividers, and user prompts.
+//
+// Banner and Divider functions create formatted output using Unicode box-drawing characters.
+// Prompt functions provide interactive user input with validation.
+// MultiSelect enables interactive multi-choice selection menus.
+//
+// Set the environment variable AMP_NO_BANNER=true to suppress banner boxes.
 package cli
 
 import (
@@ -46,6 +53,8 @@ var suppressBanner = lazy.New[bool](func() bool {
 
 const DefaultTerminalWidth = 80
 
+// DividerAutoWidth creates a horizontal divider line that spans the terminal width.
+// Auto-detects the terminal width or falls back to DefaultTerminalWidth if detection fails.
 func DividerAutoWidth() string {
 	_, w, e := TerminalDimensions()
 	if e != nil || w == 0 {
@@ -55,6 +64,12 @@ func DividerAutoWidth() string {
 	return Divider(int(w)) //nolint:gosec // Terminal width is bounded by screen size, no overflow risk
 }
 
+// BannerAutoWidth creates a formatted banner with auto-detected terminal width.
+// The banner is drawn with Unicode box characters and can align text left, center, or right.
+// Set AMP_NO_BANNER=true to suppress the banner box and return just the text with a newline.
+// Parameters:
+//   - s: The text to display (can include newlines for multi-line banners)
+//   - a: Alignment constant (AlignLeft, AlignCenter, or AlignRight)
 func BannerAutoWidth(s string, a int) string {
 	if suppressBanner.Get() {
 		return s + "\n"
@@ -68,10 +83,20 @@ func BannerAutoWidth(s string, a int) string {
 	return Banner(s, int(w), a) //nolint:gosec // Terminal width is bounded by screen size, no overflow risk
 }
 
+// Divider creates a horizontal divider line with the specified width.
+// Uses Unicode box-drawing characters (┠─┨).
 func Divider(width int) string {
 	return fmt.Sprintf("%s%s%s\n", dividerLeft, strings.Repeat(dividerMiddle, width-dividerPadding), dividerRight)
 }
 
+// Banner creates a formatted text banner with the specified width and alignment.
+// The banner is drawn with Unicode box characters (╒═╕ for top, └─┘ for bottom, │ for sides).
+// Text longer than the width is truncated with an ellipsis (…).
+// Set AMP_NO_BANNER=true to suppress the banner box and return just the text with a newline.
+// Parameters:
+//   - s: The text to display (can include newlines for multi-line banners)
+//   - width: The total width of the banner in characters
+//   - alignment: Alignment constant (AlignLeft, AlignCenter, or AlignRight)
 func Banner(s string, width int, alignment int) string {
 	if suppressBanner.Get() {
 		return s + "\n"
@@ -112,12 +137,15 @@ func Banner(s string, width int, alignment int) string {
 	return strings.Join(parts, "\n")
 }
 
+// getLines splits text into lines, normalizing line endings.
 func getLines(s string) []string {
 	s = strings.ReplaceAll(s, "\r\n", "\n")
 
 	return strings.Split(s, "\n")
 }
 
+// countGraphic counts the number of visible (graphic) characters in a string.
+// This is used for accurate width calculation when padding, as it ignores control characters.
 func countGraphic(s string) int {
 	count := 0
 
@@ -130,6 +158,8 @@ func countGraphic(s string) int {
 	return count
 }
 
+// truncateGraphic truncates a string to n graphic characters.
+// Returns the truncated string and the actual count of graphic characters in it.
 func truncateGraphic(s string, n int) (string, int) {
 	out := ""
 	count := 0
@@ -149,6 +179,8 @@ func truncateGraphic(s string, n int) (string, int) {
 	return out, count
 }
 
+// padCenter pads text to the specified width with center alignment.
+// Text longer than width is truncated with an ellipsis.
 func padCenter(text string, width int) string {
 	length := countGraphic(text)
 	if length == width {
@@ -172,6 +204,8 @@ func padCenter(text string, width int) string {
 	return fmt.Sprintf("%s%s%s", spaces(leftPad), str, spaces(rightPad))
 }
 
+// padLeft pads text to the specified width with left alignment (text on left, padding on right).
+// Text longer than width is truncated with an ellipsis.
 func padLeft(text string, width int) string {
 	length := countGraphic(text)
 	if length == width {
@@ -193,6 +227,8 @@ func padLeft(text string, width int) string {
 	return fmt.Sprintf("%s%s", str, spaces(diff))
 }
 
+// padRight pads text to the specified width with right alignment (padding on left, text on right).
+// Text longer than width is truncated with an ellipsis.
 func padRight(text string, width int) string {
 	length := countGraphic(text)
 	if length == width {
@@ -214,6 +250,8 @@ func padRight(text string, width int) string {
 	return fmt.Sprintf("%s%s", spaces(diff), str)
 }
 
+// size executes the 'stty size' command to get terminal dimensions.
+// Returns a string in the format "rows columns".
 func size() (string, error) {
 	f, e := os.Open("/dev/tty")
 	if e != nil {
@@ -230,6 +268,8 @@ func size() (string, error) {
 	return string(out), err
 }
 
+// parse parses the output from 'stty size' command.
+// Expects input in the format "rows columns" and returns (rows, columns, error).
 func parse(input string) (uint, uint, error) {
 	parts := strings.Split(input, " ")
 

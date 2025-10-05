@@ -1,3 +1,40 @@
+// Package transport provides HTTP transport configuration with DNS caching and connection pooling.
+//
+// This package creates reusable http.Transport instances with configurable options for
+// connection pooling, DNS caching, and TLS settings. It provides singleton instances for
+// common configurations to avoid creating duplicate transports.
+//
+// # Basic Usage
+//
+//	// Create a new transport with defaults
+//	transport := transport.New()
+//
+//	// Get a singleton instance with specific options
+//	rt := transport.Get(transport.EnableDNSCache)
+//
+//	// Use context to override transport
+//	ctx := transport.WithTransport(ctx, customTransport)
+//	rt := transport.GetContext(ctx)
+//
+// # Configuration Options
+//
+//   - DisableConnectionPooling: Disable HTTP keep-alive and connection reuse
+//   - EnableDNSCache: Use cached DNS lookups to reduce DNS traffic
+//   - InsecureTLS: Skip TLS certificate verification (use only for testing)
+//   - WithTransportOverride: Provide a custom transport implementation
+//
+// # Environment Variables
+//
+// The following environment variables can be used to configure transport behavior:
+//
+//   - HTTP_TRANSPORT_PREFER_POOLED: Enable connection pooling by default (default: true)
+//   - HTTP_TRANSPORT_MAX_IDLE_CONNS: Maximum idle connections (default: 100)
+//   - HTTP_TRANSPORT_IDLE_CONN_TIMEOUT: Idle connection timeout (default: 90s)
+//   - HTTP_TRANSPORT_TLS_HANDSHAKE_TIMEOUT: TLS handshake timeout (default: 10s)
+//   - HTTP_TRANSPORT_EXPECT_CONTINUE_TIMEOUT: Expect-Continue timeout (default: 1s)
+//   - HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2: Force HTTP/2 attempts (default: false)
+//   - HTTP_TRANSPORT_DIAL_TIMEOUT: Connection dial timeout (default: 30s)
+//   - HTTP_TRANSPORT_DIAL_KEEPALIVE: TCP keep-alive duration (default: 30s)
 package transport
 
 import (
@@ -17,6 +54,9 @@ func New(options ...Option) *http.Transport {
 	return create(readOptions(options...))
 }
 
+// create builds a new http.Transport from the given config.
+// It reads environment variables for fine-tuning transport parameters and applies
+// the configuration options (connection pooling, DNS caching, TLS settings).
 func create(cfg *config) *http.Transport {
 	maxIdleConns := envutil.Int("HTTP_TRANSPORT_MAX_IDLE_CONNS",
 		envutil.Default(defaultMaxIdleConns)).
@@ -92,6 +132,8 @@ func GetContext(ctx context.Context, opts ...Option) http.RoundTripper {
 	return Get(opts...)
 }
 
+// defaultTransportDialContext returns a DialContext function from the given dialer.
+// This is used as the default dial function for transports that don't use DNS caching.
 func defaultTransportDialContext(dialer *net.Dialer) func(context.Context, string, string) (net.Conn, error) {
 	return dialer.DialContext
 }

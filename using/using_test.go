@@ -222,7 +222,7 @@ func TestOpenFile_NonExistent(t *testing.T) {
 		return nil
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestFile(t *testing.T) {

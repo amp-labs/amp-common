@@ -6,10 +6,8 @@ import (
 	"github.com/amp-labs/amp-common/tuple"
 )
 
-// Combine2 combines 2 distinct Readers into a single Reader that contains a
-// tuple.Tuple2 with the values of the original Readers. If any of the original
-// Readers has an error or is missing, the resulting Reader will also have an
-// error or be missing.
+// Combine2 combines 2 Readers into a single Reader containing a Tuple2.
+// All-or-nothing: if any Reader has an error or is missing, the result will too.
 func Combine2[A any, B any](
 	first Reader[A],
 	second Reader[B],
@@ -38,10 +36,8 @@ func Combine2[A any, B any](
 	}
 }
 
-// Combine3 combines 3 distinct Readers into a single Reader that contains a
-// tuple.Tuple3 with the values of the original Readers. If any of the original
-// Readers has an error or is missing, the resulting Reader will also have an
-// error or be missing.
+// Combine3 combines 3 Readers into a single Reader containing a Tuple3.
+// All-or-nothing: if any Reader has an error or is missing, the result will too.
 func Combine3[A any, B any, C any](
 	first Reader[A],
 	second Reader[B],
@@ -71,10 +67,8 @@ func Combine3[A any, B any, C any](
 	}
 }
 
-// Combine4 combines 4 distinct Readers into a single Reader that contains a
-// tuple.Tuple4 with the values of the original Readers. If any of the original
-// Readers has an error or is missing, the resulting Reader will also have an
-// error or be missing.
+// Combine4 combines 4 Readers into a single Reader containing a Tuple4.
+// All-or-nothing: if any Reader has an error or is missing, the result will too.
 func Combine4[A any, B any, C any, D any](
 	first Reader[A],
 	second Reader[B],
@@ -105,10 +99,8 @@ func Combine4[A any, B any, C any, D any](
 	}
 }
 
-// Combine5 combines 5 distinct Readers into a single Reader that contains a
-// tuple.Tuple5 with the values of the original Readers. If any of the original
-// Readers has an error or is missing, the resulting Reader will also have an
-// error or be missing.
+// Combine5 combines 5 Readers into a single Reader containing a Tuple5.
+// All-or-nothing: if any Reader has an error or is missing, the result will too.
 func Combine5[A any, B any, C any, D any, E any](
 	first Reader[A],
 	second Reader[B],
@@ -140,10 +132,8 @@ func Combine5[A any, B any, C any, D any, E any](
 	}
 }
 
-// Combine6 combines 5 distinct Readers into a single Reader that contains a
-// tuple.Tuple6 with the values of the original Readers. If any of the original
-// Readers has an error or is missing, the resulting Reader will also have an
-// error or be missing.
+// Combine6 combines 6 Readers into a single Reader containing a Tuple6.
+// All-or-nothing: if any Reader has an error or is missing, the result will too.
 func Combine6[A any, B any, C any, D any, E any, F any](
 	first Reader[A],
 	second Reader[B],
@@ -176,9 +166,8 @@ func Combine6[A any, B any, C any, D any, E any, F any](
 	}
 }
 
-// Split2 splits a Reader of a tuple.Tuple2 into 2 distinct Readers. If the original
-// Reader has an error or is missing, the resulting Readers will also have an
-// error or be missing.
+// Split2 splits a Reader[Tuple2] into 2 separate Readers.
+// If the input Reader has an error or is missing, both output Readers will too.
 func Split2[A any, B any](
 	value Reader[tuple.Tuple2[A, B]],
 ) (Reader[A], Reader[B]) {
@@ -196,9 +185,8 @@ func Split2[A any, B any](
 		Reader[B]{key: value.key, present: true, value: value.value.Second()}
 }
 
-// Split3 splits a Reader of a tuple.Tuple3 into 3 distinct Readers. If the original
-// Reader has an error or is missing, the resulting Readers will also have an
-// error or be missing.
+// Split3 splits a Reader[Tuple3] into 3 separate Readers.
+// If the input Reader has an error or is missing, all output Readers will too.
 func Split3[A any, B any, C any](
 	value Reader[tuple.Tuple3[A, B, C]],
 ) (Reader[A], Reader[B], Reader[C]) {
@@ -219,9 +207,8 @@ func Split3[A any, B any, C any](
 		Reader[C]{key: value.key, present: true, value: value.value.Third()}
 }
 
-// Split4 splits a Reader of a tuple.Tuple4 into 4 distinct Readers. If the original
-// Reader has an error or is missing, the resulting Readers will also have an
-// error or be missing.
+// Split4 splits a Reader[Tuple4] into 4 separate Readers.
+// If the input Reader has an error or is missing, all output Readers will too.
 func Split4[A any, B any, C any, D any](
 	value Reader[tuple.Tuple4[A, B, C, D]],
 ) (Reader[A], Reader[B], Reader[C], Reader[D]) {
@@ -245,6 +232,8 @@ func Split4[A any, B any, C any, D any](
 		Reader[D]{key: value.key, present: true, value: value.value.Fourth()}
 }
 
+// Split5 splits a Reader[Tuple5] into 5 separate Readers.
+// If the input Reader has an error or is missing, all output Readers will too.
 func Split5[A any, B any, C any, D any, E any](
 	value Reader[tuple.Tuple5[A, B, C, D, E]],
 ) (Reader[A], Reader[B], Reader[C], Reader[D], Reader[E]) {
@@ -271,6 +260,8 @@ func Split5[A any, B any, C any, D any, E any](
 		Reader[E]{key: value.key, present: true, value: value.value.Fifth()}
 }
 
+// Split6 splits a Reader[Tuple6] into 6 separate Readers.
+// If the input Reader has an error or is missing, all output Readers will too.
 func Split6[A any, B any, C any, D any, E any, F any](
 	value Reader[tuple.Tuple6[A, B, C, D, E, F]],
 ) (Reader[A], Reader[B], Reader[C], Reader[D], Reader[E], Reader[F]) {

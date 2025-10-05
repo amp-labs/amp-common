@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSome(t *testing.T) {
@@ -477,7 +478,7 @@ func TestUnmarshalJSON(t *testing.T) {
 
 		var opt Value[int]
 		err := json.Unmarshal([]byte(`{invalid}`), &opt)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 

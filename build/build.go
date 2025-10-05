@@ -1,3 +1,6 @@
+// Package build provides utilities for parsing build information that is
+// embedded at compile time. The Info struct is designed to be populated via
+// -ldflags during the build process in other repositories.
 package build
 
 import (
@@ -5,6 +8,9 @@ import (
 	"log/slog"
 )
 
+// Info contains build metadata that is typically embedded at compile time.
+// This struct is populated in other repositories using -ldflags to inject
+// version information, build details, and dependency versions.
 type Info struct {
 	GitCommit    string            `json:"git_commit"` //nolint:tagliatelle
 	GitBranch    string            `json:"git_branch"` //nolint:tagliatelle
@@ -16,6 +22,8 @@ type Info struct {
 	Dependencies map[string]string `json:"dependencies"`
 }
 
+// Parse deserializes a JSON string into build Info.
+// Returns (nil, false) if the input is empty, "{}", or fails to parse.
 func Parse(js string) (*Info, bool) {
 	if len(js) == 0 {
 		return nil, false

@@ -1,5 +1,3 @@
-// nolint
-// TODO: fix the linter issues in this file
 package pool
 
 import (
@@ -95,7 +93,7 @@ func New[C io.Closer](factory func() (C, error), opts ...Option) Pool[C] {
 		opt(options)
 	}
 
-	p := &poolImpl[C]{
+	poolInst := &poolImpl[C]{
 		name:        options.name,
 		getCh:       make(chan getRequest[C]),
 		putCh:       make(chan putRequest[C]),
@@ -106,20 +104,20 @@ func New[C io.Closer](factory func() (C, error), opts ...Option) Pool[C] {
 		outstanding: atomic.NewInt64(0),
 	}
 
-	go p.loop()
+	go poolInst.loop()
 
-	poolAlive.WithLabelValues(p.name).Set(1)
-	poolObjectsTotal.WithLabelValues(p.name).Set(0)
-	poolObjectsInUse.WithLabelValues(p.name).Set(0)
-	poolObjectsIdle.WithLabelValues(p.name).Set(0)
-	objectsClosed.WithLabelValues(p.name).Add(0)
-	objectsClosedErrors.WithLabelValues(p.name).Add(0)
-	objectsCreated.WithLabelValues(p.name).Add(0)
-	creationErrors.WithLabelValues(p.name).Add(0)
+	poolAlive.WithLabelValues(poolInst.name).Set(1)
+	poolObjectsTotal.WithLabelValues(poolInst.name).Set(0)
+	poolObjectsInUse.WithLabelValues(poolInst.name).Set(0)
+	poolObjectsIdle.WithLabelValues(poolInst.name).Set(0)
+	objectsClosed.WithLabelValues(poolInst.name).Add(0)
+	objectsClosedErrors.WithLabelValues(poolInst.name).Add(0)
+	objectsCreated.WithLabelValues(poolInst.name).Add(0)
+	creationErrors.WithLabelValues(poolInst.name).Add(0)
 
-	poolCreated.WithLabelValues(p.name).Inc()
+	poolCreated.WithLabelValues(poolInst.name).Inc()
 
-	return p
+	return poolInst
 }
 
 type poolImpl[C io.Closer] struct {
@@ -154,6 +152,82 @@ type poolObject[C io.Closer] struct {
 	lastTouched time.Time
 }
 
+func (g *poolImpl[C]) handleGet(get getRequest[C], objectPool *[]poolObject[C]) {
+	if len(*objectPool) > 0 {
+		obj := (*objectPool)[0]
+		*objectPool = (*objectPool)[1:]
+		get.resultChan <- try.Try[C]{Value: obj.obj}
+
+		g.outstanding.Inc()
+		poolObjectsInUse.WithLabelValues(g.name).Inc()
+		poolObjectsIdle.WithLabelValues(g.name).Dec()
+		close(get.resultChan)
+	} else {
+		obj, err := g.createObject()
+		get.resultChan <- try.Try[C]{
+			Value: obj,
+			Error: err,
+		}
+
+		if err == nil {
+			g.outstanding.Inc()
+			poolObjectsInUse.WithLabelValues(g.name).Inc()
+		}
+
+		close(get.resultChan)
+	}
+}
+
+func (g *poolImpl[C]) handlePut(put putRequest[C], objectPool *[]poolObject[C]) {
+	*objectPool = append(*objectPool, poolObject[C]{
+		obj:         put.obj,
+		lastTouched: time.Now(),
+	})
+
+	g.outstanding.Dec()
+	poolObjectsInUse.WithLabelValues(g.name).Dec()
+	poolObjectsIdle.WithLabelValues(g.name).Inc()
+	put.doneChan <- struct{}{}
+	close(put.doneChan)
+}
+
+func (g *poolImpl[C]) handleCloseIdle(closeIdleReq closeIdleRequest, objectPool *[]poolObject[C]) closeIdleResponse {
+	var errs []error
+
+	purged := 0
+
+	var remainder []poolObject[C]
+
+	for _, obj := range *objectPool {
+		age := time.Since(obj.lastTouched)
+		if age < closeIdleReq.minIdle {
+			remainder = append(remainder, obj)
+
+			continue
+		}
+
+		if err := obj.obj.Close(); err != nil { //nolint:typecheck
+			errs = append(errs, err)
+			remainder = append(remainder, obj)
+
+			objectsClosedErrors.WithLabelValues(g.name).Inc()
+		} else {
+			poolObjectsTotal.WithLabelValues(g.name).Dec()
+			poolObjectsIdle.WithLabelValues(g.name).Dec()
+			objectsClosed.WithLabelValues(g.name).Inc()
+
+			purged++
+		}
+	}
+
+	*objectPool = remainder
+
+	return closeIdleResponse{
+		errs:      errs,
+		successes: purged,
+	}
+}
+
 func (g *poolImpl[C]) loop() {
 	defer g.running.Store(false)
 	defer poolAlive.WithLabelValues(g.name).Set(0)
@@ -179,78 +253,20 @@ func (g *poolImpl[C]) loop() {
 		select {
 		case get, ok := <-g.getCh:
 			if ok {
-				if len(objectPool) > 0 {
-					obj := objectPool[0]
-					objectPool = objectPool[1:]
-					get.resultChan <- try.Try[C]{Value: obj.obj}
-
-					g.outstanding.Inc()
-					poolObjectsInUse.WithLabelValues(g.name).Inc()
-					poolObjectsIdle.WithLabelValues(g.name).Dec()
-					close(get.resultChan)
-				} else {
-					obj, err := g.createObject()
-					get.resultChan <- try.Try[C]{
-						Value: obj,
-						Error: err,
-					}
-					g.outstanding.Inc()
-					poolObjectsInUse.WithLabelValues(g.name).Inc()
-					close(get.resultChan)
-				}
+				g.handleGet(get, &objectPool)
 			} else {
 				done++
 			}
 		case put, ok := <-g.putCh:
 			if ok {
-				objectPool = append(objectPool, poolObject[C]{
-					obj:         put.obj,
-					lastTouched: time.Now(),
-				})
-
-				g.outstanding.Dec()
-				poolObjectsInUse.WithLabelValues(g.name).Dec()
-				poolObjectsIdle.WithLabelValues(g.name).Inc()
-				put.doneChan <- struct{}{}
-				close(put.doneChan)
+				g.handlePut(put, &objectPool)
 			} else {
 				done++
 			}
-		case ci, ok := <-g.ciCh:
+		case closeIdleReq, ok := <-g.ciCh:
 			if ok {
-				var errs []error
-				purged := 0
-
-				var remainder []poolObject[C]
-
-				for _, obj := range objectPool {
-					age := time.Since(obj.lastTouched)
-					if age < ci.minIdle {
-						remainder = append(remainder, obj)
-
-						continue
-					}
-
-					if err := obj.obj.Close(); err != nil { //nolint:typecheck
-						errs = append(errs, err)
-						remainder = append(remainder, obj)
-
-						objectsClosedErrors.WithLabelValues(g.name).Inc()
-					} else {
-						poolObjectsTotal.WithLabelValues(g.name).Dec()
-						poolObjectsIdle.WithLabelValues(g.name).Dec()
-						objectsClosed.WithLabelValues(g.name).Inc()
-
-						purged++
-					}
-				}
-
-				objectPool = remainder
-
-				ci.doneChan <- closeIdleResponse{
-					errs:      errs,
-					successes: purged,
-				}
+				resp := g.handleCloseIdle(closeIdleReq, &objectPool)
+				closeIdleReq.doneChan <- resp
 			} else {
 				done++
 			}
@@ -265,10 +281,12 @@ func (g *poolImpl[C]) loop() {
 
 		if (done == 1 || done == 2) && outstanding == 0 {
 			stopDrain()
+
 			continue
 		}
 
-		if done >= 3 {
+		const allChannelsClosed = 3
+		if done >= allChannelsClosed {
 			break
 		}
 	}
@@ -294,22 +312,25 @@ func (g *poolImpl[C]) loop() {
 }
 
 func joinErrors(errs ...error) error {
-	if len(errs) == 0 {
+	switch {
+	case len(errs) == 0:
 		return nil
-	} else if len(errs) == 1 {
+	case len(errs) == 1:
 		return errs[0]
-	} else {
+	default:
 		return errors.Join(errs...)
 	}
 }
 
 var ErrPoolClosed = errors.New("pool is closed")
 
+var ErrPoolGet = errors.New("unable to run poolImpl.Get, perhaps the channel is closed")
+
 // Get will fetch an object from the pool. If there's
 // an existing one, it will use that. If there's none
 // available, it will create a new one and return that.
 func (g *poolImpl[C]) Get() (obj C, err error) {
-	if g.running.Load() == false {
+	if !g.running.Load() {
 		var zero C
 
 		return zero, ErrPoolClosed
@@ -319,7 +340,7 @@ func (g *poolImpl[C]) Get() (obj C, err error) {
 
 	defer func() {
 		if tmp := recover(); tmp != nil {
-			err = fmt.Errorf("unable to run poolImpl.Get, perhaps the channel is closed: %v", tmp)
+			err = fmt.Errorf("%w: %v", ErrPoolGet, tmp)
 
 			var zero C
 			obj = zero
@@ -359,8 +380,8 @@ func (g *poolImpl[C]) Get() (obj C, err error) {
 }
 
 // Put will return an object to the pool.
-func (g *poolImpl[C]) Put(c C) {
-	if g.running.Load() == false {
+func (g *poolImpl[C]) Put(obj C) {
+	if !g.running.Load() {
 		slog.Error("pool is closed, unable to put object back")
 
 		return
@@ -370,7 +391,7 @@ func (g *poolImpl[C]) Put(c C) {
 
 	defer func() {
 		if tmp := recover(); tmp != nil {
-			slog.Error("unable to run poolImpl.Put, perhaps the channel is closed: %v", tmp)
+			slog.Error("unable to run poolImpl.Put, perhaps the channel is closed", "error", tmp)
 		}
 	}()
 
@@ -378,7 +399,7 @@ func (g *poolImpl[C]) Put(c C) {
 	defer timeoutTimer.Stop()
 
 	req := putRequest[C]{
-		obj:      c,
+		obj:      obj,
 		doneChan: rsp,
 	}
 
@@ -391,7 +412,7 @@ func (g *poolImpl[C]) Put(c C) {
 			return
 		}
 	case <-timeoutTimer.C:
-		should.Close(c, "unable to close pool object")
+		should.Close(obj, "unable to close pool object")
 	}
 }
 
@@ -401,7 +422,7 @@ func (g *poolImpl[C]) Put(c C) {
 // It returns the number of objects closed, or
 // an error if any of the close calls failed.
 func (g *poolImpl[C]) CloseIdle(minTimeIdle time.Duration) (int, error) {
-	if g.running.Load() == false {
+	if !g.running.Load() {
 		return 0, ErrPoolClosed
 	}
 
@@ -409,7 +430,7 @@ func (g *poolImpl[C]) CloseIdle(minTimeIdle time.Duration) (int, error) {
 
 	defer func() {
 		if tmp := recover(); tmp != nil {
-			slog.Error("unable to run poolImpl.CloseIdle, perhaps the channel is closed: %v", tmp)
+			slog.Error("unable to run poolImpl.CloseIdle, perhaps the channel is closed", "error", tmp)
 		}
 	}()
 
@@ -436,7 +457,7 @@ func (g *poolImpl[C]) CloseIdle(minTimeIdle time.Duration) (int, error) {
 
 // Close will close the entire pool and close all pooled objects.
 func (g *poolImpl[C]) Close() error {
-	if g.running.Load() == false {
+	if !g.running.Load() {
 		return ErrPoolClosed
 	}
 

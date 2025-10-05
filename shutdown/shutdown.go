@@ -1,3 +1,13 @@
+// Package shutdown provides utilities for graceful shutdown coordination.
+// It allows registering cleanup hooks and sets up signal handlers for SIGINT and SIGTERM.
+//
+// Typical usage:
+//
+//	ctx := shutdown.SetupHandler()
+//	shutdown.BeforeShutdown(func() {
+//	    // cleanup logic
+//	})
+//	// ... run application with ctx
 package shutdown
 
 import (
@@ -10,9 +20,9 @@ import (
 )
 
 var (
-	mut     sync.Mutex     //nolint:gochecknoglobals
-	hooks   []func()       //nolint:gochecknoglobals
-	channel chan os.Signal //nolint:gochecknoglobals
+	mut     sync.Mutex     //nolint:gochecknoglobals // Protects hooks slice
+	hooks   []func()       //nolint:gochecknoglobals // Cleanup hooks to run before shutdown
+	channel chan os.Signal //nolint:gochecknoglobals // Signal channel for shutdown coordination
 )
 
 // BeforeShutdown registers a function to be called before
@@ -35,10 +45,13 @@ func Shutdown() {
 	}
 }
 
-// SetupHandler sets up a signal handler for SIGTERM
+// SetupHandler sets up a signal handler for SIGINT and SIGTERM
 // and returns a context that will be canceled when the
 // signal is received. You can use this context to clean up
 // resources before the process exits.
+//
+// The returned context is canceled after all registered
+// BeforeShutdown hooks have been executed.
 func SetupHandler() context.Context {
 	channel = make(chan os.Signal, 1)
 	signal.Notify(channel, syscall.SIGINT, syscall.SIGTERM)
@@ -60,6 +73,8 @@ func SetupHandler() context.Context {
 	return ctx
 }
 
+// cleanup runs all registered hooks and clears the hooks slice.
+// Must be called with channel closed to prevent concurrent modifications.
 func cleanup() {
 	mut.Lock()
 	defer mut.Unlock()

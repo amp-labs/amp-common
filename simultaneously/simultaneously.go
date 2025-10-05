@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/amp-labs/amp-common/utils"
+	"github.com/amp-labs/amp-common/contexts"
 )
 
 // ErrPanicRecovered is the base error for panic recovery.
@@ -107,7 +107,7 @@ func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.
 
 		// If the context is already canceled, don't bother running the function
 		// since it will error out anyway.
-		if !utils.IsContextAlive(ctx) {
+		if !contexts.IsContextAlive(ctx) {
 			errorChan <- ctx.Err()
 
 			return

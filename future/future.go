@@ -35,6 +35,7 @@ import (
 	"runtime/debug"
 	"sync"
 
+	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/try"
 	"github.com/amp-labs/amp-common/utils"
 )
@@ -617,7 +618,7 @@ func CombineContext[T any](ctx context.Context, futures ...*Future[T]) *Future[[
 
 		for _, fut := range futures {
 			// Check if context was canceled before awaiting next future
-			if !utils.IsContextAlive(ctx) {
+			if !contexts.IsContextAlive(ctx) {
 				promise.Failure(ctx.Err())
 
 				return
@@ -762,7 +763,7 @@ func CombineContextNoShortCircuit[T any](ctx context.Context, futures ...*Future
 
 		for _, fut := range futures {
 			// Short-circuit on context cancellation
-			if !utils.IsContextAlive(ctx) {
+			if !contexts.IsContextAlive(ctx) {
 				promise.Failure(ctx.Err())
 
 				return

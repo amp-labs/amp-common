@@ -6,6 +6,10 @@ import (
 )
 
 func SleepCtx(ctx context.Context, dur time.Duration) error {
+	if dur <= 0 {
+		return nil
+	}
+
 	timer := time.NewTimer(dur)
 	defer timer.Stop()
 

@@ -139,6 +139,25 @@ func WithCustomerId(ctx context.Context, customerId string) context.Context {
 	return context.WithValue(ctx, contextKey("customer_id"), customerId)
 }
 
+// GetCustomerId returns the customer ID from the context. If the customer ID is not provided,
+// an empty string will be returned, along with a false value. Otherwise, the customer ID
+// will be returned along with a true value.
+func GetCustomerId(ctx context.Context) (string, bool) { //nolint:contextcheck
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	cid := ctx.Value(contextKey("customer_id"))
+	if cid != nil {
+		val, ok := cid.(string)
+		if ok {
+			return val, true
+		}
+	}
+
+	return "", false
+}
+
 // WithSubsystem adds a subsystem to the context. If the subsystem is not provided, the default subsystem
 // will be used. The default subsystem is set by the ConfigureLogging function.
 func WithSubsystem(ctx context.Context, subsystem string) context.Context {
@@ -232,6 +251,26 @@ func WithRoutingToBuilder(ctx context.Context, projectId string) context.Context
 	return context.WithValue(ctx, logProjectContextKey(), projectId)
 }
 
+// GetRoutingToBuilder returns the project ID from the context. If the
+// project ID is not provided, an empty string will be returned, along with
+// a false value. Otherwise, the project ID will be returned along with
+// a true value.
+func GetRoutingToBuilder(ctx context.Context) (string, bool) { //nolint:contextcheck
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	destinationProject := ctx.Value(logProjectContextKey())
+	if destinationProject != nil {
+		val, ok := destinationProject.(string)
+		if ok {
+			return val, true
+		}
+	}
+
+	return "", false
+}
+
 // GetSubsystem returns the subsystem from the context. If the
 // subsystem is not provided, the default subsystem will be used.
 func GetSubsystem(ctx context.Context) string { //nolint:contextcheck
@@ -253,6 +292,7 @@ func GetSubsystem(ctx context.Context) string { //nolint:contextcheck
 	}
 }
 
+// WithRequestId adds a Kong request ID to the context.
 func WithRequestId(ctx context.Context, requestId string) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
@@ -261,6 +301,9 @@ func WithRequestId(ctx context.Context, requestId string) context.Context {
 	return context.WithValue(ctx, contextKey("request_id"), requestId)
 }
 
+// GetRequestId returns the request ID from the context. If the request ID is not provided,
+// an empty string will be returned, along with a false value. Otherwise, the request ID
+// will be returned along with a true value.
 func GetRequestId(ctx context.Context) (string, bool) { //nolint:contextcheck
 	if ctx == nil {
 		ctx = context.Background()
@@ -291,6 +334,11 @@ var hostname = lazy.New[string](func() string {
 	return h
 })
 
+// GetPodName returns the pod name (or hostname if not running in k8s).
+func GetPodName() string {
+	return hostname.Get()
+}
+
 func getRealContext(ctx ...context.Context) context.Context {
 	var realCtx context.Context
 
@@ -312,7 +360,9 @@ func getRealContext(ctx ...context.Context) context.Context {
 	return realCtx
 }
 
-func isSensitiveMessage(ctx context.Context) bool {
+// IsSensitiveMessage returns true if the message is marked as sensitive.
+// Sensitive messages won't be routed to customers.
+func IsSensitiveMessage(ctx context.Context) bool {
 	// Check for a sensitive flag.
 	isSensitive := false
 	sensitive := ctx.Value(contextKey("sensitive"))
@@ -327,6 +377,7 @@ func isSensitiveMessage(ctx context.Context) bool {
 	return isSensitive
 }
 
+// getBaseLogger returns a logger with the subsystem and pod name already set.
 func getBaseLogger(ctx context.Context) *slog.Logger {
 	// Get the default logger
 	logger := slog.Default()
@@ -368,27 +419,24 @@ func Get(ctx ...context.Context) *slog.Logger {
 		logger = logger.With("slack_channel", channel)
 	}
 
-	if isSensitiveMessage(realCtx) {
+	if IsSensitiveMessage(realCtx) {
 		// We don't want to expose customers to sensitive info, so we'll redact
 		// it (from them) by omitting the customer id entirely. In other words,
 		// there's no chance this will accidentally be routed to a customer.
 		return logger
 	}
 
-	cid := realCtx.Value(contextKey("customer_id"))
-	if cid != nil {
-		val, ok := cid.(string)
-		if ok {
-			logger = logger.With("customer_id", val)
-		}
+	// If we have a customer ID, add it to the log context.
+	custId, ok := GetCustomerId(realCtx)
+	if ok {
+		logger = logger.With("customer_id", custId)
 	}
 
-	destinationProject := realCtx.Value(logProjectContextKey())
-	if destinationProject != nil {
-		val, ok := destinationProject.(string)
-		if ok {
-			logger = logger.With("log_project", val)
-		}
+	// If we have a project ID for routing to the builder, add it to the log context.
+	logProject, ok := GetRoutingToBuilder(realCtx)
+	if ok {
+		// This will trigger a special log route which will route the log
+		logger = logger.With("log_project", logProject)
 	}
 
 	return logger

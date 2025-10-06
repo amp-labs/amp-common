@@ -5,6 +5,9 @@ import (
 	"github.com/amp-labs/amp-common/set"
 )
 
+// DeduplicateValues removes duplicate values from a slice using SHA-256 hashing.
+// Returns a new slice containing only unique values in arbitrary order.
+// Returns an error if hashing fails or hash collision is detected.
 func DeduplicateValues[T set.Collectable[T]](values []T) ([]T, error) {
 	s := set.NewSet[T](hashing.Sha256) // big hash space, low chance of collision
 	if err := s.AddAll(values...); err != nil {
@@ -14,6 +17,9 @@ func DeduplicateValues[T set.Collectable[T]](values []T) ([]T, error) {
 	return s.Entries(), nil
 }
 
+// HasDuplicateValues checks whether a slice contains any duplicate values.
+// Returns true if duplicates exist, false otherwise.
+// Returns an error if hashing fails or hash collision is detected.
 func HasDuplicateValues[T set.Collectable[T]](values []T) (bool, error) {
 	count, err := CountDuplicateValues(values)
 	if err != nil {
@@ -23,6 +29,10 @@ func HasDuplicateValues[T set.Collectable[T]](values []T) (bool, error) {
 	return count > 0, nil
 }
 
+// CountDuplicateValues counts the total number of duplicate occurrences in a slice.
+// For example, [A, A, B, B] returns 3 (one extra A and two extra B's).
+// Uses SHA-256 hashing for comparison and detects hash collisions.
+// Returns an error if hashing fails or hash collision is detected.
 func CountDuplicateValues[T set.Collectable[T]](values []T) (int, error) {
 	seen := make(map[string]T)
 	counts := make(map[string]int)

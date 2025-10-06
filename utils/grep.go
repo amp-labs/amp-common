@@ -2,7 +2,11 @@ package utils
 
 import "regexp"
 
-// Returns (caller write channel, caller read channel, err).
+// GrepChannel creates a filtered channel pair using a POSIX regex pattern.
+// Messages sent to the write channel are matched against the regex, and only
+// matching messages are forwarded to the read channel.
+// Returns (write channel, read channel, error).
+// The read channel is automatically closed when the write channel is closed.
 func GrepChannel(expr string) (chan string, chan string, error) {
 	re, err := regexp.CompilePOSIX(expr)
 	if err != nil {

@@ -17,21 +17,22 @@ import (
 
 const portMax = 65535
 
-// TrimString represents a transformer that trims the given string.
+// TrimString removes leading and trailing whitespace from a string.
 func TrimString(s string) (string, error) {
 	return strings.TrimSpace(s), nil
 }
 
-// SplitString represents a transformer that splits the given string using the given separator.
+// SplitString returns a transformer that splits a string by the given separator.
+// The separator can be any string, including multi-character separators.
 func SplitString(sep string) func(string) ([]string, error) {
 	return func(s string) ([]string, error) {
 		return strings.Split(s, sep), nil
 	}
 }
 
-// Keyify represents a transformer that converts the given slice of strings to a maps
-// where the keys are the strings in the slice. The values are empty structs. This
-// is basically just a very cheap way to create a set.
+// Keyify converts a slice of strings to a map where the keys are the strings
+// from the slice and values are empty structs. This provides an efficient
+// way to create a set for membership testing.
 func Keyify(strs []string) (map[string]struct{}, error) {
 	m := make(map[string]struct{}, len(strs))
 
@@ -42,35 +43,36 @@ func Keyify(strs []string) (map[string]struct{}, error) {
 	return m, nil
 }
 
-// String represents a transformer that converts the given byte slice to a string.
+// String converts a byte slice to a string.
 func String(value []byte) (string, error) {
 	return string(value), nil
 }
 
-// Bytes represents a transformer that converts the given string to a byte slice.
+// Bytes converts a string to a byte slice.
 func Bytes(value string) ([]byte, error) {
 	return []byte(value), nil
 }
 
-// ToLower represents a transformer that converts the given string to lower case.
+// ToLower converts a string to lowercase.
 func ToLower(s string) (string, error) {
 	return strings.ToLower(s), nil
 }
 
-// ToUpper represents a transformer that converts the given string to upper case.
+// ToUpper converts a string to uppercase.
 func ToUpper(s string) (string, error) {
 	return strings.ToUpper(s), nil
 }
 
-// ReplaceAll represents a transformer that replaces all occurrences of the old
-// string with the new string.
+// ReplaceAll returns a transformer that replaces all occurrences of oldStr
+// with newStr in the input string.
 func ReplaceAll(oldStr, newStr string) func(string) (string, error) {
 	return func(s string) (string, error) {
 		return strings.ReplaceAll(s, oldStr, newStr), nil
 	}
 }
 
-// OneOf represents a transformer that checks if the given value is one of the given choices.
+// OneOf returns a transformer that validates a value is one of the allowed choices.
+// Returns ErrInvalidChoice if the value doesn't match any of the choices.
 func OneOf[A comparable](choices ...A) func(A) (A, error) { //nolint:ireturn
 	return func(value A) (A, error) {
 		for _, c := range choices {
@@ -83,32 +85,35 @@ func OneOf[A comparable](choices ...A) func(A) (A, error) { //nolint:ireturn
 	}
 }
 
-// Bool represents a transformer that parses the given string as a bool.
+// Bool parses a string as a boolean value.
+// Accepts: "1", "t", "T", "true", "TRUE", "True", "0", "f", "F", "false", "FALSE", "False".
 func Bool(value string) (bool, error) {
 	return strconv.ParseBool(value)
 }
 
-// Int64 represents a transformer that parses the given string as an int64.
+// Int64 parses a string as a base-10 int64.
 func Int64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
-// Uint64 represents a transformer that parses the given string as an uint64.
+// Uint64 parses a string as a base-10 uint64.
 func Uint64(value string) (uint64, error) {
 	return strconv.ParseUint(value, 10, 64)
 }
 
-// Float64 represents a transformer that parses the given string as a float64.
+// Float64 parses a string as a float64.
 func Float64(value string) (float64, error) {
 	return strconv.ParseFloat(value, 64)
 }
 
-// Float32 represents a transformer that casts the given float64 to a float32.
+// Float32 converts a float64 to a float32.
+// Note: This may lose precision for values outside the float32 range.
 func Float32(value float64) (float32, error) {
 	return float32(value), nil
 }
 
-// Positive represents a transformer that checks if the given value is positive.
+// Positive validates that a numeric value is greater than zero.
+// Returns ErrNonPositive if the value is less than or equal to zero.
 func Positive[A Numeric](value A) (A, error) { // nolint:ireturn
 	if value <= 0 {
 		return value, ErrNonPositive
@@ -156,7 +161,9 @@ func GzipLevel(value string) (int, error) {
 	}
 }
 
-// HostAndPort represents a transformer that parses the given string as a host:port pair.
+// HostAndPort parses a string as a host:port pair.
+// The input must be in the format "host:port" where port is a valid port number (0-65535).
+// Returns ErrBadHostAndPort if the format is invalid or the port is out of range.
 func HostAndPort(value string) (envtypes.HostPort, error) {
 	parts := strings.SplitN(value, ":", 2) //nolint:gomnd,mnd
 	if len(parts) != 2 {                   //nolint:gomnd,mnd
@@ -173,7 +180,9 @@ func HostAndPort(value string) (envtypes.HostPort, error) {
 	return envtypes.HostPort{Host: host, Port: port}, nil
 }
 
-// Port represents a transformer that parses the given string as a port number.
+// Port parses a string as a TCP/UDP port number.
+// Valid port numbers are in the range 0-65535.
+// Returns ErrBadPort if the value is not a valid port number.
 func Port(value string) (uint16, error) {
 	port, err := Int64(value)
 	if err != nil {
@@ -191,18 +200,22 @@ func Port(value string) (uint16, error) {
 	return uint16(port), nil
 }
 
-// URL represents a transformer that parses the given string as a URL.
+// URL parses a string as a URL using Go's standard url.Parse.
+// The URL may be relative or absolute.
 func URL(value string) (*url.URL, error) {
 	return url.Parse(value)
 }
 
-// UUID represents a transformer that parses the given string as a UUID.
+// UUID parses a string as a UUID in any of the formats accepted by github.com/google/uuid.
+// Accepts formats like: "6ba7b810-9dad-11d1-80b4-00c04fd430c8" or "6ba7b8109dad11d180b400c04fd430c8".
 func UUID(value string) (uuid.UUID, error) {
 	return uuid.Parse(value)
 }
 
-// Path represents a transformer which treats the input as a local path.
-// The path is stat'ed, and the result is a LocalPath struct.
+// Path treats the input as a local filesystem path and returns a LocalPath struct.
+// The path is stat'ed to gather file information. If the path doesn't exist,
+// the LocalPath will have a nil Info field but no error is returned.
+// Other stat errors (permission denied, etc.) are returned as errors.
 func Path(value string) (envtypes.LocalPath, error) {
 	stat, err := os.Stat(value)
 	if err != nil {
@@ -222,7 +235,8 @@ func Path(value string) (envtypes.LocalPath, error) {
 	}, nil
 }
 
-// PathExists represents a transformer that checks if the given path exists.
+// PathExists validates that a path exists on the filesystem.
+// Returns os.ErrNotExist if the path does not exist.
 func PathExists(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	if value.Info == nil {
 		return value, os.ErrNotExist
@@ -231,7 +245,8 @@ func PathExists(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	return value, nil
 }
 
-// PathNotExists represents a transformer that checks if the given path does not exist.
+// PathNotExists validates that a path does NOT exist on the filesystem.
+// Returns os.ErrExist if the path already exists.
 func PathNotExists(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	if value.Info != nil {
 		return value, os.ErrExist
@@ -240,7 +255,8 @@ func PathNotExists(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	return value, nil
 }
 
-// PathIsFile represents a transformer that checks if the given path is a file.
+// PathIsFile validates that a path exists and is a regular file (not a directory).
+// Returns os.ErrNotExist if the path doesn't exist, or ErrNotAFile if it's a directory.
 func PathIsFile(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	if value.Info == nil {
 		return value, os.ErrNotExist
@@ -253,8 +269,9 @@ func PathIsFile(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	return value, fmt.Errorf("%w: %s", ErrNotAFile, value.Path)
 }
 
-// PathIsNonEmptyFile represents a transformer that checks if the given path is a
-// non-empty file (i.e. size > 0).
+// PathIsNonEmptyFile validates that a path exists, is a regular file, and has size > 0.
+// Returns os.ErrNotExist if the path doesn't exist, ErrNotAFile if it's a directory,
+// or ErrEmptyFile if the file size is zero.
 func PathIsNonEmptyFile(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	if value.Info == nil {
 		return value, os.ErrNotExist
@@ -271,7 +288,8 @@ func PathIsNonEmptyFile(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	return value, nil
 }
 
-// PathIsDir represents a transformer that checks if the given path is a directory.
+// PathIsDir validates that a path exists and is a directory.
+// Returns os.ErrNotExist if the path doesn't exist, or ErrNotADir if it's a file.
 func PathIsDir(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	if value.Info == nil {
 		return value, os.ErrNotExist
@@ -284,38 +302,44 @@ func PathIsDir(value envtypes.LocalPath) (envtypes.LocalPath, error) {
 	return value, fmt.Errorf("%w: %s", ErrNotADir, value.Path)
 }
 
-// OpenFile represents a transformer that opens the given file for reading.
-// The file won't be closed, so the caller is responsible for closing it.
+// OpenFile opens the file at the given path for reading.
+// The caller is responsible for closing the returned file.
 func OpenFile(value envtypes.LocalPath) (*os.File, error) {
 	return os.Open(value.Path)
 }
 
-// ReadFile represents a transformer that reads the contents of the given file.
+// ReadFile reads and returns the entire contents of the file at the given path.
 func ReadFile(value envtypes.LocalPath) ([]byte, error) {
 	return os.ReadFile(value.Path)
 }
 
-// Duration represents a transformer that parses the given string as a time.Duration.
+// Duration parses a string as a time.Duration.
+// Accepts formats like "1h30m", "5s", "100ms", etc. as defined by time.ParseDuration.
 func Duration(value string) (time.Duration, error) {
 	return time.ParseDuration(value)
 }
 
-// Time represents a transformer that parses the given string as a time.Time.
+// Time returns a transformer that parses a string as a time.Time using the given layout.
+// The layout uses Go's reference time format (Mon Jan 2 15:04:05 MST 2006).
 func Time(layout string) func(string) (time.Time, error) {
 	return func(value string) (time.Time, error) {
 		return time.Parse(layout, value)
 	}
 }
 
-// CastNumeric represents a transformer that casts the given value to a
-// different numeric type. Useful to go from (as an example) int64 to int32.
+// CastNumeric converts a numeric value from one type to another.
+// Example: CastNumeric[int64, int32] converts int64 to int32.
+// Note: This may truncate or lose precision depending on the types involved.
 func CastNumeric[A Numeric, B Numeric](value A) (B, error) { //nolint:ireturn
 	return B(value), nil
 }
 
+// ErrInvalidLogLevel is returned when a log level string is not recognized.
 var ErrInvalidLogLevel = errors.New("invalid log level")
 
-// SlogLevel represents a transformer that parses the given string as a slog.Level.
+// SlogLevel parses a string as a slog.Level.
+// Accepts: "debug", "info", "warn", "error" (case-sensitive).
+// Returns ErrInvalidLogLevel for unrecognized values.
 func SlogLevel(value string) (slog.Level, error) {
 	switch value {
 	case "debug":

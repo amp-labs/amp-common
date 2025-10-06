@@ -78,6 +78,10 @@ issues:
     - text: "cloud.google.com/go/pubsub.*is deprecated: Please use cloud.google.com/go/pubsub/v2"
       linters:
         - staticcheck
+    # shutdown package tests modify shared global state and cannot run in parallel
+    - path: shutdown/shutdown_test\.go
+      linters:
+        - paralleltest
   exclude-dirs:
     - openapi
     - scripts

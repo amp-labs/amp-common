@@ -60,6 +60,7 @@ func TestSetupHandler(t *testing.T) {
 	require.NotNil(t, channel)
 
 	var hookCalled atomic.Bool
+
 	BeforeShutdown(func() {
 		hookCalled.Store(true)
 	})
@@ -90,6 +91,7 @@ func TestSetupHandlerSIGINT(t *testing.T) {
 	ctx := SetupHandler()
 
 	var hookCalled atomic.Bool
+
 	BeforeShutdown(func() {
 		hookCalled.Store(true)
 	})
@@ -117,6 +119,7 @@ func TestShutdown(t *testing.T) {
 	ctx := SetupHandler()
 
 	var hookCalled atomic.Bool
+
 	BeforeShutdown(func() {
 		hookCalled.Store(true)
 	})
@@ -155,35 +158,63 @@ func TestMultipleHooksExecutionOrder(t *testing.T) {
 	hooks = nil
 	channel = nil
 
-	var mu atomic.Value
+	var executionOrder atomic.Value
 
 	BeforeShutdown(func() {
 		current := []int{1}
-		if existing := mu.Load(); existing != nil {
-			current = append(existing.([]int), 1)
+		existing := executionOrder.Load()
+
+		if existing != nil {
+			existingSlice, ok := existing.([]int)
+			if ok {
+				existingSlice = append(existingSlice, 1)
+				executionOrder.Store(existingSlice)
+
+				return
+			}
 		}
-		mu.Store(current)
+
+		executionOrder.Store(current)
 	})
 
 	BeforeShutdown(func() {
 		current := []int{2}
-		if existing := mu.Load(); existing != nil {
-			current = append(existing.([]int), 2)
+		existing := executionOrder.Load()
+
+		if existing != nil {
+			existingSlice, ok := existing.([]int)
+			if ok {
+				existingSlice = append(existingSlice, 2)
+				executionOrder.Store(existingSlice)
+
+				return
+			}
 		}
-		mu.Store(current)
+
+		executionOrder.Store(current)
 	})
 
 	BeforeShutdown(func() {
 		current := []int{3}
-		if existing := mu.Load(); existing != nil {
-			current = append(existing.([]int), 3)
+		existing := executionOrder.Load()
+
+		if existing != nil {
+			existingSlice, ok := existing.([]int)
+			if ok {
+				existingSlice = append(existingSlice, 3)
+				executionOrder.Store(existingSlice)
+
+				return
+			}
 		}
-		mu.Store(current)
+
+		executionOrder.Store(current)
 	})
 
 	cleanup()
 
-	result := mu.Load().([]int)
+	result, ok := executionOrder.Load().([]int)
+	require.True(t, ok)
 	assert.Equal(t, []int{1, 2, 3}, result)
 }
 
@@ -195,6 +226,7 @@ func TestContextCanceledAfterHooks(t *testing.T) {
 	ctx := SetupHandler()
 
 	var contextWasCanceled atomic.Bool
+
 	BeforeShutdown(func() {
 		// Check if context is still active during hook execution
 		select {
@@ -222,15 +254,18 @@ func TestConcurrentBeforeShutdown(t *testing.T) {
 	const numGoroutines = 100
 	done := make(chan bool, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func() {
+			_ = i
+
 			BeforeShutdown(func() {})
+
 			done <- true
 		}()
 	}
 
 	// Wait for all goroutines to complete
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		<-done
 	}
 

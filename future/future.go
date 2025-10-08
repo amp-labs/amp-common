@@ -32,12 +32,11 @@ package future
 import (
 	"context"
 	"errors"
-	"runtime/debug"
 	"sync"
 
 	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/try"
-	"github.com/amp-labs/amp-common/utils"
+	"go.uber.org/atomic"
 )
 
 var (
@@ -65,6 +64,7 @@ type Future[T any] struct {
 	once        sync.Once     // Ensures result is only written once
 	result      try.Try[T]    // Stores the final result (value + error)
 	resultReady chan struct{} // Closed when result is available (broadcast signal)
+	cancelFunc  func()        // A callback to cancel the underlying computation, if supported
 }
 
 // New creates a new Future/Promise pair for manual async computation management.
@@ -89,14 +89,20 @@ type Future[T any] struct {
 //
 // Design note: The unbuffered channel is intentionally not closed here - it will be
 // closed by the Promise when fulfill() is called, which broadcasts to all waiters.
-func New[T any]() (future *Future[T], promise *Promise[T]) {
+func New[T any](cancel ...func()) (future *Future[T], promise *Promise[T]) {
 	future = &Future[T]{
 		resultReady: make(chan struct{}), // Unbuffered - closed on completion
 	}
 
-	return future, &Promise[T]{
-		future: future,
+	promise = &Promise[T]{
+		future:      future,
+		canceled:    atomic.NewBool(false),
+		cancelFuncs: cancel,
 	}
+
+	future.cancelFunc = promise.cancel
+
+	return future, promise
 }
 
 // Go creates a new Future and executes the given function in a new goroutine.
@@ -124,23 +130,24 @@ func New[T any]() (future *Future[T], promise *Promise[T]) {
 // Design note: The panic recovery is critical because panics in goroutines crash the
 // entire program by default. This converts them to errors that can be handled normally.
 func Go[T any](fn func() (T, error)) *Future[T] {
+	return GoWithExecutor[T](&DefaultGoExecutor[T]{}, fn)
+}
+
+// GoWithExecutor creates a new Future and executes the function using a custom executor.
+//
+// This allows you to customize how the async operation is executed, such as for testing
+// or using a different concurrency model. Most users should use Go() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[int]{}
+//	future := future.GoWithExecutor(customExec, func() (int, error) {
+//	    return 42, nil
+//	})
+func GoWithExecutor[T any](exec Executor[T], fn func() (T, error)) *Future[T] {
 	future, promise := New[T]()
 
-	go func() {
-		// Panic recovery MUST be deferred to catch panics in fn()
-		defer func() {
-			if err := recover(); err != nil {
-				// Convert panic to error with stack trace for debugging
-				pre := utils.GetPanicRecoveryError(err, debug.Stack())
-
-				promise.Failure(pre)
-			}
-		}()
-
-		// Execute the user's function and complete the promise
-		value, err := fn()
-		promise.Complete(value, err)
-	}()
+	exec.Go(promise, fn)
 
 	return future
 }
@@ -171,37 +178,39 @@ func Go[T any](fn func() (T, error)) *Future[T] {
 //   - The parent context can still cancel the child via the usual context mechanisms
 //
 //nolint:contextcheck // GoContext intentionally creates a new cancellable context for the goroutine
-func GoContext[T any](parentCtx context.Context, operation func(context.Context) (T, error)) *Future[T] {
-	future, promise := New[T]()
+func GoContext[T any](ctx context.Context, operation func(context.Context) (T, error)) *Future[T] {
+	return GoContextWithExecutor[T](ctx, &DefaultGoExecutor[T]{}, operation)
+}
 
+// GoContextWithExecutor creates a new Future with context support using a custom executor.
+//
+// This combines the context-awareness of GoContext with the flexibility of custom executors.
+// Most users should use GoContext() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[int]{}
+//	future := future.GoContextWithExecutor(ctx, customExec, func(ctx context.Context) (int, error) {
+//	    return fetchWithContext(ctx)
+//	})
+//
+//nolint:contextcheck // GoContextWithExecutor intentionally creates a new cancellable context for the goroutine
+func GoContextWithExecutor[T any](
+	ctx context.Context, exec Executor[T], operation func(context.Context) (T, error),
+) *Future[T] {
 	// Ensure we always have a valid context
-	if parentCtx == nil {
-		parentCtx = context.Background()
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
 	// Create a child context that we can cancel when the goroutine completes
 	// This prevents context leaks and allows independent cancellation
-	goCtx, cancel := context.WithCancel(parentCtx)
+	goCtx, cancel := context.WithCancel(ctx)
 
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				// Convert panic to error with stack trace
-				pre := utils.GetPanicRecoveryError(err, debug.Stack())
+	// Create the Future/Promise pair
+	future, promise := New[T](cancel)
 
-				promise.Failure(pre)
-			}
-
-			// CRITICAL: Always cancel the context to prevent leaks
-			// This releases resources even if the function panicked
-			cancel()
-		}()
-
-		// Execute user's function with the child context
-		value, err := operation(goCtx)
-
-		promise.Complete(value, err)
-	}()
+	exec.GoContext(goCtx, promise, operation)
 
 	return future
 }
@@ -312,6 +321,21 @@ func (f *Future[T]) ToChannelContext(ctx context.Context) <-chan try.Try[T] {
 	return ch
 }
 
+// Cancel attempts to cancel the underlying computation if it supports cancellation.
+//
+// This is a best-effort operation. If the future was created with GoContext,
+// this will cancel that context. If the future was created  with Go or New
+// without a cancellable context, this does nothing.
+//
+// This simply sends a signal. The actual cancellation depends on whether the
+// underlying operation respects context cancellation. If it doesn't, the operation
+// will continue running in the background.
+func (f *Future[T]) Cancel() {
+	if f.cancelFunc != nil {
+		f.cancelFunc()
+	}
+}
+
 // NewError creates a Future that is already completed with the given error.
 //
 // This is a convenience function for creating pre-failed futures, which is useful for:
@@ -365,6 +389,26 @@ func NewError[T any](err error) *Future[T] {
 //   - Uses Go() internally, so transformation happens in a separate goroutine
 //   - Error propagation is automatic - no need for manual if err != nil checks
 func Map[A, B any](fut *Future[A], transformFunc func(A) (B, error)) *Future[B] {
+	return MapWithExecutor[A, B](fut, &DefaultGoExecutor[B]{}, transformFunc)
+}
+
+// MapWithExecutor transforms a Future[A] into a Future[B] using a custom executor.
+//
+// This is identical to Map but allows you to specify a custom executor for the
+// transformation. Most users should use Map() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[User]{}
+//	idFuture := future.Go(getUserId)
+//	userFuture := future.MapWithExecutor(idFuture, customExec, func(id int) (User, error) {
+//	    return fetchUser(id)
+//	})
+func MapWithExecutor[A, B any](
+	fut *Future[A],
+	exec Executor[B],
+	transformFunc func(A) (B, error),
+) *Future[B] {
 	// Input validation - return pre-failed futures for invalid inputs
 	if fut == nil {
 		return NewError[B](ErrNilFuture)
@@ -375,7 +419,7 @@ func Map[A, B any](fut *Future[A], transformFunc func(A) (B, error)) *Future[B] 
 	}
 
 	// Create a new future that awaits the original and transforms the result
-	return Go[B](func() (B, error) {
+	return GoWithExecutor[B](exec, func() (B, error) {
 		// Wait for the original future to complete
 		val, err := fut.Await()
 		if err != nil {
@@ -412,6 +456,28 @@ func Map[A, B any](fut *Future[A], transformFunc func(A) (B, error)) *Future[B] 
 func MapContext[A, B any](
 	ctx context.Context, fut *Future[A], transformFunc func(context.Context, A) (B, error),
 ) *Future[B] {
+	return MapContextWithExecutor[A, B](ctx, fut, &DefaultGoExecutor[B]{}, transformFunc)
+}
+
+// MapContextWithExecutor transforms a Future[A] into a Future[B] with context support using a custom executor.
+//
+// This combines context-awareness with custom executor support for transformations.
+// Most users should use MapContext() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[User]{}
+//	idFuture := future.Go(getUserId)
+//	userFuture := future.MapContextWithExecutor(ctx, idFuture, customExec,
+//	    func(ctx context.Context, id int) (User, error) {
+//	        return fetchUserWithContext(ctx, id)
+//	    })
+func MapContextWithExecutor[A, B any](
+	ctx context.Context,
+	fut *Future[A],
+	exec Executor[B],
+	transformFunc func(context.Context, A) (B, error),
+) *Future[B] {
 	// Input validation
 	if fut == nil {
 		return NewError[B](ErrNilFuture)
@@ -422,7 +488,7 @@ func MapContext[A, B any](
 	}
 
 	// Create a context-aware future that awaits and transforms
-	return GoContext[B](ctx, func(ctx context.Context) (B, error) {
+	return GoContextWithExecutor[B](ctx, exec, func(ctx context.Context) (B, error) {
 		// Wait for the original future with context support
 		val, err := fut.AwaitContext(ctx)
 		if err != nil {
@@ -462,7 +528,25 @@ func MapContext[A, B any](
 // Design note: Without FlatMap, you'd get Future[Future[[]Post]] which is awkward.
 // FlatMap "flattens" this to just Future[[]Post] by awaiting both futures.
 func FlatMap[A, B any](fut *Future[A], fn func(A) *Future[B]) *Future[B] {
-	return Go[B](func() (B, error) {
+	return FlatMapWithExecutor[A, B](fut, &DefaultGoExecutor[B]{}, fn)
+}
+
+// FlatMapWithExecutor transforms a Future[A] into a Future[B] using a custom executor.
+//
+// This is identical to FlatMap but allows you to specify a custom executor.
+// Most users should use FlatMap() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[[]Post]{}
+//	userFuture := future.Go(fetchUser)
+//	postsFuture := future.FlatMapWithExecutor(userFuture, customExec, func(user User) *Future[[]Post] {
+//	    return future.Go(func() ([]Post, error) {
+//	        return fetchPosts(user.ID)
+//	    })
+//	})
+func FlatMapWithExecutor[A, B any](fut *Future[A], exec Executor[B], fn func(A) *Future[B]) *Future[B] {
+	return GoWithExecutor(exec, func() (B, error) {
 		// Await the first future
 		val, err := fut.Await()
 		if err != nil {
@@ -497,7 +581,27 @@ func FlatMap[A, B any](fut *Future[A], fn func(A) *Future[B]) *Future[B] {
 // Design note: The same context is used for awaiting both futures, allowing
 // cancellation at any point in the chain.
 func FlatMapContext[A, B any](ctx context.Context, fut *Future[A], fn func(A) *Future[B]) *Future[B] {
-	return GoContext[B](ctx, func(ctx context.Context) (B, error) {
+	return FlatMapContextWithExecutor[A, B](ctx, fut, &DefaultGoExecutor[B]{}, fn)
+}
+
+// FlatMapContextWithExecutor transforms a Future[A] into a Future[B] with context support using a custom executor.
+//
+// This combines context-awareness with custom executor support for chaining async operations.
+// Most users should use FlatMapContext() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[[]Post]{}
+//	userFuture := future.GoContext(ctx, fetchUser)
+//	postsFuture := future.FlatMapContextWithExecutor(ctx, userFuture, customExec, func(user User) *Future[[]Post] {
+//	    return future.GoContext(ctx, func(ctx context.Context) ([]Post, error) {
+//	        return fetchPostsWithContext(ctx, user.ID)
+//	    })
+//	})
+func FlatMapContextWithExecutor[A, B any](
+	ctx context.Context, fut *Future[A], exec Executor[B], fn func(A) *Future[B],
+) *Future[B] {
+	return GoContextWithExecutor[B](ctx, exec, func(ctx context.Context) (B, error) {
 		// Await first future with context
 		val, err := fut.AwaitContext(ctx)
 		if err != nil {
@@ -545,6 +649,21 @@ func FlatMapContext[A, B any](ctx context.Context, fut *Future[A], fn func(A) *F
 //   - For non-short-circuiting behavior, use CombineNoShortCircuit
 //   - The goroutine waits sequentially but futures run concurrently
 func Combine[T any](futures ...*Future[T]) *Future[[]T] {
+	return CombineWithExecutor[T](&DefaultGoExecutor[[]T]{}, futures...)
+}
+
+// CombineWithExecutor combines multiple futures using a custom executor.
+//
+// This is identical to Combine but allows you to specify a custom executor for the
+// combination operation. Most users should use Combine() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[[]User]{}
+//	fut1 := future.Go(fetchUser1)
+//	fut2 := future.Go(fetchUser2)
+//	combined := future.CombineWithExecutor(customExec, fut1, fut2)
+func CombineWithExecutor[T any](exec Executor[[]T], futures ...*Future[T]) *Future[[]T] {
 	future, promise := New[[]T]()
 
 	// Special case: no futures to combine
@@ -554,7 +673,7 @@ func Combine[T any](futures ...*Future[T]) *Future[[]T] {
 		return future
 	}
 
-	go func() {
+	exec.Go(promise, func() ([]T, error) {
 		// Pre-allocate slice for efficiency
 		results := make([]T, 0, len(futures))
 
@@ -563,17 +682,15 @@ func Combine[T any](futures ...*Future[T]) *Future[[]T] {
 			val, err := fut.Await()
 			if err != nil {
 				// Short-circuit: fail immediately on first error
-				promise.Failure(err)
-
-				return
+				return nil, err
 			}
 
 			results = append(results, val)
 		}
 
 		// All futures succeeded
-		promise.Success(results)
-	}()
+		return results, nil
+	})
 
 	return future
 }
@@ -605,6 +722,23 @@ func Combine[T any](futures ...*Future[T]) *Future[[]T] {
 // Design note: The context check happens between awaits to allow early exit if
 // the context is canceled while waiting for slow futures.
 func CombineContext[T any](ctx context.Context, futures ...*Future[T]) *Future[[]T] {
+	return CombineContextWithExecutor[T](ctx, &DefaultGoExecutor[[]T]{}, futures...)
+}
+
+// CombineContextWithExecutor combines multiple futures with context support using a custom executor.
+//
+// This is identical to CombineContext but allows you to specify a custom executor.
+// Most users should use CombineContext() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[[]User]{}
+//	fut1 := future.GoContext(ctx, fetchUser1)
+//	fut2 := future.GoContext(ctx, fetchUser2)
+//	combined := future.CombineContextWithExecutor(ctx, customExec, fut1, fut2)
+func CombineContextWithExecutor[T any](
+	ctx context.Context, exec Executor[[]T], futures ...*Future[T],
+) *Future[[]T] {
 	future, promise := New[[]T]()
 
 	if len(futures) == 0 {
@@ -613,31 +747,27 @@ func CombineContext[T any](ctx context.Context, futures ...*Future[T]) *Future[[
 		return future
 	}
 
-	go func() {
+	exec.GoContext(ctx, promise, func(ctx context.Context) ([]T, error) {
 		results := make([]T, 0, len(futures))
 
 		for _, fut := range futures {
 			// Check if context was canceled before awaiting next future
 			if !contexts.IsContextAlive(ctx) {
-				promise.Failure(ctx.Err())
-
-				return
+				return nil, ctx.Err()
 			}
 
 			// Await with context support
 			val, err := fut.AwaitContext(ctx)
 			if err != nil {
 				// Fail on first error (could be context error or future error)
-				promise.Failure(err)
-
-				return
+				return nil, err
 			}
 
 			results = append(results, val)
 		}
 
-		promise.Success(results)
-	}()
+		return results, nil
+	})
 
 	return future
 }
@@ -676,6 +806,20 @@ func CombineContext[T any](ctx context.Context, futures ...*Future[T]) *Future[[
 // Design note: This uses promise.fulfill with a Try type to store both results and
 // errors, but Await() only returns the error part in failure cases.
 func CombineNoShortCircuit[T any](futures ...*Future[T]) *Future[[]T] {
+	return CombineNoShortCircuitWithExecutor[T](&DefaultGoExecutor[[]T]{}, futures...)
+}
+
+// CombineNoShortCircuitWithExecutor combines multiple futures without short-circuiting using a custom executor.
+//
+// This is identical to CombineNoShortCircuit but allows you to specify a custom executor.
+// Most users should use CombineNoShortCircuit() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[[]User]{}
+//	futs := []*Future[User]{fut1, fut2, fut3}
+//	combined := future.CombineNoShortCircuitWithExecutor(customExec, futs...)
+func CombineNoShortCircuitWithExecutor[T any](exec Executor[[]T], futures ...*Future[T]) *Future[[]T] {
 	future, promise := New[[]T]()
 
 	if len(futures) == 0 {
@@ -684,7 +828,7 @@ func CombineNoShortCircuit[T any](futures ...*Future[T]) *Future[[]T] {
 		return future
 	}
 
-	go func() {
+	exec.Go(promise, func() ([]T, error) {
 		// Collect both results and errors
 		results := make([]T, 0, len(futures))
 		errs := make([]error, 0, len(futures))
@@ -710,10 +854,12 @@ func CombineNoShortCircuit[T any](futures ...*Future[T]) *Future[[]T] {
 				Value: results,
 				Error: err,
 			})
-		} else {
-			promise.Success(results)
+
+			return results, err
 		}
-	}()
+
+		return results, nil
+	})
 
 	return future
 }
@@ -749,6 +895,23 @@ func CombineNoShortCircuit[T any](futures ...*Future[T]) *Future[[]T] {
 // Design note: Context cancellation causes immediate return (short-circuit), but
 // future errors do not - all futures are awaited to collect all errors.
 func CombineContextNoShortCircuit[T any](ctx context.Context, futures ...*Future[T]) *Future[[]T] {
+	return CombineContextNoShortCircuitWithExecutor[T](ctx, &DefaultGoExecutor[[]T]{}, futures...)
+}
+
+// CombineContextNoShortCircuitWithExecutor combines futures with context support without
+// short-circuiting using a custom executor.
+//
+// This is identical to CombineContextNoShortCircuit but allows you to specify a custom executor.
+// Most users should use CombineContextNoShortCircuit() instead.
+//
+// Example:
+//
+//	customExec := &MyCustomExecutor[[]Result]{}
+//	futs := []*Future[Result]{fut1, fut2, fut3}
+//	combined := future.CombineContextNoShortCircuitWithExecutor(ctx, customExec, futs...)
+func CombineContextNoShortCircuitWithExecutor[T any](
+	ctx context.Context, exec Executor[[]T], futures ...*Future[T],
+) *Future[[]T] {
 	future, promise := New[[]T]()
 
 	if len(futures) == 0 {
@@ -757,16 +920,14 @@ func CombineContextNoShortCircuit[T any](ctx context.Context, futures ...*Future
 		return future
 	}
 
-	go func() {
+	exec.GoContext(ctx, promise, func(ctx context.Context) ([]T, error) {
 		results := make([]T, 0, len(futures))
 		errs := make([]error, 0, len(futures))
 
 		for _, fut := range futures {
 			// Short-circuit on context cancellation
 			if !contexts.IsContextAlive(ctx) {
-				promise.Failure(ctx.Err())
-
-				return
+				return nil, ctx.Err()
 			}
 
 			// Await with context (may fail due to context or future error)
@@ -787,10 +948,12 @@ func CombineContextNoShortCircuit[T any](ctx context.Context, futures ...*Future
 				Value: results,
 				Error: err,
 			})
-		} else {
-			promise.Success(results)
+
+			return results, err
 		}
-	}()
+
+		return results, nil
+	})
 
 	return future
 }

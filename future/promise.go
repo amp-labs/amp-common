@@ -1,6 +1,9 @@
 package future
 
-import "github.com/amp-labs/amp-common/try"
+import (
+	"github.com/amp-labs/amp-common/try"
+	"go.uber.org/atomic"
+)
 
 // Promise represents the write-only side of an asynchronous computation.
 //
@@ -16,7 +19,34 @@ import "github.com/amp-labs/amp-common/try"
 // Design note: The promise holds a reference to the future, not the other way around.
 // This ensures futures can be passed around without exposing the ability to complete them.
 type Promise[T any] struct {
-	future *Future[T] // Reference to the associated future (write access)
+	future      *Future[T]   // Reference to the associated future (write access)
+	canceled    *atomic.Bool // Atomic flag indicating if this promise has been canceled
+	cancelFuncs []func()     // Functions to call when promise is canceled
+}
+
+// IsCancelled returns true if the promise has been canceled.
+//
+// This is a thread-safe check that can be called from any goroutine.
+// Once a promise is canceled, it remains canceled permanently.
+func (p *Promise[T]) IsCancelled() bool {
+	return p.canceled.Load()
+}
+
+// cancel marks the promise as canceled and executes all registered cancel functions.
+//
+// This is an internal method used by the future package for cancellation propagation.
+// It uses atomic compare-and-swap to ensure cancel functions are only executed once,
+// even if cancel() is called multiple times concurrently.
+//
+// Thread safety: Safe to call from any goroutine. Multiple calls are idempotent -
+// only the first call executes the cancel functions.
+func (p *Promise[T]) cancel() {
+	// Only execute cancel functions once using atomic CAS
+	if p.canceled.CompareAndSwap(false, true) {
+		for _, cancel := range p.cancelFuncs {
+			cancel()
+		}
+	}
 }
 
 // fulfill is the internal method that actually completes the promise.

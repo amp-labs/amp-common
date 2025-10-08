@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const helloString = "hello"
+
 var (
 	errTest      = errors.New("test error")
 	errOriginal  = errors.New("original error")
@@ -110,13 +112,13 @@ func TestGoContext_Success(t *testing.T) {
 	t.Parallel()
 
 	fut := GoContext(t.Context(), func(_ context.Context) (string, error) {
-		return "hello", nil
+		return helloString, nil
 	})
 
 	result, err := fut.Await()
 
 	require.NoError(t, err)
-	assert.Equal(t, "hello", result)
+	assert.Equal(t, helloString, result)
 }
 
 func TestGoContext_ContextCancellation(t *testing.T) {
@@ -421,7 +423,7 @@ func TestAwaitContext_Idempotent(t *testing.T) {
 	t.Parallel()
 
 	fut := Go(func() (string, error) {
-		return "hello", nil
+		return helloString, nil
 	})
 
 	ctx := t.Context()
@@ -429,15 +431,15 @@ func TestAwaitContext_Idempotent(t *testing.T) {
 	// Call AwaitContext multiple times
 	result1, err1 := fut.AwaitContext(ctx)
 	require.NoError(t, err1)
-	assert.Equal(t, "hello", result1)
+	assert.Equal(t, helloString, result1)
 
 	result2, err2 := fut.AwaitContext(ctx)
 	require.NoError(t, err2)
-	assert.Equal(t, "hello", result2)
+	assert.Equal(t, helloString, result2)
 
 	result3, err3 := fut.AwaitContext(ctx)
 	require.NoError(t, err3)
-	assert.Equal(t, "hello", result3)
+	assert.Equal(t, helloString, result3)
 }
 
 func TestMixedReads_Idempotent(t *testing.T) {
@@ -548,7 +550,7 @@ func TestMap_NilFuture(t *testing.T) {
 	t.Parallel()
 
 	mapped := Map[int, string](nil, func(val int) (string, error) {
-		return "test", nil
+		return testString, nil
 	})
 
 	result, err := mapped.Await()
@@ -1022,4 +1024,587 @@ func TestToChannelContext_NilContext(t *testing.T) {
 	// Channel should be closed
 	_, ok := <-ch
 	assert.False(t, ok, "channel should be closed")
+}
+
+// --- Executor Tests ---
+
+// mockExecutor is a test executor that executes callbacks synchronously.
+type mockExecutor[T any] struct {
+	goCalled        bool
+	goContextCalled bool
+}
+
+func (m *mockExecutor[T]) Go(promise *Promise[T], callback func() (T, error)) {
+	m.goCalled = true
+	value, err := callback()
+	promise.Complete(value, err)
+}
+
+func (m *mockExecutor[T]) GoContext(
+	ctx context.Context, promise *Promise[T], callback func(ctx context.Context) (T, error),
+) {
+	m.goContextCalled = true
+	value, err := callback(ctx)
+	promise.Complete(value, err)
+}
+
+func TestGoWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := GoWithExecutor(exec, func() (int, error) {
+		return 42, nil
+	})
+
+	result, err := fut.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+	assert.True(t, exec.goCalled, "executor.Go should have been called")
+}
+
+func TestGoWithExecutor_Error(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := GoWithExecutor(exec, func() (int, error) {
+		return 0, errTest
+	})
+
+	result, err := fut.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, errTest, err)
+	assert.Equal(t, 0, result)
+	assert.True(t, exec.goCalled)
+}
+
+func TestGoContextWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[string]{}
+
+	fut := GoContextWithExecutor(t.Context(), exec, func(ctx context.Context) (string, error) {
+		return helloString, nil
+	})
+
+	result, err := fut.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, helloString, result)
+	assert.True(t, exec.goContextCalled, "executor.GoContext should have been called")
+}
+
+func TestGoContextWithExecutor_Error(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[string]{}
+
+	fut := GoContextWithExecutor(t.Context(), exec, func(ctx context.Context) (string, error) {
+		return "", errTest
+	})
+
+	result, err := fut.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, errTest, err)
+	assert.Equal(t, "", result)
+	assert.True(t, exec.goContextCalled)
+}
+
+func TestGoContextWithExecutor_NilContext(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	// nil context should be replaced with context.Background()
+	fut := GoContextWithExecutor(t.Context(), exec, func(ctx context.Context) (int, error) {
+		assert.NotNil(t, ctx, "context should not be nil")
+
+		return 99, nil
+	})
+
+	result, err := fut.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, 99, result)
+}
+
+func TestMapWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := Go(func() (int, error) {
+		return 21, nil
+	})
+
+	mapped := MapWithExecutor(fut, exec, func(val int) (int, error) {
+		return val * 2, nil
+	})
+
+	result, err := mapped.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+	assert.True(t, exec.goCalled)
+}
+
+func TestMapWithExecutor_OriginalError(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := Go(func() (int, error) {
+		return 0, errOriginal
+	})
+
+	mapped := MapWithExecutor(fut, exec, func(val int) (int, error) {
+		return val * 2, nil
+	})
+
+	result, err := mapped.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, errOriginal, err)
+	assert.Equal(t, 0, result)
+	assert.True(t, exec.goCalled)
+}
+
+func TestMapWithExecutor_TransformError(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := Go(func() (int, error) {
+		return 21, nil
+	})
+
+	mapped := MapWithExecutor(fut, exec, func(_ int) (int, error) {
+		return 0, errTransform
+	})
+
+	result, err := mapped.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, errTransform, err)
+	assert.Equal(t, 0, result)
+}
+
+func TestMapWithExecutor_NilFuture(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[string]{}
+
+	mapped := MapWithExecutor[int, string](nil, exec, func(val int) (string, error) {
+		return testString, nil
+	})
+
+	result, err := mapped.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "nil future")
+	assert.Equal(t, "", result)
+	assert.False(t, exec.goCalled, "executor should not be called for validation errors")
+}
+
+func TestMapWithExecutor_NilFunction(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[string]{}
+
+	fut := Go(func() (int, error) {
+		return 42, nil
+	})
+
+	mapped := MapWithExecutor[int, string](fut, exec, nil)
+
+	result, err := mapped.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "nil function")
+	assert.Equal(t, "", result)
+	assert.False(t, exec.goCalled)
+}
+
+func TestMapContextWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := Go(func() (int, error) {
+		return 21, nil
+	})
+
+	mapped := MapContextWithExecutor(t.Context(), fut, exec, func(ctx context.Context, val int) (int, error) {
+		return val * 2, nil
+	})
+
+	result, err := mapped.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+	assert.True(t, exec.goContextCalled)
+}
+
+func TestMapContextWithExecutor_NilFuture(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[string]{}
+
+	mapped := MapContextWithExecutor[int, string](
+		t.Context(), nil, exec, func(ctx context.Context, val int) (string, error) {
+			return testString, nil
+		},
+	)
+
+	result, err := mapped.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "nil future")
+	assert.Equal(t, "", result)
+	assert.False(t, exec.goContextCalled)
+}
+
+func TestMapContextWithExecutor_NilFunction(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[string]{}
+
+	fut := Go(func() (int, error) {
+		return 42, nil
+	})
+
+	mapped := MapContextWithExecutor[int, string](t.Context(), fut, exec, nil)
+
+	result, err := mapped.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "nil function")
+	assert.Equal(t, "", result)
+	assert.False(t, exec.goContextCalled)
+}
+
+func TestFlatMapWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := Go(func() (int, error) {
+		return 21, nil
+	})
+
+	flatMapped := FlatMapWithExecutor(fut, exec, func(val int) *Future[int] {
+		return Go(func() (int, error) {
+			return val * 2, nil
+		})
+	})
+
+	result, err := flatMapped.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+	assert.True(t, exec.goCalled)
+}
+
+func TestFlatMapWithExecutor_OriginalError(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := Go(func() (int, error) {
+		return 0, errOriginal
+	})
+
+	flatMapped := FlatMapWithExecutor(fut, exec, func(val int) *Future[int] {
+		return Go(func() (int, error) {
+			return val * 2, nil
+		})
+	})
+
+	result, err := flatMapped.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, errOriginal, err)
+	assert.Equal(t, 0, result)
+}
+
+func TestFlatMapContextWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[int]{}
+
+	fut := Go(func() (int, error) {
+		return 21, nil
+	})
+
+	flatMapped := FlatMapContextWithExecutor(t.Context(), fut, exec, func(val int) *Future[int] {
+		return Go(func() (int, error) {
+			return val * 2, nil
+		})
+	})
+
+	result, err := flatMapped.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+	assert.True(t, exec.goContextCalled)
+}
+
+func TestCombineWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	fut1 := Go(func() (int, error) {
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		return 2, nil
+	})
+
+	fut3 := Go(func() (int, error) {
+		return 3, nil
+	})
+
+	combined := CombineWithExecutor(exec, fut1, fut2, fut3)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2, 3}, results)
+	assert.True(t, exec.goCalled)
+}
+
+func TestCombineWithExecutor_OneError(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	fut1 := Go(func() (int, error) {
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		return 0, errTest
+	})
+
+	fut3 := Go(func() (int, error) {
+		return 3, nil
+	})
+
+	combined := CombineWithExecutor(exec, fut1, fut2, fut3)
+
+	results, err := combined.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, errTest, err)
+	assert.Nil(t, results)
+}
+
+func TestCombineWithExecutor_EmptyFutures(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	combined := CombineWithExecutor(exec)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Nil(t, results)
+	assert.False(t, exec.goCalled, "executor should not be called for empty list")
+}
+
+func TestCombineContextWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	fut1 := Go(func() (int, error) {
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		return 2, nil
+	})
+
+	combined := CombineContextWithExecutor(t.Context(), exec, fut1, fut2)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2}, results)
+	assert.True(t, exec.goContextCalled)
+}
+
+func TestCombineContextWithExecutor_EmptyFutures(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	combined := CombineContextWithExecutor(t.Context(), exec)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Nil(t, results)
+	assert.False(t, exec.goContextCalled)
+}
+
+func TestCombineNoShortCircuitWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	fut1 := Go(func() (int, error) {
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		return 2, nil
+	})
+
+	combined := CombineNoShortCircuitWithExecutor(exec, fut1, fut2)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2}, results)
+	assert.True(t, exec.goCalled)
+}
+
+func TestCombineNoShortCircuitWithExecutor_WithErrors(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	fut1 := Go(func() (int, error) {
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		return 0, errTest
+	})
+
+	fut3 := Go(func() (int, error) {
+		return 3, nil
+	})
+
+	combined := CombineNoShortCircuitWithExecutor(exec, fut1, fut2, fut3)
+
+	results, err := combined.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), errTest.Error())
+	assert.Nil(t, results)
+}
+
+func TestCombineNoShortCircuitWithExecutor_EmptyFutures(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	combined := CombineNoShortCircuitWithExecutor(exec)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{}, results)
+	assert.False(t, exec.goCalled)
+}
+
+func TestCombineContextNoShortCircuitWithExecutor_Success(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	fut1 := Go(func() (int, error) {
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		return 2, nil
+	})
+
+	combined := CombineContextNoShortCircuitWithExecutor(t.Context(), exec, fut1, fut2)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2}, results)
+	assert.True(t, exec.goContextCalled)
+}
+
+func TestCombineContextNoShortCircuitWithExecutor_WithErrors(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	fut1 := Go(func() (int, error) {
+		return 1, nil
+	})
+
+	fut2 := Go(func() (int, error) {
+		return 0, errTest
+	})
+
+	combined := CombineContextNoShortCircuitWithExecutor(t.Context(), exec, fut1, fut2)
+
+	results, err := combined.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), errTest.Error())
+	assert.Nil(t, results)
+}
+
+func TestCombineContextNoShortCircuitWithExecutor_EmptyFutures(t *testing.T) {
+	t.Parallel()
+
+	exec := &mockExecutor[[]int]{}
+
+	combined := CombineContextNoShortCircuitWithExecutor(t.Context(), exec)
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{}, results)
+	assert.False(t, exec.goContextCalled)
+}
+
+func TestDefaultGoExecutor_PanicRecovery(t *testing.T) {
+	t.Parallel()
+
+	exec := &DefaultGoExecutor[int]{}
+
+	fut := GoWithExecutor(exec, func() (int, error) {
+		panic("test panic in executor")
+	})
+
+	result, err := fut.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "recovered from panic: test panic in executor")
+	assert.Contains(t, err.Error(), "stack trace:")
+	assert.Equal(t, 0, result)
+}
+
+func TestDefaultGoExecutor_GoContext_PanicRecovery(t *testing.T) {
+	t.Parallel()
+
+	exec := &DefaultGoExecutor[string]{}
+
+	fut := GoContextWithExecutor(t.Context(), exec, func(ctx context.Context) (string, error) {
+		panic("test panic in GoContext")
+	})
+
+	result, err := fut.Await()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "recovered from panic: test panic in GoContext")
+	assert.Contains(t, err.Error(), "stack trace:")
+	assert.Equal(t, "", result)
 }

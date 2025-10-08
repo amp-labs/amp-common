@@ -30,147 +30,148 @@ func Do(maxConcurrent int, f ...func(ctx context.Context) error) error {
 // Panics that occur within the callback functions are automatically recovered and converted to errors.
 // This prevents a single panicking function from crashing the entire process.
 func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.Context) error) error {
-	// We'll wrap the context for this function so we can cancel it
 	ctx, cancel := context.WithCancel(ctx)
 
-	// We only want to cancel the context once, so we'll use a sync.Once
 	var cancelOnce sync.Once
 	defer cancelOnce.Do(cancel)
 
-	// If maxConcurrent is less than 1, we'll just run everything at once.
 	if maxConcurrent < 1 {
 		maxConcurrent = len(callback)
 	}
 
-	// We'll use a buffered channel as a semaphore to limit
-	// the number of concurrent goroutines. This is just
-	// a simple way to permit parallelism without overwhelming
-	// the system. A little burstiness is fine, but a lot
-	// can cause problems, so this just helps smooth things out.
-	sem := make(chan struct{}, maxConcurrent)
+	exec := newExecutor(maxConcurrent, &cancelOnce, cancel)
+	defer exec.cleanup()
 
-	// This is how we avoid racing with the channels themselves
-	// being closed. Without this, occasional panics can happen,
-	// especially with respect to the sem channel.
-	var waitGroup sync.WaitGroup
+	exec.launchAll(ctx, callback)
+
+	errs := exec.collectResults(len(callback))
+
+	return combineErrors(errs)
+}
+
+// executor manages the concurrent execution of callback functions.
+type executor struct {
+	cancelOnce *sync.Once
+	cancel     context.CancelFunc
+	sem        chan struct{}
+	errorChan  chan error
+	doneChan   chan struct{}
+	waitGroup  sync.WaitGroup
+}
+
+// newExecutor creates a new executor with the given concurrency limit.
+func newExecutor(maxConcurrent int, cancelOnce *sync.Once, cancel context.CancelFunc) *executor {
+	sem := make(chan struct{}, maxConcurrent)
 
 	// Fill the semaphore with maxConcurrent empty structs
 	for range maxConcurrent {
 		sem <- struct{}{}
 	}
 
-	// We'll use two channels to communicate with the goroutines.
-	errorChan := make(chan error)
-	doneChan := make(chan struct{})
+	return &executor{
+		cancelOnce: cancelOnce,
+		cancel:     cancel,
+		sem:        sem,
+		errorChan:  make(chan error),
+		doneChan:   make(chan struct{}),
+	}
+}
 
-	// Make sure we close the channels when we're done.
+// cleanup closes all channels after waiting for goroutines to finish.
+func (e *executor) cleanup() {
+	e.waitGroup.Wait()
+	close(e.sem)
+	close(e.errorChan)
+	close(e.doneChan)
+}
+
+// launchAll starts all callback functions in separate goroutines.
+func (e *executor) launchAll(ctx context.Context, callbacks []func(context.Context) error) {
+	for _, fn := range callbacks {
+		e.waitGroup.Add(1)
+		go e.run(ctx, fn)
+	}
+}
+
+// run executes a single callback function with semaphore control and panic recovery.
+func (e *executor) run(ctx context.Context, fn func(context.Context) error) {
+	<-e.sem // take one out (will block if empty)
+
 	defer func() {
-		waitGroup.Wait()
-		close(sem)
-		close(errorChan)
-		close(doneChan)
+		e.sem <- struct{}{} // put it back
+		e.waitGroup.Done()
 	}()
 
-	// Invoker will do the following:
-	// 1. Take a semaphore (blocking if none are available)
-	// 2. Call the function (only if the context is still alive)
-	// 3. If the function returns an error, send it to the error channel
-	// 4. If the function returns nil, send a signal to the done channel
-	// 5. Put the semaphore back
-	// 6. Recover from any panics and convert them to errors
-	invoker := func(callerFn func(context.Context) error) {
-		<-sem // take one out (will block if empty)
+	defer e.recoverPanic()
 
-		defer func() {
-			sem <- struct{}{} // put it back
+	e.executeCallback(ctx, fn)
+}
 
-			waitGroup.Done()
-		}()
-
-		// Recover from panics and convert them to errors
-		defer func() {
-			if r := recover(); r != nil {
-				var err error
-				if e, ok := r.(error); ok {
-					err = fmt.Errorf("%w: %w\n%s", ErrPanicRecovered, e, debug.Stack())
-				} else {
-					err = fmt.Errorf("%w: %v\n%s", ErrPanicRecovered, r, debug.Stack())
-				}
-
-				// Cancel the context to stop other functions
-				cancelOnce.Do(cancel)
-
-				// Send the panic as an error
-				errorChan <- err
-			}
-		}()
-
-		// If the context is already canceled, don't bother running the function
-		// since it will error out anyway.
-		if !contexts.IsContextAlive(ctx) {
-			errorChan <- ctx.Err()
-
-			return
-		}
-
-		if e := callerFn(ctx); e != nil {
-			// Cancel the context as soon as we know there was an error,
-			// to try to save on CPU cycles. Other functions should
-			// check their context and return early if they are canceled.
-			// Anything blocked on the semaphore will be unblocked and then
-			// will check the context and return early.
-			cancelOnce.Do(cancel)
-
-			// Send the error to the error channel
-			errorChan <- e
-		} else {
-			// All good, send a signal to the done channel
-			doneChan <- struct{}{}
-		}
+// recoverPanic recovers from panics and converts them to errors.
+func (e *executor) recoverPanic() {
+	r := recover()
+	if r == nil {
+		return
 	}
 
-	// Start all the goroutines at once.
-	// Ideally, most of these will block on the semaphore
-	// and only run when there's room. So the fact that there
-	// are a lot of goroutines here is not necessarily a problem.
-	running := 0
+	err := formatPanicError(r)
 
-	for _, callerFn := range callback {
-		waitGroup.Add(1)
+	// Cancel the context to stop other functions
+	e.cancelOnce.Do(e.cancel)
 
-		running++
+	// Send the panic as an error
+	e.errorChan <- err
+}
 
-		go invoker(callerFn)
+// formatPanicError converts a panic value into a formatted error with stack trace.
+func formatPanicError(r interface{}) error {
+	if e, ok := r.(error); ok {
+		return fmt.Errorf("%w: %w\n%s", ErrPanicRecovered, e, debug.Stack())
 	}
 
-	// Keep track of all the errors we encounter.
+	return fmt.Errorf("%w: %v\n%s", ErrPanicRecovered, r, debug.Stack())
+}
+
+// executeCallback runs the callback function and sends the result to the appropriate channel.
+func (e *executor) executeCallback(ctx context.Context, fn func(context.Context) error) {
+	if !contexts.IsContextAlive(ctx) {
+		e.errorChan <- ctx.Err()
+
+		return
+	}
+
+	err := fn(ctx)
+	if err != nil {
+		e.cancelOnce.Do(e.cancel)
+		e.errorChan <- err
+	} else {
+		e.doneChan <- struct{}{}
+	}
+}
+
+// collectResults waits for all goroutines to complete and collects errors.
+func (e *executor) collectResults(count int) []error {
 	var errs []error
 
-	// Wait for all the goroutines to finish.
-	for running > 0 {
+	for range count {
 		select {
-		case e := <-errorChan:
-			// Keep track of the error
-			errs = append(errs, e)
-
-			break
-		case <-doneChan:
-			// The function finished successfully
-			break
+		case err := <-e.errorChan:
+			errs = append(errs, err)
+		case <-e.doneChan: // Function completed successfully
 		}
-
-		running--
 	}
 
+	return errs
+}
+
+// combineErrors returns a single error from a slice of errors.
+func combineErrors(errs []error) error {
 	switch len(errs) {
 	case 0:
-		// Everything succeeded
 		return nil
 	case 1:
-		// Only one error
 		return errs[0]
 	default:
-		// Multiple errors
 		return errors.Join(errs...)
 	}
 }

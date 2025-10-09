@@ -660,3 +660,462 @@ func (m *mockCloserWithDeferPanic) Close() (err error) {
 
 	return err
 }
+
+// Tests for ChannelCloser
+
+func TestChannelCloser_NilChannel(t *testing.T) {
+	t.Parallel()
+
+	var ch chan int
+
+	closer := ChannelCloser(ch)
+	assert.Nil(t, closer, "ChannelCloser should return nil for nil channel")
+}
+
+func TestChannelCloser_BasicClose(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int, 1)
+	closer := ChannelCloser(ch)
+
+	require.NotNil(t, closer)
+
+	// Channel should be open - send a value to verify
+	ch <- 42
+	val := <-ch
+	assert.Equal(t, 42, val, "Channel should be open and working")
+
+	// Close the channel
+	err := closer.Close()
+	require.NoError(t, err)
+
+	// Channel should be closed now
+	_, ok := <-ch
+	assert.False(t, ok, "Channel should be closed")
+}
+
+func TestChannelCloser_DoubleClose(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan string)
+	closer := ChannelCloser(ch)
+
+	// First close should succeed
+	err1 := closer.Close()
+	require.NoError(t, err1)
+
+	// Second close should panic (closing an already-closed channel)
+	assert.Panics(t, func() {
+		_ = closer.Close()
+	}, "Double close should panic")
+}
+
+func TestChannelCloser_DoubleCloseWithHandlePanic(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan bool)
+	closer := HandlePanic(ChannelCloser(ch))
+
+	// First close should succeed
+	err1 := closer.Close()
+	require.NoError(t, err1)
+
+	// Second close should return an error (panic converted to error by HandlePanic)
+	err2 := closer.Close()
+	require.Error(t, err2, "Second close should return error from HandlePanic")
+	assert.Contains(t, err2.Error(), "close of closed channel")
+}
+
+func TestChannelCloser_WithBufferedChannel(t *testing.T) {
+	t.Parallel()
+
+	testCh := make(chan int, 10)
+	closer := ChannelCloser(testCh)
+
+	// Send some values
+	testCh <- 1
+	testCh <- 2
+	testCh <- 3
+
+	// Close the channel
+	err := closer.Close()
+	require.NoError(t, err)
+
+	// Should still be able to receive buffered values
+	val1 := <-testCh
+	val2 := <-testCh
+	val3 := <-testCh
+
+	assert.Equal(t, 1, val1)
+	assert.Equal(t, 2, val2)
+	assert.Equal(t, 3, val3)
+
+	// Next receive should indicate channel is closed
+	_, ok := <-testCh
+	assert.False(t, ok, "Channel should be closed after draining buffer")
+}
+
+func TestChannelCloser_DifferentTypes(t *testing.T) {
+	t.Parallel()
+
+	// Test with different channel types
+	t.Run("int channel", func(t *testing.T) {
+		t.Parallel()
+
+		ch := make(chan int)
+		closer := ChannelCloser(ch)
+		err := closer.Close()
+		require.NoError(t, err)
+
+		_, ok := <-ch
+		assert.False(t, ok)
+	})
+
+	t.Run("string channel", func(t *testing.T) {
+		t.Parallel()
+
+		ch := make(chan string)
+		closer := ChannelCloser(ch)
+		err := closer.Close()
+		require.NoError(t, err)
+
+		_, ok := <-ch
+		assert.False(t, ok)
+	})
+
+	t.Run("struct channel", func(t *testing.T) {
+		t.Parallel()
+
+		type testStruct struct {
+			ID   int
+			Name string
+		}
+
+		ch := make(chan testStruct)
+		closer := ChannelCloser(ch)
+		err := closer.Close()
+		require.NoError(t, err)
+
+		_, ok := <-ch
+		assert.False(t, ok)
+	})
+
+	t.Run("pointer channel", func(t *testing.T) {
+		t.Parallel()
+
+		ch := make(chan *mockCloser)
+		closer := ChannelCloser(ch)
+		err := closer.Close()
+		require.NoError(t, err)
+
+		_, ok := <-ch
+		assert.False(t, ok)
+	})
+
+	t.Run("empty struct channel", func(t *testing.T) {
+		t.Parallel()
+
+		ch := make(chan struct{})
+		closer := ChannelCloser(ch)
+		err := closer.Close()
+		require.NoError(t, err)
+
+		_, ok := <-ch
+		assert.False(t, ok)
+	})
+}
+
+func TestChannelCloser_WithCloseOnce(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+	closer := CloseOnce(ChannelCloser(ch))
+
+	// Close multiple times
+	err1 := closer.Close()
+	err2 := closer.Close()
+	err3 := closer.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.NoError(t, err3)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "Channel should be closed")
+}
+
+func TestChannelCloser_ConcurrentClosesRaw(t *testing.T) {
+	t.Parallel()
+
+	testCh := make(chan int)
+	closer := ChannelCloser(testCh)
+
+	const goroutines = 10
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	panicCount := 0
+
+	var mutex sync.Mutex
+
+	// Launch multiple goroutines trying to close simultaneously
+	// Some will panic when trying to close an already-closed channel
+	for range goroutines {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					mutex.Lock()
+					panicCount++
+					mutex.Unlock()
+				}
+
+				waitGroup.Done()
+			}()
+
+			_ = closer.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// At least one goroutine should have panicked
+	assert.Positive(t, panicCount, "Some goroutines should have panicked from double close")
+
+	// Channel should be closed
+	_, ok := <-testCh
+	assert.False(t, ok, "Channel should be closed")
+}
+
+func TestChannelCloser_ConcurrentClosesWithCloseOnce(t *testing.T) {
+	t.Parallel()
+
+	testCh := make(chan string)
+	closer := CloseOnce(ChannelCloser(testCh))
+
+	const goroutines = 100
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	// Launch multiple goroutines trying to close simultaneously
+	for range goroutines {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = closer.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// Channel should be closed
+	_, ok := <-testCh
+	assert.False(t, ok, "Channel should be closed")
+}
+
+func TestChannelCloser_WithCloserCollector(t *testing.T) {
+	t.Parallel()
+
+	ch1 := make(chan int)
+	ch2 := make(chan string)
+	ch3 := make(chan bool)
+
+	collector := NewCloser()
+	collector.Add(ChannelCloser(ch1))
+	collector.Add(ChannelCloser(ch2))
+	collector.Add(ChannelCloser(ch3))
+
+	err := collector.Close()
+	require.NoError(t, err)
+
+	// All channels should be closed
+	_, ok1 := <-ch1
+	_, ok2 := <-ch2
+	_, ok3 := <-ch3
+
+	assert.False(t, ok1, "Channel 1 should be closed")
+	assert.False(t, ok2, "Channel 2 should be closed")
+	assert.False(t, ok3, "Channel 3 should be closed")
+}
+
+func TestChannelCloser_WithMixedClosers(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+	mock := &mockCloser{}
+
+	collector := NewCloser()
+	collector.Add(ChannelCloser(ch))
+	collector.Add(mock)
+
+	err := collector.Close()
+	require.NoError(t, err)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "Channel should be closed")
+
+	// Mock closer should have been closed
+	assert.Equal(t, 1, mock.getCloseCount(), "Mock closer should be closed once")
+}
+
+func TestChannelCloser_WithHandlePanic(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+	closer := HandlePanic(ChannelCloser(ch))
+
+	err := closer.Close()
+	require.NoError(t, err)
+
+	// Channel should be closed
+	_, ok := <-ch
+	assert.False(t, ok, "Channel should be closed")
+
+	// Second close should return an error (panic converted to error by HandlePanic)
+	err2 := closer.Close()
+	require.Error(t, err2, "Second close should return error from HandlePanic")
+	assert.Contains(t, err2.Error(), "close of closed channel")
+}
+
+func TestChannelCloser_AllWrappersComposed(t *testing.T) {
+	t.Parallel()
+
+	testCh := make(chan string, 5)
+
+	// Compose all wrappers: HandlePanic + CloseOnce + ChannelCloser
+	closer := HandlePanic(CloseOnce(ChannelCloser(testCh)))
+
+	// Send some data
+	testCh <- "hello"
+	testCh <- "world"
+
+	// Close from multiple goroutines
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(10)
+
+	for range 10 {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = closer.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// Should be able to receive buffered values
+	val1 := <-testCh
+	val2 := <-testCh
+
+	assert.Equal(t, "hello", val1)
+	assert.Equal(t, "world", val2)
+
+	// Channel should be closed
+	_, ok := <-testCh
+	assert.False(t, ok, "Channel should be closed")
+}
+
+func TestChannelCloser_TypeAssertion(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+	closer := ChannelCloser(ch)
+
+	// Verify that the returned value is of the correct type
+	_, ok := closer.(*channelCloserImpl[int])
+	assert.True(t, ok, "ChannelCloser should return a *channelCloserImpl")
+}
+
+func TestChannelCloser_WithNilInternalChannel(t *testing.T) {
+	t.Parallel()
+
+	// Test the edge case where channelCloserImpl has a nil channel
+	closer := &channelCloserImpl[int]{ch: nil}
+
+	err := closer.Close()
+	assert.NoError(t, err, "Closing with nil internal channel should not error")
+}
+
+func TestChannelCloser_ClosedChannelReadBehavior(t *testing.T) {
+	t.Parallel()
+
+	testCh := make(chan int, 2)
+	testCh <- 10
+	testCh <- 20
+
+	closer := ChannelCloser(testCh)
+	err := closer.Close()
+	require.NoError(t, err)
+
+	// Reading from closed channel with buffer should return buffered values
+	val1 := <-testCh
+	val2 := <-testCh
+
+	assert.Equal(t, 10, val1)
+	assert.Equal(t, 20, val2)
+
+	// Reading from closed empty channel should return zero value and false
+	val3, ok := <-testCh
+	assert.Equal(t, 0, val3, "Should get zero value from closed channel")
+	assert.False(t, ok, "ok should be false for closed channel")
+}
+
+func TestChannelCloser_SendOnlyChannel(t *testing.T) {
+	t.Parallel()
+
+	// Test with send-only channel type
+	testCh := make(chan int, 1)
+
+	var sendCh chan<- int = testCh
+
+	closer := ChannelCloser(sendCh)
+
+	// Send a value
+	sendCh <- 42
+
+	// Close using the closer
+	err := closer.Close()
+	require.NoError(t, err)
+
+	// Verify channel is closed by reading from original channel
+	val, ok := <-testCh
+	assert.Equal(t, 42, val)
+	assert.True(t, ok)
+
+	_, ok = <-testCh
+	assert.False(t, ok, "Channel should be closed")
+}
+
+func TestChannelCloser_SendOnlyInFunction(t *testing.T) {
+	t.Parallel()
+
+	// Simulate a pattern where you pass send-only channel to a worker
+	worker := func(ch chan<- string, closer io.Closer) {
+		defer closer.Close()
+		ch <- "hello"
+		ch <- "world"
+	}
+
+	ch := make(chan string, 2)
+	closer := ChannelCloser(ch)
+
+	// Pass send-only channel and closer to worker
+	worker(ch, closer)
+
+	// Read values
+	val1 := <-ch
+	val2 := <-ch
+
+	assert.Equal(t, "hello", val1)
+	assert.Equal(t, "world", val2)
+
+	// Verify closed
+	_, ok := <-ch
+	assert.False(t, ok, "Channel should be closed")
+}

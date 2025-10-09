@@ -4,6 +4,7 @@
 //   - Closer: A collector that manages multiple io.Closer instances and closes them all at once
 //   - CloseOnce: A thread-safe wrapper that ensures an io.Closer is only closed once
 //   - HandlePanic: A wrapper that recovers from panics in Close() and converts them to errors
+//   - ChannelCloser: A generic io.Closer wrapper for channels
 package common
 
 import (
@@ -224,4 +225,92 @@ func (p *panicHandlingImpl) Close() (err error) {
 	}()
 
 	return p.closer.Close()
+}
+
+// channelCloserImpl is a generic io.Closer implementation for closing channels.
+// It accepts a send-only channel since only senders should close channels.
+type channelCloserImpl[T any] struct {
+	ch chan<- T
+}
+
+// ChannelCloser wraps a send-only channel and returns an io.Closer that will close the channel when Close() is called.
+// Accepts send-only channels (chan<-) since only the sender should close a channel in Go.
+//
+// This is useful when you want to manage channel lifecycle using the io.Closer interface,
+// allowing channels to be used with utilities like Closer, CloseOnce, and HandlePanic.
+//
+// Thread-safety: Closing a channel is not inherently thread-safe in Go. If you need to close
+// a channel from multiple goroutines, wrap the result with CloseOnce:
+//
+//	closer := CloseOnce(ChannelCloser(ch))
+//
+// Panic handling: If you need to handle panics from closing an already-closed channel,
+// wrap the result with HandlePanic:
+//
+//	closer := HandlePanic(ChannelCloser(ch))
+//
+// Or combine both for thread-safe panic handling:
+//
+//	closer := HandlePanic(CloseOnce(ChannelCloser(ch)))
+//
+// Special cases:
+//   - Returns nil if the input channel is nil
+//   - Will panic if the channel is already closed (use HandlePanic to prevent this)
+//   - Accepts send-only channels (chan<-) or bidirectional channels (chan) which implicitly convert to chan<-
+//
+// Example usage:
+//
+//	ch := make(chan int)
+//	closer := ChannelCloser(ch)
+//	defer closer.Close()
+//
+//	// Use channel...
+//
+//	// Channel will be closed when closer.Close() is called
+//
+// Example with send-only channel:
+//
+//	func worker(ch chan<- int, closer io.Closer) {
+//	    defer closer.Close()
+//	    ch <- 42
+//	}
+//
+//	ch := make(chan int)
+//	go worker(ch, ChannelCloser(ch))
+//
+// Example with CloseOnce for thread-safety:
+//
+//	ch := make(chan string)
+//	closer := CloseOnce(ChannelCloser(ch))
+//
+//	// Safe to call from multiple goroutines
+//	go func() { closer.Close() }()
+//	go func() { closer.Close() }()
+//
+// Example with Closer collector:
+//
+//	collector := NewCloser()
+//	ch1 := make(chan int)
+//	ch2 := make(chan string)
+//	collector.Add(ChannelCloser(ch1))
+//	collector.Add(ChannelCloser(ch2))
+//	defer collector.Close() // Both channels will be closed
+func ChannelCloser[T any](ch chan<- T) io.Closer {
+	if ch == nil {
+		return nil
+	}
+
+	return &channelCloserImpl[T]{ch: ch}
+}
+
+// Close closes the wrapped channel.
+// Will panic if the channel is already closed (use HandlePanic wrapper to prevent this).
+func (c *channelCloserImpl[T]) Close() error {
+	if c.ch == nil {
+		return nil
+	}
+
+	close(c.ch)
+
+	return nil
 }

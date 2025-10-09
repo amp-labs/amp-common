@@ -41,6 +41,409 @@ func (m *mockCloser) getCloseCount() int {
 	return m.closeCount
 }
 
+// Tests for CustomCloser
+
+func TestCustomCloser_NilFunction(t *testing.T) {
+	t.Parallel()
+
+	result := CustomCloser(nil)
+	assert.Nil(t, result, "CustomCloser should return nil for nil function")
+}
+
+func TestCustomCloser_BasicClose(t *testing.T) {
+	t.Parallel()
+
+	closeCalled := false
+	closeFn := func() error {
+		closeCalled = true
+
+		return nil
+	}
+
+	closer := CustomCloser(closeFn)
+	require.NotNil(t, closer)
+
+	err := closer.Close()
+	require.NoError(t, err)
+	assert.True(t, closeCalled, "Close function should have been called")
+}
+
+func TestCustomCloser_ErrorPropagation(t *testing.T) {
+	t.Parallel()
+
+	expectedError := errors.New("custom close error")
+	closeFn := func() error {
+		return expectedError
+	}
+
+	closer := CustomCloser(closeFn)
+	require.NotNil(t, closer)
+
+	err := closer.Close()
+	assert.Equal(t, expectedError, err, "Error from close function should be propagated")
+}
+
+func TestCustomCloser_MultipleCloses(t *testing.T) {
+	t.Parallel()
+
+	closeCount := 0
+	closeFn := func() error {
+		closeCount++
+
+		return nil
+	}
+
+	closer := CustomCloser(closeFn)
+	require.NotNil(t, closer)
+
+	// customCloser is NOT idempotent by itself (that's CloseOnce's job)
+	err1 := closer.Close()
+	err2 := closer.Close()
+	err3 := closer.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.NoError(t, err3)
+	assert.Equal(t, 3, closeCount, "customCloser allows multiple closes")
+}
+
+func TestCustomCloser_WithCloseOnce(t *testing.T) {
+	t.Parallel()
+
+	closeCount := 0
+	closeFn := func() error {
+		closeCount++
+
+		return nil
+	}
+
+	closer := CloseOnce(CustomCloser(closeFn))
+	require.NotNil(t, closer)
+
+	// Close multiple times
+	err1 := closer.Close()
+	err2 := closer.Close()
+	err3 := closer.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.NoError(t, err3)
+	assert.Equal(t, 1, closeCount, "CloseOnce wrapper should ensure single close")
+}
+
+func TestCustomCloser_WithHandlePanic(t *testing.T) {
+	t.Parallel()
+
+	closeFn := func() error {
+		panic("cleanup panic")
+	}
+
+	closer := HandlePanic(CustomCloser(closeFn))
+	require.NotNil(t, closer)
+
+	err := closer.Close()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cleanup panic", "Panic should be converted to error")
+}
+
+func TestCustomCloser_WithCloserCollector(t *testing.T) {
+	t.Parallel()
+
+	closedOrder := []int{}
+	var mu sync.Mutex
+
+	makeCustomCloser := func(id int) io.Closer {
+		return CustomCloser(func() error {
+			mu.Lock()
+			closedOrder = append(closedOrder, id)
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	collector := NewCloser()
+	collector.Add(makeCustomCloser(1))
+	collector.Add(makeCustomCloser(2))
+	collector.Add(makeCustomCloser(3))
+
+	err := collector.Close()
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2, 3}, closedOrder, "Custom closers should be closed in order")
+}
+
+func TestCustomCloser_MultipleErrors(t *testing.T) {
+	t.Parallel()
+
+	error1 := errors.New("cleanup error 1")
+	error2 := errors.New("cleanup error 2")
+	error3 := errors.New("cleanup error 3")
+
+	collector := NewCloser()
+	collector.Add(CustomCloser(func() error { return error1 }))
+	collector.Add(CustomCloser(func() error { return nil }))
+	collector.Add(CustomCloser(func() error { return error2 }))
+	collector.Add(CustomCloser(func() error { return error3 }))
+
+	err := collector.Close()
+	require.Error(t, err)
+
+	// All errors should be present in the joined error
+	assert.ErrorIs(t, err, error1)
+	assert.ErrorIs(t, err, error2)
+	assert.ErrorIs(t, err, error3)
+}
+
+func TestCustomCloser_ConcurrentCloses(t *testing.T) {
+	t.Parallel()
+
+	closeCount := 0
+	var mu sync.Mutex
+
+	closeFn := func() error {
+		mu.Lock()
+		closeCount++
+		mu.Unlock()
+
+		return nil
+	}
+
+	closer := CustomCloser(closeFn)
+	require.NotNil(t, closer)
+
+	const goroutines = 50
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	// Launch multiple goroutines trying to close simultaneously
+	for range goroutines {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = closer.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// Without CloseOnce, all goroutines will call the function
+	assert.Equal(t, goroutines, closeCount, "All goroutines should call close function")
+}
+
+func TestCustomCloser_ConcurrentClosesWithCloseOnce(t *testing.T) {
+	t.Parallel()
+
+	closeCount := 0
+	var mu sync.Mutex
+
+	closeFn := func() error {
+		mu.Lock()
+		closeCount++
+		mu.Unlock()
+
+		return nil
+	}
+
+	closer := CloseOnce(CustomCloser(closeFn))
+	require.NotNil(t, closer)
+
+	const goroutines = 100
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	// Launch multiple goroutines trying to close simultaneously
+	for range goroutines {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = closer.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// With CloseOnce, only one goroutine should actually call the function
+	assert.Equal(t, 1, closeCount, "CloseOnce should ensure single close")
+}
+
+func TestCustomCloser_ComplexCleanup(t *testing.T) {
+	t.Parallel()
+
+	// Simulate a complex cleanup scenario with multiple resources
+	var resources []string
+	var mu sync.Mutex
+
+	cleanup1 := CustomCloser(func() error {
+		mu.Lock()
+		resources = append(resources, "database disconnected")
+		mu.Unlock()
+
+		return nil
+	})
+
+	cleanup2 := CustomCloser(func() error {
+		mu.Lock()
+		resources = append(resources, "cache cleared")
+		mu.Unlock()
+
+		return nil
+	})
+
+	cleanup3 := CustomCloser(func() error {
+		mu.Lock()
+		resources = append(resources, "files closed")
+		mu.Unlock()
+
+		return nil
+	})
+
+	collector := NewCloser(cleanup1, cleanup2, cleanup3)
+
+	err := collector.Close()
+	require.NoError(t, err)
+	assert.Equal(t, []string{
+		"database disconnected",
+		"cache cleared",
+		"files closed",
+	}, resources)
+}
+
+func TestCustomCloser_WithDeferPattern(t *testing.T) {
+	t.Parallel()
+
+	cleanupCalled := false
+
+	// Simulate typical defer pattern
+	runWithCleanup := func() error {
+		closer := CustomCloser(func() error {
+			cleanupCalled = true
+
+			return nil
+		})
+		defer closer.Close()
+
+		// Do some work...
+		return nil
+	}
+
+	err := runWithCleanup()
+	require.NoError(t, err)
+	assert.True(t, cleanupCalled, "Cleanup should be called via defer")
+}
+
+func TestCustomCloser_TypeAssertion(t *testing.T) {
+	t.Parallel()
+
+	closeFn := func() error { return nil }
+	closer := CustomCloser(closeFn)
+
+	require.NotNil(t, closer)
+
+	// Verify that the returned value is of the correct type
+	_, ok := closer.(*customCloser)
+	assert.True(t, ok, "CustomCloser should return a *customCloser")
+}
+
+func TestCustomCloser_AllWrappersComposed(t *testing.T) {
+	t.Parallel()
+
+	closeCount := 0
+	var mu sync.Mutex
+
+	closeFn := func() error {
+		mu.Lock()
+		closeCount++
+		mu.Unlock()
+
+		// Simulate a panic on second call (if not protected by CloseOnce)
+		if closeCount > 1 {
+			panic("should not be called more than once")
+		}
+
+		return nil
+	}
+
+	// Compose all wrappers: HandlePanic + CloseOnce + CustomCloser
+	closer := HandlePanic(CloseOnce(CustomCloser(closeFn)))
+
+	// Close from multiple goroutines
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(10)
+
+	for range 10 {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = closer.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// Should only be called once due to CloseOnce
+	mu.Lock()
+	count := closeCount
+	mu.Unlock()
+
+	assert.Equal(t, 1, count, "Function should only be called once")
+}
+
+func TestCustomCloser_ErrorRetry(t *testing.T) {
+	t.Parallel()
+
+	closeCount := 0
+	closeFn := func() error {
+		closeCount++
+		if closeCount < 3 {
+			return errors.New("transient error")
+		}
+
+		return nil
+	}
+
+	closer := CustomCloser(closeFn)
+	require.NotNil(t, closer)
+
+	// First two attempts fail
+	err1 := closer.Close()
+	assert.Error(t, err1)
+	assert.Equal(t, 1, closeCount)
+
+	err2 := closer.Close()
+	assert.Error(t, err2)
+	assert.Equal(t, 2, closeCount)
+
+	// Third attempt succeeds
+	err3 := closer.Close()
+	assert.NoError(t, err3)
+	assert.Equal(t, 3, closeCount)
+}
+
+func TestCustomCloser_MixedWithStandardClosers(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	customCloseCalled := false
+
+	collector := NewCloser()
+	collector.Add(mock)
+	collector.Add(CustomCloser(func() error {
+		customCloseCalled = true
+
+		return nil
+	}))
+
+	err := collector.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount(), "Standard closer should be closed")
+	assert.True(t, customCloseCalled, "Custom closer should be closed")
+}
+
 // Tests for Closer
 
 func TestNewCloser_Empty(t *testing.T) {

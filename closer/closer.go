@@ -5,6 +5,7 @@
 //   - CloseOnce: A thread-safe wrapper that ensures an io.Closer is only closed once
 //   - HandlePanic: A wrapper that recovers from panics in Close() and converts them to errors
 //   - ChannelCloser: A generic io.Closer wrapper for channels
+//   - CustomCloser: Creates an io.Closer from any cleanup function
 package common
 
 import (
@@ -15,6 +16,57 @@ import (
 
 	"github.com/amp-labs/amp-common/utils"
 )
+
+// customCloser is an internal implementation that wraps a function to make it an io.Closer.
+// This allows any cleanup function to be used as an io.Closer, enabling it to work with
+// utilities like Closer, CloseOnce, and HandlePanic.
+type customCloser struct {
+	closeFn func() error // The cleanup function to execute when Close() is called
+}
+
+// CustomCloser creates an io.Closer from a cleanup function.
+// This allows arbitrary cleanup logic to be integrated with the io.Closer interface.
+//
+// Special cases:
+//   - Returns nil if closeFn is nil
+//
+// Example usage:
+//
+//	cleanup := func() error {
+//	    // Custom cleanup logic
+//	    return disconnectDatabase()
+//	}
+//	closer := CustomCloser(cleanup)
+//	defer closer.Close()
+//
+// Example with Closer collector:
+//
+//	collector := NewCloser()
+//	collector.Add(CustomCloser(func() error {
+//	    log.Println("cleanup step 1")
+//	    return nil
+//	}))
+//	collector.Add(CustomCloser(func() error {
+//	    log.Println("cleanup step 2")
+//	    return nil
+//	}))
+//	defer collector.Close()
+func CustomCloser(closeFn func() error) io.Closer {
+	if closeFn == nil {
+		return nil
+	}
+
+	return &customCloser{closeFn: closeFn}
+}
+
+// Close executes the wrapped cleanup function and returns its result.
+func (c *customCloser) Close() error {
+	if c.closeFn != nil {
+		return c.closeFn()
+	}
+
+	return nil
+}
 
 // Closer is a collector that manages multiple io.Closer instances.
 // It allows you to add closers incrementally and close them all at once,

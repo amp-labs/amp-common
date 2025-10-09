@@ -12,9 +12,8 @@ import (
 func TestPushd(t *testing.T) {
 	t.Parallel()
 
-	t.Run("executes function in different directory and returns", func(t *testing.T) {
-		t.Parallel()
-
+	t.Run("executes function in different directory and returns", func(t *testing.T) { //nolint:paralleltest
+		// NOTE: Cannot run in parallel because Pushd modifies global process state (working directory)
 		// Get current working directory
 		originalWd, err := os.Getwd()
 		require.NoError(t, err)
@@ -40,9 +39,8 @@ func TestPushd(t *testing.T) {
 		assert.Equal(t, originalWd, currentWd)
 	})
 
-	t.Run("returns to original directory even if function returns error", func(t *testing.T) {
-		t.Parallel()
-
+	t.Run("returns to original directory even if function returns error", func(t *testing.T) { //nolint:paralleltest
+		// NOTE: Cannot run in parallel because Pushd modifies global process state (working directory)
 		originalWd, err := os.Getwd()
 		require.NoError(t, err)
 

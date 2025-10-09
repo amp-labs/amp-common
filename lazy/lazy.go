@@ -1,35 +1,38 @@
 package lazy
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
 // Of is a lazy value that is initialized at most once.
 type Of[T any] struct {
-	create func() T
-	once   sync.Once
-	value  T
+	create      func() T
+	once        sync.Once
+	value       T
+	initialized atomic.Bool // Thread-safe flag to track initialization state
 }
 
 // Get returns the value (and initializes it if necessary).
 func (t *Of[T]) Get() T { //nolint:ireturn
-	willTryToCreate := t.create != nil
-
 	defer func() {
 		if err := recover(); err != nil {
-			t.once = sync.Once{} // reset the once state
+			// Reset the once state on panic so initialization can be retried
+			t.once = sync.Once{}
 
 			panic(err)
 		}
-
-		if willTryToCreate {
-			t.create = nil
-		}
 	}()
 
-	if willTryToCreate {
-		t.once.Do(func() {
+	t.once.Do(func() {
+		// Only initialize if create function is set
+		if t.create != nil {
 			t.value = t.create()
-		})
-	}
+			// Mark as initialized and clear the create function
+			t.initialized.Store(true)
+			t.create = nil
+		}
+	})
 
 	return t.value
 }
@@ -39,13 +42,14 @@ func (t *Of[T]) Get() T { //nolint:ireturn
 func (t *Of[T]) Set(value T) {
 	t.create = nil
 	t.value = value
+	t.initialized.Store(true)
 }
 
 // Initialized returns true if the value has been initialized.
 // This is useful for testing and debugging, but should never
 // be part of the normal code flow.
 func (t *Of[T]) Initialized() bool {
-	return t.create == nil
+	return t.initialized.Load()
 }
 
 // New creates a new lazy value. The callback will be called later, when the

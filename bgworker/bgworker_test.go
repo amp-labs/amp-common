@@ -50,15 +50,22 @@ func TestGo(t *testing.T) {
 
 	var counter atomic.Int32
 
+	done := make(chan struct{})
+
 	err := Go(func() {
 		counter.Add(1)
+		close(done)
 	})
 
 	require.NoError(t, err)
 
-	// Wait a bit for the goroutine to execute
-	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, int32(1), counter.Load())
+	// Wait for the goroutine to signal completion
+	select {
+	case <-done:
+		assert.Equal(t, int32(1), counter.Load())
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout waiting for goroutine to complete")
+	}
 }
 
 func TestGoMultipleTasks(t *testing.T) {
@@ -66,15 +73,26 @@ func TestGoMultipleTasks(t *testing.T) {
 
 	var counter atomic.Int32
 
+	done := make(chan struct{}, 10)
+
 	for range 10 {
 		err := Go(func() {
 			counter.Add(1)
+			done <- struct{}{}
 		})
 		require.NoError(t, err)
 	}
 
-	// Wait a bit for all goroutines to execute
-	time.Sleep(100 * time.Millisecond)
+	// Wait for all goroutines to signal completion
+	for i := range 10 {
+		select {
+		case <-done:
+			// Task completed
+		case <-time.After(1 * time.Second):
+			t.Fatalf("timeout waiting for goroutine %d to complete", i)
+		}
+	}
+
 	assert.Equal(t, int32(10), counter.Load())
 }
 

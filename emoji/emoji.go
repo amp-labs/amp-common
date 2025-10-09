@@ -21,7 +21,7 @@ const (
 	Loudspeaker  = "📢"
 	Warning      = "⚠️"
 	NoEntry      = "⛔"
-	Prohibitied  = "🚫"
+	Prohibited   = "🚫"
 	Stop         = "🛑"
 	Ok           = "✓"
 	NotOk        = "✗"

@@ -8,13 +8,20 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"sync"
+	"sync/atomic"
 
 	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/lazy"
 )
 
 // Used for logging customer-specific messages (so the caller can know which part of the system is generating the log).
-var subsystem = "" //nolint:gochecknoglobals
+// Using atomic.Value to ensure thread-safe reads and writes.
+var subsystem atomic.Value //nolint:gochecknoglobals
+
+// configMutex protects concurrent calls to ConfigureLoggingWithOptions.
+// This is necessary because the function modifies global state (slog.SetDefault and log.Default).
+var configMutex sync.Mutex //nolint:gochecknoglobals
 
 // It's considered good practice to use unexported custom types for context keys.
 // This avoids collisions with other packages that might be using the same string
@@ -38,7 +45,13 @@ type Options struct {
 
 // ConfigureLoggingWithOptions configures logging for the application.
 // It returns the default logger.
+// This function is thread-safe but modifies global state, so concurrent calls
+// will be serialized.
 func ConfigureLoggingWithOptions(opts Options) *slog.Logger {
+	// Protect against concurrent configuration changes
+	configMutex.Lock()
+	defer configMutex.Unlock()
+
 	var handler slog.Handler
 
 	if opts.Output == nil {
@@ -69,7 +82,7 @@ func ConfigureLoggingWithOptions(opts Options) *slog.Logger {
 
 	// Set the default name of the subsystem (only customers might care about
 	// this, it's for informational purposes only)
-	subsystem = opts.Subsystem
+	subsystem.Store(opts.Subsystem)
 
 	return logger
 }
@@ -284,12 +297,17 @@ func GetSubsystem(ctx context.Context) string { //nolint:contextcheck
 		val, ok := sub.(string)
 		if ok {
 			return val
-		} else {
-			return subsystem
 		}
-	} else {
-		return subsystem
 	}
+
+	// Return the default subsystem value (thread-safe read)
+	if defaultSub := subsystem.Load(); defaultSub != nil {
+		if val, ok := defaultSub.(string); ok {
+			return val
+		}
+	}
+
+	return ""
 }
 
 // WithRequestId adds a Kong request ID to the context.

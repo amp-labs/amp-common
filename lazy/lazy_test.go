@@ -548,7 +548,7 @@ func TestLazyZeroValue(t *testing.T) {
 	t.Run("New with nil function", func(t *testing.T) {
 		t.Parallel()
 
-		val := &Of[int]{create: nil}
+		val := &Of[int]{}
 
 		// With nil create function, not initialized yet
 		assert.False(t, val.Initialized())

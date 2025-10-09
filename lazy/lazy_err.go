@@ -7,8 +7,8 @@ import (
 
 // OfErr is a lazy value that is initialized at most once, but which might error out.
 type OfErr[T any] struct {
-	create func() (T, error)
-	value  T
+	create atomic.Pointer[func() (T, error)]
+	value  atomic.Pointer[T]
 
 	done uint32
 	m    sync.Mutex
@@ -19,7 +19,8 @@ type OfErr[T any] struct {
 // NOT memoized, so if the initialization function returns an error, it will be
 // invoked again on the next call to Get.
 func (t *OfErr[T]) Get() (T, error) { //nolint:ireturn
-	willTryToCreate := t.create != nil
+	createFn := t.create.Load()
+	willTryToCreate := createFn != nil
 
 	var errOut error
 
@@ -33,19 +34,25 @@ func (t *OfErr[T]) Get() (T, error) { //nolint:ireturn
 		// The function is done, it didn't panic, it didn't return
 		// an error. We can now safely mark the value as memoized.
 		if willTryToCreate && errOut == nil {
-			t.create = nil
+			t.create.Store(nil)
 		}
 	}()
 
 	if willTryToCreate {
 		errOut = t.doOrError(func() error {
-			value, err := t.create()
+			// Re-load create function inside lock to avoid race
+			fn := t.create.Load()
+			if fn == nil {
+				return nil
+			}
+
+			value, err := (*fn)()
 			if err != nil {
 				return err
 			}
 
-			t.value = value
-			t.create = nil
+			t.value.Store(&value)
+			t.create.Store(nil)
 
 			return nil
 		})
@@ -56,22 +63,29 @@ func (t *OfErr[T]) Get() (T, error) { //nolint:ireturn
 		}
 	}
 
-	return t.value, nil
+	valPtr := t.value.Load()
+	if valPtr != nil {
+		return *valPtr, nil
+	}
+
+	var zero T
+
+	return zero, nil
 }
 
 // Set lets you mutate the value. This is useful in some cases,
 // but you should prefer the Get + callback pattern.
 func (t *OfErr[T]) Set(value T) {
 	atomic.StoreUint32(&t.done, 1)
-	t.create = nil
-	t.value = value
+	t.create.Store(nil)
+	t.value.Store(&value)
 }
 
 // Initialized returns true if the value has been initialized.
 // This is useful for testing and debugging, but should never
 // be part of the normal code flow.
 func (t *OfErr[T]) Initialized() bool {
-	return t.create == nil
+	return t.create.Load() == nil
 }
 
 func (t *OfErr[T]) doOrError(f func() error) error {
@@ -100,5 +114,8 @@ func (t *OfErr[T]) doSlowOrError(f func() error) error {
 }
 
 func NewErr[T any](f func() (T, error)) *OfErr[T] {
-	return &OfErr[T]{create: f}
+	lazy := &OfErr[T]{}
+	lazy.create.Store(&f)
+
+	return lazy
 }

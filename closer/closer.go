@@ -1,0 +1,227 @@
+// Package common provides utilities for managing io.Closer resources.
+//
+// The package includes:
+//   - Closer: A collector that manages multiple io.Closer instances and closes them all at once
+//   - CloseOnce: A thread-safe wrapper that ensures an io.Closer is only closed once
+//   - HandlePanic: A wrapper that recovers from panics in Close() and converts them to errors
+package common
+
+import (
+	"errors"
+	"io"
+	"runtime/debug"
+	"sync"
+
+	"github.com/amp-labs/amp-common/utils"
+)
+
+// Closer is a collector that manages multiple io.Closer instances.
+// It allows you to add closers incrementally and close them all at once,
+// collecting any errors that occur during the close operations.
+//
+// Example usage:
+//
+//	closer := NewCloser()
+//	file, err := os.Open("example.txt")
+//	if err != nil {
+//	    return err
+//	}
+//	closer.Add(file)
+//
+//	conn, err := net.Dial("tcp", "example.com:80")
+//	if err != nil {
+//	    closer.Close() // Close file if connection fails
+//	    return err
+//	}
+//	closer.Add(conn)
+//
+//	// Both file and conn will be closed, even if one returns an error
+//	return closer.Close()
+type Closer struct {
+	closers []io.Closer
+}
+
+// NewCloser creates a new Closer with zero or more initial io.Closer instances.
+//
+// Example:
+//
+//	closer := NewCloser(file1, file2, conn)
+//	defer closer.Close()
+func NewCloser(closers ...io.Closer) *Closer {
+	return &Closer{closers: closers}
+}
+
+// Add adds an io.Closer to the collection. The closer will be closed when Close() is called.
+// Nil closers are allowed and will be safely skipped during Close().
+//
+// Note: Add is not thread-safe. If you need to add closers concurrently, use external synchronization.
+func (c *Closer) Add(closer io.Closer) {
+	c.closers = append(c.closers, closer)
+}
+
+// Close closes all registered io.Closer instances in the order they were added.
+// If any closers return errors, all closers will still be attempted, and all errors
+// will be collected and returned as a joined error using errors.Join.
+//
+// Nil closers are safely skipped.
+//
+// Returns nil if all closers succeeded, or a joined error containing all failures.
+func (c *Closer) Close() error {
+	var errs []error
+
+	for _, closer := range c.closers {
+		if closer != nil {
+			if err := closer.Close(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	return nil
+}
+
+// closeOnceImpl is the internal implementation of a thread-safe single-close wrapper.
+// It uses a mutex to ensure that only one Close() call actually invokes the underlying closer.
+type closeOnceImpl struct {
+	mut    sync.Mutex
+	closed bool      // Protected by mut: tracks whether Close() has completed successfully
+	closer io.Closer // The underlying closer to protect
+}
+
+// CloseOnce wraps an io.Closer to ensure it can only be closed once.
+// Subsequent calls to Close() will be no-ops and return nil.
+//
+// This is useful for resources that may be shared across multiple goroutines or
+// passed through multiple cleanup paths, where you want to ensure Close() is called
+// but avoid double-close bugs.
+//
+// Thread-safety: CloseOnce is safe for concurrent use. Multiple goroutines can
+// call Close() simultaneously, and only one will actually close the underlying resource.
+//
+// Error handling: If the underlying Close() returns an error, the resource is NOT
+// marked as closed, and subsequent Close() calls will retry. This ensures that
+// transient errors can be retried, but successful closes are idempotent.
+//
+// Special cases:
+//   - Returns nil if the input closer is nil
+//   - If the input is already a *closeOnceImpl, returns it unchanged (idempotent)
+//
+// Example usage:
+//
+//	closer := CloseOnce(file)
+//	defer closer.Close()  // Safe even if explicitly closed elsewhere
+//
+//	// ... later in code ...
+//	if someCondition {
+//	    closer.Close()  // Won't double-close
+//	}
+func CloseOnce(closer io.Closer) io.Closer {
+	if closer == nil {
+		return nil
+	}
+
+	// Idempotent: if already wrapped, return the existing wrapper
+	once, ok := closer.(*closeOnceImpl)
+	if ok {
+		return once
+	}
+
+	return &closeOnceImpl{closer: closer}
+}
+
+// Close closes the underlying io.Closer exactly once. Subsequent calls return nil without closing.
+//
+// If the first Close() call returns an error, the closer is NOT marked as closed,
+// allowing subsequent Close() calls to retry. This is intentional to handle transient errors.
+// Once Close() succeeds (returns nil), all future calls will return nil without invoking
+// the underlying closer.
+//
+// Thread-safety: This method is safe for concurrent use.
+func (c *closeOnceImpl) Close() error {
+	if c.closer == nil {
+		return nil
+	}
+
+	c.mut.Lock()
+	defer c.mut.Unlock()
+
+	if c.closed {
+		return nil
+	}
+
+	if err := c.closer.Close(); err != nil {
+		return err
+	}
+
+	c.closed = true
+
+	return nil
+}
+
+// HandlePanic wraps an io.Closer to recover from panics during Close() and convert them to errors.
+// This prevents panics in Close() calls from crashing the program, which is especially useful
+// when closing resources in cleanup code or deferred statements.
+//
+// If the wrapped closer panics during Close(), the panic is recovered and converted to an error
+// that includes the panic value and stack trace. If Close() also returns an error, both the
+// panic error and the Close() error are joined using errors.Join.
+//
+// Thread-safety: HandlePanic wrappers are safe for concurrent use if the underlying closer is.
+// However, like most io.Closer implementations, calling Close() concurrently is not recommended
+// unless the underlying closer explicitly supports it.
+//
+// Special cases:
+//   - Returns nil if the input closer is nil
+//   - If the input is already a *panicHandlingImpl, returns it unchanged (idempotent)
+//
+// Example usage:
+//
+//	closer := HandlePanic(riskyCloser)
+//	if err := closer.Close(); err != nil {
+//	    // Will receive an error instead of a panic if riskyCloser panics
+//	    log.Printf("close failed: %v", err)
+//	}
+func HandlePanic(closer io.Closer) io.Closer {
+	if closer == nil {
+		return nil
+	}
+
+	// Idempotent: if already wrapped, return the existing wrapper
+	if _, ok := closer.(*panicHandlingImpl); ok {
+		return closer
+	}
+
+	return &panicHandlingImpl{closer: closer}
+}
+
+// panicHandlingImpl is the internal implementation of a panic-recovering closer wrapper.
+// It uses defer/recover to catch panics from the underlying closer's Close() method.
+type panicHandlingImpl struct {
+	closer io.Closer // The underlying closer to protect
+}
+
+// Close calls the underlying closer's Close() method with panic recovery.
+// If the underlying Close() panics, the panic is recovered and converted to an error.
+// If both Close() returns an error AND panics, both errors are joined.
+func (p *panicHandlingImpl) Close() (err error) {
+	if p.closer == nil {
+		return nil
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			err2 := utils.GetPanicRecoveryError(r, debug.Stack())
+			if err == nil {
+				err = err2
+			} else {
+				err = errors.Join(err, err2)
+			}
+		}
+	}()
+
+	return p.closer.Close()
+}

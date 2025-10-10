@@ -16,6 +16,11 @@ var (
 	errMultiple1       = errors.New("error 1")
 	errMultiple2       = errors.New("error 2")
 	errMultiple3       = errors.New("error 3")
+	errCustomClose     = errors.New("custom close error")
+	errCleanup1        = errors.New("cleanup error 1")
+	errCleanup2        = errors.New("cleanup error 2")
+	errCleanup3        = errors.New("cleanup error 3")
+	errTransient       = errors.New("transient error")
 )
 
 // mockCloser is a test implementation of io.Closer.
@@ -71,16 +76,15 @@ func TestCustomCloser_BasicClose(t *testing.T) {
 func TestCustomCloser_ErrorPropagation(t *testing.T) {
 	t.Parallel()
 
-	expectedError := errors.New("custom close error")
 	closeFn := func() error {
-		return expectedError
+		return errCustomClose
 	}
 
 	closer := CustomCloser(closeFn)
 	require.NotNil(t, closer)
 
 	err := closer.Close()
-	assert.Equal(t, expectedError, err, "Error from close function should be propagated")
+	assert.Equal(t, errCustomClose, err, "Error from close function should be propagated")
 }
 
 func TestCustomCloser_MultipleCloses(t *testing.T) {
@@ -150,13 +154,14 @@ func TestCustomCloser_WithCloserCollector(t *testing.T) {
 	t.Parallel()
 
 	closedOrder := []int{}
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	makeCustomCloser := func(id int) io.Closer {
 		return CustomCloser(func() error {
-			mu.Lock()
+			mutex.Lock()
 			closedOrder = append(closedOrder, id)
-			mu.Unlock()
+			mutex.Unlock()
 
 			return nil
 		})
@@ -175,35 +180,32 @@ func TestCustomCloser_WithCloserCollector(t *testing.T) {
 func TestCustomCloser_MultipleErrors(t *testing.T) {
 	t.Parallel()
 
-	error1 := errors.New("cleanup error 1")
-	error2 := errors.New("cleanup error 2")
-	error3 := errors.New("cleanup error 3")
-
 	collector := NewCloser()
-	collector.Add(CustomCloser(func() error { return error1 }))
+	collector.Add(CustomCloser(func() error { return errCleanup1 }))
 	collector.Add(CustomCloser(func() error { return nil }))
-	collector.Add(CustomCloser(func() error { return error2 }))
-	collector.Add(CustomCloser(func() error { return error3 }))
+	collector.Add(CustomCloser(func() error { return errCleanup2 }))
+	collector.Add(CustomCloser(func() error { return errCleanup3 }))
 
 	err := collector.Close()
 	require.Error(t, err)
 
 	// All errors should be present in the joined error
-	assert.ErrorIs(t, err, error1)
-	assert.ErrorIs(t, err, error2)
-	assert.ErrorIs(t, err, error3)
+	require.ErrorIs(t, err, errCleanup1)
+	require.ErrorIs(t, err, errCleanup2)
+	require.ErrorIs(t, err, errCleanup3)
 }
 
 func TestCustomCloser_ConcurrentCloses(t *testing.T) {
 	t.Parallel()
 
 	closeCount := 0
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	closeFn := func() error {
-		mu.Lock()
+		mutex.Lock()
 		closeCount++
-		mu.Unlock()
+		mutex.Unlock()
 
 		return nil
 	}
@@ -236,12 +238,13 @@ func TestCustomCloser_ConcurrentClosesWithCloseOnce(t *testing.T) {
 	t.Parallel()
 
 	closeCount := 0
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	closeFn := func() error {
-		mu.Lock()
+		mutex.Lock()
 		closeCount++
-		mu.Unlock()
+		mutex.Unlock()
 
 		return nil
 	}
@@ -275,28 +278,29 @@ func TestCustomCloser_ComplexCleanup(t *testing.T) {
 
 	// Simulate a complex cleanup scenario with multiple resources
 	var resources []string
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	cleanup1 := CustomCloser(func() error {
-		mu.Lock()
+		mutex.Lock()
 		resources = append(resources, "database disconnected")
-		mu.Unlock()
+		mutex.Unlock()
 
 		return nil
 	})
 
 	cleanup2 := CustomCloser(func() error {
-		mu.Lock()
+		mutex.Lock()
 		resources = append(resources, "cache cleared")
-		mu.Unlock()
+		mutex.Unlock()
 
 		return nil
 	})
 
 	cleanup3 := CustomCloser(func() error {
-		mu.Lock()
+		mutex.Lock()
 		resources = append(resources, "files closed")
-		mu.Unlock()
+		mutex.Unlock()
 
 		return nil
 	})
@@ -352,12 +356,13 @@ func TestCustomCloser_AllWrappersComposed(t *testing.T) {
 	t.Parallel()
 
 	closeCount := 0
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	closeFn := func() error {
-		mu.Lock()
+		mutex.Lock()
 		closeCount++
-		mu.Unlock()
+		mutex.Unlock()
 
 		// Simulate a panic on second call (if not protected by CloseOnce)
 		if closeCount > 1 {
@@ -386,9 +391,9 @@ func TestCustomCloser_AllWrappersComposed(t *testing.T) {
 	waitGroup.Wait()
 
 	// Should only be called once due to CloseOnce
-	mu.Lock()
+	mutex.Lock()
 	count := closeCount
-	mu.Unlock()
+	mutex.Unlock()
 
 	assert.Equal(t, 1, count, "Function should only be called once")
 }
@@ -400,7 +405,7 @@ func TestCustomCloser_ErrorRetry(t *testing.T) {
 	closeFn := func() error {
 		closeCount++
 		if closeCount < 3 {
-			return errors.New("transient error")
+			return errTransient
 		}
 
 		return nil
@@ -411,16 +416,16 @@ func TestCustomCloser_ErrorRetry(t *testing.T) {
 
 	// First two attempts fail
 	err1 := closer.Close()
-	assert.Error(t, err1)
+	require.Error(t, err1)
 	assert.Equal(t, 1, closeCount)
 
 	err2 := closer.Close()
-	assert.Error(t, err2)
+	require.Error(t, err2)
 	assert.Equal(t, 2, closeCount)
 
 	// Third attempt succeeds
 	err3 := closer.Close()
-	assert.NoError(t, err3)
+	require.NoError(t, err3)
 	assert.Equal(t, 3, closeCount)
 }
 

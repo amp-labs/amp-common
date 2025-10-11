@@ -153,8 +153,7 @@ func (p *LogRequestParams) getBody(req *http.Request, body []byte) (*printable.P
 	return truncatedBody, true
 }
 
-// getLevel determines the log level to use for the request.
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
 func (p *LogRequestParams) getLevel(req *http.Request) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -167,8 +166,7 @@ func (p *LogRequestParams) getLevel(req *http.Request) slog.Level {
 	return p.LevelOverride(req)
 }
 
-// getLogMessage determines the log message to use for the request.
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogRequestMessage
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogRequestMessage.
 func (p *LogRequestParams) getLogMessage(request *http.Request) string {
 	if p == nil {
 		return DefaultLogRequestMessage
@@ -299,8 +297,7 @@ func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printabl
 	return truncatedBody, true
 }
 
-// getLevel determines the log level to use for the response.
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
 func (p *LogResponseParams) getLevel(resp *http.Response) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -313,8 +310,7 @@ func (p *LogResponseParams) getLevel(resp *http.Response) slog.Level {
 	return p.LevelOverride(resp)
 }
 
-// getLogMessage determines the log message to use for the response.
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogResponseMessage
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogResponseMessage.
 func (p *LogResponseParams) getLogMessage(resp *http.Response) string {
 	if p == nil {
 		return DefaultLogResponseMessage
@@ -389,7 +385,7 @@ func (p *LogErrorParams) getQueryParams(u *url.URL) url.Values {
 }
 
 // getLevel determines the log level to use for the error.
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
 func (p *LogErrorParams) getLevel(err error) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -402,8 +398,7 @@ func (p *LogErrorParams) getLevel(err error) slog.Level {
 	return p.LevelOverride(err)
 }
 
-// getLogMessage determines the log message to use for the error.
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogErrorMessage
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogErrorMessage.
 func (p *LogErrorParams) getLogMessage(err error) string {
 	if p == nil {
 		return DefaultLogErrorMessage

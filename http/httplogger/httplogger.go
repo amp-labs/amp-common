@@ -153,7 +153,8 @@ func (p *LogRequestParams) getBody(req *http.Request, body []byte) (*printable.P
 	return truncatedBody, true
 }
 
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
+// getLevel determines the log level to use for the request.
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
 func (p *LogRequestParams) getLevel(req *http.Request) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -166,7 +167,8 @@ func (p *LogRequestParams) getLevel(req *http.Request) slog.Level {
 	return p.LevelOverride(req)
 }
 
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogRequestMessage.
+// getLogMessage determines the log message to use for the request.
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogRequestMessage
 func (p *LogRequestParams) getLogMessage(request *http.Request) string {
 	if p == nil {
 		return DefaultLogRequestMessage
@@ -252,6 +254,15 @@ func (p *LogResponseParams) getHeaders(resp *http.Response) http.Header {
 	return resp.Header
 }
 
+// getQueryParams returns the query parameters from the request URL, applying redaction if configured.
+func (p *LogResponseParams) getQueryParams(u *url.URL) url.Values {
+	if p.RedactQueryParams != nil && u != nil {
+		return redact.URLValues(u.Query(), p.RedactQueryParams)
+	}
+
+	return u.Query()
+}
+
 // getBody returns the response body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
 func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printable.Payload, bool) {
@@ -288,7 +299,8 @@ func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printabl
 	return truncatedBody, true
 }
 
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
+// getLevel determines the log level to use for the response.
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
 func (p *LogResponseParams) getLevel(resp *http.Response) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -301,7 +313,8 @@ func (p *LogResponseParams) getLevel(resp *http.Response) slog.Level {
 	return p.LevelOverride(resp)
 }
 
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogResponseMessage.
+// getLogMessage determines the log message to use for the response.
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogResponseMessage
 func (p *LogResponseParams) getLogMessage(resp *http.Response) string {
 	if p == nil {
 		return DefaultLogResponseMessage
@@ -365,7 +378,18 @@ type LogErrorParams struct {
 	RedactQueryParams redact.Func
 }
 
+// getQueryParams returns the query parameters from the URL, applying redaction if configured.
 // Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
+func (p *LogErrorParams) getQueryParams(u *url.URL) url.Values {
+	if p.RedactQueryParams != nil && u != nil {
+		return redact.URLValues(u.Query(), p.RedactQueryParams)
+	}
+
+	return u.Query()
+}
+
+// getLevel determines the log level to use for the error.
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
 func (p *LogErrorParams) getLevel(err error) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -378,7 +402,8 @@ func (p *LogErrorParams) getLevel(err error) slog.Level {
 	return p.LevelOverride(err)
 }
 
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogErrorMessage.
+// getLogMessage determines the log message to use for the error.
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogErrorMessage
 func (p *LogErrorParams) getLogMessage(err error) string {
 	if p == nil {
 		return DefaultLogErrorMessage

@@ -90,6 +90,10 @@ func (p *Payload) String() string {
 		return ""
 	}
 
+	if p.IsTruncated() {
+		return p.Content + "…"
+	}
+
 	return p.Content
 }
 

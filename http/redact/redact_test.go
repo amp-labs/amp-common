@@ -224,7 +224,7 @@ func TestHeaders_DefaultActionOnUnknown(t *testing.T) {
 func TestUrlValues_NilValues(t *testing.T) {
 	t.Parallel()
 
-	result := redact.UrlValues(nil, nil)
+	result := redact.URLValues(nil, nil)
 	assert.Nil(t, result)
 }
 
@@ -236,7 +236,7 @@ func TestUrlValues_NilRedactFunc(t *testing.T) {
 		"page":    []string{"1"},
 	}
 
-	result := redact.UrlValues(values, nil)
+	result := redact.URLValues(values, nil)
 
 	assert.Equal(t, "secret123", result.Get("api_key"))
 	assert.Equal(t, "1", result.Get("page"))
@@ -257,7 +257,7 @@ func TestUrlValues_ActionKeep(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.UrlValues(values, redactFunc)
+	result := redact.URLValues(values, redactFunc)
 
 	assert.Equal(t, "1", result.Get("page"))
 	assert.Equal(t, "10", result.Get("limit"))
@@ -280,7 +280,7 @@ func TestUrlValues_ActionRedact(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.UrlValues(values, redactFunc)
+	result := redact.URLValues(values, redactFunc)
 
 	assert.Equal(t, "<redacted>", result.Get("api_key"))
 	assert.Equal(t, "<redacted>", result.Get("token"))
@@ -302,7 +302,7 @@ func TestUrlValues_ActionPartial(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.UrlValues(values, redactFunc)
+	result := redact.URLValues(values, redactFunc)
 
 	assert.Equal(t, "sk_live_**********", result.Get("api_key"))
 }
@@ -323,7 +323,7 @@ func TestUrlValues_ActionDelete(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.UrlValues(values, redactFunc)
+	result := redact.URLValues(values, redactFunc)
 
 	assert.Equal(t, "1", result.Get("page"))
 	assert.Empty(t, result.Get("secret"))
@@ -345,7 +345,7 @@ func TestUrlValues_MultipleValues(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.UrlValues(values, redactFunc)
+	result := redact.URLValues(values, redactFunc)
 
 	ids := result["id"]
 	assert.Len(t, ids, 3)
@@ -366,13 +366,13 @@ func TestUrlValues_DefaultActionOnUnknown(t *testing.T) {
 		return redact.Action(100), 0
 	}
 
-	result := redact.UrlValues(values, redactFunc)
+	result := redact.URLValues(values, redactFunc)
 
 	// Should default to ActionKeep
 	assert.Equal(t, "1", result.Get("page"))
 }
 
-// Test realistic scenarios
+// Test realistic scenarios.
 func TestHeaders_RealisticScenario_LoggingSafeHeaders(t *testing.T) {
 	t.Parallel()
 
@@ -445,7 +445,7 @@ func TestUrlValues_RealisticScenario_LoggingSafeQueryParams(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.UrlValues(values, redactFunc)
+	result := redact.URLValues(values, redactFunc)
 
 	assert.Equal(t, "1", result.Get("page"))
 	assert.Equal(t, "10", result.Get("limit"))

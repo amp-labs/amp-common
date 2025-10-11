@@ -125,7 +125,7 @@ type loggingTransport struct {
 	transport http.RoundTripper
 }
 
-// Compile-time check to ensure loggingTransport implements http.RoundTripper
+// Compile-time check to ensure loggingTransport implements http.RoundTripper.
 var _ http.RoundTripper = (*loggingTransport)(nil)
 
 // RoundTrip implements the http.RoundTripper interface.

@@ -26,7 +26,7 @@ func TestLogError_NilRequest(t *testing.T) {
 	}
 
 	// Should not panic with nil request
-	httplogger.LogError(nil, errors.New("test error"), "GET", "corr-123", nil, params)
+	httplogger.LogError(nil, errors.New("test error"), "GET", "corr-123", nil, params) //nolint:err113
 
 	// Should not have logged anything
 	assert.Empty(t, logBuffer.String())
@@ -35,11 +35,11 @@ func TestLogError_NilRequest(t *testing.T) {
 func TestLogError_NilParams(t *testing.T) {
 	t.Parallel()
 
-	req, err := http.NewRequest("GET", "https://api.example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
 	require.NoError(t, err)
 
 	// Should not panic with nil params
-	httplogger.LogError(req, errors.New("test error"), "GET", "corr-123", req.URL, nil)
+	httplogger.LogError(req, errors.New("test error"), "GET", "corr-123", req.URL, nil) //nolint:err113
 }
 
 func TestLogError_BasicError(t *testing.T) {
@@ -48,14 +48,14 @@ func TestLogError_BasicError(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("GET", "https://api.example.com/path", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com/path", nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
 		Logger: logger,
 	}
 
-	testErr := errors.New("connection timeout")
+	testErr := errors.New("connection timeout") //nolint:err113
 
 	httplogger.LogError(req, testErr, "GET", "corr-123", req.URL, params)
 
@@ -73,14 +73,15 @@ func TestLogError_WithQueryParams(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("GET", "https://api.example.com/path?page=1&limit=10", nil)
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodGet, "https://api.example.com/path?page=1&limit=10", nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
 		Logger: logger,
 	}
 
-	testErr := errors.New("bad request")
+	testErr := errors.New("bad request") //nolint:err113
 
 	httplogger.LogError(req, testErr, "GET", "corr-456", req.URL, params)
 
@@ -95,7 +96,8 @@ func TestLogError_WithRedactedQueryParams(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("GET", "https://api.example.com/path?api_key=secret123&page=1", nil)
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodGet, "https://api.example.com/path?api_key=secret123&page=1", nil)
 	require.NoError(t, err)
 
 	redactFunc := func(key, value string) (redact.Action, int) {
@@ -111,14 +113,14 @@ func TestLogError_WithRedactedQueryParams(t *testing.T) {
 		RedactQueryParams: redactFunc,
 	}
 
-	testErr := errors.New("unauthorized")
+	testErr := errors.New("unauthorized") //nolint:err113
 
 	httplogger.LogError(req, testErr, "GET", "corr-789", req.URL, params)
 
 	logOutput := logBuffer.String()
 	// Asterisks are URL encoded as %2A
 	assert.Contains(t, logOutput, "api_key=secr%2A%2A%2A%2A%2A") // Redacted with URL encoding
-	assert.Contains(t, logOutput, "page=1")                       // Not redacted
+	assert.Contains(t, logOutput, "page=1")                      // Not redacted
 	assert.Contains(t, logOutput, "unauthorized")
 }
 
@@ -128,7 +130,7 @@ func TestLogError_NilError(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("GET", "https://api.example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
@@ -151,14 +153,14 @@ func TestLogError_NilURL(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("GET", "https://api.example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
 		Logger: logger,
 	}
 
-	testErr := errors.New("network error")
+	testErr := errors.New("network error") //nolint:err113
 
 	// Should handle nil URL gracefully
 	httplogger.LogError(req, testErr, "GET", "corr-000", nil, params)
@@ -174,7 +176,8 @@ func TestLogError_ComplexError(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("POST", "https://api.example.com/users?admin=true", nil)
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://api.example.com/users?admin=true", nil)
 	require.NoError(t, err)
 
 	redactFunc := func(key, value string) (redact.Action, int) {
@@ -190,7 +193,7 @@ func TestLogError_ComplexError(t *testing.T) {
 		RedactQueryParams: redactFunc,
 	}
 
-	testErr := errors.New("internal server error: database connection failed")
+	testErr := errors.New("internal server error: database connection failed") //nolint:err113
 
 	httplogger.LogError(req, testErr, "POST", "corr-complex", req.URL, params)
 
@@ -208,14 +211,14 @@ func TestLogError_EmptyCorrelationID(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("GET", "https://api.example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
 		Logger: logger,
 	}
 
-	testErr := errors.New("timeout")
+	testErr := errors.New("timeout") //nolint:err113
 
 	// Should handle empty correlation ID
 	httplogger.LogError(req, testErr, "GET", "", req.URL, params)
@@ -234,7 +237,7 @@ func TestLogError_LogLevel(t *testing.T) {
 		Level: slog.LevelError,
 	}))
 
-	req, err := http.NewRequest("GET", "https://api.example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
@@ -242,7 +245,7 @@ func TestLogError_LogLevel(t *testing.T) {
 		DefaultLevel: slog.LevelError,
 	}
 
-	testErr := errors.New("critical error")
+	testErr := errors.New("critical error") //nolint:err113
 
 	httplogger.LogError(req, testErr, "GET", "corr-level", req.URL, params)
 
@@ -258,14 +261,16 @@ func TestLogError_SpecialCharactersInURL(t *testing.T) {
 	var logBuffer bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-	req, err := http.NewRequest("GET", "https://api.example.com/search?q=hello%20world&filter=a%26b", nil)
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodGet,
+		"https://api.example.com/search?q=hello%20world&filter=a%26b", nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
 		Logger: logger,
 	}
 
-	testErr := errors.New("parse error")
+	testErr := errors.New("parse error") //nolint:err113
 
 	httplogger.LogError(req, testErr, "GET", "corr-special", req.URL, params)
 
@@ -292,14 +297,14 @@ func TestLogError_MultipleQueryParamsWithSameKey(t *testing.T) {
 	q.Add("id", "789")
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, u.String(), nil)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
 		Logger: logger,
 	}
 
-	testErr := errors.New("not found")
+	testErr := errors.New("not found") //nolint:err113
 
 	httplogger.LogError(req, testErr, "GET", "corr-multi", req.URL, params)
 

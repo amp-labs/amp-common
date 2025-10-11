@@ -206,9 +206,9 @@ func TestPayload_IsJSON(t *testing.T) {
 
 			isJSON, err := tt.payload.IsJSON()
 			if tt.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			assert.Equal(t, tt.expectedOK, isJSON)
@@ -301,9 +301,9 @@ func TestPayload_GetContentBytes(t *testing.T) {
 
 			result, err := tt.payload.GetContentBytes()
 			if tt.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			}
 		})
@@ -489,23 +489,23 @@ func TestPayload_Truncate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := tt.payload.Truncate(tt.size)
-			if tt.expectError {
-				assert.Error(t, err)
+			result, err := testCase.payload.Truncate(testCase.size)
+			if testCase.expectError {
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
-			if tt.expectNil {
+			if testCase.expectNil {
 				assert.Nil(t, result)
 			} else {
 				require.NotNil(t, result)
-				assert.Equal(t, tt.expectedContent, result.Content)
-				assert.Equal(t, tt.expectedTruncated, result.TruncatedLength)
+				assert.Equal(t, testCase.expectedContent, result.Content)
+				assert.Equal(t, testCase.expectedTruncated, result.TruncatedLength)
 			}
 		})
 	}
@@ -559,7 +559,8 @@ func TestRequest_JSONContent(t *testing.T) {
 	t.Parallel()
 
 	jsonBody := `{"key":"value","number":123}`
-	req, err := http.NewRequest("POST", "https://example.com", io.NopCloser(strings.NewReader(jsonBody)))
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(jsonBody)))
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/json")
@@ -569,7 +570,7 @@ func TestRequest_JSONContent(t *testing.T) {
 	require.NotNil(t, payload)
 
 	assert.False(t, payload.IsBase64())
-	assert.Equal(t, jsonBody, payload.GetContent())
+	assert.JSONEq(t, jsonBody, payload.GetContent())
 	assert.Equal(t, int64(len(jsonBody)), payload.GetLength())
 
 	isJSON, err := payload.IsJSON()
@@ -581,7 +582,8 @@ func TestRequest_TextContent(t *testing.T) {
 	t.Parallel()
 
 	textBody := "hello world"
-	req, err := http.NewRequest("POST", "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "text/plain")
@@ -600,7 +602,8 @@ func TestRequest_BinaryContent(t *testing.T) {
 
 	// Binary data (PNG header)
 	binaryData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-	req, err := http.NewRequest("POST", "https://example.com", io.NopCloser(bytes.NewReader(binaryData)))
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(bytes.NewReader(binaryData)))
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "image/png")
@@ -624,7 +627,7 @@ func TestRequest_WithPrereadBody(t *testing.T) {
 	bodyText := "preread body"
 	bodyBytes := []byte(bodyText)
 
-	req, err := http.NewRequest("POST", "https://example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://example.com", nil)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "text/plain")
@@ -640,7 +643,7 @@ func TestRequest_WithPrereadBody(t *testing.T) {
 func TestRequest_EmptyBody(t *testing.T) {
 	t.Parallel()
 
-	req, err := http.NewRequest("GET", "https://example.com", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://example.com", nil)
 	require.NoError(t, err)
 
 	payload, err := printable.Request(req, nil)
@@ -653,7 +656,7 @@ func TestResponse_JSONContent(t *testing.T) {
 
 	jsonBody := `{"status":"ok","data":[1,2,3]}`
 	resp := &http.Response{
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Header:     http.Header{},
 		Body:       io.NopCloser(strings.NewReader(jsonBody)),
 	}
@@ -664,7 +667,7 @@ func TestResponse_JSONContent(t *testing.T) {
 	require.NotNil(t, payload)
 
 	assert.False(t, payload.IsBase64())
-	assert.Equal(t, jsonBody, payload.GetContent())
+	assert.JSONEq(t, jsonBody, payload.GetContent())
 	assert.Equal(t, int64(len(jsonBody)), payload.GetLength())
 
 	isJSON, err := payload.IsJSON()
@@ -677,7 +680,7 @@ func TestResponse_TextContent(t *testing.T) {
 
 	textBody := "response body"
 	resp := &http.Response{
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Header:     http.Header{},
 		Body:       io.NopCloser(strings.NewReader(textBody)),
 	}
@@ -698,7 +701,7 @@ func TestResponse_WithPrereadBody(t *testing.T) {
 	bodyBytes := []byte(bodyText)
 
 	resp := &http.Response{
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Header:     http.Header{},
 		Body:       nil,
 	}
@@ -716,7 +719,7 @@ func TestResponse_EmptyBody(t *testing.T) {
 	t.Parallel()
 
 	resp := &http.Response{
-		StatusCode: 204,
+		StatusCode: http.StatusNoContent,
 		Header:     http.Header{},
 		Body:       io.NopCloser(strings.NewReader("")),
 	}
@@ -730,7 +733,8 @@ func TestRequest_XMLContent(t *testing.T) {
 	t.Parallel()
 
 	xmlBody := `<?xml version="1.0"?><root><item>value</item></root>`
-	req, err := http.NewRequest("POST", "https://example.com", io.NopCloser(strings.NewReader(xmlBody)))
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(xmlBody)))
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/xml")
@@ -747,7 +751,8 @@ func TestRequest_FormURLEncoded(t *testing.T) {
 	t.Parallel()
 
 	formBody := "key1=value1&key2=value2"
-	req, err := http.NewRequest("POST", "https://example.com", io.NopCloser(strings.NewReader(formBody)))
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(formBody)))
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -797,7 +802,8 @@ func TestRequest_CharsetConversion(t *testing.T) {
 
 	// UTF-8 text
 	utf8Text := "Hello, 世界"
-	req, err := http.NewRequest("POST", "https://example.com", io.NopCloser(strings.NewReader(utf8Text)))
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(utf8Text)))
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "text/plain; charset=utf-8")

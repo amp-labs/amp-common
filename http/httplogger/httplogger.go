@@ -117,15 +117,6 @@ func (p *LogRequestParams) getHeaders(req *http.Request) http.Header {
 	return req.Header
 }
 
-// getQueryParams returns the request query parameters, applying redaction if configured.
-func (p *LogRequestParams) getQueryParams(req *http.Request) url.Values {
-	if p.RedactQueryParams != nil && req.URL != nil {
-		return redact.UrlValues(req.URL.Query(), p.RedactQueryParams)
-	}
-
-	return req.URL.Query()
-}
-
 // getBody returns the request body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
 func (p *LogRequestParams) getBody(req *http.Request, body []byte) (*printable.Payload, bool) {
@@ -162,8 +153,7 @@ func (p *LogRequestParams) getBody(req *http.Request, body []byte) (*printable.P
 	return truncatedBody, true
 }
 
-// getLevel determines the log level to use for the request.
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
 func (p *LogRequestParams) getLevel(req *http.Request) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -176,8 +166,7 @@ func (p *LogRequestParams) getLevel(req *http.Request) slog.Level {
 	return p.LevelOverride(req)
 }
 
-// getLogMessage determines the log message to use for the request.
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogRequestMessage
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogRequestMessage.
 func (p *LogRequestParams) getLogMessage(request *http.Request) string {
 	if p == nil {
 		return DefaultLogRequestMessage
@@ -263,15 +252,6 @@ func (p *LogResponseParams) getHeaders(resp *http.Response) http.Header {
 	return resp.Header
 }
 
-// getQueryParams returns the query parameters from the request URL, applying redaction if configured.
-func (p *LogResponseParams) getQueryParams(u *url.URL) url.Values {
-	if p.RedactQueryParams != nil && u != nil {
-		return redact.UrlValues(u.Query(), p.RedactQueryParams)
-	}
-
-	return u.Query()
-}
-
 // getBody returns the response body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
 func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printable.Payload, bool) {
@@ -308,8 +288,7 @@ func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printabl
 	return truncatedBody, true
 }
 
-// getLevel determines the log level to use for the response.
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
 func (p *LogResponseParams) getLevel(resp *http.Response) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -322,8 +301,7 @@ func (p *LogResponseParams) getLevel(resp *http.Response) slog.Level {
 	return p.LevelOverride(resp)
 }
 
-// getLogMessage determines the log message to use for the response.
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogResponseMessage
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogResponseMessage.
 func (p *LogResponseParams) getLogMessage(resp *http.Response) string {
 	if p == nil {
 		return DefaultLogResponseMessage
@@ -362,11 +340,13 @@ type LogErrorParams struct {
 	Logger *slog.Logger
 
 	// DefaultLevel is the default log level to use for errors.
-	// If not set, defaults to slog.LevelDebug (though ERROR is more typical). Can be overridden per-error using LevelOverride.
+	// If not set, defaults to slog.LevelDebug (though ERROR is more typical).
+	// Can be overridden per-error using LevelOverride.
 	DefaultLevel slog.Level
 
 	// LevelOverride is an optional function that allows dynamic log level selection based on the error.
-	// This is useful for logging different error types at different levels (e.g., context.Canceled at INFO, others at ERROR).
+	// This is useful for logging different error types at different levels
+	// (e.g., context.Canceled at INFO, others at ERROR).
 	// If nil or returns zero value, DefaultLevel is used.
 	LevelOverride func(err error) slog.Level
 
@@ -375,7 +355,8 @@ type LogErrorParams struct {
 	DefaultMessage string
 
 	// MessageOverride is an optional function that allows dynamic message selection based on the error.
-	// This is useful for customizing log messages based on error type (e.g., "Connection timeout" vs "DNS resolution failed").
+	// This is useful for customizing log messages based on error type
+	// (e.g., "Connection timeout" vs "DNS resolution failed").
 	// If nil or returns empty string, DefaultMessage or DefaultLogErrorMessage is used.
 	MessageOverride func(err error) string
 
@@ -384,17 +365,7 @@ type LogErrorParams struct {
 	RedactQueryParams redact.Func
 }
 
-// getQueryParams returns the query parameters from the URL, applying redaction if configured.
-func (p *LogErrorParams) getQueryParams(u *url.URL) url.Values {
-	if p.RedactQueryParams != nil && u != nil {
-		return redact.UrlValues(u.Query(), p.RedactQueryParams)
-	}
-
-	return u.Query()
-}
-
-// getLevel determines the log level to use for the error.
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug
+// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
 func (p *LogErrorParams) getLevel(err error) slog.Level {
 	if p == nil {
 		return slog.LevelDebug
@@ -407,8 +378,7 @@ func (p *LogErrorParams) getLevel(err error) slog.Level {
 	return p.LevelOverride(err)
 }
 
-// getLogMessage determines the log message to use for the error.
-// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogErrorMessage
+// Priority: MessageOverride (if returns non-empty) > DefaultMessage > DefaultLogErrorMessage.
 func (p *LogErrorParams) getLogMessage(err error) string {
 	if p == nil {
 		return DefaultLogErrorMessage
@@ -442,23 +412,23 @@ func (p *LogErrorParams) log(err error, details map[string]any) {
 
 // cloneURL creates a shallow copy of a URL.
 // This is useful when we need to modify the URL (e.g., redact query params) without affecting the original.
-func cloneURL(u *url.URL) *url.URL {
-	if u == nil {
+func cloneURL(sourceURL *url.URL) *url.URL {
+	if sourceURL == nil {
 		return nil
 	}
 
 	return &url.URL{
-		Scheme:      u.Scheme,
-		Opaque:      u.Opaque,
-		User:        u.User,
-		Host:        u.Host,
-		Path:        u.Path,
-		RawPath:     u.RawPath,
-		OmitHost:    u.OmitHost,
-		ForceQuery:  u.ForceQuery,
-		RawQuery:    u.RawQuery,
-		Fragment:    u.Fragment,
-		RawFragment: u.RawFragment,
+		Scheme:      sourceURL.Scheme,
+		Opaque:      sourceURL.Opaque,
+		User:        sourceURL.User,
+		Host:        sourceURL.Host,
+		Path:        sourceURL.Path,
+		RawPath:     sourceURL.RawPath,
+		OmitHost:    sourceURL.OmitHost,
+		ForceQuery:  sourceURL.ForceQuery,
+		RawQuery:    sourceURL.RawQuery,
+		Fragment:    sourceURL.Fragment,
+		RawFragment: sourceURL.RawFragment,
 	}
 }
 
@@ -488,7 +458,7 @@ func LogRequest(request *http.Request, optionalBody []byte, correlationID string
 	u := cloneURL(request.URL)
 
 	if params.RedactQueryParams != nil {
-		values := redact.UrlValues(request.URL.Query(), params.RedactQueryParams)
+		values := redact.URLValues(request.URL.Query(), params.RedactQueryParams)
 
 		u.RawQuery = values.Encode()
 	}
@@ -528,7 +498,10 @@ func LogRequest(request *http.Request, optionalBody []byte, correlationID string
 //	    RedactHeaders: myRedactFunc,
 //	}
 //	LogResponse(resp, bodyBytes, "GET", "corr-123", req.URL, params)
-func LogResponse(response *http.Response, optionalBody []byte, requestMethod, correlationID string, requestURL *url.URL, params *LogResponseParams) {
+func LogResponse(
+	response *http.Response, optionalBody []byte,
+	requestMethod, correlationID string, requestURL *url.URL, params *LogResponseParams,
+) {
 	if response == nil || params == nil {
 		return
 	}
@@ -536,7 +509,7 @@ func LogResponse(response *http.Response, optionalBody []byte, requestMethod, co
 	u := cloneURL(requestURL)
 
 	if params.RedactQueryParams != nil {
-		values := redact.UrlValues(requestURL.Query(), params.RedactQueryParams)
+		values := redact.URLValues(requestURL.Query(), params.RedactQueryParams)
 
 		u.RawQuery = values.Encode()
 	}
@@ -581,7 +554,10 @@ func LogResponse(response *http.Response, optionalBody []byte, requestMethod, co
 //	    LogError(req, err, req.Method, "corr-123", req.URL, params)
 //	    return nil, err
 //	}
-func LogError(request *http.Request, err error, requestMethod, correlationID string, requestURL *url.URL, params *LogErrorParams) {
+func LogError(
+	request *http.Request, err error,
+	requestMethod, correlationID string, requestURL *url.URL, params *LogErrorParams,
+) {
 	if request == nil || params == nil {
 		return
 	}
@@ -592,7 +568,7 @@ func LogError(request *http.Request, err error, requestMethod, correlationID str
 		u := cloneURL(requestURL)
 
 		if params.RedactQueryParams != nil {
-			values := redact.UrlValues(requestURL.Query(), params.RedactQueryParams)
+			values := redact.URLValues(requestURL.Query(), params.RedactQueryParams)
 
 			u.RawQuery = values.Encode()
 		}

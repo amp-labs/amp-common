@@ -1795,13 +1795,13 @@ func TestCancelableCloser_TransactionPattern(t *testing.T) {
 	rolledBack := false
 	committed := false
 
-	rollbackFn := func() error {
+	rollbackFn := func() error { //nolint:unparam
 		rolledBack = true
 
 		return nil
 	}
 
-	commitFn := func() error {
+	commitFn := func() error { //nolint:unparam
 		committed = true
 
 		return nil
@@ -1853,7 +1853,7 @@ func TestCancelableCloser_TemporaryFilePattern(t *testing.T) {
 	// Simulate temporary file pattern: delete unless canceled
 	fileDeleted := false
 
-	deleteFn := func() error {
+	deleteFn := func() error { //nolint:unparam
 		fileDeleted = true
 
 		return nil

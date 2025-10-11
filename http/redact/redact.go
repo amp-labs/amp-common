@@ -115,7 +115,7 @@ func Headers(headers http.Header, redact Func) http.Header {
 	return redacted
 }
 
-// UrlValues creates a redacted copy of URL query parameters based on the provided redaction function.
+// URLValues creates a redacted copy of URL query parameters based on the provided redaction function.
 // It processes each query parameter key-value pair through the redact callback to determine how to
 // handle sensitive data.
 //
@@ -136,8 +136,8 @@ func Headers(headers http.Header, redact Func) http.Header {
 //	    }
 //	    return ActionKeep, 0
 //	}
-//	redactedParams := UrlValues(req.URL.Query(), redactFunc)
-func UrlValues(values url.Values, redact Func) url.Values {
+//	redactedParams := URLValues(req.URL.Query(), redactFunc)
+func URLValues(values url.Values, redact Func) url.Values {
 	if values == nil {
 		return nil
 	}

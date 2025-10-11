@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/amp-labs/amp-common/utils"
+	"go.uber.org/atomic"
 )
 
 // customCloser is an internal implementation that wraps a function to make it an io.Closer.
@@ -365,4 +366,107 @@ func (c *channelCloserImpl[T]) Close() error {
 	close(c.ch)
 
 	return nil
+}
+
+// cancelableCloser is an internal implementation that wraps an io.Closer with the ability
+// to cancel the close operation. It uses an atomic boolean to track whether Close() should
+// actually close the underlying resource or be a no-op.
+type cancelableCloser struct {
+	shouldClose *atomic.Bool // Atomic flag: true means Close() will close, false means Close() is a no-op
+	closer      io.Closer    // The underlying closer to conditionally close
+}
+
+// Close conditionally closes the underlying io.Closer based on the shouldClose flag.
+// If the cancel function has been called, this method returns nil without closing.
+// Otherwise, it closes the underlying closer and returns any error.
+//
+// Thread-safety: This method is safe for concurrent use due to the atomic shouldClose flag.
+func (c *cancelableCloser) Close() error {
+	if c.closer == nil {
+		return nil
+	}
+
+	if c.shouldClose.Load() {
+		return c.closer.Close()
+	}
+
+	return nil
+}
+
+// cancel prevents future Close() calls from closing the underlying resource.
+// After calling cancel(), Close() will become a no-op that returns nil.
+// This method is safe for concurrent use.
+func (c *cancelableCloser) cancel() {
+	c.shouldClose.Store(false)
+}
+
+// CancelableCloser wraps an io.Closer with the ability to cancel the close operation.
+// It returns both a closer and a cancel function. If the cancel function is called before Close(),
+// then Close() will become a no-op and return nil without closing the underlying resource.
+//
+// This is useful for resource management scenarios where you want to conditionally clean up
+// based on success/failure, such as:
+//   - Transaction-like behavior (commit on success, rollback on failure)
+//   - Temporary file handling (delete on error, keep on success)
+//   - Connection pooling (return to pool on success, close on error)
+//
+// Thread-safety: Both the returned closer and cancel function are safe for concurrent use.
+// Multiple goroutines can call Close() and cancel() simultaneously.
+//
+// Special cases:
+//   - Returns (nil, no-op function) if the input closer is nil
+//   - If the input is already a *cancelableCloser, returns it with its cancel function (idempotent)
+//
+// Example usage - temporary file handling:
+//
+//	tmpFile, err := os.CreateTemp("", "example")
+//	if err != nil {
+//	    return err
+//	}
+//	closer, cancel := CancelableCloser(CustomCloser(func() error {
+//	    tmpFile.Close()
+//	    return os.Remove(tmpFile.Name())
+//	}))
+//	defer closer.Close() // Will delete file unless cancel() is called
+//
+//	// ... process file ...
+//
+//	if success {
+//	    cancel() // Keep the file, don't delete it
+//	}
+//
+// Example usage - transaction pattern:
+//
+//	tx, err := db.Begin()
+//	if err != nil {
+//	    return err
+//	}
+//	closer, cancel := CancelableCloser(CustomCloser(func() error {
+//	    return tx.Rollback() // Rollback unless canceled
+//	}))
+//	defer closer.Close()
+//
+//	// ... do work ...
+//
+//	if err := tx.Commit(); err != nil {
+//	    return err // Rollback via deferred Close()
+//	}
+//	cancel() // Success, don't rollback
+//	return nil
+func CancelableCloser(c io.Closer) (closer io.Closer, cancel func()) {
+	if c == nil {
+		return nil, func() {}
+	}
+
+	cc, ok := c.(*cancelableCloser)
+	if ok {
+		return cc, cc.cancel
+	}
+
+	cc = &cancelableCloser{
+		shouldClose: atomic.NewBool(true),
+		closer:      c,
+	}
+
+	return cc, cc.cancel
 }

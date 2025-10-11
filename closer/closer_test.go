@@ -1791,28 +1791,25 @@ func TestCancelableCloser_WithCustomCloser(t *testing.T) {
 func TestCancelableCloser_TransactionPattern(t *testing.T) {
 	t.Parallel()
 
-	// Simulate transaction pattern: rollback unless canceled
-	rolledBack := false
-	committed := false
-
-	rollbackFn := func() error { //nolint:unparam
-		rolledBack = true
-
-		return nil
-	}
-
-	commitFn := func() error { //nolint:unparam
-		committed = true
-
-		return nil
-	}
-
 	// Test 1: Successful transaction (cancel = commit, no rollback)
 	t.Run("success case", func(t *testing.T) {
 		t.Parallel()
 
-		rolledBack = false
-		committed = false
+		// Use local variables to avoid races between subtests
+		rolledBack := false
+		committed := false
+
+		rollbackFn := func() error { //nolint:unparam
+			rolledBack = true
+
+			return nil
+		}
+
+		commitFn := func() error { //nolint:unparam
+			committed = true
+
+			return nil
+		}
 
 		closer, cancel := CancelableCloser(CustomCloser(rollbackFn))
 		defer closer.Close() // Will rollback unless canceled
@@ -1832,8 +1829,15 @@ func TestCancelableCloser_TransactionPattern(t *testing.T) {
 	t.Run("failure case", func(t *testing.T) {
 		t.Parallel()
 
-		rolledBack = false
-		committed = false
+		// Use local variables to avoid races between subtests
+		rolledBack := false
+		committed := false
+
+		rollbackFn := func() error { //nolint:unparam
+			rolledBack = true
+
+			return nil
+		}
 
 		closer, _ := CancelableCloser(CustomCloser(rollbackFn))
 
@@ -1850,20 +1854,18 @@ func TestCancelableCloser_TransactionPattern(t *testing.T) {
 func TestCancelableCloser_TemporaryFilePattern(t *testing.T) {
 	t.Parallel()
 
-	// Simulate temporary file pattern: delete unless canceled
-	fileDeleted := false
-
-	deleteFn := func() error { //nolint:unparam
-		fileDeleted = true
-
-		return nil
-	}
-
 	// Test 1: Keep file (cancel = keep)
 	t.Run("keep file", func(t *testing.T) {
 		t.Parallel()
 
-		fileDeleted = false
+		// Use local variables to avoid races between subtests
+		fileDeleted := false
+
+		deleteFn := func() error { //nolint:unparam
+			fileDeleted = true
+
+			return nil
+		}
 
 		closer, cancel := CancelableCloser(CustomCloser(deleteFn))
 		defer closer.Close() // Will delete unless canceled
@@ -1878,7 +1880,14 @@ func TestCancelableCloser_TemporaryFilePattern(t *testing.T) {
 	t.Run("delete file", func(t *testing.T) {
 		t.Parallel()
 
-		fileDeleted = false
+		// Use local variables to avoid races between subtests
+		fileDeleted := false
+
+		deleteFn := func() error { //nolint:unparam
+			fileDeleted = true
+
+			return nil
+		}
 
 		closer, _ := CancelableCloser(CustomCloser(deleteFn))
 

@@ -37,7 +37,7 @@ const (
 	// ActionKeep indicates that the header value should be kept as-is.
 	ActionKeep Action = iota
 	// ActionRedact indicates that the header value should be fully redacted (replaced with "<redacted>").
-	ActionRedact Action = iota
+	ActionRedact
 	// ActionPartial indicates that the header value should be partially redacted
 	// (show first N characters, replace rest with asterisks).
 	ActionPartial

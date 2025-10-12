@@ -61,14 +61,6 @@ type Map[K collectable.Collectable[K], V any] interface {
 	Clone() Map[K, V]
 }
 
-// mapEntry is an internal structure that stores a key-value pair in the hash map.
-// It preserves the original key alongside the value to enable collision detection
-// through key equality comparison when hash values match.
-type mapEntry[K collectable.Collectable[K], V any] struct {
-	Key   K
-	Value V
-}
-
 // NewHashMap creates a new hash-based Map implementation using the provided hash function.
 // The hash function must produce consistent hash values for equal keys and should
 // minimize collisions to avoid ErrHashCollision errors during operations.
@@ -85,7 +77,7 @@ type mapEntry[K collectable.Collectable[K], V any] struct {
 func NewHashMap[K collectable.Collectable[K], V any](hash hashing.HashFunc) Map[K, V] {
 	return &hashMap[K, V]{
 		hash: hash,
-		data: make(map[string]mapEntry[K, V]),
+		data: make(map[string]KeyValuePair[K, V]),
 	}
 }
 
@@ -117,7 +109,7 @@ func NewHashMap[K collectable.Collectable[K], V any](hash hashing.HashFunc) Map[
 func NewHashMapWithSize[K collectable.Collectable[K], V any](hash hashing.HashFunc, size int) Map[K, V] {
 	return &hashMap[K, V]{
 		hash: hash,
-		data: make(map[string]mapEntry[K, V], size),
+		data: make(map[string]KeyValuePair[K, V], size),
 	}
 }
 
@@ -128,8 +120,8 @@ func NewHashMapWithSize[K collectable.Collectable[K], V any](hash hashing.HashFu
 //
 // The implementation is not thread-safe and uses O(1) average-case lookup time.
 type hashMap[K collectable.Collectable[K], V any] struct {
-	hash hashing.HashFunc          // Hash function for converting keys to string hashes
-	data map[string]mapEntry[K, V] // Internal storage indexed by hash values
+	hash hashing.HashFunc              // Hash function for converting keys to string hashes
+	data map[string]KeyValuePair[K, V] // Internal storage indexed by hash values
 }
 
 // Add inserts or updates a key-value pair in the hash map.
@@ -148,7 +140,7 @@ func (h *hashMap[K, V]) Add(key K, value V) error {
 		return errors2.ErrHashCollision
 	}
 
-	h.data[hashVal] = mapEntry[K, V]{Key: key, Value: value}
+	h.data[hashVal] = KeyValuePair[K, V]{Key: key, Value: value}
 
 	return nil
 }
@@ -178,7 +170,7 @@ func (h *hashMap[K, V]) Remove(key K) error {
 // The map remains usable after calling Clear. This operation is O(1) as it simply
 // reallocates the internal storage, allowing the old data to be garbage collected.
 func (h *hashMap[K, V]) Clear() {
-	h.data = make(map[string]mapEntry[K, V])
+	h.data = make(map[string]KeyValuePair[K, V])
 }
 
 // Contains checks whether a key exists in the hash map.

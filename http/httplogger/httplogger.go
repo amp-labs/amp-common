@@ -252,15 +252,6 @@ func (p *LogResponseParams) getHeaders(resp *http.Response) http.Header {
 	return resp.Header
 }
 
-// getQueryParams returns the query parameters from the request URL, applying redaction if configured.
-func (p *LogResponseParams) getQueryParams(u *url.URL) url.Values {
-	if p.RedactQueryParams != nil && u != nil {
-		return redact.URLValues(u.Query(), p.RedactQueryParams)
-	}
-
-	return u.Query()
-}
-
 // getBody returns the response body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
 func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printable.Payload, bool) {
@@ -372,16 +363,6 @@ type LogErrorParams struct {
 	// RedactQueryParams is an optional function to redact sensitive query parameters from the request URL.
 	// If nil, query parameters are logged as-is without redaction.
 	RedactQueryParams redact.Func
-}
-
-// getQueryParams returns the query parameters from the URL, applying redaction if configured.
-// Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
-func (p *LogErrorParams) getQueryParams(u *url.URL) url.Values {
-	if p.RedactQueryParams != nil && u != nil {
-		return redact.URLValues(u.Query(), p.RedactQueryParams)
-	}
-
-	return u.Query()
 }
 
 // getLevel determines the log level to use for the error.

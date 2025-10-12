@@ -269,6 +269,7 @@ func TestHashMap_Clear(t *testing.T) {
 	})
 }
 
+//nolint:dupl // Intentional duplication with TestOrderedHashMap_Contains for parallel test coverage
 func TestHashMap_Contains(t *testing.T) {
 	t.Parallel()
 
@@ -328,6 +329,7 @@ func TestHashMap_Contains(t *testing.T) {
 	})
 }
 
+//nolint:dupl // Intentional duplication with TestOrderedHashMap_Size for parallel test coverage
 func TestHashMap_Size(t *testing.T) {
 	t.Parallel()
 

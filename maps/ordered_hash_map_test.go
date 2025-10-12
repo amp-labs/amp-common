@@ -1,0 +1,788 @@
+package maps_test
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/amp-labs/amp-common/hashing"
+	"github.com/amp-labs/amp-common/maps"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestNewOrderedHashMap(t *testing.T) {
+	t.Parallel()
+
+	t.Run("creates empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		require.NotNil(t, m)
+		assert.Equal(t, 0, m.Size())
+	})
+
+	t.Run("map is usable immediately", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, 42)
+		require.NoError(t, err)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("preserves insertion order from start", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		expectedOrder := []string{"first", "second", "third"}
+
+		for i, key := range expectedOrder {
+			err := m.Add(testKey{value: key}, i)
+			require.NoError(t, err)
+		}
+
+		// Verify order
+		idx := 0
+		for i, entry := range m.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expectedOrder[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+}
+
+func TestOrderedHashMap_Add(t *testing.T) {
+	t.Parallel()
+
+	t.Run("adds new key-value pair", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("updates existing key without changing order", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, "value1")
+		require.NoError(t, err)
+
+		err = m.Add(key, "value2")
+		require.NoError(t, err)
+		assert.Equal(t, 1, m.Size())
+
+		// Verify order is maintained (key should still be first)
+		count := 0
+
+		for i, entry := range m.Seq() {
+			assert.Equal(t, 0, i)
+			assert.Equal(t, "test", entry.Key.value)
+			assert.Equal(t, "value2", entry.Value)
+
+			count++
+		}
+
+		assert.Equal(t, 1, count)
+	})
+
+	t.Run("handles multiple different keys in order", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		keys := []string{"key1", "key2", "key3", "key4", "key5"}
+
+		for i, k := range keys {
+			key := testKey{value: k}
+			err := m.Add(key, i)
+			require.NoError(t, err)
+		}
+
+		assert.Equal(t, len(keys), m.Size())
+
+		// Verify insertion order
+		idx := 0
+		for i, entry := range m.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, keys[idx], entry.Key.value)
+			assert.Equal(t, idx, entry.Value)
+
+			idx++
+		}
+	})
+
+	t.Run("returns error on hash collision", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[collidingKey, string](hashing.Sha256)
+		key1 := collidingKey{id: 1, hash: "same"}
+		key2 := collidingKey{id: 2, hash: "same"}
+
+		err := m.Add(key1, "value1")
+		require.NoError(t, err)
+
+		err = m.Add(key2, "value2")
+		assert.Error(t, err)
+	})
+}
+
+func TestOrderedHashMap_Remove(t *testing.T) {
+	t.Parallel()
+
+	t.Run("removes existing key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+
+		err = m.Remove(key)
+		require.NoError(t, err)
+		assert.Equal(t, 0, m.Size())
+
+		contains, err := m.Contains(key)
+		require.NoError(t, err)
+		assert.False(t, contains)
+	})
+
+	t.Run("no-op for non-existent key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "missing"}
+		err := m.Remove(key)
+		require.NoError(t, err)
+		assert.Equal(t, 0, m.Size())
+	})
+
+	t.Run("removes only specified key and maintains order", func(t *testing.T) {
+		t.Parallel()
+
+		orderedMap := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key1 := testKey{value: "key1"}
+		key2 := testKey{value: "key2"}
+		key3 := testKey{value: "key3"}
+		err := orderedMap.Add(key1, "value1")
+		require.NoError(t, err)
+		err = orderedMap.Add(key2, "value2")
+		require.NoError(t, err)
+		err = orderedMap.Add(key3, "value3")
+		require.NoError(t, err)
+
+		err = orderedMap.Remove(key2)
+		require.NoError(t, err)
+		assert.Equal(t, 2, orderedMap.Size())
+
+		// Verify order is maintained
+		expectedKeys := []string{"key1", "key3"}
+
+		idx := 0
+		for i, entry := range orderedMap.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expectedKeys[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+
+	t.Run("removes key from middle preserves order", func(t *testing.T) {
+		t.Parallel()
+
+		orderedMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		keys := []string{"a", "b", "c", "d", "e"}
+
+		for i, k := range keys {
+			err := orderedMap.Add(testKey{value: k}, i)
+			require.NoError(t, err)
+		}
+
+		// Remove middle key
+		err := orderedMap.Remove(testKey{value: "c"})
+		require.NoError(t, err)
+
+		// Verify order
+		expected := []string{"a", "b", "d", "e"}
+
+		idx := 0
+		for i, entry := range orderedMap.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expected[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+
+	t.Run("returns error on hash collision", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[collidingKey, string](hashing.Sha256)
+		key1 := collidingKey{id: 1, hash: "same"}
+		key2 := collidingKey{id: 2, hash: "same"}
+
+		err := m.Add(key1, "value1")
+		require.NoError(t, err)
+
+		err = m.Remove(key2)
+		assert.Error(t, err)
+	})
+}
+
+func TestOrderedHashMap_Clear(t *testing.T) {
+	t.Parallel()
+
+	t.Run("removes all entries", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+
+		for i := range 10 {
+			key := testKey{value: fmt.Sprintf("key%d", i)}
+			err := m.Add(key, i)
+			require.NoError(t, err)
+		}
+
+		m.Clear()
+		assert.Equal(t, 0, m.Size())
+
+		// Verify iteration yields nothing
+		count := 0
+		for range m.Seq() {
+			count++
+		}
+
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("map is usable after clear", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key1 := testKey{value: "key1"}
+		err := m.Add(key1, "value1")
+		require.NoError(t, err)
+
+		m.Clear()
+
+		key2 := testKey{value: "key2"}
+		err = m.Add(key2, "value2")
+		require.NoError(t, err)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("clear on empty map is safe", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m.Clear()
+		assert.Equal(t, 0, m.Size())
+	})
+}
+
+//nolint:dupl // Intentional duplication with TestHashMap_Contains for parallel test coverage
+func TestOrderedHashMap_Contains(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns true for existing key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+
+		contains, err := m.Contains(key)
+		require.NoError(t, err)
+		assert.True(t, contains)
+	})
+
+	t.Run("returns false for non-existent key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "missing"}
+
+		contains, err := m.Contains(key)
+		require.NoError(t, err)
+		assert.False(t, contains)
+	})
+
+	t.Run("returns false after key is removed", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+
+		err = m.Remove(key)
+		require.NoError(t, err)
+
+		contains, err := m.Contains(key)
+		require.NoError(t, err)
+		assert.False(t, contains)
+	})
+
+	t.Run("returns error on hash collision", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[collidingKey, string](hashing.Sha256)
+		key1 := collidingKey{id: 1, hash: "same"}
+		key2 := collidingKey{id: 2, hash: "same"}
+
+		err := m.Add(key1, "value1")
+		require.NoError(t, err)
+
+		contains, err := m.Contains(key2)
+		require.Error(t, err)
+		assert.False(t, contains)
+	})
+}
+
+//nolint:dupl // Intentional duplication with TestHashMap_Size for parallel test coverage
+func TestOrderedHashMap_Size(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns zero for empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		assert.Equal(t, 0, m.Size())
+	})
+
+	t.Run("returns correct size after additions", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		assert.Equal(t, 0, m.Size())
+
+		key1 := testKey{value: "key1"}
+		err := m.Add(key1, "value1")
+		require.NoError(t, err)
+		assert.Equal(t, 1, m.Size())
+
+		key2 := testKey{value: "key2"}
+		err = m.Add(key2, "value2")
+		require.NoError(t, err)
+		assert.Equal(t, 2, m.Size())
+	})
+
+	t.Run("returns correct size after removals", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key1 := testKey{value: "key1"}
+		key2 := testKey{value: "key2"}
+		err := m.Add(key1, "value1")
+		require.NoError(t, err)
+		err = m.Add(key2, "value2")
+		require.NoError(t, err)
+
+		err = m.Remove(key1)
+		require.NoError(t, err)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("updating existing key doesn't change size", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "key"}
+		err := m.Add(key, "value1")
+		require.NoError(t, err)
+
+		err = m.Add(key, "value2")
+		require.NoError(t, err)
+		assert.Equal(t, 1, m.Size())
+	})
+}
+
+func TestOrderedHashMap_Seq(t *testing.T) {
+	t.Parallel()
+
+	t.Run("iterates over all entries in insertion order", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		keys := []string{"key1", "key2", "key3", "key4", "key5"}
+
+		for i, k := range keys {
+			key := testKey{value: k}
+			err := m.Add(key, i)
+			require.NoError(t, err)
+		}
+
+		// Verify order and index
+		idx := 0
+		for i, entry := range m.Seq() {
+			assert.Equal(t, idx, i, "index should match iteration order")
+			assert.Equal(t, keys[idx], entry.Key.value, "key order should match insertion order")
+			assert.Equal(t, idx, entry.Value)
+
+			idx++
+		}
+
+		assert.Equal(t, len(keys), idx, "should iterate over all entries")
+	})
+
+	t.Run("maintains order after updates", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		keys := []string{"a", "b", "c"}
+
+		for _, k := range keys {
+			err := m.Add(testKey{value: k}, k)
+			require.NoError(t, err)
+		}
+
+		// Update middle key
+		err := m.Add(testKey{value: "b"}, "updated")
+		require.NoError(t, err)
+
+		// Verify order unchanged
+		idx := 0
+		for i, entry := range m.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, keys[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+
+	t.Run("handles empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		count := 0
+
+		for range m.Seq() {
+			count++
+		}
+
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("stops early when yield returns false", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+
+		for i := range 10 {
+			key := testKey{value: fmt.Sprintf("key%d", i)}
+			err := m.Add(key, i)
+			require.NoError(t, err)
+		}
+
+		count := 0
+		for range m.Seq() {
+			count++
+			if count >= 5 {
+				break
+			}
+		}
+
+		assert.Equal(t, 5, count)
+	})
+
+	t.Run("preserves order after removals", func(t *testing.T) {
+		t.Parallel()
+
+		orderedMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		keys := []string{"a", "b", "c", "d", "e"}
+
+		for i, k := range keys {
+			err := orderedMap.Add(testKey{value: k}, i)
+			require.NoError(t, err)
+		}
+
+		// Remove some keys
+		orderedMap.Remove(testKey{value: "b"}) //nolint:errcheck
+		orderedMap.Remove(testKey{value: "d"}) //nolint:errcheck
+
+		// Verify remaining order
+		expected := []string{"a", "c", "e"}
+
+		idx := 0
+		for i, entry := range orderedMap.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expected[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+}
+
+func TestOrderedHashMap_Union(t *testing.T) {
+	t.Parallel()
+
+	t.Run("combines two maps in order", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m2.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		m2.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
+
+		result, err := m1.Union(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 4, result.Size())
+
+		// Verify order: m1 keys first, then m2 keys
+		expectedOrder := []string{"key1", "key2", "key3", "key4"}
+
+		idx := 0
+		for i, entry := range result.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expectedOrder[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+
+	t.Run("other map values take precedence but maintain first map position", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m2.Add(testKey{value: "key2"}, "updated2") //nolint:errcheck
+		m2.Add(testKey{value: "key4"}, "value4")   //nolint:errcheck
+
+		result, err := m1.Union(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 4, result.Size())
+
+		// Verify order: key2 stays in its original position from m1
+		expectedOrder := []string{"key1", "key2", "key3", "key4"}
+
+		idx := 0
+		for i, entry := range result.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expectedOrder[idx], entry.Key.value)
+
+			if entry.Key.value == "key2" {
+				assert.Equal(t, "updated2", entry.Value, "value should be from second map")
+			}
+
+			idx++
+		}
+	})
+
+	t.Run("original maps are not modified", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+
+		result, err := m1.Union(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 2, result.Size())
+		assert.Equal(t, 1, m1.Size())
+		assert.Equal(t, 1, m2.Size())
+	})
+
+	t.Run("union with empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+
+		result, err := m1.Union(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 1, result.Size())
+	})
+}
+
+func TestOrderedHashMap_Intersection(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns common keys in first map order", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		m1.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m2.Add(testKey{value: "key4"}, "other4") //nolint:errcheck
+		m2.Add(testKey{value: "key2"}, "other2") //nolint:errcheck
+		m2.Add(testKey{value: "key5"}, "other5") //nolint:errcheck
+
+		result, err := m1.Intersection(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 2, result.Size())
+
+		// Verify order from first map (key2, key4)
+		expectedOrder := []string{"key2", "key4"}
+
+		idx := 0
+		for i, entry := range result.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expectedOrder[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+
+	t.Run("values are from first map", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key"}, "value1") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m2.Add(testKey{value: "key"}, "value2") //nolint:errcheck
+
+		result, err := m1.Intersection(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 1, result.Size())
+
+		for _, entry := range result.Seq() {
+			assert.Equal(t, "value1", entry.Value)
+		}
+	})
+
+	t.Run("returns empty map when no common keys", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+
+		result, err := m1.Intersection(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 0, result.Size())
+	})
+
+	t.Run("original maps are not modified", func(t *testing.T) {
+		t.Parallel()
+
+		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+
+		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+
+		result, err := m1.Intersection(m2)
+		require.NoError(t, err)
+		assert.Equal(t, 1, result.Size())
+		assert.Equal(t, 2, m1.Size())
+		assert.Equal(t, 1, m2.Size())
+	})
+}
+
+func TestOrderedHashMap_Clone(t *testing.T) {
+	t.Parallel()
+
+	t.Run("creates independent copy with same order", func(t *testing.T) {
+		t.Parallel()
+
+		original := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		keys := []string{"key1", "key2", "key3"}
+
+		for _, k := range keys {
+			original.Add(testKey{value: k}, k) //nolint:errcheck
+		}
+
+		cloned := original.Clone()
+		assert.Equal(t, original.Size(), cloned.Size())
+
+		// Verify order is preserved
+		idx := 0
+		for i, entry := range cloned.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, keys[idx], entry.Key.value)
+
+			idx++
+		}
+
+		// Modify original
+		original.Add(testKey{value: "key4"}, "key4") //nolint:errcheck
+
+		// Clone should not be affected
+		assert.Equal(t, 4, original.Size())
+		assert.Equal(t, 3, cloned.Size())
+	})
+
+	t.Run("cloned map has same entries in same order", func(t *testing.T) {
+		t.Parallel()
+
+		original := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		expectedOrder := []string{"a", "b", "c", "d"}
+
+		for i, k := range expectedOrder {
+			original.Add(testKey{value: k}, i) //nolint:errcheck
+		}
+
+		cloned := original.Clone()
+
+		// Verify all entries exist and are in order
+		idx := 0
+		for i, entry := range cloned.Seq() {
+			assert.Equal(t, idx, i)
+			assert.Equal(t, expectedOrder[idx], entry.Key.value)
+			assert.Equal(t, idx, entry.Value)
+
+			idx++
+		}
+	})
+
+	t.Run("clones empty map", func(t *testing.T) {
+		t.Parallel()
+
+		original := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		cloned := original.Clone()
+		require.NotNil(t, cloned)
+		assert.Equal(t, 0, cloned.Size())
+	})
+
+	t.Run("modifications to clone don't affect original", func(t *testing.T) {
+		t.Parallel()
+
+		original := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		original.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		original.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+
+		cloned := original.Clone()
+
+		// Modify clone
+		cloned.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		cloned.Remove(testKey{value: "key1"})        //nolint:errcheck
+
+		// Original should be unchanged
+		assert.Equal(t, 2, original.Size())
+
+		// Verify original order
+		expectedOrder := []string{"key1", "key2"}
+		idx := 0
+
+		for _, entry := range original.Seq() {
+			assert.Equal(t, expectedOrder[idx], entry.Key.value)
+
+			idx++
+		}
+	})
+}

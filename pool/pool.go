@@ -21,6 +21,9 @@ const (
 	tickerFrequency = 30 * time.Second
 )
 
+// ErrTimeout is returned when a pool operation exceeds its configured timeout period.
+// This can occur during Get, Put, or CloseIdle operations when the pool is under heavy
+// load or when the operation cannot complete within the allocated time window.
 var ErrTimeout = errors.New("timeout")
 
 // Pool represents a pool of Objects. Objects must implement
@@ -73,8 +76,13 @@ type poolOptions struct {
 	name string
 }
 
+// Option is a functional option for configuring a Pool during creation.
+// Options are passed to New and applied in order to customize pool behavior.
 type Option func(*poolOptions)
 
+// WithName sets a custom name for the pool, which is used in Prometheus metrics labels
+// to distinguish between different pools in monitoring and observability systems.
+// If not specified, the default name "pool" is used.
 func WithName(name string) Option {
 	return func(p *poolOptions) {
 		p.name = name
@@ -322,8 +330,14 @@ func joinErrors(errs ...error) error {
 	}
 }
 
+// ErrPoolClosed is returned when attempting to perform operations on a pool that has
+// been closed via Close(). Once a pool is closed, all Get, Put, and CloseIdle operations
+// will fail with this error. Create a new pool if you need to resume pooling operations.
 var ErrPoolClosed = errors.New("pool is closed")
 
+// ErrPoolGet is returned when the Get operation encounters an internal failure, typically
+// due to the pool's internal channels being closed or in an invalid state. This is a rare
+// error that usually indicates the pool is shutting down or has encountered a critical issue.
 var ErrPoolGet = errors.New("unable to run poolImpl.Get, perhaps the channel is closed")
 
 // Get will fetch an object from the pool. If there's

@@ -1527,3 +1527,521 @@ func TestChannelCloser_SendOnlyInFunction(t *testing.T) {
 	_, ok := <-ch
 	assert.False(t, ok, "Channel should be closed")
 }
+
+// Tests for CancelableCloser
+
+func TestCancelableCloser_NilCloser(t *testing.T) {
+	t.Parallel()
+
+	closer, cancel := CancelableCloser(nil)
+	assert.Nil(t, closer, "CancelableCloser should return nil closer for nil input")
+	assert.NotNil(t, cancel, "Cancel function should not be nil even for nil input")
+
+	// Calling cancel should not panic
+	cancel()
+}
+
+func TestCancelableCloser_NormalClose(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, _ := CancelableCloser(mock)
+
+	require.NotNil(t, closer)
+
+	err := closer.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount(), "Close should be called once")
+}
+
+func TestCancelableCloser_CloseAfterCancel(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, cancel := CancelableCloser(mock)
+
+	require.NotNil(t, closer)
+
+	// Cancel first, then close
+	cancel()
+
+	err := closer.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 0, mock.getCloseCount(), "Close should not be called after cancel")
+}
+
+func TestCancelableCloser_CancelAfterClose(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, cancel := CancelableCloser(mock)
+
+	// Close first
+	err := closer.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount())
+
+	// Cancel after close should not affect anything
+	cancel()
+
+	// Second close should be a no-op due to cancel
+	err = closer.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount(), "Should not close again after cancel")
+}
+
+func TestCancelableCloser_MultipleCloses(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, _ := CancelableCloser(mock)
+
+	// Close multiple times without cancel
+	err1 := closer.Close()
+	err2 := closer.Close()
+	err3 := closer.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.NoError(t, err3)
+	assert.Equal(t, 3, mock.getCloseCount(), "CancelableCloser allows multiple closes without cancel")
+}
+
+func TestCancelableCloser_MultipleClosesThenCancel(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, cancel := CancelableCloser(mock)
+
+	// Close multiple times
+	err1 := closer.Close()
+	err2 := closer.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.Equal(t, 2, mock.getCloseCount())
+
+	// Cancel, then try to close again
+	cancel()
+
+	err3 := closer.Close()
+	require.NoError(t, err3)
+	assert.Equal(t, 2, mock.getCloseCount(), "Should not close again after cancel")
+}
+
+func TestCancelableCloser_MultipleCancels(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, cancel := CancelableCloser(mock)
+
+	// Cancel multiple times
+	cancel()
+	cancel()
+	cancel()
+
+	// Close should be a no-op
+	err := closer.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 0, mock.getCloseCount(), "Should not close after multiple cancels")
+}
+
+func TestCancelableCloser_ErrorPropagation(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{closeError: errCloseFailed}
+	closer, _ := CancelableCloser(mock)
+
+	err := closer.Close()
+	assert.Equal(t, errCloseFailed, err, "Error from underlying closer should be propagated")
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestCancelableCloser_ErrorIgnoredAfterCancel(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{closeError: errCloseFailed}
+	closer, cancel := CancelableCloser(mock)
+
+	// Cancel first
+	cancel()
+
+	// Close should not call the underlying closer, so no error
+	err := closer.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 0, mock.getCloseCount(), "Should not attempt close after cancel")
+}
+
+func TestCancelableCloser_Idempotent(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer1, cancel1 := CancelableCloser(mock)
+
+	// Calling CancelableCloser on an already wrapped closer should return the same wrapper
+	closer2, cancel2 := CancelableCloser(closer1)
+
+	assert.Same(t, closer1, closer2, "CancelableCloser should be idempotent")
+
+	// Both cancel functions should work
+	cancel1()
+
+	err := closer2.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 0, mock.getCloseCount(), "Should not close after cancel via first cancel function")
+
+	// Try the second cancel function (should be a no-op since already canceled)
+	cancel2()
+
+	err = closer2.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 0, mock.getCloseCount())
+}
+
+func TestCancelableCloser_ConcurrentCloses(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, _ := CancelableCloser(mock)
+
+	const goroutines = 50
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	// Launch multiple goroutines trying to close simultaneously
+	for range goroutines {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = closer.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	assert.Equal(t, goroutines, mock.getCloseCount(), "All goroutines should close successfully")
+}
+
+func TestCancelableCloser_ConcurrentClosesAndCancel(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, cancel := CancelableCloser(mock)
+
+	const goroutines = 100
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines + 1)
+
+	// Launch multiple goroutines trying to close simultaneously
+	for range goroutines {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = closer.Close()
+		}()
+	}
+
+	// Also try to cancel concurrently
+	go func() {
+		defer waitGroup.Done()
+
+		cancel()
+	}()
+
+	waitGroup.Wait()
+
+	// Some closes happened before cancel, some after
+	// The count should be less than goroutines due to cancel
+	closeCount := mock.getCloseCount()
+	assert.GreaterOrEqual(t, goroutines, closeCount, "Close count should not exceed number of goroutines")
+}
+
+func TestCancelableCloser_WithCustomCloser(t *testing.T) {
+	t.Parallel()
+
+	closeCalled := false
+	customCloser := CustomCloser(func() error {
+		closeCalled = true
+
+		return nil
+	})
+
+	closer, cancel := CancelableCloser(customCloser)
+
+	// Close should work
+	err := closer.Close()
+	require.NoError(t, err)
+	assert.True(t, closeCalled, "Custom close function should be called")
+
+	// Reset flag
+	closeCalled = false
+
+	// Cancel then close
+	cancel()
+
+	err = closer.Close()
+	require.NoError(t, err)
+	assert.False(t, closeCalled, "Custom close function should not be called after cancel")
+}
+
+func TestCancelableCloser_TransactionPattern(t *testing.T) {
+	t.Parallel()
+
+	// Test 1: Successful transaction (cancel = commit, no rollback)
+	t.Run("success case", func(t *testing.T) {
+		t.Parallel()
+
+		// Use local variables to avoid races between subtests
+		rolledBack := false
+		committed := false
+
+		rollbackFn := func() error { //nolint:unparam
+			rolledBack = true
+
+			return nil
+		}
+
+		commitFn := func() error { //nolint:unparam
+			committed = true
+
+			return nil
+		}
+
+		closer, cancel := CancelableCloser(CustomCloser(rollbackFn))
+		defer closer.Close() // Will rollback unless canceled
+
+		// Do work...
+		err := commitFn()
+		require.NoError(t, err)
+
+		// Success, cancel the rollback
+		cancel()
+
+		assert.True(t, committed, "Should have committed")
+		assert.False(t, rolledBack, "Should not have rolled back")
+	})
+
+	// Test 2: Failed transaction (no cancel = rollback)
+	t.Run("failure case", func(t *testing.T) {
+		t.Parallel()
+
+		// Use local variables to avoid races between subtests
+		rolledBack := false
+		committed := false
+
+		rollbackFn := func() error { //nolint:unparam
+			rolledBack = true
+
+			return nil
+		}
+
+		closer, _ := CancelableCloser(CustomCloser(rollbackFn))
+
+		// Simulate failure - don't call cancel
+		// Close manually to trigger rollback before assertions
+		err := closer.Close()
+		require.NoError(t, err)
+
+		assert.False(t, committed, "Should not have committed")
+		assert.True(t, rolledBack, "Should have rolled back")
+	})
+}
+
+func TestCancelableCloser_TemporaryFilePattern(t *testing.T) {
+	t.Parallel()
+
+	// Test 1: Keep file (cancel = keep)
+	t.Run("keep file", func(t *testing.T) {
+		t.Parallel()
+
+		// Use local variables to avoid races between subtests
+		fileDeleted := false
+
+		deleteFn := func() error { //nolint:unparam
+			fileDeleted = true
+
+			return nil
+		}
+
+		closer, cancel := CancelableCloser(CustomCloser(deleteFn))
+		defer closer.Close() // Will delete unless canceled
+
+		// Success, keep the file
+		cancel()
+
+		assert.False(t, fileDeleted, "File should not be deleted when canceled")
+	})
+
+	// Test 2: Delete file (no cancel = delete)
+	t.Run("delete file", func(t *testing.T) {
+		t.Parallel()
+
+		// Use local variables to avoid races between subtests
+		fileDeleted := false
+
+		deleteFn := func() error { //nolint:unparam
+			fileDeleted = true
+
+			return nil
+		}
+
+		closer, _ := CancelableCloser(CustomCloser(deleteFn))
+
+		// Don't cancel, close manually to trigger deletion before assertion
+		err := closer.Close()
+		require.NoError(t, err)
+
+		assert.True(t, fileDeleted, "File should be deleted when not canceled")
+	})
+}
+
+func TestCancelableCloser_WithCloserCollector(t *testing.T) {
+	t.Parallel()
+
+	mock1 := &mockCloser{}
+	mock2 := &mockCloser{}
+	mock3 := &mockCloser{}
+
+	closer1, cancel1 := CancelableCloser(mock1)
+	closer2, cancel2 := CancelableCloser(mock2)
+	closer3, _ := CancelableCloser(mock3)
+
+	collector := NewCloser(closer1, closer2, closer3)
+
+	// Cancel first two
+	cancel1()
+	cancel2()
+
+	// Close all
+	err := collector.Close()
+	require.NoError(t, err)
+
+	// Only the third should have closed
+	assert.Equal(t, 0, mock1.getCloseCount(), "First should not close due to cancel")
+	assert.Equal(t, 0, mock2.getCloseCount(), "Second should not close due to cancel")
+	assert.Equal(t, 1, mock3.getCloseCount(), "Third should close normally")
+}
+
+func TestCancelableCloser_WithAllWrappers(t *testing.T) {
+	t.Parallel()
+
+	closeCount := 0
+
+	var mutex sync.Mutex
+
+	closeFn := func() error {
+		mutex.Lock()
+		closeCount++
+		mutex.Unlock()
+
+		return nil
+	}
+
+	// Compose: HandlePanic + CloseOnce + CancelableCloser + CustomCloser
+	innerCloser := CustomCloser(closeFn)
+	cancelable, cancel := CancelableCloser(innerCloser)
+	withOnce := CloseOnce(cancelable)
+	withPanic := HandlePanic(withOnce)
+
+	// Close from multiple goroutines
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(10)
+
+	for range 10 {
+		go func() {
+			defer waitGroup.Done()
+
+			_ = withPanic.Close()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// Should only be called once due to CloseOnce
+	mutex.Lock()
+	count := closeCount
+	mutex.Unlock()
+
+	assert.Equal(t, 1, count, "Function should only be called once")
+
+	// Now cancel and try again
+	closeCount = 0
+
+	cancel()
+
+	err := withPanic.Close()
+	require.NoError(t, err)
+
+	mutex.Lock()
+	count = closeCount
+	mutex.Unlock()
+
+	assert.Equal(t, 0, count, "Function should not be called after cancel")
+}
+
+func TestCancelableCloser_TypeAssertion(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, _ := CancelableCloser(mock)
+
+	// Verify that the returned value is of the correct type
+	_, ok := closer.(*cancelableCloser)
+	assert.True(t, ok, "CancelableCloser should return a *cancelableCloser")
+}
+
+func TestCancelableCloser_WithNilInternalCloser(t *testing.T) {
+	t.Parallel()
+
+	// Test the edge case where cancelableCloser has a nil closer
+	closer := &cancelableCloser{
+		shouldClose: nil, // Will panic if not handled correctly
+		closer:      nil,
+	}
+
+	// Should handle nil closer gracefully
+	err := closer.Close()
+	assert.NoError(t, err, "Closing with nil internal closer should not error")
+}
+
+func TestCancelableCloser_RaceConditionCancelAndClose(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockCloser{}
+	closer, cancel := CancelableCloser(mock)
+
+	const goroutines = 100
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	// Half try to close, half try to cancel
+	for i := range goroutines {
+		if i%2 == 0 {
+			go func() {
+				defer waitGroup.Done()
+
+				_ = closer.Close()
+			}()
+		} else {
+			go func() {
+				defer waitGroup.Done()
+
+				cancel()
+			}()
+		}
+	}
+
+	waitGroup.Wait()
+
+	// Test should complete without data races
+	// The close count will vary depending on timing
+	closeCount := mock.getCloseCount()
+	assert.GreaterOrEqual(t, goroutines, closeCount, "Close count should be reasonable")
+}

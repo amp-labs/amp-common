@@ -1,4 +1,4 @@
-// Package common provides utilities for managing io.Closer resources.
+// Package closer provides utilities for managing io.Closer resources.
 //
 // The package includes:
 //   - Closer: A collector that manages multiple io.Closer instances and closes them all at once
@@ -6,7 +6,7 @@
 //   - HandlePanic: A wrapper that recovers from panics in Close() and converts them to errors
 //   - ChannelCloser: A generic io.Closer wrapper for channels
 //   - CustomCloser: Creates an io.Closer from any cleanup function
-package common
+package closer
 
 import (
 	"errors"

@@ -365,6 +365,7 @@ type LogErrorParams struct {
 	RedactQueryParams redact.Func
 }
 
+// getLevel determines the log level to use for the error.
 // Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
 func (p *LogErrorParams) getLevel(err error) slog.Level {
 	if p == nil {

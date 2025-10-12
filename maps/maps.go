@@ -2,8 +2,221 @@
 package maps
 
 import (
+	"errors"
+	"iter"
 	"strings"
+
+	"github.com/amp-labs/amp-common/compare"
+	"github.com/amp-labs/amp-common/hashing"
 )
+
+// ErrHashCollision is returned when two distinct keys produce the same hash value.
+// This error indicates that the hash function is not suitable for the given key space,
+// or that the key distribution is causing unexpected collisions. When this error occurs,
+// consider using a different hash function or implementing a collision resolution strategy.
+var ErrHashCollision = errors.New("hashing collision")
+
+// Collectable is an interface that combines the Hashable and
+// Comparable interfaces. This is useful for objects that need
+// to be stored in a Set, where uniqueness is determined by
+// the hashing value, and collisions are resolved by comparing
+// the objects.
+type Collectable[T any] interface {
+	hashing.Hashable
+	compare.Comparable[T]
+}
+
+// Map is a generic hash map interface for storing key-value pairs where keys must be
+// both hashable and comparable. It provides set-like operations (Union, Intersection)
+// in addition to standard map operations. All methods that modify the map or query for
+// keys may return ErrHashCollision if the hash function produces collisions.
+//
+// Keys must implement the Collectable interface, which ensures they can be hashed
+// for efficient lookup and compared for equality to resolve hash collisions.
+//
+// Thread-safety: Implementations are not guaranteed to be thread-safe unless
+// explicitly documented. Concurrent access must be synchronized by the caller.
+type Map[K Collectable[K], V any] interface {
+	// Add inserts or updates a key-value pair in the map.
+	// If the key already exists, its value is replaced.
+	// Returns ErrHashCollision if the hash function produces a collision with a different key.
+	Add(key K, value V) error
+
+	// Remove deletes the key-value pair from the map.
+	// If the key doesn't exist, this is a no-op and returns nil.
+	// Returns ErrHashCollision if the hash function produces a collision with a different key.
+	Remove(key K) error
+
+	// Clear removes all key-value pairs from the map, leaving it empty.
+	Clear()
+
+	// Contains checks if the given key exists in the map.
+	// Returns true if the key exists, false otherwise.
+	// Returns ErrHashCollision if the hash function produces a collision with a different key.
+	Contains(key K) (bool, error)
+
+	// Size returns the number of key-value pairs currently stored in the map.
+	Size() int
+
+	// Seq returns an iterator for ranging over all key-value pairs in the map.
+	// The iteration order is non-deterministic. This method is compatible with
+	// Go 1.23+ range-over-func syntax: for key, value := range map.Seq() { ... }
+	Seq() iter.Seq2[K, V]
+
+	// Union creates a new map containing all key-value pairs from both this map and other.
+	// If a key exists in both maps, the value from other takes precedence.
+	// Returns ErrHashCollision if any hash collision occurs during the operation.
+	Union(other Map[K, V]) (Map[K, V], error)
+
+	// Intersection creates a new map containing only key-value pairs whose keys exist in both maps.
+	// The values are taken from this map, not from other.
+	// Returns ErrHashCollision if any hash collision occurs during the operation.
+	Intersection(other Map[K, V]) (Map[K, V], error)
+}
+
+type mapEntry[K Collectable[K], V any] struct {
+	Key   K
+	Value V
+}
+
+// NewMap creates a new hash-based Map implementation using the provided hash function.
+// The hash function must produce consistent hash values for equal keys and should
+// minimize collisions to avoid ErrHashCollision errors during operations.
+//
+// The returned map is not thread-safe. Concurrent access must be synchronized by the caller.
+//
+// Example:
+//
+//	// Using a custom hash function
+//	m := maps.NewMap[MyKey, string](func(k hashing.Hashable) (string, error) {
+//	    return k.Hash(), nil
+//	})
+//	m.Add(key, "value")
+func NewMap[K Collectable[K], V any](hash hashing.HashFunc) Map[K, V] {
+	return &hashMap[K, V]{
+		hash: hash,
+		data: make(map[string]mapEntry[K, V]),
+	}
+}
+
+type hashMap[K Collectable[K], V any] struct {
+	hash hashing.HashFunc
+	data map[string]mapEntry[K, V]
+}
+
+func (h *hashMap[K, V]) Add(key K, value V) error {
+	hashVal, err := h.hash(key)
+	if err != nil {
+		return err
+	}
+
+	prev, ok := h.data[hashVal]
+
+	if ok && !key.Equals(prev.Key) {
+		// Hash collision detected
+		return ErrHashCollision
+	}
+
+	h.data[hashVal] = mapEntry[K, V]{Key: key, Value: value}
+
+	return nil
+}
+
+func (h *hashMap[K, V]) Remove(key K) error {
+	hashVal, err := h.hash(key)
+	if err != nil {
+		return err
+	}
+
+	prev, ok := h.data[hashVal]
+
+	if ok && !key.Equals(prev.Key) {
+		// Hash collision detected - the stored key is different
+		return ErrHashCollision
+	}
+
+	delete(h.data, hashVal)
+
+	return nil
+}
+
+func (h *hashMap[K, V]) Clear() {
+	h.data = make(map[string]mapEntry[K, V])
+}
+
+func (h *hashMap[K, V]) Contains(key K) (bool, error) {
+	hashVal, err := h.hash(key)
+	if err != nil {
+		return false, err
+	}
+
+	prev, ok := h.data[hashVal]
+
+	if !ok {
+		return false, nil
+	}
+
+	if !key.Equals(prev.Key) {
+		// Hash collision detected - the stored key is different
+		return false, ErrHashCollision
+	}
+
+	return true, nil
+}
+
+func (h *hashMap[K, V]) Size() int {
+	return len(h.data)
+}
+
+func (h *hashMap[K, V]) Seq() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for _, entry := range h.data {
+			if !yield(entry.Key, entry.Value) {
+				return
+			}
+		}
+	}
+}
+
+func (h *hashMap[K, V]) Union(other Map[K, V]) (Map[K, V], error) {
+	result := NewMap[K, V](h.hash)
+
+	// Add all entries from this map
+	for key, value := range h.Seq() {
+		if err := result.Add(key, value); err != nil {
+			return nil, err
+		}
+	}
+
+	// Add all entries from the other map (overwrites duplicates)
+	for key, value := range other.Seq() {
+		if err := result.Add(key, value); err != nil {
+			return nil, err
+		}
+	}
+
+	return result, nil
+}
+
+func (h *hashMap[K, V]) Intersection(other Map[K, V]) (Map[K, V], error) {
+	result := NewMap[K, V](h.hash)
+
+	// Only add entries that exist in both maps
+	for key, value := range h.Seq() {
+		contains, err := other.Contains(key)
+		if err != nil {
+			return nil, err
+		}
+
+		if contains {
+			if err := result.Add(key, value); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return result, nil
+}
 
 // CaseInsensitiveMap is a map that allows both case-sensitive and case-insensitive key lookups.
 // It maintains the original casing of keys while also supporting case-insensitive retrieval.

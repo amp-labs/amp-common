@@ -74,6 +74,9 @@ type Map[K Collectable[K], V any] interface {
 	Intersection(other Map[K, V]) (Map[K, V], error)
 }
 
+// mapEntry is an internal structure that stores a key-value pair in the hash map.
+// It preserves the original key alongside the value to enable collision detection
+// through key equality comparison when hash values match.
 type mapEntry[K Collectable[K], V any] struct {
 	Key   K
 	Value V
@@ -99,11 +102,20 @@ func NewMap[K Collectable[K], V any](hash hashing.HashFunc) Map[K, V] {
 	}
 }
 
+// hashMap is the concrete implementation of the Map interface using a hash table.
+// It stores entries in a Go map indexed by string hash values. Collision detection
+// is performed by comparing the full key using the Comparable interface when hash
+// values match. This ensures correctness even with imperfect hash functions.
+//
+// The implementation is not thread-safe and uses O(1) average-case lookup time.
 type hashMap[K Collectable[K], V any] struct {
-	hash hashing.HashFunc
-	data map[string]mapEntry[K, V]
+	hash hashing.HashFunc          // Hash function for converting keys to string hashes
+	data map[string]mapEntry[K, V] // Internal storage indexed by hash values
 }
 
+// Add inserts or updates a key-value pair in the hash map.
+// If the key already exists (determined by both hash and equality), its value is replaced.
+// Returns ErrHashCollision if a different key produces the same hash value.
 func (h *hashMap[K, V]) Add(key K, value V) error {
 	hashVal, err := h.hash(key)
 	if err != nil {
@@ -122,6 +134,9 @@ func (h *hashMap[K, V]) Add(key K, value V) error {
 	return nil
 }
 
+// Remove deletes a key-value pair from the hash map.
+// If the key doesn't exist, this is a no-op and returns nil.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
 func (h *hashMap[K, V]) Remove(key K) error {
 	hashVal, err := h.hash(key)
 	if err != nil {
@@ -140,10 +155,16 @@ func (h *hashMap[K, V]) Remove(key K) error {
 	return nil
 }
 
+// Clear removes all key-value pairs from the hash map, resetting it to an empty state.
+// The map remains usable after calling Clear. This operation is O(1) as it simply
+// reallocates the internal storage, allowing the old data to be garbage collected.
 func (h *hashMap[K, V]) Clear() {
 	h.data = make(map[string]mapEntry[K, V])
 }
 
+// Contains checks whether a key exists in the hash map.
+// Returns true if the key exists, false otherwise.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
 func (h *hashMap[K, V]) Contains(key K) (bool, error) {
 	hashVal, err := h.hash(key)
 	if err != nil {
@@ -164,10 +185,21 @@ func (h *hashMap[K, V]) Contains(key K) (bool, error) {
 	return true, nil
 }
 
+// Size returns the number of key-value pairs currently stored in the hash map.
+// This operation is O(1) as it simply returns the length of the internal storage.
 func (h *hashMap[K, V]) Size() int {
 	return len(h.data)
 }
 
+// Seq returns an iterator for ranging over all key-value pairs in the hash map.
+// The iteration order is non-deterministic as it depends on the internal hash map iteration order.
+// This method is compatible with Go 1.23+ range-over-func syntax:
+//
+//	for key, value := range map.Seq() {
+//	    // process key and value
+//	}
+//
+// The iterator stops early if the yield function returns false.
 func (h *hashMap[K, V]) Seq() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for _, entry := range h.data {
@@ -178,6 +210,12 @@ func (h *hashMap[K, V]) Seq() iter.Seq2[K, V] {
 	}
 }
 
+// Union creates a new hash map containing all key-value pairs from both this map and other.
+// If a key exists in both maps, the value from other takes precedence in the result.
+// Returns a new Map instance with entries from both maps merged together.
+// Returns ErrHashCollision if any hash collision occurs during the operation.
+//
+// The time complexity is O(n + m) where n is the size of this map and m is the size of other.
 func (h *hashMap[K, V]) Union(other Map[K, V]) (Map[K, V], error) {
 	result := NewMap[K, V](h.hash)
 
@@ -198,6 +236,12 @@ func (h *hashMap[K, V]) Union(other Map[K, V]) (Map[K, V], error) {
 	return result, nil
 }
 
+// Intersection creates a new hash map containing only key-value pairs whose keys exist in both maps.
+// The values are taken from this map, not from other. Keys are compared using both hash and equality.
+// Returns a new Map instance with only the common entries.
+// Returns ErrHashCollision if any hash collision occurs during the operation.
+//
+// The time complexity is O(n) where n is the size of the smaller map.
 func (h *hashMap[K, V]) Intersection(other Map[K, V]) (Map[K, V], error) {
 	result := NewMap[K, V](h.hash)
 

@@ -281,6 +281,26 @@ func (h *hashMap[K, V]) Intersection(other Map[K, V]) (Map[K, V], error) {
 	return result, nil
 }
 
+// Clone creates a shallow copy of the hash map, duplicating its structure and entries.
+// The keys and values themselves are not deep-copied; they are referenced as-is in the new map.
+// Returns a new Map instance with the same entries as this map.
+//
+// If the receiver is nil, returns nil. The cloned map uses the same hash function as the original
+// and is completely independent - modifications to one map do not affect the other.
+//
+// This operation is O(n) where n is the number of entries in the map, as it iterates through
+// all entries to populate the new map.
+//
+// Note: Since the map was already validated during construction, Add operations during cloning
+// should not fail with hash collisions. Any errors are silently ignored.
+//
+// Example:
+//
+//	original := maps.NewHashMap[MyKey, string](hashFunc)
+//	original.Add(key1, "value1")
+//
+//	cloned := original.Clone()
+//	cloned.Add(key2, "value2")  // Does not affect original
 func (h *hashMap[K, V]) Clone() Map[K, V] {
 	if h == nil {
 		return nil

@@ -1,0 +1,166 @@
+package maps
+
+import (
+	"iter"
+	"sync"
+
+	"github.com/amp-labs/amp-common/collectable"
+)
+
+// NewThreadSafeOrderedMap wraps an existing OrderedMap implementation with thread-safe access using sync.RWMutex.
+// It provides concurrent read/write access to the underlying ordered map while preserving the OrderedMap interface.
+//
+// The wrapper uses read-write locks to allow multiple concurrent readers or exclusive writer access.
+// Write operations (Add, Remove, Clear) acquire exclusive locks, while read operations
+// (Contains, Size, Seq, Union, Intersection, Clone) use shared read locks for better concurrency.
+//
+// Example usage:
+//
+//	unsafeMap := maps.NewOrderedHashMap[string, int](hashing.Sha256)
+//	safeMap := maps.NewThreadSafeOrderedMap(unsafeMap)
+//	safeMap.Add("key", 42) // thread-safe
+func NewThreadSafeOrderedMap[K collectable.Collectable[K], V any](m OrderedMap[K, V]) OrderedMap[K, V] {
+	if m == nil {
+		return nil
+	}
+
+	tsom, ok := m.(*threadSafeOrderedMap[K, V])
+	if ok {
+		// Already thread-safe, return as-is
+		return tsom
+	}
+
+	return &threadSafeOrderedMap[K, V]{
+		internal: m,
+	}
+}
+
+// threadSafeOrderedMap is a decorator that wraps any OrderedMap implementation with thread-safe access.
+// It uses sync.RWMutex to coordinate concurrent access, allowing multiple simultaneous
+// readers or a single exclusive writer.
+type threadSafeOrderedMap[K collectable.Collectable[K], V any] struct {
+	mutex    sync.RWMutex     // Protects access to internal map
+	internal OrderedMap[K, V] // Underlying ordered map implementation
+}
+
+// Add inserts or updates a key-value pair in the map with exclusive lock protection.
+// Acquires a write lock to ensure no other goroutines can read or write during the operation.
+func (t *threadSafeOrderedMap[K, V]) Add(key K, value V) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	return t.internal.Add(key, value)
+}
+
+// Remove deletes a key-value pair from the map with exclusive lock protection.
+// Acquires a write lock to ensure no other goroutines can read or write during the operation.
+func (t *threadSafeOrderedMap[K, V]) Remove(key K) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	return t.internal.Remove(key)
+}
+
+// Clear removes all entries from the map with exclusive lock protection.
+// Acquires a write lock to ensure no other goroutines can read or write during the operation.
+func (t *threadSafeOrderedMap[K, V]) Clear() {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	t.internal.Clear()
+}
+
+// Contains checks if a key exists in the map with shared read lock protection.
+// Acquires a read lock, allowing multiple concurrent Contains calls without blocking each other.
+func (t *threadSafeOrderedMap[K, V]) Contains(key K) (bool, error) {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return t.internal.Contains(key)
+}
+
+// Size returns the number of entries in the map with shared read lock protection.
+// Acquires a read lock, allowing multiple concurrent Size calls without blocking each other.
+func (t *threadSafeOrderedMap[K, V]) Size() int {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return t.internal.Size()
+}
+
+// Seq returns an iterator over the map's key-value pairs with snapshot semantics.
+// Acquires a read lock only during the snapshot creation, then releases it before returning.
+//
+// Implementation note: This creates a complete snapshot of the map under a read lock,
+// then returns an iterator over that snapshot. This design ensures:
+//   - The read lock is not held during iteration (preventing long-lived lock holding)
+//   - Iteration sees a consistent view of the map at the time Seq() was called
+//   - Multiple goroutines can iterate concurrently without blocking each other
+//   - Changes made after Seq() is called are not visible to the iterator
+//
+// Trade-off: Uses O(n) memory to store the snapshot, but provides better concurrency
+// characteristics than holding the lock during iteration.
+func (t *threadSafeOrderedMap[K, V]) Seq() iter.Seq2[int, KeyValuePair[K, V]] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	// Create snapshot under read lock
+	accum := make([]KeyValuePair[K, V], 0, t.internal.Size())
+
+	for _, kv := range t.internal.Seq() {
+		accum = append(accum, kv)
+	}
+
+	// Return iterator over snapshot (no lock held during iteration)
+	return func(yield func(int, KeyValuePair[K, V]) bool) {
+		for i, kv := range accum {
+			if !yield(i, kv) {
+				return
+			}
+		}
+	}
+}
+
+// Union creates a new thread-safe ordered map containing all entries from both this map and another.
+// Acquires a read lock on this map during the operation. The returned map is also thread-safe.
+//
+// Note: The 'other' map is accessed directly without coordination. If 'other' is also being
+// modified concurrently, the caller should handle that synchronization externally.
+func (t *threadSafeOrderedMap[K, V]) Union(other OrderedMap[K, V]) (OrderedMap[K, V], error) {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	value, err := t.internal.Union(other)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewThreadSafeOrderedMap(value), nil
+}
+
+// Intersection creates a new thread-safe ordered map containing only entries present in both maps.
+// Acquires a read lock on this map during the operation. The returned map is also thread-safe.
+//
+// Note: The 'other' map is accessed directly without coordination. If 'other' is also being
+// modified concurrently, the caller should handle that synchronization externally.
+func (t *threadSafeOrderedMap[K, V]) Intersection(other OrderedMap[K, V]) (OrderedMap[K, V], error) {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	value, err := t.internal.Intersection(other)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewThreadSafeOrderedMap(value), nil
+}
+
+// Clone creates a deep copy of the map with independent thread-safe access.
+// Acquires a read lock on this map during the clone operation.
+// The returned map is a new thread-safe instance that can be modified independently.
+func (t *threadSafeOrderedMap[K, V]) Clone() OrderedMap[K, V] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return NewThreadSafeOrderedMap(t.internal.Clone())
+}

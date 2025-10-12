@@ -1,36 +1,22 @@
 package set
 
 import (
-	"errors"
 	"iter"
 	"sort"
 
 	"facette.io/natsort"
+	"github.com/amp-labs/amp-common/collectable"
 	"github.com/amp-labs/amp-common/compare"
+	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/hashing"
 )
-
-// ErrHashCollision is returned when a hashing collision is detected.
-// Specifically this refers to two different (non-equal) objects
-// that have the same hashing value.
-var ErrHashCollision = errors.New("hashing collision")
-
-// Collectable is an interface that combines the Hashable and
-// Comparable interfaces. This is useful for objects that need
-// to be stored in a Set, where uniqueness is determined by
-// the hashing value, and collisions are resolved by comparing
-// the objects.
-type Collectable[T any] interface {
-	hashing.Hashable
-	compare.Comparable[T]
-}
 
 // A Set is a collection of unique elements. Uniqueness is
 // determined by the HashFunc provided when the Set is created,
 // as well as how the object has implemented the Hashable and
 // Comparable interfaces. If a collision is detected, an error
 // is returned.
-type Set[T Collectable[T]] interface {
+type Set[T collectable.Collectable[T]] interface {
 	// AddAll adds multiple elements to the set. Returns an error if any element
 	// causes a hash collision or if hashing fails.
 	AddAll(elements ...T) error
@@ -69,14 +55,14 @@ type Set[T Collectable[T]] interface {
 	Intersection(other Set[T]) (Set[T], error)
 }
 
-type setImpl[T Collectable[T]] struct {
+type setImpl[T collectable.Collectable[T]] struct {
 	hash     hashing.HashFunc
 	elements map[string]T
 }
 
 // NewSet creates a new Set with the provided hash function.
 // The hash function is used to determine uniqueness of elements.
-func NewSet[T Collectable[T]](hash hashing.HashFunc) Set[T] {
+func NewSet[T collectable.Collectable[T]](hash hashing.HashFunc) Set[T] {
 	return &setImpl[T]{
 		hash:     hash,
 		elements: make(map[string]T),
@@ -104,7 +90,7 @@ func (s *setImpl[T]) Add(element T) error {
 		if compare.Equals(prev, element) {
 			return nil
 		} else {
-			return ErrHashCollision
+			return errors2.ErrHashCollision
 		}
 	}
 
@@ -146,7 +132,7 @@ func (s *setImpl[T]) Contains(element T) (bool, error) {
 		if compare.Equals(prev, element) {
 			return true, nil
 		} else {
-			return true, ErrHashCollision
+			return true, errors2.ErrHashCollision
 		}
 	}
 
@@ -342,7 +328,7 @@ func (s *StringSet) Intersection(other *StringSet) (*StringSet, error) {
 // OrderedSet is a Set that maintains insertion order of elements.
 // Unlike the regular Set where Entries() returns elements in arbitrary order,
 // OrderedSet.Entries() returns elements in the order they were added.
-type OrderedSet[T Collectable[T]] interface {
+type OrderedSet[T collectable.Collectable[T]] interface {
 	// AddAll adds multiple elements to the set in order. Returns an error if any element
 	// causes a hash collision or if hashing fails. If an element already exists, it is not
 	// added again and its position in the order is not changed.
@@ -386,7 +372,7 @@ type OrderedSet[T Collectable[T]] interface {
 	Intersection(other OrderedSet[T]) (OrderedSet[T], error)
 }
 
-type orderedSetImpl[T Collectable[T]] struct {
+type orderedSetImpl[T collectable.Collectable[T]] struct {
 	hash  hashing.HashFunc
 	set   Set[T]
 	order []T
@@ -395,7 +381,7 @@ type orderedSetImpl[T Collectable[T]] struct {
 // NewOrderedSet creates a new OrderedSet with the provided hash function.
 // The hash function is used to determine uniqueness of elements.
 // Elements are returned in insertion order by Entries().
-func NewOrderedSet[T Collectable[T]](hash hashing.HashFunc) OrderedSet[T] {
+func NewOrderedSet[T collectable.Collectable[T]](hash hashing.HashFunc) OrderedSet[T] {
 	return &orderedSetImpl[T]{
 		hash:  hash,
 		set:   NewSet[T](hash),

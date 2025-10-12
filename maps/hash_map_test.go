@@ -80,7 +80,7 @@ func TestNewHashMapWithSize(t *testing.T) {
 
 		m := maps.NewHashMapWithSize[testKey, int](hashing.Sha256, 2)
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			key := testKey{value: fmt.Sprintf("key%d", i)}
 			err := m.Add(key, i)
 			require.NoError(t, err)
@@ -96,7 +96,7 @@ func TestNewHashMapWithSize(t *testing.T) {
 		// Performance benchmarking would be done separately
 		m := maps.NewHashMapWithSize[testKey, int](hashing.Sha256, 1000)
 
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			key := testKey{value: fmt.Sprintf("key%d", i)}
 			err := m.Add(key, i)
 			require.NoError(t, err)
@@ -137,7 +137,7 @@ func TestHashMap_Add(t *testing.T) {
 
 		m := maps.NewHashMap[testKey, int](hashing.Sha256)
 
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			key := testKey{value: fmt.Sprintf("key%d", i)}
 			err := m.Add(key, i)
 			require.NoError(t, err)
@@ -234,7 +234,7 @@ func TestHashMap_Clear(t *testing.T) {
 
 		m := maps.NewHashMap[testKey, int](hashing.Sha256)
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			key := testKey{value: fmt.Sprintf("key%d", i)}
 			err := m.Add(key, i)
 			require.NoError(t, err)
@@ -430,7 +430,7 @@ func TestHashMap_Seq(t *testing.T) {
 
 		m := maps.NewHashMap[testKey, int](hashing.Sha256)
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			key := testKey{value: fmt.Sprintf("key%d", i)}
 			err := m.Add(key, i)
 			require.NoError(t, err)

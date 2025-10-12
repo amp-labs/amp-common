@@ -5,6 +5,12 @@ import "errors"
 var (
 	ErrNotImplemented = errors.New("not implemented")
 	ErrWrongType      = errors.New("wrong type")
+
+	// ErrHashCollision is returned when two distinct keys produce the same hash value.
+	// This error indicates that the hash function is not suitable for the given key space,
+	// or that the key distribution is causing unexpected collisions. When this error occurs,
+	// consider using a different hash function or implementing a collision resolution strategy.
+	ErrHashCollision = errors.New("hashing collision")
 )
 
 // Collection is a thread-unsafe utility for accumulating multiple errors.

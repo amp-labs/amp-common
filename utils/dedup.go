@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"github.com/amp-labs/amp-common/collectable"
+	"github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/set"
 )
@@ -8,7 +10,7 @@ import (
 // DeduplicateValues removes duplicate values from a slice using SHA-256 hashing.
 // Returns a new slice containing only unique values in arbitrary order.
 // Returns an error if hashing fails or hash collision is detected.
-func DeduplicateValues[T set.Collectable[T]](values []T) ([]T, error) {
+func DeduplicateValues[T collectable.Collectable[T]](values []T) ([]T, error) {
 	s := set.NewSet[T](hashing.Sha256) // big hash space, low chance of collision
 	if err := s.AddAll(values...); err != nil {
 		return nil, err
@@ -20,7 +22,7 @@ func DeduplicateValues[T set.Collectable[T]](values []T) ([]T, error) {
 // HasDuplicateValues checks whether a slice contains any duplicate values.
 // Returns true if duplicates exist, false otherwise.
 // Returns an error if hashing fails or hash collision is detected.
-func HasDuplicateValues[T set.Collectable[T]](values []T) (bool, error) {
+func HasDuplicateValues[T collectable.Collectable[T]](values []T) (bool, error) {
 	count, err := CountDuplicateValues(values)
 	if err != nil {
 		return false, err
@@ -33,7 +35,7 @@ func HasDuplicateValues[T set.Collectable[T]](values []T) (bool, error) {
 // For example, [A, A, B, B] returns 3 (one extra A and two extra B's).
 // Uses SHA-256 hashing for comparison and detects hash collisions.
 // Returns an error if hashing fails or hash collision is detected.
-func CountDuplicateValues[T set.Collectable[T]](values []T) (int, error) {
+func CountDuplicateValues[T collectable.Collectable[T]](values []T) (int, error) {
 	seen := make(map[string]T)
 	counts := make(map[string]int)
 
@@ -55,7 +57,7 @@ func CountDuplicateValues[T set.Collectable[T]](values []T) (int, error) {
 			if prev.Equals(val) {
 				continue
 			} else {
-				return 0, set.ErrHashCollision
+				return 0, errors.ErrHashCollision
 			}
 		}
 

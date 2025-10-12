@@ -7,7 +7,7 @@ import "regexp"
 // matching messages are forwarded to the read channel.
 // Returns (write channel, read channel, error).
 // The read channel is automatically closed when the write channel is closed.
-func GrepChannel(expr string) (chan string, chan string, error) {
+func GrepChannel(expr string) (in chan<- string, out <-chan string, err error) {
 	re, err := regexp.CompilePOSIX(expr)
 	if err != nil {
 		return nil, nil, err

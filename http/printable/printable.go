@@ -101,6 +101,10 @@ func (p *Payload) String() string {
 // It returns a slog.GroupValue containing the raw content, parsed JSON (if applicable),
 // base64 encoding flag, size information, and truncation details.
 func (p *Payload) LogValue() slog.Value {
+	if p == nil {
+		return slog.StringValue("<nil>")
+	}
+
 	var attrs []slog.Attr
 
 	attrs = append(attrs, slog.String("raw", p.String()))

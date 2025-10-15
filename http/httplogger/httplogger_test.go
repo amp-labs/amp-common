@@ -26,7 +26,7 @@ func TestLogError_NilRequest(t *testing.T) {
 	}
 
 	// Should not panic with nil request
-	httplogger.LogError(nil, errors.New("test error"), "GET", "corr-123", nil, params) //nolint:err113
+	httplogger.LogError(t.Context(), nil, errors.New("test error"), "GET", "corr-123", nil, params) //nolint:err113
 
 	// Should not have logged anything
 	assert.Empty(t, logBuffer.String())
@@ -39,7 +39,7 @@ func TestLogError_NilParams(t *testing.T) {
 	require.NoError(t, err)
 
 	// Should not panic with nil params
-	httplogger.LogError(req, errors.New("test error"), "GET", "corr-123", req.URL, nil) //nolint:err113
+	httplogger.LogError(t.Context(), req, errors.New("test error"), "GET", "corr-123", req.URL, nil) //nolint:err113
 }
 
 func TestLogError_BasicError(t *testing.T) {
@@ -57,7 +57,7 @@ func TestLogError_BasicError(t *testing.T) {
 
 	testErr := errors.New("connection timeout") //nolint:err113
 
-	httplogger.LogError(req, testErr, "GET", "corr-123", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "corr-123", req.URL, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "HTTP request failed")
@@ -83,7 +83,7 @@ func TestLogError_WithQueryParams(t *testing.T) {
 
 	testErr := errors.New("bad request") //nolint:err113
 
-	httplogger.LogError(req, testErr, "GET", "corr-456", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "corr-456", req.URL, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "page=1")
@@ -115,7 +115,7 @@ func TestLogError_WithRedactedQueryParams(t *testing.T) {
 
 	testErr := errors.New("unauthorized") //nolint:err113
 
-	httplogger.LogError(req, testErr, "GET", "corr-789", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "corr-789", req.URL, params)
 
 	logOutput := logBuffer.String()
 	// Asterisks are URL encoded as %2A
@@ -138,7 +138,7 @@ func TestLogError_NilError(t *testing.T) {
 	}
 
 	// Should still log even with nil error
-	httplogger.LogError(req, nil, "GET", "corr-999", req.URL, params)
+	httplogger.LogError(t.Context(), req, nil, "GET", "corr-999", req.URL, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "HTTP request failed")
@@ -163,7 +163,7 @@ func TestLogError_NilURL(t *testing.T) {
 	testErr := errors.New("network error") //nolint:err113
 
 	// Should handle nil URL gracefully
-	httplogger.LogError(req, testErr, "GET", "corr-000", nil, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "corr-000", nil, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "HTTP request failed")
@@ -195,7 +195,7 @@ func TestLogError_ComplexError(t *testing.T) {
 
 	testErr := errors.New("internal server error: database connection failed") //nolint:err113
 
-	httplogger.LogError(req, testErr, "POST", "corr-complex", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "POST", "corr-complex", req.URL, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "HTTP request failed")
@@ -221,7 +221,7 @@ func TestLogError_EmptyCorrelationID(t *testing.T) {
 	testErr := errors.New("timeout") //nolint:err113
 
 	// Should handle empty correlation ID
-	httplogger.LogError(req, testErr, "GET", "", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "", req.URL, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "HTTP request failed")
@@ -247,7 +247,7 @@ func TestLogError_LogLevel(t *testing.T) {
 
 	testErr := errors.New("critical error") //nolint:err113
 
-	httplogger.LogError(req, testErr, "GET", "corr-level", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "corr-level", req.URL, params)
 
 	logOutput := logBuffer.String()
 	// Should log at ERROR level
@@ -272,7 +272,7 @@ func TestLogError_SpecialCharactersInURL(t *testing.T) {
 
 	testErr := errors.New("parse error") //nolint:err113
 
-	httplogger.LogError(req, testErr, "GET", "corr-special", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "corr-special", req.URL, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "HTTP request failed")
@@ -306,7 +306,7 @@ func TestLogError_MultipleQueryParamsWithSameKey(t *testing.T) {
 
 	testErr := errors.New("not found") //nolint:err113
 
-	httplogger.LogError(req, testErr, "GET", "corr-multi", req.URL, params)
+	httplogger.LogError(t.Context(), req, testErr, "GET", "corr-multi", req.URL, params)
 
 	logOutput := logBuffer.String()
 	assert.Contains(t, logOutput, "HTTP request failed")

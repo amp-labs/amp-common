@@ -87,8 +87,10 @@ func ConfigureLoggingWithOptions(opts Options) *slog.Logger {
 	return logger
 }
 
+// Option is a functional option for configuring logging via ConfigureLogging.
 type Option func(*Options)
 
+// ErrInvalidLogOutput is returned when an invalid log output destination is specified.
 var ErrInvalidLogOutput = errors.New("invalid log output")
 
 // ConfigureLogging configures logging for the application.
@@ -357,6 +359,8 @@ func GetPodName() string {
 	return hostname.Get()
 }
 
+// getRealContext extracts the first non-nil context from a variadic list.
+// If no context is provided or all are nil, it returns context.Background().
 func getRealContext(ctx ...context.Context) context.Context {
 	var realCtx context.Context
 
@@ -410,6 +414,12 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 		logger = logger.With("request-id", requestId)
 	}
 
+	// Check for key-values to add to the logger.
+	vals := getValues(ctx)
+	if vals != nil {
+		logger = logger.With(vals...)
+	}
+
 	return logger
 }
 
@@ -458,4 +468,38 @@ func Get(ctx ...context.Context) *slog.Logger {
 	}
 
 	return logger
+}
+
+// With returns a new context with the given values added.
+// The values are added to the logger automatically.
+func With(ctx context.Context, values ...any) context.Context {
+	if len(values) == 0 && ctx != nil {
+		// Corner case, don't bother creating a new context.
+		return ctx
+	}
+
+	vals := append(getValues(ctx), values...)
+
+	return context.WithValue(ctx, contextKey("loggerValues"), vals)
+}
+
+// getValues retrieves logger values from the context that were added via With.
+// Returns nil if no values are present in the context.
+func getValues(ctx context.Context) []any { //nolint:contextcheck
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Check for a value override.
+	vals := ctx.Value(contextKey("loggerValues"))
+	if vals != nil {
+		val, ok := vals.([]any)
+		if ok {
+			return val
+		}
+
+		return nil
+	}
+
+	return nil
 }

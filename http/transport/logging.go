@@ -15,6 +15,9 @@ import (
 	"github.com/google/uuid"
 )
 
+// skipLoggingKey is the context key used to indicate whether logging should be skipped for a request.
+const skipLoggingKey = contextKey("skipTransportLogging")
+
 // NewLoggingTransport creates an http.RoundTripper that logs all HTTP requests, responses, and errors.
 // It wraps an existing transport (or http.DefaultTransport if nil) and automatically logs:
 //   - Outgoing requests (method, URL, headers, optional body)
@@ -142,14 +145,14 @@ var _ http.RoundTripper = (*loggingTransport)(nil)
 //	req, _ := http.NewRequestWithContext(ctx, "GET", "https://api.example.com/health", nil)
 //	resp, err := client.Do(req)
 func WithSkipLogging(ctx context.Context, skip bool) context.Context {
-	return contexts.WithValue[contextKey, bool](ctx, "skipTransportLogging", skip)
+	return contexts.WithValue[contextKey, bool](ctx, skipLoggingKey, skip)
 }
 
 // IsSkipLogging checks whether the skip logging flag is set in the context.
 // Returns true if logging should be skipped, false otherwise.
 // If the context key is not found, defaults to false (logging enabled).
 func IsSkipLogging(ctx context.Context) bool {
-	skip, found := contexts.GetValue[contextKey, bool](ctx, "skipTransportLogging")
+	skip, found := contexts.GetValue[contextKey, bool](ctx, skipLoggingKey)
 
 	if !found {
 		return false

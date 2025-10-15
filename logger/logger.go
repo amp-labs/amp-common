@@ -496,10 +496,8 @@ func getValues(ctx context.Context) []any { //nolint:contextcheck
 		val, ok := vals.([]any)
 		if ok {
 			return val
-		} else {
-			return nil
 		}
-	} else {
 		return nil
 	}
+	return nil
 }

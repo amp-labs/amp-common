@@ -155,19 +155,19 @@ func (l *loggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 	correlationID := uuid7.String()
 
 	// Log the outgoing request
-	httplogger.LogRequest(request, nil, correlationID, l.requestParams)
+	httplogger.LogRequest(request.Context(), request, nil, correlationID, l.requestParams)
 
 	// Perform the actual HTTP request
 	response, err := l.transport.RoundTrip(request)
 	if err != nil {
 		// Log the error at ERROR level
-		httplogger.LogError(request, err, request.Method, correlationID, request.URL, l.errorParams)
+		httplogger.LogError(request.Context(), request, err, request.Method, correlationID, request.URL, l.errorParams)
 
 		return response, err
 	}
 
 	// Log the successful response at DEBUG level
-	httplogger.LogResponse(response, nil, request.Method, correlationID, request.URL, l.responseParams)
+	httplogger.LogResponse(request.Context(), response, nil, request.Method, correlationID, request.URL, l.responseParams)
 
 	return response, err
 }

@@ -68,6 +68,11 @@ type LogRequestParams struct {
 	// Logger is the slog.Logger instance to use for logging.
 	Logger *slog.Logger
 
+	// GetLogger is an optional function to dynamically obtain a logger from a context.
+	// If nil, the Logger field is used directly. If GetLogger returns nil,
+	// Logger is used as fallback.
+	GetLogger func(ctx context.Context) *slog.Logger
+
 	// DefaultLevel is the default log level to use for requests.
 	// If not set, defaults to slog.LevelDebug. Can be overridden per-request using LevelOverride.
 	DefaultLevel slog.Level
@@ -108,6 +113,27 @@ type LogRequestParams struct {
 	BodyTruncationLength int64
 }
 
+// getLogger returns the slog.Logger to use for logging.
+// Priority: GetLogger(ctx) > Logger > slog.Default().
+func (p *LogRequestParams) getLogger(ctx context.Context) *slog.Logger {
+	if p == nil {
+		return slog.Default()
+	}
+
+	if p.GetLogger != nil {
+		logger := p.GetLogger(ctx)
+		if logger != nil {
+			return logger
+		}
+	}
+
+	if p.Logger != nil {
+		return p.Logger
+	}
+
+	return slog.Default()
+}
+
 // getHeaders returns the request headers, applying redaction if configured.
 func (p *LogRequestParams) getHeaders(req *http.Request) http.Header {
 	if p.RedactHeaders != nil {
@@ -119,14 +145,14 @@ func (p *LogRequestParams) getHeaders(req *http.Request) http.Header {
 
 // getBody returns the request body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
-func (p *LogRequestParams) getBody(req *http.Request, body []byte) (*printable.Payload, bool) {
+func (p *LogRequestParams) getBody(ctx context.Context, req *http.Request, body []byte) (*printable.Payload, bool) {
 	if !p.IncludeBody {
 		return nil, false
 	}
 
 	payload, err := printable.Request(req, body)
 	if err != nil {
-		p.Logger.Error("Error creating printable request", "error", err)
+		p.getLogger(ctx).Error("Error creating printable request", "error", err)
 
 		return nil, false
 	}
@@ -145,7 +171,7 @@ func (p *LogRequestParams) getBody(req *http.Request, body []byte) (*printable.P
 
 	truncatedBody, err := payload.Truncate(truncationLength)
 	if err != nil {
-		p.Logger.Error("Error truncating payload", "error", err)
+		p.getLogger(ctx).Error("Error truncating payload", "error", err)
 
 		return payload, true
 	}
@@ -193,8 +219,8 @@ func (p *LogRequestParams) getLogMessage(request *http.Request) string {
 }
 
 // log writes the log entry using the configured logger, level, and message.
-func (p *LogRequestParams) log(request *http.Request, details map[string]any) {
-	p.Logger.Log(context.Background(), p.getLevel(request),
+func (p *LogRequestParams) log(ctx context.Context, request *http.Request, details map[string]any) {
+	p.getLogger(ctx).Log(ctx, p.getLevel(request),
 		p.getLogMessage(request), "details", details)
 }
 
@@ -202,6 +228,11 @@ func (p *LogRequestParams) log(request *http.Request, details map[string]any) {
 type LogResponseParams struct {
 	// Logger is the slog.Logger instance to use for logging.
 	Logger *slog.Logger
+
+	// GetLogger is an optional function to dynamically obtain a logger from a context.
+	// If nil, the Logger field is used directly. If GetLogger returns nil,
+	// Logger is used as fallback.
+	GetLogger func(ctx context.Context) *slog.Logger
 
 	// DefaultLevel is the default log level to use for responses.
 	// If not set, defaults to slog.LevelDebug. Can be overridden per-response using LevelOverride.
@@ -243,6 +274,27 @@ type LogResponseParams struct {
 	BodyTruncationLength int64
 }
 
+// getLogger returns the slog.Logger to use for logging.
+// Priority: GetLogger(ctx) > Logger > slog.Default().
+func (p *LogResponseParams) getLogger(ctx context.Context) *slog.Logger {
+	if p == nil {
+		return slog.Default()
+	}
+
+	if p.GetLogger != nil {
+		logger := p.GetLogger(ctx)
+		if logger != nil {
+			return logger
+		}
+	}
+
+	if p.Logger != nil {
+		return p.Logger
+	}
+
+	return slog.Default()
+}
+
 // getHeaders returns the response headers, applying redaction if configured.
 func (p *LogResponseParams) getHeaders(resp *http.Response) http.Header {
 	if p.RedactHeaders != nil {
@@ -254,14 +306,14 @@ func (p *LogResponseParams) getHeaders(resp *http.Response) http.Header {
 
 // getBody returns the response body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
-func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printable.Payload, bool) {
+func (p *LogResponseParams) getBody(ctx context.Context, resp *http.Response, body []byte) (*printable.Payload, bool) {
 	if !p.IncludeBody {
 		return nil, false
 	}
 
 	payload, err := printable.Response(resp, body)
 	if err != nil {
-		p.Logger.Error("Error creating printable response", "error", err)
+		p.getLogger(ctx).Error("Error creating printable response", "error", err)
 
 		return nil, false
 	}
@@ -280,7 +332,7 @@ func (p *LogResponseParams) getBody(resp *http.Response, body []byte) (*printabl
 
 	truncatedBody, err := payload.Truncate(truncationLength)
 	if err != nil {
-		p.Logger.Error("Error truncating payload", "error", err)
+		p.getLogger(ctx).Error("Error truncating payload", "error", err)
 
 		return payload, true
 	}
@@ -328,8 +380,8 @@ func (p *LogResponseParams) getLogMessage(resp *http.Response) string {
 }
 
 // log writes the log entry using the configured logger, level, and message.
-func (p *LogResponseParams) log(resp *http.Response, details map[string]any) {
-	p.Logger.Log(context.Background(), p.getLevel(resp),
+func (p *LogResponseParams) log(ctx context.Context, resp *http.Response, details map[string]any) {
+	p.getLogger(ctx).Log(ctx, p.getLevel(resp),
 		p.getLogMessage(resp), "details", details)
 }
 
@@ -338,6 +390,11 @@ func (p *LogResponseParams) log(resp *http.Response, details map[string]any) {
 type LogErrorParams struct {
 	// Logger is the slog.Logger instance to use for logging.
 	Logger *slog.Logger
+
+	// GetLogger is an optional function to dynamically obtain a logger from a context.
+	// If nil, the Logger field is used directly. If GetLogger returns nil,
+	// Logger is used as fallback.
+	GetLogger func(ctx context.Context) *slog.Logger
 
 	// DefaultLevel is the default log level to use for errors.
 	// If not set, defaults to slog.LevelDebug (though ERROR is more typical).
@@ -363,6 +420,27 @@ type LogErrorParams struct {
 	// RedactQueryParams is an optional function to redact sensitive query parameters from the request URL.
 	// If nil, query parameters are logged as-is without redaction.
 	RedactQueryParams redact.Func
+}
+
+// getLogger returns the slog.Logger to use for logging.
+// Priority: GetLogger(ctx) > Logger > slog.Default().
+func (p *LogErrorParams) getLogger(ctx context.Context) *slog.Logger {
+	if p == nil {
+		return slog.Default()
+	}
+
+	if p.GetLogger != nil {
+		logger := p.GetLogger(ctx)
+		if logger != nil {
+			return logger
+		}
+	}
+
+	if p.Logger != nil {
+		return p.Logger
+	}
+
+	return slog.Default()
 }
 
 // getLevel determines the log level to use for the error.
@@ -406,8 +484,8 @@ func (p *LogErrorParams) getLogMessage(err error) string {
 }
 
 // log writes the log entry using the configured logger, level, and message.
-func (p *LogErrorParams) log(err error, details map[string]any) {
-	p.Logger.Log(context.Background(), p.getLevel(err),
+func (p *LogErrorParams) log(ctx context.Context, err error, details map[string]any) {
+	p.getLogger(ctx).Log(ctx, p.getLevel(err),
 		p.getLogMessage(err), "details", details)
 }
 
@@ -438,6 +516,7 @@ func cloneURL(sourceURL *url.URL) *url.URL {
 // optional body content if configured. Nil checks are performed to prevent panics.
 //
 // Parameters:
+//   - ctx: The context for obtaining a logger
 //   - request: The HTTP request to log (required, returns early if nil)
 //   - optionalBody: Optional pre-read body bytes. If nil, body won't be logged unless IncludeBody is false.
 //   - correlationID: A correlation ID to track the request across systems
@@ -451,7 +530,13 @@ func cloneURL(sourceURL *url.URL) *url.URL {
 //	    RedactHeaders: myRedactFunc,
 //	}
 //	LogRequest(req, bodyBytes, "corr-123", params)
-func LogRequest(request *http.Request, optionalBody []byte, correlationID string, params *LogRequestParams) {
+func LogRequest(
+	ctx context.Context,
+	request *http.Request,
+	optionalBody []byte,
+	correlationID string,
+	params *LogRequestParams,
+) {
 	if request == nil || params == nil {
 		return
 	}
@@ -471,12 +556,12 @@ func LogRequest(request *http.Request, optionalBody []byte, correlationID string
 		"headers":       params.getHeaders(request),
 	}
 
-	body, _ := params.getBody(request, optionalBody)
+	body, _ := params.getBody(ctx, request, optionalBody)
 	if body != nil {
 		details["body"] = body
 	}
 
-	params.log(request, details)
+	params.log(ctx, request, details)
 }
 
 // LogResponse logs an HTTP response with optional body content.
@@ -484,6 +569,7 @@ func LogRequest(request *http.Request, optionalBody []byte, correlationID string
 // and includes optional body content if configured. Nil checks are performed to prevent panics.
 //
 // Parameters:
+//   - ctx: The context for obtaining a logger
 //   - response: The HTTP response to log (required, returns early if nil)
 //   - optionalBody: Optional pre-read body bytes. If nil, body won't be logged unless IncludeBody is false.
 //   - requestMethod: The HTTP method from the original request (GET, POST, etc.)
@@ -500,8 +586,12 @@ func LogRequest(request *http.Request, optionalBody []byte, correlationID string
 //	}
 //	LogResponse(resp, bodyBytes, "GET", "corr-123", req.URL, params)
 func LogResponse(
-	response *http.Response, optionalBody []byte,
-	requestMethod, correlationID string, requestURL *url.URL, params *LogResponseParams,
+	ctx context.Context,
+	response *http.Response,
+	optionalBody []byte,
+	requestMethod, correlationID string,
+	requestURL *url.URL,
+	params *LogResponseParams,
 ) {
 	if response == nil || params == nil {
 		return
@@ -524,12 +614,12 @@ func LogResponse(
 		"statusCode":    response.StatusCode,
 	}
 
-	body, _ := params.getBody(response, optionalBody)
+	body, _ := params.getBody(ctx, response, optionalBody)
 	if body != nil {
 		details["body"] = body
 	}
 
-	params.log(response, details)
+	params.log(ctx, response, details)
 }
 
 // LogError logs an HTTP request error that occurred during RoundTrip.
@@ -537,6 +627,7 @@ func LogResponse(
 // It logs the request context (method, URL, correlation ID) along with the error details.
 //
 // Parameters:
+//   - ctx: The context for obtaining a logger
 //   - request: The HTTP request that failed (required, returns early if nil)
 //   - err: The error that occurred (required for meaningful logging)
 //   - requestMethod: The HTTP method from the request (GET, POST, etc.)
@@ -556,8 +647,11 @@ func LogResponse(
 //	    return nil, err
 //	}
 func LogError(
+	ctx context.Context,
 	request *http.Request, err error,
-	requestMethod, correlationID string, requestURL *url.URL, params *LogErrorParams,
+	requestMethod, correlationID string,
+	requestURL *url.URL,
+	params *LogErrorParams,
 ) {
 	if request == nil || params == nil {
 		return
@@ -587,5 +681,5 @@ func LogError(
 		details["error"] = err.Error()
 	}
 
-	params.log(err, details)
+	params.log(ctx, err, details)
 }

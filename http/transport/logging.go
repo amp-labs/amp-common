@@ -9,10 +9,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/http/httplogger"
 	"github.com/amp-labs/amp-common/logger"
 	"github.com/google/uuid"
 )
+
+// skipLoggingKey is the context key used to indicate whether logging should be skipped for a request.
+const skipLoggingKey = contextKey("skipTransportLogging")
 
 // NewLoggingTransport creates an http.RoundTripper that logs all HTTP requests, responses, and errors.
 // It wraps an existing transport (or http.DefaultTransport if nil) and automatically logs:
@@ -128,6 +132,35 @@ type loggingTransport struct {
 // Compile-time check to ensure loggingTransport implements http.RoundTripper.
 var _ http.RoundTripper = (*loggingTransport)(nil)
 
+// WithSkipLogging returns a new context with the skip logging flag set.
+// When skip is true, the loggingTransport will bypass all logging for requests made with this context.
+//
+// This is useful for scenarios where you want to selectively disable logging for specific requests,
+// such as health checks, metrics endpoints, or other high-frequency calls that would clutter logs.
+//
+// Example:
+//
+//	// Skip logging for this specific request
+//	ctx := transport.WithSkipLogging(context.Background(), true)
+//	req, _ := http.NewRequestWithContext(ctx, "GET", "https://api.example.com/health", nil)
+//	resp, err := client.Do(req)
+func WithSkipLogging(ctx context.Context, skip bool) context.Context {
+	return contexts.WithValue[contextKey, bool](ctx, skipLoggingKey, skip)
+}
+
+// IsSkipLogging checks whether the skip logging flag is set in the context.
+// Returns true if logging should be skipped, false otherwise.
+// If the context key is not found, defaults to false (logging enabled).
+func IsSkipLogging(ctx context.Context) bool {
+	skip, found := contexts.GetValue[contextKey, bool](ctx, skipLoggingKey)
+
+	if !found {
+		return false
+	}
+
+	return skip
+}
+
 // RoundTrip implements the http.RoundTripper interface.
 // It logs the outgoing request, performs the HTTP round trip, and logs either the response or error.
 //
@@ -146,6 +179,10 @@ var _ http.RoundTripper = (*loggingTransport)(nil)
 //   - If the underlying transport returns an error, logs it at ERROR level and returns the error
 //   - If the underlying transport succeeds, logs the response at DEBUG level
 func (l *loggingTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	if IsSkipLogging(request.Context()) {
+		return l.transport.RoundTrip(request)
+	}
+
 	// Generate unique correlation ID for this request/response pair
 	uuid7, err := uuid.NewV7()
 	if err != nil {

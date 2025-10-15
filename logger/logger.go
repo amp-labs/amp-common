@@ -497,7 +497,9 @@ func getValues(ctx context.Context) []any { //nolint:contextcheck
 		if ok {
 			return val
 		}
+
 		return nil
 	}
+
 	return nil
 }

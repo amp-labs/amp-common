@@ -610,3 +610,387 @@ func TestLoggingTransport_Interface(t *testing.T) {
 		var _ http.RoundTripper = (*loggingTransport)(nil)
 	})
 }
+
+func TestWithSkipLogging(t *testing.T) {
+	t.Parallel()
+
+	t.Run("sets skip logging to true", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := t.Context()
+		ctxWithSkip := WithSkipLogging(ctx, true)
+
+		assert.True(t, IsSkipLogging(ctxWithSkip))
+	})
+
+	t.Run("sets skip logging to false", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := t.Context()
+		ctxWithSkip := WithSkipLogging(ctx, false)
+
+		assert.False(t, IsSkipLogging(ctxWithSkip))
+	})
+
+	t.Run("returns new context", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := t.Context()
+		ctxWithSkip := WithSkipLogging(ctx, true)
+
+		// Verify the new context has the skip flag
+		assert.True(t, IsSkipLogging(ctxWithSkip))
+
+		// Original context should not have the skip flag (proves new context was created)
+		assert.False(t, IsSkipLogging(ctx))
+	})
+
+	t.Run("can override previous value", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := t.Context()
+		ctx1 := WithSkipLogging(ctx, true)
+		ctx2 := WithSkipLogging(ctx1, false)
+
+		assert.True(t, IsSkipLogging(ctx1))
+		assert.False(t, IsSkipLogging(ctx2))
+	})
+}
+
+func TestIsSkipLogging(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns false for context without skip flag", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := t.Context()
+		assert.False(t, IsSkipLogging(ctx))
+	})
+
+	t.Run("returns false for nil context", func(t *testing.T) {
+		t.Parallel()
+
+		// This should not panic - use context.TODO() instead of nil
+		assert.False(t, IsSkipLogging(context.TODO())) //nolint:staticcheck,usetesting // Testing nil-safety behavior
+	})
+
+	t.Run("returns true when skip flag is set to true", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := WithSkipLogging(t.Context(), true)
+		assert.True(t, IsSkipLogging(ctx))
+	})
+
+	t.Run("returns false when skip flag is set to false", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := WithSkipLogging(t.Context(), false)
+		assert.False(t, IsSkipLogging(ctx))
+	})
+
+	t.Run("returns correct value for nested context", func(t *testing.T) {
+		t.Parallel()
+
+		// Define custom types for context keys to avoid staticcheck warnings
+		type contextKey string
+
+		const (
+			otherKey   contextKey = "other-key"
+			anotherKey contextKey = "another-key"
+		)
+
+		// Create a context with skip=true, then add other values
+		ctx := t.Context()
+		ctx = context.WithValue(ctx, otherKey, "other-value")
+		ctx = WithSkipLogging(ctx, true)
+		ctx = context.WithValue(ctx, anotherKey, "another-value")
+
+		assert.True(t, IsSkipLogging(ctx))
+	})
+}
+
+func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
+	t.Parallel()
+
+	t.Run("skips logging when skip flag is true", func(t *testing.T) {
+		t.Parallel()
+
+		captureLog := newCaptureLogger()
+		customLogger := slog.New(captureLog.handler())
+		ctx := t.Context()
+
+		// Set skip logging flag
+		ctx = WithSkipLogging(ctx, true)
+
+		mockResp := &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader("success")),
+			Header:     make(http.Header),
+		}
+
+		mockTransport := &mockTransport{response: mockResp}
+
+		requestParams := &httplogger.LogRequestParams{
+			Logger:      customLogger,
+			IncludeBody: true,
+		}
+		responseParams := &httplogger.LogResponseParams{
+			Logger:      customLogger,
+			IncludeBody: true,
+		}
+		errorParams := &httplogger.LogErrorParams{
+			Logger: customLogger,
+		}
+
+		trans := NewLoggingTransport(ctx, mockTransport, requestParams, responseParams, errorParams)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com/test", nil)
+		require.NoError(t, err)
+
+		resp, err := trans.RoundTrip(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Same(t, mockResp, resp)
+
+		// Should have NO log entries because logging was skipped
+		assert.Empty(t, captureLog.logs)
+	})
+
+	t.Run("logs normally when skip flag is false", func(t *testing.T) {
+		t.Parallel()
+
+		captureLog := newCaptureLogger()
+		customLogger := slog.New(captureLog.handler())
+		ctx := t.Context()
+
+		// Explicitly set skip logging to false
+		ctx = WithSkipLogging(ctx, false)
+
+		mockResp := &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader("success")),
+			Header:     make(http.Header),
+		}
+
+		mockTransport := &mockTransport{response: mockResp}
+
+		requestParams := &httplogger.LogRequestParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+		responseParams := &httplogger.LogResponseParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+
+		trans := NewLoggingTransport(ctx, mockTransport, requestParams, responseParams, nil)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com/test", nil)
+		require.NoError(t, err)
+
+		resp, err := trans.RoundTrip(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Should have 2 log entries: request and response
+		assert.Len(t, captureLog.logs, 2)
+	})
+
+	t.Run("logs normally when skip flag is not set", func(t *testing.T) {
+		t.Parallel()
+
+		captureLog := newCaptureLogger()
+		customLogger := slog.New(captureLog.handler())
+		ctx := t.Context()
+
+		// Don't set skip logging flag - should default to logging enabled
+
+		mockResp := &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader("success")),
+			Header:     make(http.Header),
+		}
+
+		mockTransport := &mockTransport{response: mockResp}
+
+		requestParams := &httplogger.LogRequestParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+		responseParams := &httplogger.LogResponseParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+
+		trans := NewLoggingTransport(ctx, mockTransport, requestParams, responseParams, nil)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com/test", nil)
+		require.NoError(t, err)
+
+		resp, err := trans.RoundTrip(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Should have 2 log entries: request and response (default behavior is to log)
+		assert.Len(t, captureLog.logs, 2)
+	})
+
+	t.Run("skips error logging when skip flag is true", func(t *testing.T) {
+		t.Parallel()
+
+		captureLog := newCaptureLogger()
+		customLogger := slog.New(captureLog.handler())
+		ctx := t.Context()
+
+		// Set skip logging flag
+		ctx = WithSkipLogging(ctx, true)
+
+		mockErr := errors.New("connection timeout") //nolint:err113
+		mockTransport := &mockTransport{err: mockErr}
+
+		requestParams := &httplogger.LogRequestParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+		responseParams := &httplogger.LogResponseParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+		errorParams := &httplogger.LogErrorParams{
+			Logger: customLogger,
+		}
+
+		trans := NewLoggingTransport(ctx, mockTransport, requestParams, responseParams, errorParams)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.example.com/data", nil)
+		require.NoError(t, err)
+
+		resp, err := trans.RoundTrip(req)
+		if resp != nil {
+			defer resp.Body.Close()
+		}
+
+		require.Error(t, err)
+		assert.Same(t, mockErr, err)
+
+		// Should have NO log entries because logging was skipped
+		assert.Empty(t, captureLog.logs)
+	})
+
+	t.Run("still performs request when skip logging is true", func(t *testing.T) {
+		t.Parallel()
+
+		captureLog := newCaptureLogger()
+		customLogger := slog.New(captureLog.handler())
+		ctx := t.Context()
+
+		// Set skip logging flag
+		ctx = WithSkipLogging(ctx, true)
+
+		// Use a specific response body value to verify the transport was actually called
+		expectedBodyContent := "specific-response-content"
+		mockResp := &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader(expectedBodyContent)),
+			Header:     make(http.Header),
+		}
+
+		mockTransport := &mockTransport{response: mockResp}
+
+		requestParams := &httplogger.LogRequestParams{
+			Logger: customLogger,
+		}
+		responseParams := &httplogger.LogResponseParams{
+			Logger: customLogger,
+		}
+
+		trans := NewLoggingTransport(ctx, mockTransport, requestParams, responseParams, nil)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com/test", nil)
+		require.NoError(t, err)
+
+		resp, err := trans.RoundTrip(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Verify the underlying transport was called by checking the response
+		assert.Same(t, mockResp, resp, "should receive the mock response")
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		// Read and verify body content
+		bodyBytes, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		assert.Equal(t, expectedBodyContent, string(bodyBytes))
+
+		// Verify no logs were created
+		assert.Empty(t, captureLog.logs)
+	})
+
+	t.Run("respects skip flag per request", func(t *testing.T) {
+		t.Parallel()
+
+		captureLog := newCaptureLogger()
+		customLogger := slog.New(captureLog.handler())
+		ctx := t.Context()
+
+		mockResp := &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader("success")),
+			Header:     make(http.Header),
+		}
+
+		mockTransport := &mockTransport{response: mockResp}
+
+		requestParams := &httplogger.LogRequestParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+		responseParams := &httplogger.LogResponseParams{
+			Logger:      customLogger,
+			IncludeBody: false,
+		}
+
+		trans := NewLoggingTransport(ctx, mockTransport, requestParams, responseParams, nil)
+
+		// First request: skip logging
+		ctxWithSkip := WithSkipLogging(ctx, true)
+		req1, err := http.NewRequestWithContext(ctxWithSkip, http.MethodGet, "https://api.example.com/test1", nil)
+		require.NoError(t, err)
+
+		resp1, err := trans.RoundTrip(req1)
+		require.NoError(t, err)
+		resp1.Body.Close()
+
+		// Should have no logs yet
+		assert.Empty(t, captureLog.logs)
+
+		// Second request: normal logging
+		req2, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com/test2", nil)
+		require.NoError(t, err)
+
+		mockTransport.response = &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader("success")),
+			Header:     make(http.Header),
+		}
+
+		resp2, err := trans.RoundTrip(req2)
+		require.NoError(t, err)
+		resp2.Body.Close()
+
+		// Should have 2 logs now (from second request only)
+		assert.Len(t, captureLog.logs, 2)
+
+		// Verify logs are for the second request
+		requestDetails, ok := captureLog.logs[0].attrs["details"].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, "https://api.example.com/test2", requestDetails["url"])
+	})
+}

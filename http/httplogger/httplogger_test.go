@@ -493,7 +493,7 @@ func TestLogResponse_IncludeBodyOverride_ReturnsTrue(t *testing.T) {
 	params := &httplogger.LogResponseParams{
 		Logger:      logger,
 		IncludeBody: false, // This should be overridden
-		IncludeBodyOverride: func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
+		IncludeBodyOverride: func(ctx context.Context, response *http.Response, bodyBytes []byte) bool {
 			return true // Override to include body
 		},
 	}
@@ -527,7 +527,7 @@ func TestLogResponse_IncludeBodyOverride_ReturnsFalse(t *testing.T) {
 	params := &httplogger.LogResponseParams{
 		Logger:      logger,
 		IncludeBody: true, // This should be overridden
-		IncludeBodyOverride: func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
+		IncludeBodyOverride: func(ctx context.Context, response *http.Response, bodyBytes []byte) bool {
 			return false // Override to exclude body
 		},
 	}
@@ -553,7 +553,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnStatusCode(t *testing.T) {
 	params := &httplogger.LogResponseParams{
 		Logger:      logger,
 		IncludeBody: true,
-		IncludeBodyOverride: func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
+		IncludeBodyOverride: func(ctx context.Context, response *http.Response, bodyBytes []byte) bool {
 			// Only log body for error responses (4xx, 5xx)
 			return false // We'll override this in the actual test based on the response
 		},
@@ -571,7 +571,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnStatusCode(t *testing.T) {
 	}
 
 	// Update params to check status code from response
-	params.IncludeBodyOverride = func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
+	params.IncludeBodyOverride = func(ctx context.Context, response *http.Response, bodyBytes []byte) bool {
 		// In real scenario, we'd need to access response somehow
 		// For this test, we'll just check body content as a proxy
 		return bytes.Contains(bodyBytes, []byte("error"))
@@ -609,7 +609,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
 	params := &httplogger.LogResponseParams{
 		Logger:      logger,
 		IncludeBody: true,
-		IncludeBodyOverride: func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
+		IncludeBodyOverride: func(ctx context.Context, response *http.Response, bodyBytes []byte) bool {
 			return int64(len(bodyBytes)) <= maxSize
 		},
 	}

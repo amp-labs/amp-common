@@ -403,7 +403,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		redactFunc := func(key, value string) (redact.Action, int) {
 			if strings.ToLower(key) == "authorization" {
-				return redact.ActionRedact, 0
+				return redact.ActionRedactFully, 0
 			}
 
 			return redact.ActionKeep, 0
@@ -440,7 +440,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		headers, ok := requestDetails["headers"].(map[string]any)
 		require.True(t, ok)
-		assert.Equal(t, "<redacted>", headers["Authorization"])
+		assert.Equal(t, "[redacted]", headers["Authorization"])
 		assert.Equal(t, "application/json", headers["Content-Type"])
 	})
 
@@ -559,7 +559,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		redactFunc := func(key, _ string) (redact.Action, int) {
 			if key == "api_key" {
-				return redact.ActionRedact, 0
+				return redact.ActionRedactFully, 0
 			}
 
 			return redact.ActionKeep, 0
@@ -596,7 +596,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		urlStr, ok := requestDetails["url"].(string)
 		require.True(t, ok)
-		assert.Contains(t, urlStr, "api_key=%3Credacted%3E") // URL encoded <redacted>
+		assert.Contains(t, urlStr, "api_key=%5Bredacted%5D") // URL encoded [redacted]
 		assert.Contains(t, urlStr, "limit=10")
 	})
 }

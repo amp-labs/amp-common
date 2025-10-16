@@ -103,6 +103,12 @@ type LogRequestParams struct {
 	// Set to false for requests with sensitive or large bodies.
 	IncludeBody bool
 
+	// IncludeBodyOverride is an optional function that dynamically determines whether to include
+	// the request body in logs. If non-nil, this function is called instead of using the IncludeBody field.
+	// This allows for conditional body logging based on context, request properties, or body content.
+	// Example use cases: skip logging bodies over a certain size, exclude specific endpoints, etc.
+	IncludeBodyOverride func(ctx context.Context, request *http.Request, body []byte) bool
+
 	// TransformBody is an optional function to transform the payload before logging.
 	// This can be used to format, redact, or modify the body content.
 	// If the function returns nil, the original payload is used.
@@ -143,10 +149,20 @@ func (p *LogRequestParams) getHeaders(ctx context.Context, req *http.Request) ht
 	return req.Header
 }
 
+// shouldIncludeBody determines whether the request body should be included in logs.
+// Priority: IncludeBodyOverride function > IncludeBody boolean field.
+func (p *LogRequestParams) shouldIncludeBody(ctx context.Context, req *http.Request, body []byte) bool {
+	if p.IncludeBodyOverride != nil {
+		return p.IncludeBodyOverride(ctx, req, body)
+	}
+
+	return p.IncludeBody
+}
+
 // getBody returns the request body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
 func (p *LogRequestParams) getBody(ctx context.Context, req *http.Request, body []byte) (*printable.Payload, bool) {
-	if !p.IncludeBody {
+	if !p.shouldIncludeBody(ctx, req, body) {
 		return nil, false
 	}
 
@@ -264,6 +280,13 @@ type LogResponseParams struct {
 	// Set to false for responses with sensitive or large bodies.
 	IncludeBody bool
 
+	// IncludeBodyOverride is an optional function that dynamically determines whether to include
+	// the response body in logs. If non-nil, this function is called instead of using the IncludeBody field.
+	// This allows for conditional body logging based on context, request properties, or body content.
+	// Example use cases: skip logging bodies over a certain size, exclude specific status codes, etc.
+	// Note: The request parameter is from resp.Request, representing the original request that generated this response.
+	IncludeBodyOverride func(ctx context.Context, request *http.Request, body []byte) bool
+
 	// TransformBody is an optional function to transform the payload before logging.
 	// This can be used to format, redact, or modify the body content.
 	// If the function returns nil, the original payload is used.
@@ -304,10 +327,20 @@ func (p *LogResponseParams) getHeaders(ctx context.Context, resp *http.Response)
 	return resp.Header
 }
 
+// shouldIncludeBody determines whether the response body should be included in logs.
+// Priority: IncludeBodyOverride function > IncludeBody boolean field.
+func (p *LogResponseParams) shouldIncludeBody(ctx context.Context, resp *http.Response, body []byte) bool {
+	if p.IncludeBodyOverride != nil {
+		return p.IncludeBodyOverride(ctx, resp.Request, body)
+	}
+
+	return p.IncludeBody
+}
+
 // getBody returns the response body as a printable payload, applying transformation and truncation.
 // Returns (payload, true) if successful, (nil/payload, false) if body should not be logged.
 func (p *LogResponseParams) getBody(ctx context.Context, resp *http.Response, body []byte) (*printable.Payload, bool) {
-	if !p.IncludeBody {
+	if !p.shouldIncludeBody(ctx, resp, body) {
 		return nil, false
 	}
 

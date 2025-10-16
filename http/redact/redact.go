@@ -4,6 +4,7 @@
 package redact
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -61,7 +62,7 @@ const (
 //
 // Example:
 //
-//	func redactSecrets(key, value string) (Action, int) {
+//	func redactSecrets(ctx context.Context, key, value string) (Action, int) {
 //	    if strings.Contains(strings.ToLower(key), "authorization") {
 //	        return ActionPartial, 6  // Show "Bearer" prefix
 //	    }
@@ -70,7 +71,7 @@ const (
 //	    }
 //	    return ActionKeep, 0         // Keep everything else
 //	}
-type Func func(key, value string) (action Action, partialLength int)
+type Func func(ctx context.Context, key, value string) (action Action, partialLength int)
 
 // Headers creates a redacted copy of HTTP headers based on the provided redaction function.
 // It processes each header key-value pair through the redact callback to determine how to
@@ -91,7 +92,7 @@ type Func func(key, value string) (action Action, partialLength int)
 //	    return ActionKeep, 0
 //	}
 //	redactedHeaders := Headers(req.Header, redactFunc)
-func Headers(headers http.Header, redact Func) http.Header {
+func Headers(ctx context.Context, headers http.Header, redact Func) http.Header {
 	if headers == nil {
 		return nil
 	}
@@ -104,7 +105,7 @@ func Headers(headers http.Header, redact Func) http.Header {
 
 	for key, hdrs := range headers {
 		for _, val := range hdrs {
-			action, partialLen := redact(key, val)
+			action, partialLen := redact(ctx, key, val)
 
 			switch action {
 			case ActionKeep:
@@ -148,7 +149,7 @@ func Headers(headers http.Header, redact Func) http.Header {
 //	    return ActionKeep, 0
 //	}
 //	redactedParams := URLValues(req.URL.Query(), redactFunc)
-func URLValues(values url.Values, redact Func) url.Values {
+func URLValues(ctx context.Context, values url.Values, redact Func) url.Values {
 	if values == nil {
 		return nil
 	}
@@ -167,7 +168,7 @@ func URLValues(values url.Values, redact Func) url.Values {
 
 	for key, vals := range values {
 		for _, val := range vals {
-			action, partialLen := redact(key, val)
+			action, partialLen := redact(ctx, key, val)
 
 			switch action {
 			case ActionKeep:

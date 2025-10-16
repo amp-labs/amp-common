@@ -102,7 +102,7 @@ func TestLogError_WithRedactedQueryParams(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "api_key") {
-			return redact.ActionPartial, 4
+			return redact.ActionRedactPartialWithMask, 4
 		}
 
 		return redact.ActionKeep, 0
@@ -182,7 +182,7 @@ func TestLogError_ComplexError(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "admin") {
-			return redact.ActionRedact, 0
+			return redact.ActionRedactFully, 0
 		}
 
 		return redact.ActionKeep, 0
@@ -201,7 +201,7 @@ func TestLogError_ComplexError(t *testing.T) {
 	assert.Contains(t, logOutput, "HTTP request failed")
 	assert.Contains(t, logOutput, "internal server error")
 	assert.Contains(t, logOutput, "POST")
-	assert.Contains(t, logOutput, "admin=%3Credacted%3E") // URL encoded <redacted>
+	assert.Contains(t, logOutput, "admin=%5Bredacted%5D") // URL encoded [redacted]
 	assert.Contains(t, logOutput, "corr-complex")
 }
 

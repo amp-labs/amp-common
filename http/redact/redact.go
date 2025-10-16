@@ -15,14 +15,20 @@ import (
 //
 // Example:
 //
-//	PartiallyRedactString("sk_live_abc123def456", 8) // Returns "sk_live_************"
-//	PartiallyRedactString("short", 10)                // Returns "short"
-func PartiallyRedactString(value string, visibleRunes int) string {
+//	PartiallyRedactString("sk_live_abc123def456", 8, false) // Returns "sk_live_************"
+//	PartiallyRedactString("sk_live_abc123def456", 8, true)  // Returns "sk_live_[redacted]"
+//	PartiallyRedactString("short", 10, false)               // Returns "short"
+func PartiallyRedactString(value string, visibleRunes int, truncate bool) string {
 	if len(value) <= visibleRunes {
 		return value
 	}
 
 	show := value[:visibleRunes]
+
+	if truncate {
+		return show + "[redacted]"
+	}
+
 	hide := strings.Map(func(r rune) rune {
 		return '*'
 	}, value[visibleRunes:])
@@ -36,11 +42,14 @@ type Action int
 const (
 	// ActionKeep indicates that the header value should be kept as-is.
 	ActionKeep Action = iota
-	// ActionRedact indicates that the header value should be fully redacted (replaced with "<redacted>").
-	ActionRedact
-	// ActionPartial indicates that the header value should be partially redacted
+	// ActionRedactFully indicates that the header value should be fully redacted (replaced with "[redacted]").
+	ActionRedactFully
+	// ActionRedactPartialWithMask indicates that the header value should be partially redacted
 	// (show first N characters, replace rest with asterisks).
-	ActionPartial
+	ActionRedactPartialWithMask
+	// ActionRedactPartialTruncate indicates that the header value should be partially redacted
+	// (show first N characters, truncate the rest and add "[redacted]" to the end).
+	ActionRedactPartialTruncate
 	// ActionDelete indicates that the header should be removed entirely from the output.
 	ActionDelete
 )
@@ -100,10 +109,12 @@ func Headers(headers http.Header, redact Func) http.Header {
 			switch action {
 			case ActionKeep:
 				redacted.Add(key, val)
-			case ActionRedact:
-				redacted.Add(key, "<redacted>")
-			case ActionPartial:
-				redacted.Add(key, PartiallyRedactString(val, partialLen))
+			case ActionRedactFully:
+				redacted.Add(key, "[redacted]")
+			case ActionRedactPartialWithMask:
+				redacted.Add(key, PartiallyRedactString(val, partialLen, false))
+			case ActionRedactPartialTruncate:
+				redacted.Add(key, PartiallyRedactString(val, partialLen, true))
 			case ActionDelete:
 				// Do not add this header
 			default:
@@ -161,10 +172,12 @@ func URLValues(values url.Values, redact Func) url.Values {
 			switch action {
 			case ActionKeep:
 				redacted.Add(key, val)
-			case ActionRedact:
-				redacted.Add(key, "<redacted>")
-			case ActionPartial:
-				redacted.Add(key, PartiallyRedactString(val, partialLen))
+			case ActionRedactFully:
+				redacted.Add(key, "[redacted]")
+			case ActionRedactPartialWithMask:
+				redacted.Add(key, PartiallyRedactString(val, partialLen, false))
+			case ActionRedactPartialTruncate:
+				redacted.Add(key, PartiallyRedactString(val, partialLen, true))
 			case ActionDelete:
 				// Do not add this value
 			default:

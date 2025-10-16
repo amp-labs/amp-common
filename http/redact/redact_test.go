@@ -67,7 +67,7 @@ func TestPartiallyRedactString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := redact.PartiallyRedactString(tt.value, tt.visibleRunes)
+			result := redact.PartiallyRedactString(tt.value, tt.visibleRunes, false)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -125,7 +125,7 @@ func TestHeaders_ActionRedact(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "auth") || strings.Contains(strings.ToLower(key), "key") {
-			return redact.ActionRedact, 0
+			return redact.ActionRedactFully, 0
 		}
 
 		return redact.ActionKeep, 0
@@ -133,8 +133,8 @@ func TestHeaders_ActionRedact(t *testing.T) {
 
 	result := redact.Headers(headers, redactFunc)
 
-	assert.Equal(t, "<redacted>", result.Get("Authorization"))
-	assert.Equal(t, "<redacted>", result.Get("X-Api-Key"))
+	assert.Equal(t, "[redacted]", result.Get("Authorization"))
+	assert.Equal(t, "[redacted]", result.Get("X-Api-Key"))
 }
 
 func TestHeaders_ActionPartial(t *testing.T) {
@@ -146,7 +146,7 @@ func TestHeaders_ActionPartial(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "Authorization") {
-			return redact.ActionPartial, 7 // Show "Bearer "
+			return redact.ActionRedactPartialWithMask, 7 // Show "Bearer "
 		}
 
 		return redact.ActionKeep, 0
@@ -189,7 +189,7 @@ func TestHeaders_MultipleValues(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "Set-Cookie") {
-			return redact.ActionPartial, 8
+			return redact.ActionRedactPartialWithMask, 8
 		}
 
 		return redact.ActionKeep, 0
@@ -274,7 +274,7 @@ func TestUrlValues_ActionRedact(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "key") || strings.Contains(strings.ToLower(key), "token") {
-			return redact.ActionRedact, 0
+			return redact.ActionRedactFully, 0
 		}
 
 		return redact.ActionKeep, 0
@@ -282,8 +282,8 @@ func TestUrlValues_ActionRedact(t *testing.T) {
 
 	result := redact.URLValues(values, redactFunc)
 
-	assert.Equal(t, "<redacted>", result.Get("api_key"))
-	assert.Equal(t, "<redacted>", result.Get("token"))
+	assert.Equal(t, "[redacted]", result.Get("api_key"))
+	assert.Equal(t, "[redacted]", result.Get("token"))
 	assert.Equal(t, "1", result.Get("page"))
 }
 
@@ -296,7 +296,7 @@ func TestUrlValues_ActionPartial(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "api_key") {
-			return redact.ActionPartial, 8 // Show "sk_live_"
+			return redact.ActionRedactPartialWithMask, 8 // Show "sk_live_"
 		}
 
 		return redact.ActionKeep, 0
@@ -339,7 +339,7 @@ func TestUrlValues_MultipleValues(t *testing.T) {
 
 	redactFunc := func(key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "id") {
-			return redact.ActionPartial, 1
+			return redact.ActionRedactPartialWithMask, 1
 		}
 
 		return redact.ActionKeep, 0
@@ -390,12 +390,12 @@ func TestHeaders_RealisticScenario_LoggingSafeHeaders(t *testing.T) {
 
 		// Fully redact API keys
 		if strings.Contains(lowerKey, "key") {
-			return redact.ActionRedact, 0
+			return redact.ActionRedactFully, 0
 		}
 
 		// Partially redact authorization (show Bearer prefix)
 		if strings.Contains(lowerKey, "authorization") {
-			return redact.ActionPartial, 7
+			return redact.ActionRedactPartialWithMask, 7
 		}
 
 		// Delete internal tokens
@@ -412,7 +412,7 @@ func TestHeaders_RealisticScenario_LoggingSafeHeaders(t *testing.T) {
 	assert.Equal(t, "application/json", result.Get("Content-Type"))
 	assert.Equal(t, "MyApp/1.0", result.Get("User-Agent"))
 	assert.Equal(t, "Bearer **************************", result.Get("Authorization"))
-	assert.Equal(t, "<redacted>", result.Get("X-Api-Key"))
+	assert.Equal(t, "[redacted]", result.Get("X-Api-Key"))
 	assert.Equal(t, "req-12345", result.Get("X-Request-Id"))
 	assert.Empty(t, result.Get("X-Internal-Token"))
 }
@@ -433,7 +433,7 @@ func TestUrlValues_RealisticScenario_LoggingSafeQueryParams(t *testing.T) {
 
 		// Partially redact API keys (show prefix)
 		if strings.Contains(lowerKey, "api_key") {
-			return redact.ActionPartial, 8
+			return redact.ActionRedactPartialWithMask, 8
 		}
 
 		// Fully delete access codes from logs

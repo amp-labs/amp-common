@@ -318,62 +318,72 @@ func TestLogError_MultipleQueryParamsWithSameKey(t *testing.T) {
 	assert.Contains(t, logOutput, "id=789")
 }
 
-func TestLogRequest_IncludeBodyOverride_ReturnsTrue(t *testing.T) {
+func TestLogRequest_IncludeBodyOverride(t *testing.T) {
 	t.Parallel()
 
-	var logBuffer bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
-
-	body := []byte(`{"key":"value"}`)
-	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(body))
-	require.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-
-	params := &httplogger.LogRequestParams{
-		Logger:      logger,
-		IncludeBody: false, // This should be overridden
-		IncludeBodyOverride: func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
-			return true // Override to include body
+	tests := []struct {
+		name                string
+		body                []byte
+		includeBody         bool
+		overrideReturnValue bool
+		shouldContainBody   bool
+		shouldContainValues []string
+		shouldNotContain    []string
+	}{
+		{
+			name:                "override returns true",
+			body:                []byte(`{"key":"value"}`),
+			includeBody:         false,
+			overrideReturnValue: true,
+			shouldContainBody:   true,
+			shouldContainValues: []string{`\"key\":\"value\"`, "POST", `"body"`},
+			shouldNotContain:    nil,
+		},
+		{
+			name:                "override returns false",
+			body:                []byte(`{"secret":"hidden"}`),
+			includeBody:         true,
+			overrideReturnValue: false,
+			shouldContainBody:   false,
+			shouldContainValues: nil,
+			shouldNotContain:    []string{"secret", "hidden", `"body"`},
 		},
 	}
 
-	httplogger.LogRequest(t.Context(), req, body, "corr-123", params)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 
-	logOutput := logBuffer.String()
-	assert.Contains(t, logOutput, "Sending HTTP request")
-	assert.Contains(t, logOutput, `\"key\":\"value\"`) // Escaped because it's nested in JSON
-	assert.Contains(t, logOutput, "POST")
-	assert.Contains(t, logOutput, `"body"`) // Ensure body field exists
-}
+			var logBuffer bytes.Buffer
+			logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
-func TestLogRequest_IncludeBodyOverride_ReturnsFalse(t *testing.T) {
-	t.Parallel()
+			req, err := http.NewRequestWithContext(
+				t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(testCase.body))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
 
-	var logBuffer bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+			params := &httplogger.LogRequestParams{
+				Logger:      logger,
+				IncludeBody: testCase.includeBody,
+				IncludeBodyOverride: func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
+					return testCase.overrideReturnValue
+				},
+			}
 
-	body := []byte(`{"secret":"hidden"}`)
-	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(body))
-	require.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
+			httplogger.LogRequest(t.Context(), req, testCase.body, "corr-123", params)
 
-	params := &httplogger.LogRequestParams{
-		Logger:      logger,
-		IncludeBody: true, // This should be overridden
-		IncludeBodyOverride: func(ctx context.Context, request *http.Request, bodyBytes []byte) bool {
-			return false // Override to exclude body
-		},
+			logOutput := logBuffer.String()
+			assert.Contains(t, logOutput, "Sending HTTP request")
+
+			for _, val := range testCase.shouldContainValues {
+				assert.Contains(t, logOutput, val)
+			}
+
+			for _, val := range testCase.shouldNotContain {
+				assert.NotContains(t, logOutput, val)
+			}
+		})
 	}
-
-	httplogger.LogRequest(t.Context(), req, body, "corr-456", params)
-
-	logOutput := logBuffer.String()
-	assert.Contains(t, logOutput, "Sending HTTP request")
-	assert.NotContains(t, logOutput, "secret")
-	assert.NotContains(t, logOutput, "hidden")
-	assert.NotContains(t, logOutput, `"body"`)
 }
 
 func TestLogRequest_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
@@ -409,6 +419,7 @@ func TestLogRequest_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
 
 	// Test with large body
 	logBuffer.Reset()
+
 	req, err = http.NewRequestWithContext(
 		t.Context(), http.MethodPost, "https://api.example.com/large", bytes.NewReader(largeBody))
 	require.NoError(t, err)
@@ -449,6 +460,7 @@ func TestLogRequest_IncludeBodyOverride_ChecksEndpoint(t *testing.T) {
 
 	// Test with regular endpoint
 	logBuffer.Reset()
+
 	req, err = http.NewRequestWithContext(
 		t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(body))
 	require.NoError(t, err)
@@ -472,7 +484,7 @@ func TestLogResponse_IncludeBodyOverride_ReturnsTrue(t *testing.T) {
 
 	resp := &http.Response{
 		Status:     "200 OK",
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Request:    req,
 		Header:     make(http.Header),
 	}
@@ -507,7 +519,7 @@ func TestLogResponse_IncludeBodyOverride_ReturnsFalse(t *testing.T) {
 
 	resp := &http.Response{
 		Status:     "500 Internal Server Error",
-		StatusCode: 500,
+		StatusCode: http.StatusInternalServerError,
 		Request:    req,
 		Header:     make(http.Header),
 	}
@@ -553,7 +565,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnStatusCode(t *testing.T) {
 
 	resp := &http.Response{
 		Status:     "200 OK",
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Request:    req,
 		Header:     make(http.Header),
 	}
@@ -572,6 +584,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnStatusCode(t *testing.T) {
 
 	// Test with error response (should log body)
 	logBuffer.Reset()
+
 	resp.StatusCode = 500
 	resp.Status = "500 Internal Server Error"
 
@@ -607,7 +620,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
 
 	resp := &http.Response{
 		Status:     "200 OK",
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Request:    req,
 		Header:     make(http.Header),
 	}
@@ -664,7 +677,7 @@ func TestLogResponse_IncludeBodyOverride_NilOverride(t *testing.T) {
 
 	resp := &http.Response{
 		Status:     "200 OK",
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Request:    req,
 		Header:     make(http.Header),
 	}

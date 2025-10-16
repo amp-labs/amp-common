@@ -617,7 +617,7 @@ func TestWithSkipLogging(t *testing.T) {
 	t.Run("sets skip logging to true", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := t.Context()
 		ctxWithSkip := WithSkipLogging(ctx, true)
 
 		assert.True(t, IsSkipLogging(ctxWithSkip))
@@ -626,7 +626,7 @@ func TestWithSkipLogging(t *testing.T) {
 	t.Run("sets skip logging to false", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := t.Context()
 		ctxWithSkip := WithSkipLogging(ctx, false)
 
 		assert.False(t, IsSkipLogging(ctxWithSkip))
@@ -635,7 +635,7 @@ func TestWithSkipLogging(t *testing.T) {
 	t.Run("returns new context", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := t.Context()
 		ctxWithSkip := WithSkipLogging(ctx, true)
 
 		// Verify the new context has the skip flag
@@ -648,7 +648,7 @@ func TestWithSkipLogging(t *testing.T) {
 	t.Run("can override previous value", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := t.Context()
 		ctx1 := WithSkipLogging(ctx, true)
 		ctx2 := WithSkipLogging(ctx1, false)
 
@@ -663,39 +663,47 @@ func TestIsSkipLogging(t *testing.T) {
 	t.Run("returns false for context without skip flag", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := t.Context()
 		assert.False(t, IsSkipLogging(ctx))
 	})
 
 	t.Run("returns false for nil context", func(t *testing.T) {
 		t.Parallel()
 
-		// This should not panic
-		assert.False(t, IsSkipLogging(nil))
+		// This should not panic - use context.TODO() instead of nil
+		assert.False(t, IsSkipLogging(context.TODO())) //nolint:staticcheck,usetesting // Testing nil-safety behavior
 	})
 
 	t.Run("returns true when skip flag is set to true", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := WithSkipLogging(context.Background(), true)
+		ctx := WithSkipLogging(t.Context(), true)
 		assert.True(t, IsSkipLogging(ctx))
 	})
 
 	t.Run("returns false when skip flag is set to false", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := WithSkipLogging(context.Background(), false)
+		ctx := WithSkipLogging(t.Context(), false)
 		assert.False(t, IsSkipLogging(ctx))
 	})
 
 	t.Run("returns correct value for nested context", func(t *testing.T) {
 		t.Parallel()
 
+		// Define custom types for context keys to avoid staticcheck warnings
+		type contextKey string
+
+		const (
+			otherKey   contextKey = "other-key"
+			anotherKey contextKey = "another-key"
+		)
+
 		// Create a context with skip=true, then add other values
-		ctx := context.Background()
-		ctx = context.WithValue(ctx, "other-key", "other-value")
+		ctx := t.Context()
+		ctx = context.WithValue(ctx, otherKey, "other-value")
 		ctx = WithSkipLogging(ctx, true)
-		ctx = context.WithValue(ctx, "another-key", "another-value")
+		ctx = context.WithValue(ctx, anotherKey, "another-value")
 
 		assert.True(t, IsSkipLogging(ctx))
 	})
@@ -747,7 +755,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 		assert.Same(t, mockResp, resp)
 
 		// Should have NO log entries because logging was skipped
-		assert.Len(t, captureLog.logs, 0)
+		assert.Empty(t, captureLog.logs)
 	})
 
 	t.Run("logs normally when skip flag is false", func(t *testing.T) {
@@ -870,7 +878,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 		assert.Same(t, mockErr, err)
 
 		// Should have NO log entries because logging was skipped
-		assert.Len(t, captureLog.logs, 0)
+		assert.Empty(t, captureLog.logs)
 	})
 
 	t.Run("still performs request when skip logging is true", func(t *testing.T) {
@@ -920,7 +928,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 		assert.Equal(t, expectedBodyContent, string(bodyBytes))
 
 		// Verify no logs were created
-		assert.Len(t, captureLog.logs, 0)
+		assert.Empty(t, captureLog.logs)
 	})
 
 	t.Run("respects skip flag per request", func(t *testing.T) {
@@ -960,7 +968,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 		resp1.Body.Close()
 
 		// Should have no logs yet
-		assert.Len(t, captureLog.logs, 0)
+		assert.Empty(t, captureLog.logs)
 
 		// Second request: normal logging
 		req2, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com/test2", nil)

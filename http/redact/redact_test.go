@@ -1,6 +1,7 @@
 package redact_test
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -76,7 +77,7 @@ func TestPartiallyRedactString(t *testing.T) {
 func TestHeaders_NilHeaders(t *testing.T) {
 	t.Parallel()
 
-	result := redact.Headers(nil, nil)
+	result := redact.Headers(t.Context(), nil, nil)
 	assert.Nil(t, result)
 }
 
@@ -88,7 +89,7 @@ func TestHeaders_NilRedactFunc(t *testing.T) {
 		"Authorization": []string{"Bearer token123"},
 	}
 
-	result := redact.Headers(headers, nil)
+	result := redact.Headers(t.Context(), headers, nil)
 
 	assert.Equal(t, "application/json", result.Get("Content-Type"))
 	assert.Equal(t, "Bearer token123", result.Get("Authorization"))
@@ -105,11 +106,11 @@ func TestHeaders_ActionKeep(t *testing.T) {
 		"User-Agent":   []string{"test-client"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.Headers(headers, redactFunc)
+	result := redact.Headers(t.Context(), headers, redactFunc)
 
 	assert.Equal(t, "application/json", result.Get("Content-Type"))
 	assert.Equal(t, "test-client", result.Get("User-Agent"))
@@ -123,7 +124,7 @@ func TestHeaders_ActionRedact(t *testing.T) {
 		"X-Api-Key":     []string{"api_key_12345"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "auth") || strings.Contains(strings.ToLower(key), "key") {
 			return redact.ActionRedactFully, 0
 		}
@@ -131,7 +132,7 @@ func TestHeaders_ActionRedact(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.Headers(headers, redactFunc)
+	result := redact.Headers(t.Context(), headers, redactFunc)
 
 	assert.Equal(t, "[redacted]", result.Get("Authorization"))
 	assert.Equal(t, "[redacted]", result.Get("X-Api-Key"))
@@ -144,7 +145,7 @@ func TestHeaders_ActionPartial(t *testing.T) {
 		"Authorization": []string{"Bearer token123456789"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "Authorization") {
 			return redact.ActionRedactPartialWithMask, 7 // Show "Bearer "
 		}
@@ -152,7 +153,7 @@ func TestHeaders_ActionPartial(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.Headers(headers, redactFunc)
+	result := redact.Headers(t.Context(), headers, redactFunc)
 
 	assert.Equal(t, "Bearer **************", result.Get("Authorization"))
 }
@@ -165,7 +166,7 @@ func TestHeaders_ActionDelete(t *testing.T) {
 		"X-Secret":     []string{"should_be_deleted"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "secret") {
 			return redact.ActionDelete, 0
 		}
@@ -173,7 +174,7 @@ func TestHeaders_ActionDelete(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.Headers(headers, redactFunc)
+	result := redact.Headers(t.Context(), headers, redactFunc)
 
 	assert.Equal(t, "application/json", result.Get("Content-Type"))
 	assert.Empty(t, result.Get("X-Secret"))
@@ -187,7 +188,7 @@ func TestHeaders_MultipleValues(t *testing.T) {
 		"Set-Cookie": []string{"session=abc123", "tracking=xyz789"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "Set-Cookie") {
 			return redact.ActionRedactPartialWithMask, 8
 		}
@@ -195,7 +196,7 @@ func TestHeaders_MultipleValues(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.Headers(headers, redactFunc)
+	result := redact.Headers(t.Context(), headers, redactFunc)
 
 	cookies := result.Values("Set-Cookie")
 	assert.Len(t, cookies, 2)
@@ -211,11 +212,11 @@ func TestHeaders_DefaultActionOnUnknown(t *testing.T) {
 	}
 
 	// Return an invalid action value (100)
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		return redact.Action(100), 0
 	}
 
-	result := redact.Headers(headers, redactFunc)
+	result := redact.Headers(t.Context(), headers, redactFunc)
 
 	// Should default to ActionKeep
 	assert.Equal(t, "application/json", result.Get("Content-Type"))
@@ -224,7 +225,7 @@ func TestHeaders_DefaultActionOnUnknown(t *testing.T) {
 func TestUrlValues_NilValues(t *testing.T) {
 	t.Parallel()
 
-	result := redact.URLValues(nil, nil)
+	result := redact.URLValues(t.Context(), nil, nil)
 	assert.Nil(t, result)
 }
 
@@ -236,7 +237,7 @@ func TestUrlValues_NilRedactFunc(t *testing.T) {
 		"page":    []string{"1"},
 	}
 
-	result := redact.URLValues(values, nil)
+	result := redact.URLValues(t.Context(), values, nil)
 
 	assert.Equal(t, "secret123", result.Get("api_key"))
 	assert.Equal(t, "1", result.Get("page"))
@@ -253,11 +254,11 @@ func TestUrlValues_ActionKeep(t *testing.T) {
 		"limit": []string{"10"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.URLValues(values, redactFunc)
+	result := redact.URLValues(t.Context(), values, redactFunc)
 
 	assert.Equal(t, "1", result.Get("page"))
 	assert.Equal(t, "10", result.Get("limit"))
@@ -272,7 +273,7 @@ func TestUrlValues_ActionRedact(t *testing.T) {
 		"page":    []string{"1"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "key") || strings.Contains(strings.ToLower(key), "token") {
 			return redact.ActionRedactFully, 0
 		}
@@ -280,7 +281,7 @@ func TestUrlValues_ActionRedact(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.URLValues(values, redactFunc)
+	result := redact.URLValues(t.Context(), values, redactFunc)
 
 	assert.Equal(t, "[redacted]", result.Get("api_key"))
 	assert.Equal(t, "[redacted]", result.Get("token"))
@@ -294,7 +295,7 @@ func TestUrlValues_ActionPartial(t *testing.T) {
 		"api_key": []string{"sk_live_1234567890"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "api_key") {
 			return redact.ActionRedactPartialWithMask, 8 // Show "sk_live_"
 		}
@@ -302,7 +303,7 @@ func TestUrlValues_ActionPartial(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.URLValues(values, redactFunc)
+	result := redact.URLValues(t.Context(), values, redactFunc)
 
 	assert.Equal(t, "sk_live_**********", result.Get("api_key"))
 }
@@ -315,7 +316,7 @@ func TestUrlValues_ActionDelete(t *testing.T) {
 		"secret": []string{"should_be_deleted"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "secret") {
 			return redact.ActionDelete, 0
 		}
@@ -323,7 +324,7 @@ func TestUrlValues_ActionDelete(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.URLValues(values, redactFunc)
+	result := redact.URLValues(t.Context(), values, redactFunc)
 
 	assert.Equal(t, "1", result.Get("page"))
 	assert.Empty(t, result.Get("secret"))
@@ -337,7 +338,7 @@ func TestUrlValues_MultipleValues(t *testing.T) {
 		"id": []string{"123", "456", "789"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.EqualFold(key, "id") {
 			return redact.ActionRedactPartialWithMask, 1
 		}
@@ -345,7 +346,7 @@ func TestUrlValues_MultipleValues(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.URLValues(values, redactFunc)
+	result := redact.URLValues(t.Context(), values, redactFunc)
 
 	ids := result["id"]
 	assert.Len(t, ids, 3)
@@ -362,11 +363,11 @@ func TestUrlValues_DefaultActionOnUnknown(t *testing.T) {
 	}
 
 	// Return an invalid action value (100)
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		return redact.Action(100), 0
 	}
 
-	result := redact.URLValues(values, redactFunc)
+	result := redact.URLValues(t.Context(), values, redactFunc)
 
 	// Should default to ActionKeep
 	assert.Equal(t, "1", result.Get("page"))
@@ -385,7 +386,7 @@ func TestHeaders_RealisticScenario_LoggingSafeHeaders(t *testing.T) {
 		"X-Internal-Token": []string{"internal_secret"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		lowerKey := strings.ToLower(key)
 
 		// Fully redact API keys
@@ -407,7 +408,7 @@ func TestHeaders_RealisticScenario_LoggingSafeHeaders(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.Headers(headers, redactFunc)
+	result := redact.Headers(t.Context(), headers, redactFunc)
 
 	assert.Equal(t, "application/json", result.Get("Content-Type"))
 	assert.Equal(t, "MyApp/1.0", result.Get("User-Agent"))
@@ -428,7 +429,7 @@ func TestUrlValues_RealisticScenario_LoggingSafeQueryParams(t *testing.T) {
 		"user_id":     []string{"user123"},
 	}
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		lowerKey := strings.ToLower(key)
 
 		// Partially redact API keys (show prefix)
@@ -445,7 +446,7 @@ func TestUrlValues_RealisticScenario_LoggingSafeQueryParams(t *testing.T) {
 		return redact.ActionKeep, 0
 	}
 
-	result := redact.URLValues(values, redactFunc)
+	result := redact.URLValues(t.Context(), values, redactFunc)
 
 	assert.Equal(t, "1", result.Get("page"))
 	assert.Equal(t, "10", result.Get("limit"))

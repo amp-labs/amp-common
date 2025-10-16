@@ -2,6 +2,7 @@ package httplogger_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -100,7 +101,7 @@ func TestLogError_WithRedactedQueryParams(t *testing.T) {
 		t.Context(), http.MethodGet, "https://api.example.com/path?api_key=secret123&page=1", nil)
 	require.NoError(t, err)
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "api_key") {
 			return redact.ActionRedactPartialWithMask, 4
 		}
@@ -180,7 +181,7 @@ func TestLogError_ComplexError(t *testing.T) {
 		t.Context(), http.MethodPost, "https://api.example.com/users?admin=true", nil)
 	require.NoError(t, err)
 
-	redactFunc := func(key, value string) (redact.Action, int) {
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 		if strings.Contains(strings.ToLower(key), "admin") {
 			return redact.ActionRedactFully, 0
 		}

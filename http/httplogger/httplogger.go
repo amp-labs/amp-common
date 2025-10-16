@@ -135,9 +135,9 @@ func (p *LogRequestParams) getLogger(ctx context.Context) *slog.Logger {
 }
 
 // getHeaders returns the request headers, applying redaction if configured.
-func (p *LogRequestParams) getHeaders(req *http.Request) http.Header {
+func (p *LogRequestParams) getHeaders(ctx context.Context, req *http.Request) http.Header {
 	if p.RedactHeaders != nil {
-		return redact.Headers(req.Header, p.RedactHeaders)
+		return redact.Headers(ctx, req.Header, p.RedactHeaders)
 	}
 
 	return req.Header
@@ -296,9 +296,9 @@ func (p *LogResponseParams) getLogger(ctx context.Context) *slog.Logger {
 }
 
 // getHeaders returns the response headers, applying redaction if configured.
-func (p *LogResponseParams) getHeaders(resp *http.Response) http.Header {
+func (p *LogResponseParams) getHeaders(ctx context.Context, resp *http.Response) http.Header {
 	if p.RedactHeaders != nil {
-		return redact.Headers(resp.Header, p.RedactHeaders)
+		return redact.Headers(ctx, resp.Header, p.RedactHeaders)
 	}
 
 	return resp.Header
@@ -544,7 +544,7 @@ func LogRequest(
 	u := cloneURL(request.URL)
 
 	if params.RedactQueryParams != nil {
-		values := redact.URLValues(request.URL.Query(), params.RedactQueryParams)
+		values := redact.URLValues(ctx, request.URL.Query(), params.RedactQueryParams)
 
 		u.RawQuery = values.Encode()
 	}
@@ -553,7 +553,7 @@ func LogRequest(
 		"method":        request.Method,
 		"url":           u.String(),
 		"correlationId": correlationID,
-		"headers":       getNiceHeaders(params.getHeaders(request)),
+		"headers":       getNiceHeaders(params.getHeaders(ctx, request)),
 	}
 
 	body, _ := params.getBody(ctx, request, optionalBody)
@@ -600,7 +600,7 @@ func LogResponse(
 	u := cloneURL(requestURL)
 
 	if params.RedactQueryParams != nil {
-		values := redact.URLValues(requestURL.Query(), params.RedactQueryParams)
+		values := redact.URLValues(ctx, requestURL.Query(), params.RedactQueryParams)
 
 		u.RawQuery = values.Encode()
 	}
@@ -609,7 +609,7 @@ func LogResponse(
 		"method":        requestMethod,
 		"url":           u.String(),
 		"correlationId": correlationID,
-		"headers":       getNiceHeaders(params.getHeaders(response)),
+		"headers":       getNiceHeaders(params.getHeaders(ctx, response)),
 		"status":        response.Status,
 		"statusCode":    response.StatusCode,
 	}
@@ -663,7 +663,7 @@ func LogError(
 		u := cloneURL(requestURL)
 
 		if params.RedactQueryParams != nil {
-			values := redact.URLValues(requestURL.Query(), params.RedactQueryParams)
+			values := redact.URLValues(ctx, requestURL.Query(), params.RedactQueryParams)
 
 			u.RawQuery = values.Encode()
 		}

@@ -401,7 +401,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		mockTransport := &mockTransport{response: mockResp}
 
-		redactFunc := func(key, value string) (redact.Action, int) {
+		redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
 			if strings.ToLower(key) == "authorization" {
 				return redact.ActionRedactFully, 0
 			}
@@ -557,7 +557,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		mockTransport := &mockTransport{response: mockResp}
 
-		redactFunc := func(key, _ string) (redact.Action, int) {
+		redactFunc := func(ctx context.Context, key, _ string) (redact.Action, int) {
 			if key == "api_key" {
 				return redact.ActionRedactFully, 0
 			}

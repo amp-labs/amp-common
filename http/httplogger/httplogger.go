@@ -285,7 +285,7 @@ type LogResponseParams struct {
 	// This allows for conditional body logging based on context, request properties, or body content.
 	// Example use cases: skip logging bodies over a certain size, exclude specific status codes, etc.
 	// Note: The request parameter is from resp.Request, representing the original request that generated this response.
-	IncludeBodyOverride func(ctx context.Context, request *http.Request, body []byte) bool
+	IncludeBodyOverride func(ctx context.Context, request *http.Response, body []byte) bool
 
 	// TransformBody is an optional function to transform the payload before logging.
 	// This can be used to format, redact, or modify the body content.
@@ -331,7 +331,7 @@ func (p *LogResponseParams) getHeaders(ctx context.Context, resp *http.Response)
 // Priority: IncludeBodyOverride function > IncludeBody boolean field.
 func (p *LogResponseParams) shouldIncludeBody(ctx context.Context, resp *http.Response, body []byte) bool {
 	if p.IncludeBodyOverride != nil {
-		return p.IncludeBodyOverride(ctx, resp.Request, body)
+		return p.IncludeBodyOverride(ctx, resp, body)
 	}
 
 	return p.IncludeBody

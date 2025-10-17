@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/amp-labs/amp-common/http/printable"
 )
 
 // PartiallyRedactString shows the first visibleRunes characters and replaces the rest
@@ -72,6 +74,24 @@ const (
 //	    return ActionKeep, 0         // Keep everything else
 //	}
 type Func func(ctx context.Context, key, value string) (action Action, partialLength int)
+
+// BodyFunc is a callback function that determines how to redact an HTTP request/response body.
+// It receives the body payload, and returns:
+//   - action: what to do with this body (keep, redact, partial redact, or delete)
+//   - partialLength: if action is ActionPartial, how many characters to show before redacting
+//
+// Example:
+//
+//	func redactBody(ctx context.Context, body *printable.Payload) (Action, int) {
+//	    if strings.Contains(body.Content, "password") {
+//	        return ActionRedactFully, 0  // Fully redact bodies containing passwords
+//	    }
+//	    if len(body.Content) > 1000 {
+//	        return ActionRedactPartialTruncate, 100  // Show first 100 chars of large bodies
+//	    }
+//	    return ActionKeep, 0  // Keep everything else
+//	}
+type BodyFunc func(ctx context.Context, body *printable.Payload) (action Action, partialLength int)
 
 // Headers creates a redacted copy of HTTP headers based on the provided redaction function.
 // It processes each header key-value pair through the redact callback to determine how to
@@ -188,4 +208,75 @@ func URLValues(ctx context.Context, values url.Values, redact Func) url.Values {
 	}
 
 	return redacted
+}
+
+// Body creates a redacted copy of an HTTP body based on the provided redaction function.
+// It processes the body payload through the redact callback to determine how to handle
+// sensitive data.
+//
+// Parameters:
+//   - body: the original HTTP body payload to redact
+//   - redact: callback function that determines how to redact the body (nil means clone without redaction)
+//
+// Returns a new *printable.Payload with redacted content. The original body is not modified.
+// If the action is ActionDelete, returns nil.
+//
+// Example:
+//
+//	redactFunc := func(ctx context.Context, body *printable.Payload) (Action, int) {
+//	    if strings.Contains(body.Content, `"password"`) {
+//	        return ActionRedactFully, 0  // Fully redact bodies with passwords
+//	    }
+//	    return ActionKeep, 0
+//	}
+//	redactedBody := Body(ctx, requestBody, redactFunc)
+func Body(ctx context.Context, body *printable.Payload, redact BodyFunc) *printable.Payload {
+	if body == nil {
+		return nil
+	}
+
+	if redact == nil {
+		return body.Clone()
+	}
+
+	action, partialLen := redact(ctx, body)
+
+	switch action {
+	case ActionKeep:
+		return body.Clone()
+	case ActionRedactFully:
+		// Replace entire content with redaction marker
+		// Preserve original Length but update TruncatedLength to reflect new content size
+		redactedText := "[redacted]"
+
+		return &printable.Payload{
+			Content:         redactedText,
+			Length:          body.Length,
+			TruncatedLength: int64(len(redactedText)),
+		}
+	case ActionRedactPartialWithMask:
+		// Show first N characters, replace rest with asterisks
+		redactedContent := PartiallyRedactString(body.Content, partialLen, false)
+
+		return &printable.Payload{
+			Content:         redactedContent,
+			Length:          body.Length,
+			TruncatedLength: int64(len(redactedContent)),
+		}
+	case ActionRedactPartialTruncate:
+		// Show first N characters, truncate rest with "[redacted]" marker
+		redactedContent := PartiallyRedactString(body.Content, partialLen, true)
+
+		return &printable.Payload{
+			Content:         redactedContent,
+			Length:          body.Length,
+			TruncatedLength: int64(len(redactedContent)),
+		}
+	case ActionDelete:
+		// Remove body entirely from output (returns nil)
+		return nil
+	default:
+		// Default to keeping the body if action is unknown
+		return body.Clone()
+	}
 }

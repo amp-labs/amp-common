@@ -722,7 +722,12 @@ func processPayload(
 	}
 
 	if redactBody != nil {
-		payload = redact.Body(ctx, payload, redactBody)
+		redactedPayload, err := redact.Body(ctx, payload, redactBody)
+		if err != nil {
+			logger.Error("Error redacting body", "error", err)
+		} else {
+			payload = redactedPayload
+		}
 	}
 
 	if payload == nil {

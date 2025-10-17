@@ -43,6 +43,7 @@ import (
 
 	"github.com/amp-labs/amp-common/http/printable"
 	"github.com/amp-labs/amp-common/http/redact"
+	"github.com/amp-labs/amp-common/logger"
 )
 
 const (
@@ -99,6 +100,9 @@ type LogRequestParams struct {
 	// If nil, query parameters are logged as-is without redaction.
 	RedactQueryParams redact.Func
 
+	// RedactBody is an optional function to redact the request body.
+	RedactBody redact.BodyFunc
+
 	// IncludeBody determines whether to include the request body in logs.
 	// Set to false for requests with sensitive or large bodies.
 	IncludeBody bool
@@ -112,7 +116,7 @@ type LogRequestParams struct {
 	// TransformBody is an optional function to transform the payload before logging.
 	// This can be used to format, redact, or modify the body content.
 	// If the function returns nil, the original payload is used.
-	TransformBody func(payload *printable.Payload) *printable.Payload
+	TransformBody func(ctx context.Context, payload *printable.Payload) *printable.Payload
 
 	// BodyTruncationLength sets the maximum body size in bytes.
 	// Bodies larger than this will be truncated. If <= 0, uses DefaultTruncationLength.
@@ -123,13 +127,13 @@ type LogRequestParams struct {
 // Priority: GetLogger(ctx) > Logger > slog.Default().
 func (p *LogRequestParams) getLogger(ctx context.Context) *slog.Logger {
 	if p == nil {
-		return slog.Default()
+		return logger.Get(ctx)
 	}
 
 	if p.GetLogger != nil {
-		logger := p.GetLogger(ctx)
-		if logger != nil {
-			return logger
+		log := p.GetLogger(ctx)
+		if log != nil {
+			return log
 		}
 	}
 
@@ -137,7 +141,7 @@ func (p *LogRequestParams) getLogger(ctx context.Context) *slog.Logger {
 		return p.Logger
 	}
 
-	return slog.Default()
+	return logger.Get(ctx)
 }
 
 // getHeaders returns the request headers, applying redaction if configured.
@@ -173,26 +177,7 @@ func (p *LogRequestParams) getBody(ctx context.Context, req *http.Request, body 
 		return nil, false
 	}
 
-	if p.TransformBody != nil {
-		transformed := p.TransformBody(payload)
-		if transformed != nil {
-			payload = transformed
-		}
-	}
-
-	truncationLength := p.BodyTruncationLength
-	if truncationLength <= 0 {
-		truncationLength = DefaultTruncationLength
-	}
-
-	truncatedBody, err := payload.Truncate(truncationLength)
-	if err != nil {
-		p.getLogger(ctx).Error("Error truncating payload", "error", err)
-
-		return payload, true
-	}
-
-	return truncatedBody, true
+	return processPayload(ctx, payload, p.getLogger(ctx), p.TransformBody, p.RedactBody, p.BodyTruncationLength)
 }
 
 // Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
@@ -276,6 +261,9 @@ type LogResponseParams struct {
 	// If nil, query parameters are logged as-is without redaction.
 	RedactQueryParams redact.Func
 
+	// RedactBody is an optional function to redact the response body.
+	RedactBody redact.BodyFunc
+
 	// IncludeBody determines whether to include the response body in logs.
 	// Set to false for responses with sensitive or large bodies.
 	IncludeBody bool
@@ -289,7 +277,7 @@ type LogResponseParams struct {
 	// TransformBody is an optional function to transform the payload before logging.
 	// This can be used to format, redact, or modify the body content.
 	// If the function returns nil, the original payload is used.
-	TransformBody func(payload *printable.Payload) *printable.Payload
+	TransformBody func(ctx context.Context, payload *printable.Payload) *printable.Payload
 
 	// BodyTruncationLength sets the maximum body size in bytes.
 	// Bodies larger than this will be truncated. If <= 0, uses DefaultTruncationLength.
@@ -300,13 +288,13 @@ type LogResponseParams struct {
 // Priority: GetLogger(ctx) > Logger > slog.Default().
 func (p *LogResponseParams) getLogger(ctx context.Context) *slog.Logger {
 	if p == nil {
-		return slog.Default()
+		return logger.Get(ctx)
 	}
 
 	if p.GetLogger != nil {
-		logger := p.GetLogger(ctx)
-		if logger != nil {
-			return logger
+		log := p.GetLogger(ctx)
+		if log != nil {
+			return log
 		}
 	}
 
@@ -314,7 +302,7 @@ func (p *LogResponseParams) getLogger(ctx context.Context) *slog.Logger {
 		return p.Logger
 	}
 
-	return slog.Default()
+	return logger.Get(ctx)
 }
 
 // getHeaders returns the response headers, applying redaction if configured.
@@ -350,26 +338,7 @@ func (p *LogResponseParams) getBody(ctx context.Context, resp *http.Response, bo
 		return nil, false
 	}
 
-	if p.TransformBody != nil {
-		transformed := p.TransformBody(payload)
-		if transformed != nil {
-			payload = transformed
-		}
-	}
-
-	truncationLength := p.BodyTruncationLength
-	if truncationLength <= 0 {
-		truncationLength = DefaultTruncationLength
-	}
-
-	truncatedBody, err := payload.Truncate(truncationLength)
-	if err != nil {
-		p.getLogger(ctx).Error("Error truncating payload", "error", err)
-
-		return payload, true
-	}
-
-	return truncatedBody, true
+	return processPayload(ctx, payload, p.getLogger(ctx), p.TransformBody, p.RedactBody, p.BodyTruncationLength)
 }
 
 // Priority: LevelOverride > DefaultLevel > slog.LevelDebug.
@@ -458,13 +427,13 @@ type LogErrorParams struct {
 // Priority: GetLogger(ctx) > Logger > slog.Default().
 func (p *LogErrorParams) getLogger(ctx context.Context) *slog.Logger {
 	if p == nil {
-		return slog.Default()
+		return logger.Get(ctx)
 	}
 
 	if p.GetLogger != nil {
-		logger := p.GetLogger(ctx)
-		if logger != nil {
-			return logger
+		log := p.GetLogger(ctx)
+		if log != nil {
+			return log
 		}
 	}
 
@@ -472,7 +441,7 @@ func (p *LogErrorParams) getLogger(ctx context.Context) *slog.Logger {
 		return p.Logger
 	}
 
-	return slog.Default()
+	return logger.Get(ctx)
 }
 
 // getLevel determines the log level to use for the error.
@@ -729,4 +698,52 @@ func getNiceHeaders(headers http.Header) map[string]any {
 	}
 
 	return niceHeaders
+}
+
+// processPayload applies transformation, redaction, and truncation to a payload.
+// Returns (payload, true) if successful, (nil/payload, false) if processing indicates body should not be logged.
+func processPayload(
+	ctx context.Context,
+	payload *printable.Payload,
+	logger *slog.Logger,
+	transformBody func(ctx context.Context, payload *printable.Payload) *printable.Payload,
+	redactBody redact.BodyFunc,
+	truncationLength int64,
+) (*printable.Payload, bool) {
+	if transformBody != nil {
+		transformed := transformBody(ctx, payload)
+		if transformed != nil {
+			payload = transformed
+		}
+	}
+
+	if payload == nil {
+		return nil, false
+	}
+
+	if redactBody != nil {
+		redactedPayload, err := redact.Body(ctx, payload, redactBody)
+		if err != nil {
+			logger.Error("Error redacting body", "error", err)
+		} else {
+			payload = redactedPayload
+		}
+	}
+
+	if payload == nil {
+		return nil, false
+	}
+
+	if truncationLength <= 0 {
+		truncationLength = DefaultTruncationLength
+	}
+
+	truncatedBody, err := payload.Truncate(truncationLength)
+	if err != nil {
+		logger.Error("Error truncating payload", "error", err)
+
+		return payload, true
+	}
+
+	return truncatedBody, true
 }

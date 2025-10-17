@@ -695,3 +695,334 @@ func TestLogResponse_IncludeBodyOverride_NilOverride(t *testing.T) {
 	assert.NotContains(t, logOutput, `"result":"success"`)
 	assert.NotContains(t, logOutput, `"body"`)
 }
+
+// Basic LogRequest tests.
+func TestLogRequest_NilRequest(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	params := &httplogger.LogRequestParams{
+		Logger: logger,
+	}
+
+	// Should not panic with nil request
+	httplogger.LogRequest(t.Context(), nil, nil, "corr-123", params)
+
+	// Should not have logged anything
+	assert.Empty(t, logBuffer.String())
+}
+
+func TestLogRequest_NilParams(t *testing.T) {
+	t.Parallel()
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)
+	require.NoError(t, err)
+
+	// Should not panic with nil params
+	httplogger.LogRequest(t.Context(), req, nil, "corr-123", nil)
+}
+
+func TestLogRequest_BasicRequest(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "test-client/1.0")
+
+	params := &httplogger.LogRequestParams{
+		Logger:      logger,
+		IncludeBody: false,
+	}
+
+	httplogger.LogRequest(t.Context(), req, nil, "corr-123", params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, "Sending HTTP request")
+	assert.Contains(t, logOutput, "POST")
+	assert.Contains(t, logOutput, "https://api.example.com/users")
+	assert.Contains(t, logOutput, "corr-123")
+	assert.Contains(t, logOutput, "application/json")
+	assert.Contains(t, logOutput, "test-client/1.0")
+}
+
+func TestLogRequest_WithBody(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	body := []byte(`{"username":"alice","email":"alice@example.com"}`)
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://api.example.com/users", bytes.NewReader(body))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	params := &httplogger.LogRequestParams{
+		Logger:      logger,
+		IncludeBody: true,
+	}
+
+	httplogger.LogRequest(t.Context(), req, body, "corr-456", params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, "Sending HTTP request")
+	assert.Contains(t, logOutput, `\"username\":\"alice\"`) // Escaped in JSON
+	assert.Contains(t, logOutput, `"body"`)
+}
+
+func TestLogRequest_WithRedactedHeaders(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com/data", nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer secret_token_12345")
+	req.Header.Set("X-Api-Key", "api_key_secret")
+	req.Header.Set("Content-Type", "application/json")
+
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
+		lowerKey := strings.ToLower(key)
+		if strings.Contains(lowerKey, "auth") || strings.Contains(lowerKey, "key") {
+			return redact.ActionRedactFully, 0
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	params := &httplogger.LogRequestParams{
+		Logger:        logger,
+		RedactHeaders: redactFunc,
+	}
+
+	httplogger.LogRequest(t.Context(), req, nil, "corr-789", params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, "[redacted]")
+	assert.NotContains(t, logOutput, "secret_token")
+	assert.NotContains(t, logOutput, "api_key_secret")
+	assert.Contains(t, logOutput, "application/json") // Not redacted
+}
+
+func TestLogRequest_WithRedactedQueryParams(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodGet,
+		"https://api.example.com/search?q=golang&api_key=secret123&page=1", nil)
+	require.NoError(t, err)
+
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
+		if strings.Contains(strings.ToLower(key), "api_key") {
+			return redact.ActionRedactPartialWithMask, 4
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	params := &httplogger.LogRequestParams{
+		Logger:            logger,
+		RedactQueryParams: redactFunc,
+	}
+
+	httplogger.LogRequest(t.Context(), req, nil, "corr-query", params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, "q=golang")
+	assert.Contains(t, logOutput, "page=1")
+	// Asterisks are URL encoded
+	assert.Contains(t, logOutput, "api_key=secr")
+	assert.NotContains(t, logOutput, "secret123")
+}
+
+func TestLogRequest_MessageOverride(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)
+	require.NoError(t, err)
+
+	params := &httplogger.LogRequestParams{
+		Logger: logger,
+		MessageOverride: func(request *http.Request) string {
+			return "Custom request message for " + request.URL.Path
+		},
+	}
+
+	httplogger.LogRequest(t.Context(), req, nil, "corr-custom", params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, "Custom request message for /users")
+	assert.NotContains(t, logOutput, "Sending HTTP request")
+}
+
+func TestLogRequest_LevelOverride(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, &slog.HandlerOptions{
+		Level: slog.LevelWarn, // Only log WARN and above
+	}))
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)
+	require.NoError(t, err)
+
+	params := &httplogger.LogRequestParams{
+		Logger: logger,
+		LevelOverride: func(request *http.Request) slog.Level {
+			return slog.LevelWarn // Log at WARN level
+		},
+	}
+
+	httplogger.LogRequest(t.Context(), req, nil, "corr-level", params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, `"level":"WARN"`)
+}
+
+// Basic LogResponse tests.
+func TestLogResponse_NilResponse(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	params := &httplogger.LogResponseParams{
+		Logger: logger,
+	}
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
+	require.NoError(t, err)
+
+	// Should not panic with nil response
+	httplogger.LogResponse(t.Context(), nil, nil, "GET", "corr-123", req.URL, params)
+
+	// Should not have logged anything
+	assert.Empty(t, logBuffer.String())
+}
+
+func TestLogResponse_NilParams(t *testing.T) {
+	t.Parallel()
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
+	require.NoError(t, err)
+
+	resp := &http.Response{
+		Status:     "200 OK",
+		StatusCode: http.StatusOK,
+		Request:    req,
+		Header:     make(http.Header),
+	}
+
+	// Should not panic with nil params
+	httplogger.LogResponse(t.Context(), resp, nil, "GET", "corr-123", req.URL, nil)
+}
+
+func TestLogResponse_BasicResponse(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com/users", nil)
+	require.NoError(t, err)
+
+	resp := &http.Response{
+		Status:     "200 OK",
+		StatusCode: http.StatusOK,
+		Request:    req,
+		Header:     make(http.Header),
+	}
+	resp.Header.Set("Content-Type", "application/json")
+
+	params := &httplogger.LogResponseParams{
+		Logger:      logger,
+		IncludeBody: false,
+	}
+
+	httplogger.LogResponse(t.Context(), resp, nil, "GET", "corr-resp", req.URL, params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, "Received HTTP response")
+	assert.Contains(t, logOutput, "GET")
+	assert.Contains(t, logOutput, "200")
+	assert.Contains(t, logOutput, "corr-resp")
+	assert.Contains(t, logOutput, "application/json")
+}
+
+func TestLogResponse_WithBody(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	body := []byte(`{"users":[{"id":1,"name":"Alice"}]}`)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com/users", nil)
+	require.NoError(t, err)
+
+	resp := &http.Response{
+		Status:     "200 OK",
+		StatusCode: http.StatusOK,
+		Request:    req,
+		Header:     make(http.Header),
+	}
+	resp.Header.Set("Content-Type", "application/json")
+
+	params := &httplogger.LogResponseParams{
+		Logger:      logger,
+		IncludeBody: true,
+	}
+
+	httplogger.LogResponse(t.Context(), resp, body, "GET", "corr-body", req.URL, params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, "Received HTTP response")
+	assert.Contains(t, logOutput, `\"users\"`) // Escaped in JSON
+	assert.Contains(t, logOutput, `"body"`)
+}
+
+func TestLogResponse_StatusCodeLevelOverride(t *testing.T) {
+	t.Parallel()
+
+	var logBuffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)
+	require.NoError(t, err)
+
+	resp := &http.Response{
+		Status:     "500 Internal Server Error",
+		StatusCode: http.StatusInternalServerError,
+		Request:    req,
+		Header:     make(http.Header),
+	}
+
+	params := &httplogger.LogResponseParams{
+		Logger: logger,
+		LevelOverride: func(response *http.Response) slog.Level {
+			if response.StatusCode >= 500 {
+				return slog.LevelError
+			}
+
+			return slog.LevelInfo
+		},
+	}
+
+	httplogger.LogResponse(t.Context(), resp, nil, "POST", "corr-error", req.URL, params)
+
+	logOutput := logBuffer.String()
+	assert.Contains(t, logOutput, `"level":"ERROR"`)
+	assert.Contains(t, logOutput, "500")
+}

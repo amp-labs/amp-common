@@ -7,8 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/amp-labs/amp-common/http/printable"
 	"github.com/amp-labs/amp-common/http/redact"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPartiallyRedactString(t *testing.T) {
@@ -69,6 +71,69 @@ func TestPartiallyRedactString(t *testing.T) {
 			t.Parallel()
 
 			result := redact.PartiallyRedactString(tt.value, tt.visibleRunes, false)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestPartiallyRedactBytes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		value        []byte
+		visibleBytes int
+		expected     []byte
+	}{
+		{
+			name:         "redact API key",
+			value:        []byte("sk_live_abc123def456"),
+			visibleBytes: 8,
+			expected:     []byte("sk_live_************"),
+		},
+		{
+			name:         "short bytes unchanged",
+			value:        []byte("short"),
+			visibleBytes: 10,
+			expected:     []byte("short"),
+		},
+		{
+			name:         "exact length unchanged",
+			value:        []byte("exact"),
+			visibleBytes: 5,
+			expected:     []byte("exact"),
+		},
+		{
+			name:         "empty bytes",
+			value:        []byte(""),
+			visibleBytes: 5,
+			expected:     []byte(""),
+		},
+		{
+			name:         "zero visible bytes",
+			value:        []byte("secret"),
+			visibleBytes: 0,
+			expected:     []byte("******"),
+		},
+		{
+			name:         "show one byte",
+			value:        []byte("password123"),
+			visibleBytes: 1,
+			expected:     []byte("p**********"),
+		},
+		{
+			name:         "binary data",
+			value:        []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06},
+			visibleBytes: 3,
+			expected:     []byte{0x01, 0x02, 0x03, '*', '*', '*'},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := redact.PartiallyRedactBytes(tt.value, tt.visibleBytes, false)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -453,4 +518,813 @@ func TestUrlValues_RealisticScenario_LoggingSafeQueryParams(t *testing.T) {
 	assert.Equal(t, "sk_live_****************", result.Get("api_key"))
 	assert.Empty(t, result.Get("access_code"))
 	assert.Equal(t, "user123", result.Get("user_id"))
+}
+
+func TestPartiallyRedactString_WithTruncate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		value        string
+		visibleRunes int
+		expected     string
+	}{
+		{
+			name:         "redact API key with truncate",
+			value:        "sk_live_abc123def456",
+			visibleRunes: 8,
+			expected:     "sk_live_[redacted]",
+		},
+		{
+			name:         "short string unchanged",
+			value:        "short",
+			visibleRunes: 10,
+			expected:     "short",
+		},
+		{
+			name:         "exact length unchanged",
+			value:        "exact",
+			visibleRunes: 5,
+			expected:     "exact",
+		},
+		{
+			name:         "empty string",
+			value:        "",
+			visibleRunes: 5,
+			expected:     "",
+		},
+		{
+			name:         "zero visible runes with truncate",
+			value:        "secret",
+			visibleRunes: 0,
+			expected:     "[redacted]",
+		},
+		{
+			name:         "show one character with truncate",
+			value:        "password123",
+			visibleRunes: 1,
+			expected:     "p[redacted]",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := redact.PartiallyRedactString(tt.value, tt.visibleRunes, true)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestPartiallyRedactBytes_WithTruncate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		value        []byte
+		visibleBytes int
+		expected     []byte
+	}{
+		{
+			name:         "redact API key with truncate",
+			value:        []byte("sk_live_abc123def456"),
+			visibleBytes: 8,
+			expected:     []byte("sk_live_[redacted]"),
+		},
+		{
+			name:         "short bytes unchanged",
+			value:        []byte("short"),
+			visibleBytes: 10,
+			expected:     []byte("short"),
+		},
+		{
+			name:         "exact length unchanged",
+			value:        []byte("exact"),
+			visibleBytes: 5,
+			expected:     []byte("exact"),
+		},
+		{
+			name:         "empty bytes",
+			value:        []byte(""),
+			visibleBytes: 5,
+			expected:     []byte(""),
+		},
+		{
+			name:         "zero visible bytes with truncate",
+			value:        []byte("secret"),
+			visibleBytes: 0,
+			expected:     []byte("[redacted]"),
+		},
+		{
+			name:         "show one byte with truncate",
+			value:        []byte("password123"),
+			visibleBytes: 1,
+			expected:     []byte("p[redacted]"),
+		},
+		{
+			name:         "binary data with truncate",
+			value:        []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06},
+			visibleBytes: 3,
+			expected:     []byte{0x01, 0x02, 0x03, '[', 'r', 'e', 'd', 'a', 'c', 't', 'e', 'd', ']'},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := redact.PartiallyRedactBytes(tt.value, tt.visibleBytes, true)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHeaders_ActionPartialTruncate(t *testing.T) {
+	t.Parallel()
+
+	headers := http.Header{
+		"Authorization": []string{"Bearer token123456789"},
+	}
+
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
+		if strings.EqualFold(key, "Authorization") {
+			return redact.ActionRedactPartialTruncate, 7 // Show "Bearer "
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	result := redact.Headers(t.Context(), headers, redactFunc)
+
+	assert.Equal(t, "Bearer [redacted]", result.Get("Authorization"))
+}
+
+func TestUrlValues_ActionPartialTruncate(t *testing.T) {
+	t.Parallel()
+
+	values := url.Values{
+		"api_key": []string{"sk_live_1234567890"},
+	}
+
+	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
+		if strings.EqualFold(key, "api_key") {
+			return redact.ActionRedactPartialTruncate, 8 // Show "sk_live_"
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	result := redact.URLValues(t.Context(), values, redactFunc)
+
+	assert.Equal(t, "sk_live_[redacted]", result.Get("api_key"))
+}
+
+func TestBody_NilBody(t *testing.T) {
+	t.Parallel()
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		return redact.ActionKeep, 0
+	}
+
+	result, err := redact.Body(t.Context(), nil, redactFunc)
+	require.NoError(t, err)
+	assert.Nil(t, result)
+}
+
+func TestBody_NilRedactFunc(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"key":"value"}`,
+		Length:  15,
+	}
+
+	result, err := redact.Body(t.Context(), payload, nil)
+	require.NoError(t, err)
+
+	assert.JSONEq(t, `{"key":"value"}`, result.Content)
+	assert.Equal(t, int64(15), result.Length)
+	// Verify it's a clone, not the same instance
+	assert.NotSame(t, payload, result)
+}
+
+func TestBody_ActionKeep(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"user":"alice","email":"alice@example.com"}`,
+		Length:  43,
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		return redact.ActionKeep, 0
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	assert.Equal(t, payload.Content, result.Content)
+	assert.Equal(t, payload.Length, result.Length)
+	assert.NotSame(t, payload, result) // Should be a clone
+}
+
+func TestBody_ActionRedactFully(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"password":"secret123","api_key":"sk_live_xyz"}`,
+		Length:  48,
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		if strings.Contains(body.Content, "password") || strings.Contains(body.Content, "api_key") {
+			return redact.ActionRedactFully, 0
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	assert.Equal(t, "[redacted]", result.Content)
+	assert.Equal(t, int64(48), result.Length) // Original length preserved
+	assert.Equal(t, int64(len("[redacted]")), result.TruncatedLength)
+}
+
+func TestBody_ActionRedactPartialWithMask(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"data":"sensitive_information_here"}`,
+		Length:  38,
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		return redact.ActionRedactPartialWithMask, 10 // Show first 10 characters
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	// Should show first 10 chars and mask the remaining 28
+	// nolint:testifylint // Content is intentionally malformed JSON (redacted)
+	assert.Equal(t, `{"data":"s***************************`, result.Content)
+	assert.Equal(t, int64(38), result.Length)
+	assert.Equal(t, int64(len(result.Content)), result.TruncatedLength)
+}
+
+func TestBody_ActionRedactPartialTruncate(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"large":"data_payload_with_lots_of_content"}`,
+		Length:  46,
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		return redact.ActionRedactPartialTruncate, 15 // Show first 15 characters
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	// nolint:testifylint // Content is intentionally malformed JSON (redacted)
+	assert.Equal(t, `{"large":"data_[redacted]`, result.Content)
+	assert.Equal(t, int64(46), result.Length)
+	assert.Equal(t, int64(len(result.Content)), result.TruncatedLength)
+}
+
+func TestBody_ActionDelete(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"secret":"top_secret_data"}`,
+		Length:  28,
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		if strings.Contains(body.Content, "secret") {
+			return redact.ActionDelete, 0
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	assert.Nil(t, result) // Body should be completely removed
+}
+
+func TestBody_DefaultActionOnUnknown(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"test":"data"}`,
+		Length:  15,
+	}
+
+	// Return an invalid action value (100)
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		return redact.Action(100), 0
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	// Should default to ActionKeep (clone the payload)
+	assert.Equal(t, payload.Content, result.Content)
+	assert.Equal(t, payload.Length, result.Length)
+}
+
+func TestBody_WithBase64Content(t *testing.T) {
+	t.Parallel()
+
+	binaryContent := "SGVsbG8gV29ybGQ=" // "Hello World" in base64 (16 chars)
+
+	payload := &printable.Payload{
+		Base64:  true,
+		Content: binaryContent,
+		Length:  11, // Original decoded length
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		if body.Base64 {
+			return redact.ActionRedactPartialWithMask, 5 // Show first 5 characters
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	// Base64 content is 16 chars, show first 5, mask remaining 11
+	// The redacted bytes ("Hello******") are re-encoded to base64
+	assert.Equal(t, "SGVsbG8qKioqKio=", result.Content)
+	assert.Equal(t, int64(11), result.Length)
+}
+
+func TestBody_PreservesTruncatedLength(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content:         `{"truncated":"data"}`,
+		Length:          1000, // Original was 1000 bytes
+		TruncatedLength: 20,   // But truncated to 20
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		return redact.ActionRedactPartialWithMask, 10
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	assert.Equal(t, int64(1000), result.Length) // Original length preserved
+	// TruncatedLength should reflect the new content length
+	assert.Equal(t, int64(len(result.Content)), result.TruncatedLength)
+}
+
+func TestBody_RealisticScenario_PasswordInJSON(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: `{"username":"alice","password":"super_secret_123","email":"alice@example.com"}`,
+		Length:  79,
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		// Fully redact if body contains passwords
+		if strings.Contains(body.Content, `"password"`) {
+			return redact.ActionRedactFully, 0
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	assert.Equal(t, "[redacted]", result.Content)
+	assert.Equal(t, int64(79), result.Length)
+	assert.NotContains(t, result.Content, "super_secret_123")
+}
+
+func TestBody_RealisticScenario_LargePayload(t *testing.T) {
+	t.Parallel()
+
+	largeContent := strings.Repeat("x", 10000)
+
+	payload := &printable.Payload{
+		Content: largeContent,
+		Length:  int64(len(largeContent)),
+	}
+
+	redactFunc := func(ctx context.Context, body *printable.Payload) (redact.Action, int) {
+		// Show first 100 characters for large payloads
+		if body.Length > 1000 {
+			return redact.ActionRedactPartialTruncate, 100
+		}
+
+		return redact.ActionKeep, 0
+	}
+
+	result, err := redact.Body(t.Context(), payload, redactFunc)
+	require.NoError(t, err)
+
+	assert.Len(t, result.Content, 100+len("[redacted]"))
+	assert.Equal(t, strings.Repeat("x", 100)+"[redacted]", result.Content)
+	assert.Equal(t, int64(10000), result.Length)
+}
+
+func TestPartiallyRedactPayload_NilPayload(t *testing.T) {
+	t.Parallel()
+
+	result, err := redact.PartiallyRedactPayload(nil, 10, false)
+
+	require.NoError(t, err)
+	assert.Nil(t, result)
+}
+
+func TestPartiallyRedactPayload_TextPayloadWithMask(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		payload      *printable.Payload
+		visibleBytes int
+		expected     string
+		expectedLen  int64
+	}{
+		{
+			name: "normal text redaction",
+			payload: &printable.Payload{
+				Content: "secret_api_key_12345",
+				Length:  20,
+			},
+			visibleBytes: 10,
+			expected:     "secret_api**********",
+			expectedLen:  20,
+		},
+		{
+			name: "short text unchanged",
+			payload: &printable.Payload{
+				Content: "short",
+				Length:  5,
+			},
+			visibleBytes: 10,
+			expected:     "short",
+			expectedLen:  5,
+		},
+		{
+			name: "exact length unchanged",
+			payload: &printable.Payload{
+				Content: "exact",
+				Length:  5,
+			},
+			visibleBytes: 5,
+			expected:     "exact",
+			expectedLen:  5,
+		},
+		{
+			name: "zero visible bytes",
+			payload: &printable.Payload{
+				Content: "secret",
+				Length:  6,
+			},
+			visibleBytes: 0,
+			expected:     "******",
+			expectedLen:  6,
+		},
+		{
+			name: "empty content",
+			payload: &printable.Payload{
+				Content: "",
+				Length:  0,
+			},
+			visibleBytes: 5,
+			expected:     "",
+			expectedLen:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := redact.PartiallyRedactPayload(tt.payload, tt.visibleBytes, false)
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result.Content)
+			assert.Equal(t, tt.payload.Length, result.Length) // Original length preserved
+			assert.Equal(t, int64(len(tt.expected)), result.TruncatedLength)
+			assert.False(t, result.Base64)
+		})
+	}
+}
+
+func TestPartiallyRedactPayload_TextPayloadWithTruncate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		payload      *printable.Payload
+		visibleBytes int
+		expected     string
+	}{
+		{
+			name: "normal text truncation",
+			payload: &printable.Payload{
+				Content: "secret_api_key_12345",
+				Length:  20,
+			},
+			visibleBytes: 10,
+			expected:     "secret_api[redacted]",
+		},
+		{
+			name: "zero visible bytes with truncate",
+			payload: &printable.Payload{
+				Content: "secret",
+				Length:  6,
+			},
+			visibleBytes: 0,
+			expected:     "[redacted]",
+		},
+		{
+			name: "show one character with truncate",
+			payload: &printable.Payload{
+				Content: "password123",
+				Length:  11,
+			},
+			visibleBytes: 1,
+			expected:     "p[redacted]",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := redact.PartiallyRedactPayload(tt.payload, tt.visibleBytes, true)
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result.Content)
+			assert.Equal(t, tt.payload.Length, result.Length) // Original length preserved
+			assert.Equal(t, int64(len(tt.expected)), result.TruncatedLength)
+			assert.False(t, result.Base64)
+		})
+	}
+}
+
+func TestPartiallyRedactPayload_Base64PayloadWithMask(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		payload      *printable.Payload
+		visibleBytes int
+		wantContent  string
+		wantLen      int64
+		wantTruncLen int64
+	}{
+		{
+			name: "base64 encoded text",
+			payload: &printable.Payload{
+				Content: "c2VjcmV0X2FwaV9rZXlfMTIzNDU=", // base64("secret_api_key_12345")
+				Length:  20,                             // Length of decoded content
+				Base64:  true,
+			},
+			visibleBytes: 10,
+			wantContent:  "c2VjcmV0X2FwaSoqKioqKioqKio=", // base64("secret_api**********")
+			wantLen:      20,
+			wantTruncLen: 20,
+		},
+		{
+			name: "short base64 unchanged",
+			payload: &printable.Payload{
+				Content: "c2hvcnQ=", // base64("short")
+				Length:  5,
+				Base64:  true,
+			},
+			visibleBytes: 10,
+			wantContent:  "c2hvcnQ=",
+			wantLen:      5,
+			wantTruncLen: 5,
+		},
+		{
+			name: "zero visible bytes base64",
+			payload: &printable.Payload{
+				Content: "c2VjcmV0", // base64("secret")
+				Length:  6,
+				Base64:  true,
+			},
+			visibleBytes: 0,
+			wantContent:  "KioqKioq", // base64("******")
+			wantLen:      6,
+			wantTruncLen: 6,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := redact.PartiallyRedactPayload(tt.payload, tt.visibleBytes, false)
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantContent, result.Content)
+			assert.Equal(t, tt.wantLen, result.Length)
+			assert.Equal(t, tt.wantTruncLen, result.TruncatedLength)
+			assert.True(t, result.Base64)
+		})
+	}
+}
+
+func TestPartiallyRedactPayload_Base64PayloadWithTruncate(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		payload      *printable.Payload
+		visibleBytes int
+		wantContent  string
+		wantLen      int64
+		wantTruncLen int64
+	}{
+		{
+			name: "base64 encoded text with truncate",
+			payload: &printable.Payload{
+				Content: "c2VjcmV0X2FwaV9rZXlfMTIzNDU=", // base64("secret_api_key_12345")
+				Length:  20,
+				Base64:  true,
+			},
+			visibleBytes: 10,
+			wantContent:  "c2VjcmV0X2FwaVtyZWRhY3RlZF0=",
+			wantLen:      20,
+			wantTruncLen: 20,
+		},
+		{
+			name: "zero visible bytes base64 with truncate",
+			payload: &printable.Payload{
+				Content: "c2VjcmV0", // base64("secret")
+				Length:  6,
+				Base64:  true,
+			},
+			visibleBytes: 0,
+			wantContent:  "W3JlZGFjdGVkXQ==",
+			wantLen:      6,
+			wantTruncLen: 10,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := redact.PartiallyRedactPayload(tt.payload, tt.visibleBytes, true)
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantContent, result.Content)
+			assert.Equal(t, tt.wantLen, result.Length)
+			assert.Equal(t, tt.wantTruncLen, result.TruncatedLength)
+			assert.True(t, result.Base64)
+		})
+	}
+}
+
+func TestPartiallyRedactPayload_InvalidBase64(t *testing.T) {
+	t.Parallel()
+
+	payload := &printable.Payload{
+		Content: "not-valid-base64!!!",
+		Length:  19,
+		Base64:  true,
+	}
+
+	result, err := redact.PartiallyRedactPayload(payload, 10, false)
+
+	require.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "illegal base64 data")
+}
+
+func TestPartiallyRedactPayload_PreservesOriginalLength(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		payload      *printable.Payload
+		visibleBytes int
+		truncate     bool
+	}{
+		{
+			name: "text with mask",
+			payload: &printable.Payload{
+				Content: "secret_api_key_12345",
+				Length:  20,
+			},
+			visibleBytes: 10,
+			truncate:     false,
+		},
+		{
+			name: "text with truncate",
+			payload: &printable.Payload{
+				Content: "secret_api_key_12345",
+				Length:  20,
+			},
+			visibleBytes: 10,
+			truncate:     true,
+		},
+		{
+			name: "base64 with mask",
+			payload: &printable.Payload{
+				Content: "c2VjcmV0X2FwaV9rZXlfMTIzNDU=",
+				Length:  20,
+				Base64:  true,
+			},
+			visibleBytes: 10,
+			truncate:     false,
+		},
+		{
+			name: "base64 with truncate",
+			payload: &printable.Payload{
+				Content: "c2VjcmV0X2FwaV9rZXlfMTIzNDU=",
+				Length:  20,
+				Base64:  true,
+			},
+			visibleBytes: 10,
+			truncate:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			originalLength := tt.payload.Length
+
+			result, err := redact.PartiallyRedactPayload(tt.payload, tt.visibleBytes, tt.truncate)
+
+			require.NoError(t, err)
+			assert.Equal(t, originalLength, result.Length, "Original length must be preserved")
+		})
+	}
+}
+
+func TestPartiallyRedactPayload_UpdatesTruncatedLength(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		payload          *printable.Payload
+		visibleBytes     int
+		truncate         bool
+		expectedTruncLen int64
+	}{
+		{
+			name: "text with mask - truncated length equals content length",
+			payload: &printable.Payload{
+				Content: "secret_api_key_12345",
+				Length:  20,
+			},
+			visibleBytes:     10,
+			truncate:         false,
+			expectedTruncLen: 20, // Same length with asterisks
+		},
+		{
+			name: "text with truncate - truncated length is shorter",
+			payload: &printable.Payload{
+				Content: "secret_api_key_12345",
+				Length:  20,
+			},
+			visibleBytes:     10,
+			truncate:         true,
+			expectedTruncLen: 20, // "secret_api[redacted]" = 20 chars
+		},
+		{
+			name: "base64 with truncate - decoded length tracked",
+			payload: &printable.Payload{
+				Content: "c2VjcmV0X2FwaV9rZXlfMTIzNDU=", // base64("secret_api_key_12345")
+				Length:  20,
+				Base64:  true,
+			},
+			visibleBytes:     10,
+			truncate:         true,
+			expectedTruncLen: 20, // Decoded "secret_api[redacted]" is 20 bytes
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := redact.PartiallyRedactPayload(tt.payload, tt.visibleBytes, tt.truncate)
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedTruncLen, result.TruncatedLength)
+		})
+	}
 }

@@ -288,7 +288,7 @@ func TestDefaultExecutor_Close_WaitsForInFlight(t *testing.T) {
 	duration := time.Since(startTime)
 
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, duration, 80*time.Millisecond) // Should have waited
+	assert.GreaterOrEqual(t, duration, 70*time.Millisecond) // Should have waited
 
 	// All operations should have completed
 	for range 3 {

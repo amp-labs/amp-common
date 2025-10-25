@@ -27,7 +27,7 @@ func TestDoCtx_RecoversPanic(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "intentional panic for testing")
 	assert.Contains(t, err.Error(), "simultaneously_test.go") // stack trace should be present
 }
@@ -42,7 +42,7 @@ func TestDoCtx_RecoversPanicError(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	require.ErrorIs(t, err, errTestPanic)
 	assert.Contains(t, err.Error(), "simultaneously_test.go") // stack trace should be present
 }
@@ -72,7 +72,7 @@ func TestDoCtx_MixedSuccessAndPanic(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "boom")
 
 	// At least one function should have completed successfully
@@ -98,11 +98,11 @@ func TestDoCtx_MultiplePanics(t *testing.T) {
 	require.Error(t, err)
 
 	// Should get at least one panic error
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 
 	// Due to concurrency and early cancellation, we might get multiple panics joined
 	// or just the first one that was caught
-	panicCount := strings.Count(err.Error(), "panic recovered")
+	panicCount := strings.Count(err.Error(), "recovered from panic")
 	assert.GreaterOrEqual(t, panicCount, 1)
 }
 
@@ -137,7 +137,7 @@ func TestDoCtx_PanicDoesNotAffectOtherGoroutines(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "early panic")
 }
 
@@ -183,7 +183,7 @@ func TestDoCtx_ErrorReturnedInsteadOfPanic(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorIs(t, err, errTest)
 	// Should not contain panic recovery message since this was a normal error
-	assert.NotContains(t, err.Error(), "panic recovered")
+	assert.NotContains(t, err.Error(), "recovered from panic")
 }
 
 func TestDoCtx_PanicWithNilValue(t *testing.T) {
@@ -199,7 +199,7 @@ func TestDoCtx_PanicWithNilValue(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "nil pointer") // The panic message should mention nil pointer
 }
 
@@ -213,7 +213,7 @@ func TestDo_RecoversPanic(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "panic in Do function")
 }
 
@@ -229,7 +229,7 @@ func TestDoCtx_PanicWithStackTrace(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "helper function panic")
 	// Stack trace should show the helper function
 	assert.Contains(t, err.Error(), "simultaneously_test.go")
@@ -277,5 +277,5 @@ func TestDoCtx_ContextCancellationAfterPanic(t *testing.T) {
 	)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 }

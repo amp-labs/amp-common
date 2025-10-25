@@ -142,7 +142,7 @@ func TestMapSetCtx_PanicRecovery(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "intentional panic")
 	assert.Nil(t, output)
 }
@@ -364,7 +364,7 @@ func TestFlatMapSetCtx_PanicRecovery(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "intentional panic")
 	assert.Nil(t, output)
 }

@@ -154,7 +154,7 @@ func FlatMapSliceCtx[Input, Output any](
 		return nil, err
 	}
 
-	totalSize := len(values)
+	totalSize := 0
 	for _, val := range outputs {
 		totalSize += len(val)
 	}

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 
 	"github.com/amp-labs/amp-common/contexts"
-	"github.com/amp-labs/amp-common/logger"
 	"github.com/amp-labs/amp-common/utils"
 )
 
@@ -18,7 +18,8 @@ type Executor interface {
 }
 
 type defaultExecutor struct {
-	sem chan struct{}
+	sem    chan struct{}
+	closed atomic.Bool
 }
 
 func newDefaultExecutor(maxConcurrent int) *defaultExecutor {
@@ -49,17 +50,10 @@ func (d *defaultExecutor) GoContext(ctx context.Context, callback func(context.C
 
 	go func() {
 		defer func() {
-			// d.sem may be closed, and we don't want the following line to panic, so we
-			// handle an additional layer of potential panic here.
-			defer func() {
-				if r := recover(); r != nil {
-					if err := utils.GetPanicRecoveryError(r, debug.Stack()); err != nil {
-						logger.Get(ctx).Error("recovered from panic", "error", err)
-					}
-				}
-			}()
-
-			d.sem <- struct{}{} // put it back
+			// Return the token to the semaphore if the executor is not closed
+			if !d.closed.Load() {
+				d.sem <- struct{}{} // put it back
+			}
 		}()
 
 		done(d.executeCallback(ctx, callback))
@@ -67,7 +61,11 @@ func (d *defaultExecutor) GoContext(ctx context.Context, callback func(context.C
 }
 
 func (d *defaultExecutor) Close() error {
-	close(d.sem)
+	// Use CompareAndSwap to atomically check and set closed flag
+	// This ensures Close() is idempotent and thread-safe
+	if d.closed.CompareAndSwap(false, true) {
+		close(d.sem)
+	}
 
 	return nil
 }

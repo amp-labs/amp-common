@@ -16,7 +16,7 @@ jobs:
       - name: Set up go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.24.6"
+          go-version-file: 'go.mod'
 
       # Run go generate
       - name: Generate
@@ -27,10 +27,24 @@ jobs:
           SKIP_FLAKY_TESTS: "true"
           RUNNING_ENV: "test"
         run: go test -json $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./... | tee results.json
-      - name: Render Test Results
+      - name: Generate coverate results
+        run: go tool cover -func=coverage.out -o=coverage.func.out
+      - name: Render Test Summary
         uses: robherley/go-test-action@v0
         with:
           fromJSONFile: results.json
+
+      - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
+        uses: tj-actions/coverage-badge-go@v3
+        with:
+          filename: coverage.out
+
+      - name: Verify Changed files
+        uses: tj-actions/verify-changed-files@v16
+        id: verify-changed-files
+        with:
+          files: README.md
+
       - name: Coverage Check
         uses: vladopajic/go-test-coverage@v2
         with:
@@ -40,3 +54,18 @@ jobs:
           threshold-file: 0
           threshold-package: 0
           threshold-total: 0
+
+      - name: Commit changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "auto: Updated coverage badge."
+
+      - name: Push changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ github.token }}
+          branch: ${{ github.head_ref }}

@@ -26,7 +26,7 @@ jobs:
         env:
           SKIP_FLAKY_TESTS: "true"
           RUNNING_ENV: "test"
-        run: go test -json $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./... > results.json
+        run: go test -json $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./... | tee results.json
       - name: Render Test Results
         uses: robherley/go-test-action@v0
         with:

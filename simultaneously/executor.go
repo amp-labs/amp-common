@@ -3,7 +3,6 @@ package simultaneously
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"runtime/debug"
 	"sync"
 
@@ -50,6 +49,8 @@ func (d *defaultExecutor) GoContext(ctx context.Context, callback func(context.C
 
 	go func() {
 		defer func() {
+			// d.sem may be closed, and we don't want the following line to panic, so we
+			// handle an additional layer of potential panic here.
 			defer func() {
 				if r := recover(); r != nil {
 					if err := utils.GetPanicRecoveryError(r, debug.Stack()); err != nil {
@@ -144,7 +145,6 @@ func (e *collector) launchAll(ctx context.Context, callbacks []func(context.Cont
 			defer e.waitGroup.Done()
 
 			if err != nil {
-				slog.Info("error executing callback", "err", err)
 				e.cancelOnce.Do(e.cancel)
 				e.errorChan <- err
 			} else {

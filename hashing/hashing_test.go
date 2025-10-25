@@ -1,6 +1,7 @@
 package hashing
 
 import (
+	"crypto/sha256"
 	"errors"
 	"hash"
 	"testing"
@@ -481,4 +482,740 @@ func TestDifferentInputsProduceDifferentHashes(t *testing.T) {
 	require.NoError(t, err2)
 
 	assert.NotEqual(t, hash1, hash2)
+}
+
+func TestHashBase64(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    Hashable
+		expected string
+	}{
+		{
+			name:     "empty string",
+			input:    HashableString(""),
+			expected: "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
+		},
+		{
+			name:     "simple string",
+			input:    HashableString("hello"),
+			expected: "LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ=",
+		},
+		{
+			name:     "string with spaces",
+			input:    HashableString("hello world"),
+			expected: "uU0nuZNNPgilLlLX2n2r+sSE7+N6U4DukIj3rOLvzek=",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := HashBase64(tt.input, sha256.New())
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableInt_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	i := HashableInt(42)
+	h := &mockHash{}
+
+	err := i.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 8)
+}
+
+func TestHashableInt_Equals(t *testing.T) { //nolint:dupl
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableInt
+		b        HashableInt
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableInt(42),
+			b:        HashableInt(42),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableInt(42),
+			b:        HashableInt(43),
+			expected: false,
+		},
+		{
+			name:     "zero values",
+			a:        HashableInt(0),
+			b:        HashableInt(0),
+			expected: true,
+		},
+		{
+			name:     "negative values",
+			a:        HashableInt(-1),
+			b:        HashableInt(-1),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableInt8_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	i := HashableInt8(42)
+	h := &mockHash{}
+
+	err := i.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 1)
+}
+
+func TestHashableInt8_Equals(t *testing.T) { //nolint:dupl
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableInt8
+		b        HashableInt8
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableInt8(42),
+			b:        HashableInt8(42),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableInt8(42),
+			b:        HashableInt8(43),
+			expected: false,
+		},
+		{
+			name:     "max value",
+			a:        HashableInt8(127),
+			b:        HashableInt8(127),
+			expected: true,
+		},
+		{
+			name:     "min value",
+			a:        HashableInt8(-128),
+			b:        HashableInt8(-128),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableInt16_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	i := HashableInt16(42)
+	h := &mockHash{}
+
+	err := i.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 2)
+}
+
+func TestHashableInt16_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableInt16
+		b        HashableInt16
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableInt16(1000),
+			b:        HashableInt16(1000),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableInt16(1000),
+			b:        HashableInt16(2000),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableInt32_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	i := HashableInt32(42)
+	h := &mockHash{}
+
+	err := i.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 4)
+}
+
+func TestHashableInt32_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableInt32
+		b        HashableInt32
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableInt32(100000),
+			b:        HashableInt32(100000),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableInt32(100000),
+			b:        HashableInt32(200000),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableInt64_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	i := HashableInt64(42)
+	h := &mockHash{}
+
+	err := i.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 8)
+}
+
+func TestHashableInt64_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableInt64
+		b        HashableInt64
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableInt64(1000000000),
+			b:        HashableInt64(1000000000),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableInt64(1000000000),
+			b:        HashableInt64(2000000000),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableUint_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	u := HashableUint(42)
+	h := &mockHash{}
+
+	err := u.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 8)
+}
+
+func TestHashableUint_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableUint
+		b        HashableUint
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableUint(42),
+			b:        HashableUint(42),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableUint(42),
+			b:        HashableUint(43),
+			expected: false,
+		},
+		{
+			name:     "zero values",
+			a:        HashableUint(0),
+			b:        HashableUint(0),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableUint8_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	u := HashableUint8(42)
+	h := &mockHash{}
+
+	err := u.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 1)
+}
+
+func TestHashableUint8_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableUint8
+		b        HashableUint8
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableUint8(42),
+			b:        HashableUint8(42),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableUint8(42),
+			b:        HashableUint8(43),
+			expected: false,
+		},
+		{
+			name:     "max value",
+			a:        HashableUint8(255),
+			b:        HashableUint8(255),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableUint16_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	u := HashableUint16(42)
+	h := &mockHash{}
+
+	err := u.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 2)
+}
+
+func TestHashableUint16_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableUint16
+		b        HashableUint16
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableUint16(1000),
+			b:        HashableUint16(1000),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableUint16(1000),
+			b:        HashableUint16(2000),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableUint32_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	u := HashableUint32(42)
+	h := &mockHash{}
+
+	err := u.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 4)
+}
+
+func TestHashableUint32_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableUint32
+		b        HashableUint32
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableUint32(100000),
+			b:        HashableUint32(100000),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableUint32(100000),
+			b:        HashableUint32(200000),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableUint64_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	u := HashableUint64(42)
+	h := &mockHash{}
+
+	err := u.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 8)
+}
+
+func TestHashableUint64_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableUint64
+		b        HashableUint64
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableUint64(1000000000),
+			b:        HashableUint64(1000000000),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableUint64(1000000000),
+			b:        HashableUint64(2000000000),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableFloat32_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	f := HashableFloat32(3.14)
+	h := &mockHash{}
+
+	err := f.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 4)
+}
+
+func TestHashableFloat32_Equals(t *testing.T) { //nolint:dupl
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableFloat32
+		b        HashableFloat32
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableFloat32(3.14),
+			b:        HashableFloat32(3.14),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableFloat32(3.14),
+			b:        HashableFloat32(2.71),
+			expected: false,
+		},
+		{
+			name:     "zero values",
+			a:        HashableFloat32(0.0),
+			b:        HashableFloat32(0.0),
+			expected: true,
+		},
+		{
+			name:     "negative values",
+			a:        HashableFloat32(-1.5),
+			b:        HashableFloat32(-1.5),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableFloat64_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	f := HashableFloat64(3.14159265359)
+	h := &mockHash{}
+
+	err := f.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 8)
+}
+
+func TestHashableFloat64_Equals(t *testing.T) { //nolint:dupl
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableFloat64
+		b        HashableFloat64
+		expected bool
+	}{
+		{
+			name:     "equal values",
+			a:        HashableFloat64(3.14159265359),
+			b:        HashableFloat64(3.14159265359),
+			expected: true,
+		},
+		{
+			name:     "different values",
+			a:        HashableFloat64(3.14159265359),
+			b:        HashableFloat64(2.71828182846),
+			expected: false,
+		},
+		{
+			name:     "zero values",
+			a:        HashableFloat64(0.0),
+			b:        HashableFloat64(0.0),
+			expected: true,
+		},
+		{
+			name:     "negative values",
+			a:        HashableFloat64(-1.5),
+			b:        HashableFloat64(-1.5),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestNumericTypes_HashConsistency(t *testing.T) {
+	t.Parallel()
+
+	// Test that same numeric values produce same hashes
+	tests := []struct {
+		name  string
+		input Hashable
+	}{
+		{"HashableInt", HashableInt(42)},
+		{"HashableInt8", HashableInt8(42)},
+		{"HashableInt16", HashableInt16(42)},
+		{"HashableInt32", HashableInt32(42)},
+		{"HashableInt64", HashableInt64(42)},
+		{"HashableUint", HashableUint(42)},
+		{"HashableUint8", HashableUint8(42)},
+		{"HashableUint16", HashableUint16(42)},
+		{"HashableUint32", HashableUint32(42)},
+		{"HashableUint64", HashableUint64(42)},
+		{"HashableFloat32", HashableFloat32(3.14)},
+		{"HashableFloat64", HashableFloat64(3.14)},
+		{"HashableBool true", HashableBool(true)},
+		{"HashableBool false", HashableBool(false)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			hash1, err1 := Sha256(tt.input)
+			require.NoError(t, err1)
+
+			hash2, err2 := Sha256(tt.input)
+			require.NoError(t, err2)
+
+			assert.Equal(t, hash1, hash2, "same input should produce same hash")
+		})
+	}
+}
+
+func TestHashableBool_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	t.Run("true and false produce different hashes", func(t *testing.T) {
+		t.Parallel()
+
+		hashTrue, err := Sha256(HashableBool(true))
+		require.NoError(t, err)
+
+		hashFalse, err := Sha256(HashableBool(false))
+		require.NoError(t, err)
+
+		assert.NotEqual(t, hashTrue, hashFalse, "true and false should have different hashes")
+	})
+
+	t.Run("same value produces same hash", func(t *testing.T) {
+		t.Parallel()
+
+		hash1, err := Sha256(HashableBool(true))
+		require.NoError(t, err)
+
+		hash2, err := Sha256(HashableBool(true))
+		require.NoError(t, err)
+
+		assert.Equal(t, hash1, hash2, "same bool value should produce same hash")
+	})
+}
+
+func TestHashableBool_Equals(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		a        HashableBool
+		b        HashableBool
+		expected bool
+	}{
+		{
+			name:     "both true",
+			a:        HashableBool(true),
+			b:        HashableBool(true),
+			expected: true,
+		},
+		{
+			name:     "both false",
+			a:        HashableBool(false),
+			b:        HashableBool(false),
+			expected: true,
+		},
+		{
+			name:     "true and false",
+			a:        HashableBool(true),
+			b:        HashableBool(false),
+			expected: false,
+		},
+		{
+			name:     "false and true",
+			a:        HashableBool(false),
+			b:        HashableBool(true),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }

@@ -59,6 +59,17 @@ type Map[K collectable.Collectable[K], V any] interface {
 	// The keys and values themselves are not deep-copied; they are referenced as-is.
 	// Returns a new Map instance with the same entries.
 	Clone() Map[K, V]
+
+	// HashFunction returns the hash function used by this map.
+	// This allows callers to inspect the hash function or create compatible maps
+	// that use the same hashing strategy, ensuring consistent key hashing across
+	// different map instances.
+	//
+	// Example use cases:
+	//   - Creating a new map with the same hash function
+	//   - Verifying two maps use compatible hash functions before merging
+	//   - Debugging hash collision issues
+	HashFunction() hashing.HashFunc
 }
 
 // NewHashMap creates a new hash-based Map implementation using the provided hash function.
@@ -305,4 +316,10 @@ func (h *hashMap[K, V]) Clone() Map[K, V] {
 	}
 
 	return result
+}
+
+// HashFunction returns the hash function used by this map.
+// This allows callers to inspect or reuse the hash function for creating compatible maps.
+func (h *hashMap[K, V]) HashFunction() hashing.HashFunc {
+	return h.hash
 }

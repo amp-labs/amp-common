@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/amp-labs/amp-common/collectable"
+	"github.com/amp-labs/amp-common/hashing"
 )
 
 // NewThreadSafeMap wraps an existing Map implementation with thread-safe access using sync.RWMutex.
@@ -163,4 +164,10 @@ func (t *threadSafeMap[K, V]) Clone() Map[K, V] {
 	defer t.mutex.RUnlock()
 
 	return NewThreadSafeMap(t.internal.Clone())
+}
+
+// HashFunction returns the hash function used by the underlying map.
+// This allows callers to inspect or reuse the hash function for creating compatible maps.
+func (t *threadSafeMap[K, V]) HashFunction() hashing.HashFunc {
+	return t.internal.HashFunction()
 }

@@ -7,8 +7,10 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"hash"
+	"math"
 )
 
 // HashFunc is a function that takes a Hashable object
@@ -115,4 +117,228 @@ func (b HashableBytes) UpdateHash(h hash.Hash) error {
 // Equals returns true if the two HashableBytes are equal.
 func (b HashableBytes) Equals(other HashableBytes) bool {
 	return bytes.Equal(b, other)
+}
+
+// HashableInt is an int type that implements the Hashable and Comparable interfaces.
+type HashableInt int
+
+// UpdateHash writes the int value to the hash using little-endian encoding.
+func (i HashableInt) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 8)                        //nolint:mnd
+	binary.LittleEndian.PutUint64(buf, uint64(i)) //nolint:gosec
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableInt values are equal.
+func (i HashableInt) Equals(other HashableInt) bool {
+	return int(i) == int(other)
+}
+
+// HashableInt8 is an int8 type that implements the Hashable and Comparable interfaces.
+type HashableInt8 int8
+
+// UpdateHash writes the int8 value to the hash as a single byte.
+func (i HashableInt8) UpdateHash(h hash.Hash) error {
+	buf := []byte{byte(i)}
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableInt8 values are equal.
+func (i HashableInt8) Equals(other HashableInt8) bool {
+	return int8(i) == int8(other)
+}
+
+// HashableInt16 is an int16 type that implements the Hashable and Comparable interfaces.
+type HashableInt16 int16
+
+// UpdateHash writes the int16 value to the hash using little-endian encoding.
+func (i HashableInt16) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 2)                        //nolint:mnd
+	binary.LittleEndian.PutUint16(buf, uint16(i)) //nolint:gosec
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableInt16 values are equal.
+func (i HashableInt16) Equals(other HashableInt16) bool {
+	return int16(i) == int16(other)
+}
+
+// HashableInt32 is an int32 type that implements the Hashable and Comparable interfaces.
+type HashableInt32 int32
+
+// UpdateHash writes the int32 value to the hash using little-endian encoding.
+func (i HashableInt32) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 4)                        //nolint:mnd
+	binary.LittleEndian.PutUint32(buf, uint32(i)) //nolint:gosec
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableInt32 values are equal.
+func (i HashableInt32) Equals(other HashableInt32) bool {
+	return int32(i) == int32(other)
+}
+
+// HashableInt64 is an int64 type that implements the Hashable and Comparable interfaces.
+type HashableInt64 int64
+
+// UpdateHash writes the int64 value to the hash using little-endian encoding.
+func (i HashableInt64) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 8)                        //nolint:mnd
+	binary.LittleEndian.PutUint64(buf, uint64(i)) //nolint:gosec
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableInt64 values are equal.
+func (i HashableInt64) Equals(other HashableInt64) bool {
+	return int64(i) == int64(other)
+}
+
+// HashableUint is a uint type that implements the Hashable and Comparable interfaces.
+type HashableUint uint
+
+// UpdateHash writes the uint value to the hash using little-endian encoding.
+func (u HashableUint) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 8) //nolint:mnd
+	binary.LittleEndian.PutUint64(buf, uint64(u))
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableUint values are equal.
+func (u HashableUint) Equals(other HashableUint) bool {
+	return uint(u) == uint(other)
+}
+
+// HashableUint8 is a uint8 type that implements the Hashable and Comparable interfaces.
+type HashableUint8 uint8
+
+// UpdateHash writes the uint8 value to the hash as a single byte.
+func (u HashableUint8) UpdateHash(h hash.Hash) error {
+	buf := []byte{byte(u)}
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableUint8 values are equal.
+func (u HashableUint8) Equals(other HashableUint8) bool {
+	return uint8(u) == uint8(other)
+}
+
+// HashableUint16 is a uint16 type that implements the Hashable and Comparable interfaces.
+type HashableUint16 uint16
+
+// UpdateHash writes the uint16 value to the hash using little-endian encoding.
+func (u HashableUint16) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 2) //nolint:mnd
+	binary.LittleEndian.PutUint16(buf, uint16(u))
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableUint16 values are equal.
+func (u HashableUint16) Equals(other HashableUint16) bool {
+	return uint16(u) == uint16(other)
+}
+
+// HashableUint32 is a uint32 type that implements the Hashable and Comparable interfaces.
+type HashableUint32 uint32
+
+// UpdateHash writes the uint32 value to the hash using little-endian encoding.
+func (u HashableUint32) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 4) //nolint:mnd
+	binary.LittleEndian.PutUint32(buf, uint32(u))
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableUint32 values are equal.
+func (u HashableUint32) Equals(other HashableUint32) bool {
+	return uint32(u) == uint32(other)
+}
+
+// HashableUint64 is a uint64 type that implements the Hashable and Comparable interfaces.
+type HashableUint64 uint64
+
+// UpdateHash writes the uint64 value to the hash using little-endian encoding.
+func (u HashableUint64) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 8) //nolint:mnd
+	binary.LittleEndian.PutUint64(buf, uint64(u))
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableUint64 values are equal.
+func (u HashableUint64) Equals(other HashableUint64) bool {
+	return uint64(u) == uint64(other)
+}
+
+// HashableFloat32 is a float32 type that implements the Hashable and Comparable interfaces.
+type HashableFloat32 float32
+
+// UpdateHash writes the float32 value to the hash using its IEEE 754 binary representation in little-endian encoding.
+func (f HashableFloat32) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 4) //nolint:mnd
+	binary.LittleEndian.PutUint32(buf, math.Float32bits(float32(f)))
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableFloat32 values are equal.
+func (f HashableFloat32) Equals(other HashableFloat32) bool {
+	return float32(f) == float32(other)
+}
+
+// HashableFloat64 is a float64 type that implements the Hashable and Comparable interfaces.
+type HashableFloat64 float64
+
+// UpdateHash writes the float64 value to the hash using its IEEE 754 binary representation in little-endian encoding.
+func (f HashableFloat64) UpdateHash(h hash.Hash) error {
+	buf := make([]byte, 8) //nolint:mnd
+	binary.LittleEndian.PutUint64(buf, math.Float64bits(float64(f)))
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableFloat64 values are equal.
+func (f HashableFloat64) Equals(other HashableFloat64) bool {
+	return float64(f) == float64(other)
+}
+
+// HashableBool is a bool type that implements the Hashable and Comparable interfaces.
+type HashableBool bool
+
+// UpdateHash writes the bool value to the hash as a single byte (0 for false, 1 for true).
+func (b HashableBool) UpdateHash(h hash.Hash) error {
+	var buf []byte
+	if b {
+		buf = []byte{1}
+	} else {
+		buf = []byte{0}
+	}
+
+	_, err := h.Write(buf)
+
+	return err
+}
+
+// Equals returns true if the two HashableBool values are equal.
+func (b HashableBool) Equals(other HashableBool) bool {
+	return bool(b) == bool(other)
 }

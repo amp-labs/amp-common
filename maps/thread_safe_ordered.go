@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/amp-labs/amp-common/collectable"
+	"github.com/amp-labs/amp-common/hashing"
 )
 
 // NewThreadSafeOrderedMap wraps an existing OrderedMap implementation with thread-safe access using sync.RWMutex.
@@ -163,4 +164,10 @@ func (t *threadSafeOrderedMap[K, V]) Clone() OrderedMap[K, V] {
 	defer t.mutex.RUnlock()
 
 	return NewThreadSafeOrderedMap(t.internal.Clone())
+}
+
+// HashFunction returns the hash function used by the underlying ordered map.
+// This allows callers to inspect or reuse the hash function for creating compatible maps.
+func (t *threadSafeOrderedMap[K, V]) HashFunction() hashing.HashFunc {
+	return t.internal.HashFunction()
 }

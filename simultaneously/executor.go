@@ -126,15 +126,11 @@ func newCollector(exec Executor, size int, cancelOnce *sync.Once, cancel context
 }
 
 // cleanup closes all channels after waiting for goroutines to finish.
-func (e *collector) cleanup() error {
+func (e *collector) cleanup() {
 	e.waitGroup.Wait()
-
-	err := e.exec.Close()
 
 	close(e.errorChan)
 	close(e.doneChan)
-
-	return err
 }
 
 // launchAll starts all callback functions in separate goroutines.

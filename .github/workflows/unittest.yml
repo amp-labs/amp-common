@@ -5,7 +5,7 @@ on:
       - main
   pull_request: {}
 jobs:
-  build:
+  test:
     runs-on:
       group: Ampersand Private
     steps:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.24.6"
+          go-version-file: 'go.mod'
 
       # Run go generate
       - name: Generate
@@ -26,7 +26,14 @@ jobs:
         env:
           SKIP_FLAKY_TESTS: "true"
           RUNNING_ENV: "test"
-        run: go test -v $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+        run: go test -json $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./... | tee results.json
+      - name: Generate coverage results
+        run: go tool cover -func=cover.out -o=coverage.func.out
+      - name: Render Test Summary
+        uses: robherley/go-test-action@v0
+        with:
+          fromJSONFile: results.json
+
       - name: Coverage Check
         uses: vladopajic/go-test-coverage@v2
         with:

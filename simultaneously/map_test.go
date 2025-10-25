@@ -121,7 +121,7 @@ func TestMapGoMapCtx_PanicRecovery(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "intentional panic")
 	assert.Nil(t, output)
 }
@@ -273,7 +273,7 @@ func TestFlatMapGoMapCtx_PanicRecovery(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "intentional panic")
 	assert.Nil(t, output)
 }
@@ -400,7 +400,7 @@ func TestMapMapCtx_PanicRecovery(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "intentional panic")
 	assert.Nil(t, output)
 }
@@ -551,7 +551,7 @@ func TestFlatMapMapCtx_PanicRecovery(t *testing.T) {
 	})
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "panic recovered")
+	assert.Contains(t, err.Error(), "recovered from panic")
 	assert.Contains(t, err.Error(), "intentional panic")
 	assert.Nil(t, output)
 }

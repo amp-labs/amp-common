@@ -1,5 +1,7 @@
 # amp-common
 
+[![Coverage](https://img.shields.io/badge/Coverage-100.0%25-brightgreen)](https://github.com/amp-labs/amp-common/.github/workflows/unittest.yml)
+
 This repository contains shared Go libraries and utilities used across Ampersand projects. It provides a collection of reusable packages for common functionality like actor models, object pooling, concurrent execution, environment variable parsing, telemetry, and more.
 
 ## Overview

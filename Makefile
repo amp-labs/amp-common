@@ -36,3 +36,7 @@ format: fix
 .PHONY: test
 test:
 	go test -v ./...
+
+.PHONY: race
+race:
+	go test -race -v ./...

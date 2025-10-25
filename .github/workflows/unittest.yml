@@ -4,10 +4,8 @@ on:
     branches:
       - main
   pull_request: {}
-permissions:
-  contents: write
 jobs:
-  build:
+  test:
     runs-on:
       group: Ampersand Private
     steps:
@@ -36,17 +34,6 @@ jobs:
         with:
           fromJSONFile: results.json
 
-      - name: Go Coverage Badge  # Pass the `cover.out` output to this action
-        uses: tj-actions/coverage-badge-go@v3
-        with:
-          filename: cover.out
-
-      - name: Verify Changed files
-        uses: tj-actions/verify-changed-files@v16
-        id: verify-changed-files
-        with:
-          files: README.md
-
       - name: Coverage Check
         uses: vladopajic/go-test-coverage@v2
         with:
@@ -56,18 +43,3 @@ jobs:
           threshold-file: 0
           threshold-package: 0
           threshold-total: 0
-
-      - name: Commit changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add README.md
-          git commit -m "auto: Updated coverage badge."
-
-      - name: Push changes
-        if: steps.verify-changed-files.outputs.files_changed == 'true'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ github.token }}
-          branch: ${{ github.head_ref }}

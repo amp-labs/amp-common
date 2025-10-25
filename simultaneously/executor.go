@@ -11,6 +11,8 @@ import (
 	"github.com/amp-labs/amp-common/utils"
 )
 
+var ErrExecutorClosed = errors.New("executor is closed")
+
 type Executor interface {
 	GoContext(ctx context.Context, fn func(context.Context) error, done func(error))
 	Go(fn func(context.Context) error, done func(error))
@@ -18,8 +20,9 @@ type Executor interface {
 }
 
 type defaultExecutor struct {
-	sem    chan struct{}
-	closed atomic.Bool
+	maxConcurrent int
+	sem           chan struct{}
+	closed        *atomic.Bool
 }
 
 func newDefaultExecutor(maxConcurrent int) *defaultExecutor {
@@ -31,7 +34,9 @@ func newDefaultExecutor(maxConcurrent int) *defaultExecutor {
 	}
 
 	return &defaultExecutor{
-		sem: sem,
+		maxConcurrent: maxConcurrent,
+		sem:           sem,
+		closed:        &atomic.Bool{},
 	}
 }
 
@@ -40,6 +45,14 @@ func (d *defaultExecutor) Go(fn func(context.Context) error, done func(error)) {
 }
 
 func (d *defaultExecutor) GoContext(ctx context.Context, callback func(context.Context) error, done func(error)) {
+	// Check to see if the executor has been closed
+	if d.closed.Load() {
+		done(ErrExecutorClosed)
+
+		return
+	}
+
+	// Wait for either a chance to run or the context to be cancelled
 	select {
 	case <-ctx.Done():
 		done(ctx.Err())
@@ -48,12 +61,18 @@ func (d *defaultExecutor) GoContext(ctx context.Context, callback func(context.C
 	case <-d.sem: // take one out (will block if empty)
 	}
 
+	// Check again due to potential race while blocking
+	if d.closed.Load() {
+		d.sem <- struct{}{}
+		done(ErrExecutorClosed)
+
+		return
+	}
+
+	// Do the actual threaded work
 	go func() {
 		defer func() {
-			// Return the token to the semaphore if the executor is not closed
-			if !d.closed.Load() {
-				d.sem <- struct{}{} // put it back
-			}
+			d.sem <- struct{}{} // Return the token to the semaphore
 		}()
 
 		done(d.executeCallback(ctx, callback))
@@ -61,11 +80,18 @@ func (d *defaultExecutor) GoContext(ctx context.Context, callback func(context.C
 }
 
 func (d *defaultExecutor) Close() error {
-	// Use CompareAndSwap to atomically check and set closed flag
-	// This ensures Close() is idempotent and thread-safe
-	if d.closed.CompareAndSwap(false, true) {
-		close(d.sem)
+	// First mark the executor as closed
+	if !d.closed.CompareAndSwap(false, true) {
+		return ErrExecutorClosed
 	}
+
+	// Drain the semaphore queue
+	for range d.maxConcurrent {
+		<-d.sem
+	}
+
+	// Safely close the channel
+	close(d.sem)
 
 	return nil
 }

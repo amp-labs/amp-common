@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/amp-labs/amp-common/collectable"
+	"github.com/amp-labs/amp-common/hashing"
 )
 
 // NewThreadSafeSet wraps an existing Set implementation with thread-safe access using sync.RWMutex.
@@ -167,6 +168,12 @@ func (t *threadSafeSet[T]) Intersection(other Set[T]) (Set[T], error) {
 	}
 
 	return NewThreadSafeSet(value), nil
+}
+
+// HashFunction returns the hash function used by the underlying set.
+// Acquires a read lock to safely access the internal set's hash function.
+func (t *threadSafeSet[T]) HashFunction() hashing.HashFunc {
+	return t.internal.HashFunction()
 }
 
 // NewThreadSafeOrderedSet wraps an existing OrderedSet implementation with thread-safe access using sync.RWMutex.
@@ -332,6 +339,12 @@ func (t *threadSafeOrderedSet[T]) Intersection(other OrderedSet[T]) (OrderedSet[
 	}
 
 	return NewThreadSafeOrderedSet(value), nil
+}
+
+// HashFunction returns the hash function used by the underlying ordered set.
+// Acquires a read lock to safely access the internal ordered set's hash function.
+func (t *threadSafeOrderedSet[T]) HashFunction() hashing.HashFunc {
+	return t.internal.HashFunction()
 }
 
 // NewThreadSafeStringSet wraps an existing StringSet with thread-safe access.

@@ -16,6 +16,8 @@ import (
 // as well as how the object has implemented the Hashable and
 // Comparable interfaces. If a collision is detected, an error
 // is returned.
+//
+//nolint:interfacebloat // Set requires these methods for complete functionality
 type Set[T collectable.Collectable[T]] interface {
 	// AddAll adds multiple elements to the set. Returns an error if any element
 	// causes a hash collision or if hashing fails.
@@ -53,6 +55,9 @@ type Set[T collectable.Collectable[T]] interface {
 	// Intersection returns a new set containing only elements present in both sets.
 	// Returns an error if any element causes a hash collision or if hashing fails.
 	Intersection(other Set[T]) (Set[T], error)
+
+	// HashFunction returns the hash function used by this set.
+	HashFunction() hashing.HashFunc
 }
 
 type setImpl[T collectable.Collectable[T]] struct {
@@ -195,6 +200,11 @@ func (s *setImpl[T]) Intersection(other Set[T]) (Set[T], error) {
 	return ns, nil
 }
 
+// HashFunction returns the hash function used by this set.
+func (s *setImpl[T]) HashFunction() hashing.HashFunc {
+	return s.hash
+}
+
 // StringSet is a specialized Set implementation for string elements.
 // It provides additional methods for sorting entries.
 type StringSet struct {
@@ -328,6 +338,8 @@ func (s *StringSet) Intersection(other *StringSet) (*StringSet, error) {
 // OrderedSet is a Set that maintains insertion order of elements.
 // Unlike the regular Set where Entries() returns elements in arbitrary order,
 // OrderedSet.Entries() returns elements in the order they were added.
+//
+//nolint:interfacebloat // OrderedSet requires these methods for complete functionality
 type OrderedSet[T collectable.Collectable[T]] interface {
 	// AddAll adds multiple elements to the set in order. Returns an error if any element
 	// causes a hash collision or if hashing fails. If an element already exists, it is not
@@ -370,6 +382,9 @@ type OrderedSet[T collectable.Collectable[T]] interface {
 	// The order is preserved from the current set. Returns an error if any element causes
 	// a hash collision or if hashing fails.
 	Intersection(other OrderedSet[T]) (OrderedSet[T], error)
+
+	// HashFunction returns the hash function used by this ordered set.
+	HashFunction() hashing.HashFunc
 }
 
 type orderedSetImpl[T collectable.Collectable[T]] struct {
@@ -518,6 +533,11 @@ func (s *orderedSetImpl[T]) Intersection(other OrderedSet[T]) (OrderedSet[T], er
 	return ns, nil
 }
 
+// HashFunction returns the hash function used by this ordered set.
+func (s *orderedSetImpl[T]) HashFunction() hashing.HashFunc {
+	return s.hash
+}
+
 // StringOrderedSet is a specialized OrderedSet implementation for string elements
 // that maintains insertion order. It provides additional methods for sorted access
 // while preserving the original insertion order in the main Entries() method.
@@ -656,4 +676,9 @@ func (s *StringOrderedSet) Intersection(other *StringOrderedSet) (*StringOrdered
 		hash: s.hash,
 		set:  ns,
 	}, nil
+}
+
+// HashFunction returns the hash function used by this set.
+func (s *StringOrderedSet) HashFunction() hashing.HashFunc {
+	return s.hash
 }

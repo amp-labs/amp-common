@@ -352,6 +352,8 @@ func TestMapMap_EmptyMap(t *testing.T) {
 }
 
 // TestMapMapCtx_ContextCancellation tests context cancellation.
+//
+//nolint:dupl // Test pattern is intentionally similar to ordered_map_test but with Map types
 func TestMapMapCtx_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
@@ -379,6 +381,8 @@ func TestMapMapCtx_ContextCancellation(t *testing.T) {
 }
 
 // TestMapMapCtx_PanicRecovery tests panic recovery.
+//
+//nolint:dupl // Test pattern is intentionally similar to ordered_map_test but with Map types
 func TestMapMapCtx_PanicRecovery(t *testing.T) {
 	t.Parallel()
 
@@ -492,6 +496,8 @@ func TestFlatMapMap_EmptyOutputs(t *testing.T) {
 }
 
 // TestFlatMapMapCtx_ContextCancellation tests context cancellation.
+//
+//nolint:dupl // Test pattern is intentionally similar to ordered_map_test but with Map types
 func TestFlatMapMapCtx_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
@@ -523,6 +529,8 @@ func TestFlatMapMapCtx_ContextCancellation(t *testing.T) {
 }
 
 // TestFlatMapMapCtx_PanicRecovery tests panic recovery.
+//
+//nolint:dupl // Test pattern is intentionally similar to ordered_map_test but with Map types
 func TestFlatMapMapCtx_PanicRecovery(t *testing.T) {
 	t.Parallel()
 
@@ -549,6 +557,8 @@ func TestFlatMapMapCtx_PanicRecovery(t *testing.T) {
 }
 
 // TestFlatMapMap_ErrorHandling tests error propagation.
+//
+//nolint:dupl // Test pattern is intentionally similar to ordered_map_test but with Map types
 func TestFlatMapMap_ErrorHandling(t *testing.T) {
 	t.Parallel()
 
@@ -574,6 +584,8 @@ func TestFlatMapMap_ErrorHandling(t *testing.T) {
 }
 
 // TestMapMap_ConcurrencyLimit tests concurrency limiting.
+//
+//nolint:dupl // Test pattern is intentionally similar to ordered_map_test but with Map types
 func TestMapMap_ConcurrencyLimit(t *testing.T) {
 	t.Parallel()
 

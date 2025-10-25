@@ -65,6 +65,17 @@ type OrderedMap[K collectable.Collectable[K], V any] interface {
 	// The keys and values themselves are not deep-copied; they are referenced as-is.
 	// Returns a new OrderedMap instance with the same entries in the same order.
 	Clone() OrderedMap[K, V]
+
+	// HashFunction returns the hash function used by this ordered map.
+	// This allows callers to inspect the hash function or create compatible ordered maps
+	// that use the same hashing strategy, ensuring consistent key hashing across
+	// different map instances.
+	//
+	// Example use cases:
+	//   - Creating a new ordered map with the same hash function
+	//   - Verifying two ordered maps use compatible hash functions before merging
+	//   - Debugging hash collision issues
+	HashFunction() hashing.HashFunc
 }
 
 // NewOrderedHashMap creates a new ordered hash-based OrderedMap implementation using the provided hash function.
@@ -331,4 +342,10 @@ func (o *orderedHashMap[K, V]) Clone() OrderedMap[K, V] {
 	}
 
 	return result
+}
+
+// HashFunction returns the hash function used by this ordered map.
+// This allows callers to inspect or reuse the hash function for creating compatible maps.
+func (o *orderedHashMap[K, V]) HashFunction() hashing.HashFunc {
+	return o.hash
 }

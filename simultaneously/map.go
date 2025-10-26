@@ -655,7 +655,8 @@ func FlatMapMapWithExecutor[InKey Collectable[InKey], InVal any, OutKey Collecta
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, 100)
+//	expectedSize := input.Size() // or set to the expected number of tasks
+//	exec := newDefaultExecutor(2, expectedSize)
 //	defer exec.Close()
 //
 //	output, err := FlatMapMapCtxWithExecutor(ctx, exec, input,

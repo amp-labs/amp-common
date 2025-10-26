@@ -47,6 +47,7 @@ type Executor interface {
 ```
 
 **Key Features:**
+
 - Semaphore-based concurrency control
 - Thread-safe execution management
 - Graceful shutdown with completion tracking
@@ -336,6 +337,7 @@ The package provides parallel transformation functions for various data structur
 | `FlatMapOrderedSet` | Transform and flatten with order | ✓ |
 
 **Note:** All functions have:
+
 - Base version (uses `context.Background()`)
 - `Ctx` version (accepts custom context)
 - `WithExecutor` version (uses custom executor)

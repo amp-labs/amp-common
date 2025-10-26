@@ -12,6 +12,7 @@ import (
 
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/maps"
+	"github.com/amp-labs/amp-common/should"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -655,4 +656,486 @@ func TestFlatMapMap_ConcurrencyLimit(t *testing.T) {
 	require.NoError(t, err)
 	assert.LessOrEqual(t, maxConcurrent.Load(), int32(4))
 	assert.GreaterOrEqual(t, maxConcurrent.Load(), int32(1))
+}
+
+// TestMapGoMapWithExecutor_SuccessfulExecution tests MapGoMapWithExecutor with successful transformation.
+func TestMapGoMapWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := map[string]int{"a": 1, "b": 2, "c": 3}
+	output, err := MapGoMapWithExecutor(exec, input, func(ctx context.Context, k string, v int) (int, string, error) {
+		return v, strings.ToUpper(k), nil
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Len(t, output, 3)
+	assert.Equal(t, "A", output[1])
+	assert.Equal(t, "B", output[2])
+	assert.Equal(t, "C", output[3])
+}
+
+// TestMapGoMapWithExecutor_ExecutorReuse tests executor reuse across multiple calls.
+func TestMapGoMapWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := map[string]int{"a": 1, "b": 2}
+	output1, err := MapGoMapWithExecutor(exec, input1, func(ctx context.Context, k string, v int) (int, string, error) {
+		return v, strings.ToUpper(k), nil
+	})
+
+	require.NoError(t, err)
+	assert.Len(t, output1, 2)
+
+	// Second batch with same executor
+	input2 := map[string]int{"x": 10, "y": 20, "z": 30}
+	output2, err := MapGoMapWithExecutor(exec, input2, func(ctx context.Context, k string, v int) (int, string, error) {
+		return v, strings.ToUpper(k), nil
+	})
+
+	require.NoError(t, err)
+	assert.Len(t, output2, 3)
+	assert.Equal(t, "X", output2[10])
+	assert.Equal(t, "Y", output2[20])
+	assert.Equal(t, "Z", output2[30])
+}
+
+// TestMapGoMapCtxWithExecutor_SuccessfulExecution tests MapGoMapCtxWithExecutor with successful transformation.
+func TestMapGoMapCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := map[string]int{"a": 1, "b": 2, "c": 3}
+	output, err := MapGoMapCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, k string, v int) (int, string, error) {
+			return v, strings.ToUpper(k), nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Len(t, output, 3)
+	assert.Equal(t, "A", output[1])
+	assert.Equal(t, "B", output[2])
+	assert.Equal(t, "C", output[3])
+}
+
+// TestMapGoMapCtxWithExecutor_ContextCancellation tests context cancellation with executor.
+func TestMapGoMapCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := make(map[int]int)
+	for i := range 10 {
+		input[i] = i
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	output, err := MapGoMapCtxWithExecutor(ctx, exec, input, func(ctx context.Context, k, v int) (int, int, error) {
+		time.Sleep(100 * time.Millisecond)
+
+		return k, v, nil
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
+}
+
+// TestFlatMapGoMapWithExecutor_SuccessfulExecution tests FlatMapGoMapWithExecutor with successful expansion.
+func TestFlatMapGoMapWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := map[string]int{"a": 2, "b": 3}
+	output, err := FlatMapGoMapWithExecutor(exec, input,
+		func(ctx context.Context, k string, v int) (map[string]int, error) {
+			result := make(map[string]int)
+			for i := range v {
+				result[fmt.Sprintf("%s%d", k, i)] = i
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Len(t, output, 5) // a0, a1, b0, b1, b2
+	assert.Equal(t, 0, output["a0"])
+	assert.Equal(t, 1, output["a1"])
+	assert.Equal(t, 0, output["b0"])
+	assert.Equal(t, 1, output["b1"])
+	assert.Equal(t, 2, output["b2"])
+}
+
+// TestFlatMapGoMapWithExecutor_ExecutorReuse tests executor reuse for FlatMapGoMap.
+func TestFlatMapGoMapWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := map[string]int{"a": 2}
+	output1, err := FlatMapGoMapWithExecutor(exec, input1,
+		func(ctx context.Context, k string, v int) (map[string]int, error) {
+			result := make(map[string]int)
+			for i := range v {
+				result[fmt.Sprintf("%s%d", k, i)] = i
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Len(t, output1, 2)
+
+	// Second batch
+	input2 := map[string]int{"x": 3}
+	output2, err := FlatMapGoMapWithExecutor(exec, input2,
+		func(ctx context.Context, k string, v int) (map[string]int, error) {
+			result := make(map[string]int)
+			for i := range v {
+				result[fmt.Sprintf("%s%d", k, i)] = i
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Len(t, output2, 3)
+}
+
+// TestFlatMapGoMapCtxWithExecutor_SuccessfulExecution tests FlatMapGoMapCtxWithExecutor with successful expansion.
+func TestFlatMapGoMapCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := map[string]int{"a": 2, "b": 3}
+	output, err := FlatMapGoMapCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, k string, v int) (map[string]int, error) {
+			result := make(map[string]int)
+			for i := range v {
+				result[fmt.Sprintf("%s%d", k, i)] = i
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Len(t, output, 5)
+}
+
+// TestFlatMapGoMapCtxWithExecutor_ContextCancellation tests context cancellation for FlatMapGoMapCtxWithExecutor.
+func TestFlatMapGoMapCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := make(map[int]int)
+	for i := range 10 {
+		input[i] = 2
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	output, err := FlatMapGoMapCtxWithExecutor(ctx, exec, input,
+		func(ctx context.Context, k, v int) (map[int]int, error) {
+			time.Sleep(100 * time.Millisecond)
+
+			return map[int]int{k: v}, nil
+		})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
+}
+
+// TestMapMapWithExecutor_SuccessfulExecution tests MapMapWithExecutor with successful transformation.
+func TestMapMapWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 1))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "c"}, 3))
+
+	output, err := MapMapWithExecutor(exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 3, output.Size())
+
+	// Verify values by iterating
+	found := make(map[int]string)
+	for key, value := range output.Seq() {
+		found[key.Key] = value
+	}
+
+	assert.Equal(t, "A", found[1])
+	assert.Equal(t, "B", found[2])
+	assert.Equal(t, "C", found[3])
+}
+
+// TestMapMapWithExecutor_ExecutorReuse tests executor reuse for MapMap.
+func TestMapMapWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 5)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input1.Add(maps.Key[string]{Key: "a"}, 1))
+	require.NoError(t, input1.Add(maps.Key[string]{Key: "b"}, 2))
+
+	output1, err := MapMapWithExecutor(exec, input1,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, output1.Size())
+
+	// Second batch
+	input2 := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input2.Add(maps.Key[string]{Key: "x"}, 10))
+	require.NoError(t, input2.Add(maps.Key[string]{Key: "y"}, 20))
+
+	output2, err := MapMapWithExecutor(exec, input2,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, output2.Size())
+}
+
+// TestMapMapCtxWithExecutor_SuccessfulExecution tests MapMapCtxWithExecutor with successful transformation.
+//
+//nolint:dupl // Test code duplicated across map types for clarity and independence
+func TestMapMapCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 1))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "c"}, 3))
+
+	output, err := MapMapCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 3, output.Size())
+}
+
+// TestMapMapCtxWithExecutor_ContextCancellation tests context cancellation for MapMapCtxWithExecutor.
+func TestMapMapCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := maps.NewHashMap[maps.Key[int], int](hashing.Sha256)
+	for i := range 10 {
+		require.NoError(t, input.Add(maps.Key[int]{Key: i}, i))
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	output, err := MapMapCtxWithExecutor(ctx, exec, input,
+		func(ctx context.Context, k maps.Key[int], v int) (maps.Key[int], int, error) {
+			time.Sleep(100 * time.Millisecond)
+
+			return k, v, nil
+		})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
+}
+
+// TestFlatMapMapWithExecutor_SuccessfulExecution tests FlatMapMapWithExecutor with successful expansion.
+func TestFlatMapMapWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 3))
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapMapWithExecutor(exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Map[maps.Key[string], int], error) {
+			result := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 5, output.Size())
+}
+
+// TestFlatMapMapWithExecutor_ExecutorReuse tests executor reuse for FlatMapMap.
+func TestFlatMapMapWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input1.Add(maps.Key[string]{Key: "a"}, 2))
+
+	//nolint:lll // Type signature is unavoidably long
+	output1, err := FlatMapMapWithExecutor(exec, input1,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Map[maps.Key[string], int], error) {
+			result := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, output1.Size())
+
+	// Second batch
+	input2 := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input2.Add(maps.Key[string]{Key: "x"}, 3))
+
+	//nolint:lll // Type signature is unavoidably long
+	output2, err := FlatMapMapWithExecutor(exec, input2,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Map[maps.Key[string], int], error) {
+			result := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, output2.Size())
+}
+
+// TestFlatMapMapCtxWithExecutor_SuccessfulExecution tests FlatMapMapCtxWithExecutor with successful expansion.
+func TestFlatMapMapCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 3))
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapMapCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Map[maps.Key[string], int], error) {
+			result := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 5, output.Size())
+}
+
+// TestFlatMapMapCtxWithExecutor_ContextCancellation tests context cancellation for FlatMapMapCtxWithExecutor.
+func TestFlatMapMapCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := maps.NewHashMap[maps.Key[int], int](hashing.Sha256)
+	for i := range 10 {
+		require.NoError(t, input.Add(maps.Key[int]{Key: i}, 2))
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapMapCtxWithExecutor(ctx, exec, input,
+		func(ctx context.Context, k maps.Key[int], v int) (maps.Map[maps.Key[int], int], error) {
+			time.Sleep(100 * time.Millisecond)
+
+			result := maps.NewHashMap[maps.Key[int], int](hashing.Sha256)
+			require.NoError(t, result.Add(k, v))
+
+			return result, nil
+		})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
 }

@@ -39,7 +39,21 @@ type defaultExecutor struct {
 
 // newDefaultExecutor creates a new executor with the specified concurrency limit.
 // The semaphore is pre-filled with tokens, allowing up to maxConcurrent operations.
-func newDefaultExecutor(maxConcurrent int) *defaultExecutor {
+// If maxConcurrent is less than 1, itemCount is used to determine the buffer size.
+func newDefaultExecutor(maxConcurrent, itemCount int) *defaultExecutor {
+	// Handle unlimited concurrency (maxConcurrent < 1) by using itemCount
+	if maxConcurrent < 1 {
+		maxConcurrent = itemCount
+	}
+
+	if maxConcurrent > itemCount {
+		maxConcurrent = itemCount
+	}
+
+	if maxConcurrent < 1 {
+		maxConcurrent = 1
+	}
+
 	sem := make(chan struct{}, maxConcurrent)
 
 	// Fill the semaphore with maxConcurrent empty structs (tokens).

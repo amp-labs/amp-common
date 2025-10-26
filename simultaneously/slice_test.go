@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/amp-labs/amp-common/should"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -384,4 +385,180 @@ func TestFlatMapSlice_LargeExpansion(t *testing.T) {
 	assert.Equal(t, 100, result[0])   // First element of first expansion
 	assert.Equal(t, 200, result[100]) // First element of second expansion
 	assert.Equal(t, 300, result[200]) // First element of third expansion
+}
+
+// TestMapSliceWithExecutor_SuccessfulExecution tests MapSliceWithExecutor with successful transformation.
+func TestMapSliceWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 5)
+	defer should.Close(exec, "closing executor")
+
+	values := []int{1, 2, 3, 4, 5}
+	result, err := MapSliceWithExecutor(exec, values, func(ctx context.Context, n int) (int, error) {
+		return n * 2, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, result)
+}
+
+// TestMapSliceWithExecutor_ExecutorReuse tests executor reuse across multiple calls.
+func TestMapSliceWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	values1 := []int{1, 2, 3}
+	result1, err := MapSliceWithExecutor(exec, values1, func(ctx context.Context, n int) (int, error) {
+		return n * 2, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{2, 4, 6}, result1)
+
+	// Second batch
+	values2 := []int{10, 20, 30, 40}
+	result2, err := MapSliceWithExecutor(exec, values2, func(ctx context.Context, n int) (int, error) {
+		return n / 10, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 2, 3, 4}, result2)
+}
+
+// TestMapSliceCtxWithExecutor_SuccessfulExecution tests MapSliceCtxWithExecutor with successful transformation.
+func TestMapSliceCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 5)
+	defer should.Close(exec, "closing executor")
+
+	values := []int{1, 2, 3, 4, 5}
+	result, err := MapSliceCtxWithExecutor(t.Context(), exec, values, func(ctx context.Context, n int) (int, error) {
+		return n * 2, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{2, 4, 6, 8, 10}, result)
+}
+
+// TestMapSliceCtxWithExecutor_ContextCancellation tests context cancellation with executor.
+func TestMapSliceCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	values := make([]int, 10)
+	for i := range values {
+		values[i] = i
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	result, err := MapSliceCtxWithExecutor(ctx, exec, values, func(ctx context.Context, n int) (int, error) {
+		time.Sleep(100 * time.Millisecond)
+
+		return n * 2, nil
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, result)
+}
+
+// TestFlatMapSliceWithExecutor_SuccessfulExecution tests FlatMapSliceWithExecutor with successful expansion.
+func TestFlatMapSliceWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	values := []int{1, 2, 3}
+	result, err := FlatMapSliceWithExecutor(exec, values, func(ctx context.Context, n int) ([]int, error) {
+		return []int{n, n * 10}, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 10, 2, 20, 3, 30}, result)
+}
+
+// TestFlatMapSliceWithExecutor_ExecutorReuse tests executor reuse for FlatMapSlice.
+func TestFlatMapSliceWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 5)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	values1 := []int{1, 2}
+	result1, err := FlatMapSliceWithExecutor(exec, values1, func(ctx context.Context, n int) ([]int, error) {
+		return []int{n, n * 10}, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 10, 2, 20}, result1)
+
+	// Second batch
+	values2 := []int{5, 6, 7}
+	result2, err := FlatMapSliceWithExecutor(exec, values2, func(ctx context.Context, n int) ([]int, error) {
+		return []int{n * 100}, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{500, 600, 700}, result2)
+}
+
+// TestFlatMapSliceCtxWithExecutor_SuccessfulExecution tests FlatMapSliceCtxWithExecutor with successful expansion.
+func TestFlatMapSliceCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	values := []int{1, 2, 3}
+	result, err := FlatMapSliceCtxWithExecutor(t.Context(), exec, values, func(ctx context.Context, n int) ([]int, error) {
+		return []int{n, n * 10}, nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{1, 10, 2, 20, 3, 30}, result)
+}
+
+// TestFlatMapSliceCtxWithExecutor_ContextCancellation tests context cancellation for FlatMapSliceCtxWithExecutor.
+func TestFlatMapSliceCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	values := make([]int, 10)
+	for i := range values {
+		values[i] = i
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	result, err := FlatMapSliceCtxWithExecutor(ctx, exec, values, func(ctx context.Context, n int) ([]int, error) {
+		time.Sleep(100 * time.Millisecond)
+
+		return []int{n * 2}, nil
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, result)
 }

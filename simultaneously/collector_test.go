@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/amp-labs/amp-common/should"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,8 +25,8 @@ var (
 func TestNewCollector(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -45,8 +46,8 @@ func TestNewCollector(t *testing.T) {
 func TestCollector_Cleanup(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -83,8 +84,8 @@ func TestCollector_Cleanup(t *testing.T) {
 func TestCollector_LaunchAll_AllSuccess(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -122,8 +123,8 @@ func TestCollector_LaunchAll_AllSuccess(t *testing.T) {
 func TestCollector_LaunchAll_WithErrors(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -162,8 +163,8 @@ func TestCollector_LaunchAll_WithErrors(t *testing.T) {
 func TestCollector_LaunchAll_CancelsContextOnError(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -209,8 +210,8 @@ func TestCollector_LaunchAll_CancelsContextOnError(t *testing.T) {
 func TestCollector_LaunchAll_EmptyCallbacks(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -230,8 +231,8 @@ func TestCollector_LaunchAll_EmptyCallbacks(t *testing.T) {
 func TestCollector_CollectResults_AllSuccess(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -257,8 +258,8 @@ func TestCollector_CollectResults_AllSuccess(t *testing.T) {
 func TestCollector_CollectResults_WithErrors(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -317,8 +318,8 @@ func TestCollector_CollectResults_WithErrors(t *testing.T) {
 func TestCollector_CollectResults_MixedSuccessAndErrors(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(5)
-	defer exec.Close()
+	exec := newDefaultExecutor(5, 5)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -383,8 +384,8 @@ func TestCollector_CollectResults_MixedSuccessAndErrors(t *testing.T) {
 func TestCollector_CollectResults_NoResults(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -405,8 +406,8 @@ func TestCollector_CollectResults_NoResults(t *testing.T) {
 func TestCollector_CancelOnceEnsuresSingleCancellation(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -445,8 +446,8 @@ func TestCollector_BufferedChannelsPreventBlocking(t *testing.T) {
 	t.Parallel()
 
 	// Create executor with low concurrency to test buffering
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 
@@ -485,8 +486,8 @@ func TestCollector_BufferedChannelsPreventBlocking(t *testing.T) {
 func TestCollector_LaunchAll_WithSlowCallbacks(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	cancelOnce := &sync.Once{}
 

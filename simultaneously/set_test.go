@@ -11,6 +11,7 @@ import (
 
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/set"
+	"github.com/amp-labs/amp-common/should"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -493,4 +494,250 @@ func TestFlatMapSet_ExpandToMultiple(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, contains, "Expected %s to be in the output set", expected)
 	}
+}
+
+// TestMapSetWithExecutor_SuccessfulExecution tests MapSetWithExecutor with successful transformation.
+func TestMapSetWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input.Add(hashing.HashableString("hello")))
+	require.NoError(t, input.Add(hashing.HashableString("world")))
+	require.NoError(t, input.Add(hashing.HashableString("test")))
+
+	output, err := MapSetWithExecutor(exec, input,
+		func(ctx context.Context, v hashing.HashableString) (hashing.HashableInt, error) {
+			return hashing.HashableInt(len(v)), nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	// "hello" and "world" both have length 5, "test" has length 4
+	assert.Equal(t, 2, output.Size())
+}
+
+// TestMapSetWithExecutor_ExecutorReuse tests executor reuse across multiple calls.
+func TestMapSetWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 5)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input1.Add(hashing.HashableString("hello")))
+	require.NoError(t, input1.Add(hashing.HashableString("world")))
+
+	output1, err := MapSetWithExecutor(exec, input1,
+		func(ctx context.Context, v hashing.HashableString) (hashing.HashableInt, error) {
+			return hashing.HashableInt(len(v)), nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, output1.Size())
+
+	// Second batch
+	input2 := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input2.Add(hashing.HashableString("abc")))
+	require.NoError(t, input2.Add(hashing.HashableString("def")))
+	require.NoError(t, input2.Add(hashing.HashableString("ghi")))
+
+	output2, err := MapSetWithExecutor(exec, input2,
+		func(ctx context.Context, v hashing.HashableString) (hashing.HashableInt, error) {
+			return hashing.HashableInt(len(v)), nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, output2.Size())
+}
+
+// TestMapSetCtxWithExecutor_SuccessfulExecution tests MapSetCtxWithExecutor with successful transformation.
+//
+//nolint:dupl // Test code duplicated across set types for clarity and independence
+func TestMapSetCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input.Add(hashing.HashableString("hello")))
+	require.NoError(t, input.Add(hashing.HashableString("world")))
+	require.NoError(t, input.Add(hashing.HashableString("test")))
+
+	output, err := MapSetCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, v hashing.HashableString) (hashing.HashableInt, error) {
+			return hashing.HashableInt(len(v)), nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 2, output.Size())
+}
+
+// TestMapSetCtxWithExecutor_ContextCancellation tests context cancellation with executor.
+func TestMapSetCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := set.NewSet[hashing.HashableInt](hashing.Sha256)
+	for i := range 10 {
+		require.NoError(t, input.Add(hashing.HashableInt(i)))
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	output, err := MapSetCtxWithExecutor(ctx, exec, input,
+		func(ctx context.Context, v hashing.HashableInt) (hashing.HashableInt, error) {
+			time.Sleep(100 * time.Millisecond)
+
+			return v * 2, nil
+		})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
+}
+
+// TestFlatMapSetWithExecutor_SuccessfulExecution tests FlatMapSetWithExecutor with successful expansion.
+func TestFlatMapSetWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input.Add(hashing.HashableString("ab")))
+	require.NoError(t, input.Add(hashing.HashableString("cd")))
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapSetWithExecutor(exec, input,
+		func(ctx context.Context, v hashing.HashableString) (set.Set[hashing.HashableString], error) {
+			result := set.NewSet[hashing.HashableString](hashing.Sha256)
+			for _, ch := range string(v) {
+				require.NoError(t, result.Add(hashing.HashableString(string(ch))))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 4, output.Size())
+}
+
+// TestFlatMapSetWithExecutor_ExecutorReuse tests executor reuse for FlatMapSet.
+func TestFlatMapSetWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input1.Add(hashing.HashableString("ab")))
+
+	//nolint:lll // Type signature is unavoidably long
+	output1, err := FlatMapSetWithExecutor(exec, input1,
+		func(ctx context.Context, v hashing.HashableString) (set.Set[hashing.HashableString], error) {
+			result := set.NewSet[hashing.HashableString](hashing.Sha256)
+			for _, ch := range string(v) {
+				require.NoError(t, result.Add(hashing.HashableString(string(ch))))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, output1.Size())
+
+	// Second batch
+	input2 := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input2.Add(hashing.HashableString("xyz")))
+
+	//nolint:lll // Type signature is unavoidably long
+	output2, err := FlatMapSetWithExecutor(exec, input2,
+		func(ctx context.Context, v hashing.HashableString) (set.Set[hashing.HashableString], error) {
+			result := set.NewSet[hashing.HashableString](hashing.Sha256)
+			for _, ch := range string(v) {
+				require.NoError(t, result.Add(hashing.HashableString(string(ch))))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, output2.Size())
+}
+
+// TestFlatMapSetCtxWithExecutor_SuccessfulExecution tests FlatMapSetCtxWithExecutor with successful expansion.
+func TestFlatMapSetCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := set.NewSet[hashing.HashableString](hashing.Sha256)
+	require.NoError(t, input.Add(hashing.HashableString("ab")))
+	require.NoError(t, input.Add(hashing.HashableString("cd")))
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapSetCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, v hashing.HashableString) (set.Set[hashing.HashableString], error) {
+			result := set.NewSet[hashing.HashableString](hashing.Sha256)
+			for _, ch := range string(v) {
+				require.NoError(t, result.Add(hashing.HashableString(string(ch))))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 4, output.Size())
+}
+
+// TestFlatMapSetCtxWithExecutor_ContextCancellation tests context cancellation for FlatMapSetCtxWithExecutor.
+func TestFlatMapSetCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := set.NewSet[hashing.HashableInt](hashing.Sha256)
+	for i := range 10 {
+		require.NoError(t, input.Add(hashing.HashableInt(i)))
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapSetCtxWithExecutor(ctx, exec, input,
+		func(ctx context.Context, v hashing.HashableInt) (set.Set[hashing.HashableInt], error) {
+			time.Sleep(100 * time.Millisecond)
+
+			result := set.NewSet[hashing.HashableInt](hashing.Sha256)
+			require.NoError(t, result.Add(v))
+
+			return result, nil
+		})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
 }

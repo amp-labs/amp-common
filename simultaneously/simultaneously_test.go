@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/amp-labs/amp-common/should"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -283,8 +284,8 @@ func TestDoCtx_ContextCancellationAfterPanic(t *testing.T) {
 func TestDoWithExecutor_SuccessfulExecution(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	var counter atomic.Int32
 
@@ -308,8 +309,8 @@ func TestDoWithExecutor_SuccessfulExecution(t *testing.T) {
 func TestDoWithExecutor_RecoversPanic(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	err := DoWithExecutor(exec,
 		func(ctx context.Context) error {
@@ -325,8 +326,8 @@ func TestDoWithExecutor_RecoversPanic(t *testing.T) {
 func TestDoWithExecutor_ReturnsError(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	err := DoWithExecutor(exec,
 		func(ctx context.Context) error {
@@ -345,8 +346,8 @@ func TestDoWithExecutor_ExecutorReuse(t *testing.T) {
 	t.Parallel()
 
 	// Create a single executor and reuse it for multiple batches
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	var firstBatch atomic.Int32
 
@@ -393,8 +394,8 @@ func TestDoWithExecutor_ExecutorReuse(t *testing.T) {
 func TestDoCtxWithExecutor_SuccessfulExecution(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	var counter atomic.Int32
 
@@ -418,8 +419,8 @@ func TestDoCtxWithExecutor_SuccessfulExecution(t *testing.T) {
 func TestDoCtxWithExecutor_RecoversPanic(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	err := DoCtxWithExecutor(t.Context(), exec,
 		func(ctx context.Context) error {
@@ -435,8 +436,8 @@ func TestDoCtxWithExecutor_RecoversPanic(t *testing.T) {
 func TestDoCtxWithExecutor_ReturnsError(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	err := DoCtxWithExecutor(t.Context(), exec,
 		func(ctx context.Context) error {
@@ -454,8 +455,8 @@ func TestDoCtxWithExecutor_ReturnsError(t *testing.T) {
 func TestDoCtxWithExecutor_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel() // Cancel immediately
@@ -479,8 +480,8 @@ func TestDoCtxWithExecutor_ExecutorReuse(t *testing.T) {
 	t.Parallel()
 
 	// Create a single executor and reuse it for multiple batches
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	var firstBatch atomic.Int32
 
@@ -527,8 +528,8 @@ func TestDoCtxWithExecutor_ExecutorReuse(t *testing.T) {
 func TestDoCtxWithExecutor_MixedSuccessAndError(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	var successCount atomic.Int32
 
@@ -569,8 +570,8 @@ func TestDoCtxWithExecutor_ConcurrencyLimit(t *testing.T) {
 	t.Parallel()
 
 	// Create executor with limit of 2
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	var activeCount atomic.Int32
 

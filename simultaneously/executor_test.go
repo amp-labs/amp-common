@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/amp-labs/amp-common/should"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,8 +24,8 @@ var (
 func TestNewDefaultExecutor(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(5)
-	defer exec.Close()
+	exec := newDefaultExecutor(5, 5)
+	defer should.Close(exec, "closing executor")
 
 	require.NotNil(t, exec)
 	assert.Equal(t, 5, exec.maxConcurrent)
@@ -36,8 +37,8 @@ func TestNewDefaultExecutor(t *testing.T) {
 func TestDefaultExecutor_Go(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	var executed atomic.Bool
 
@@ -59,8 +60,8 @@ func TestDefaultExecutor_Go(t *testing.T) {
 func TestDefaultExecutor_GoContext_SuccessfulExecution(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
-	defer exec.Close()
+	exec := newDefaultExecutor(3, 3)
+	defer should.Close(exec, "closing executor")
 
 	var executedCount atomic.Int32
 
@@ -82,8 +83,8 @@ func TestDefaultExecutor_GoContext_SuccessfulExecution(t *testing.T) {
 func TestDefaultExecutor_GoContext_WithError(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	done := make(chan error, 1)
 
@@ -100,8 +101,8 @@ func TestDefaultExecutor_GoContext_WithError(t *testing.T) {
 func TestDefaultExecutor_GoContext_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel() // Cancel immediately
@@ -121,8 +122,8 @@ func TestDefaultExecutor_GoContext_ContextCancellation(t *testing.T) {
 func TestDefaultExecutor_GoContext_ClosedExecutor(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	should.Close(exec, "closing executor")
 
 	done := make(chan error, 1)
 
@@ -139,7 +140,7 @@ func TestDefaultExecutor_GoContext_ClosedExecutor(t *testing.T) {
 func TestDefaultExecutor_GoContext_ClosedWhileWaiting(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
+	exec := newDefaultExecutor(1, 1)
 
 	// Block the only available slot
 	blocker := make(chan struct{})
@@ -193,8 +194,8 @@ func TestDefaultExecutor_GoContext_ConcurrencyLimit(t *testing.T) {
 
 	maxConcurrent := 2
 
-	exec := newDefaultExecutor(maxConcurrent)
-	defer exec.Close()
+	exec := newDefaultExecutor(maxConcurrent, 5) // 5 tasks to run
+	defer should.Close(exec, "closing executor")
 
 	var activeCount atomic.Int32
 
@@ -238,7 +239,7 @@ func TestDefaultExecutor_GoContext_ConcurrencyLimit(t *testing.T) {
 func TestDefaultExecutor_Close(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
+	exec := newDefaultExecutor(3, 3)
 
 	err := exec.Close()
 	require.NoError(t, err)
@@ -248,7 +249,7 @@ func TestDefaultExecutor_Close(t *testing.T) {
 func TestDefaultExecutor_Close_AlreadyClosed(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
+	exec := newDefaultExecutor(2, 2)
 
 	err := exec.Close()
 	require.NoError(t, err)
@@ -261,7 +262,7 @@ func TestDefaultExecutor_Close_AlreadyClosed(t *testing.T) {
 func TestDefaultExecutor_Close_WaitsForInFlight(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(3)
+	exec := newDefaultExecutor(3, 3)
 
 	var completed atomic.Int32
 
@@ -302,8 +303,8 @@ func TestDefaultExecutor_Close_WaitsForInFlight(t *testing.T) {
 func TestDefaultExecutor_ExecuteCallback_NilContext(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	var executed atomic.Bool
 
@@ -321,8 +322,8 @@ func TestDefaultExecutor_ExecuteCallback_NilContext(t *testing.T) {
 func TestDefaultExecutor_ExecuteCallback_CanceledContext(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -339,8 +340,8 @@ func TestDefaultExecutor_ExecuteCallback_CanceledContext(t *testing.T) {
 func TestDefaultExecutor_ExecuteCallback_WithPanic(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	err := exec.executeCallback(t.Context(), func(ctx context.Context) error {
 		panic("intentional panic")
@@ -354,8 +355,8 @@ func TestDefaultExecutor_ExecuteCallback_WithPanic(t *testing.T) {
 func TestDefaultExecutor_ExecuteCallback_PanicWithError(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	err := exec.executeCallback(t.Context(), func(ctx context.Context) error {
 		panic(errExecutorTest)
@@ -369,8 +370,8 @@ func TestDefaultExecutor_ExecuteCallback_PanicWithError(t *testing.T) {
 func TestDefaultExecutor_RecoverPanic_NoPanic(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	var err error
 
@@ -385,8 +386,8 @@ func TestDefaultExecutor_RecoverPanic_NoPanic(t *testing.T) {
 func TestDefaultExecutor_RecoverPanic_WithPanic(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	var err error
 
@@ -403,8 +404,8 @@ func TestDefaultExecutor_RecoverPanic_WithPanic(t *testing.T) {
 func TestDefaultExecutor_RecoverPanic_PanicWithExistingError(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	err := errExistingError
 
@@ -423,8 +424,8 @@ func TestDefaultExecutor_RecoverPanic_PanicWithExistingError(t *testing.T) {
 func TestDefaultExecutor_RecoverPanic_NilPointerPanic(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	var err error
 
@@ -484,8 +485,8 @@ func TestCombineErrors_TwoErrors(t *testing.T) {
 func TestDefaultExecutor_GoContext_MultipleCallbacks(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(5)
-	defer exec.Close()
+	exec := newDefaultExecutor(5, 5)
+	defer should.Close(exec, "closing executor")
 
 	var completedCount atomic.Int32
 
@@ -515,8 +516,8 @@ func TestDefaultExecutor_GoContext_MultipleCallbacks(t *testing.T) {
 func TestDefaultExecutor_GoContext_ContextDeadline(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 	defer cancel()
@@ -548,8 +549,8 @@ func TestDefaultExecutor_GoContext_ContextDeadline(t *testing.T) {
 func TestDefaultExecutor_StressTest(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(10)
-	defer exec.Close()
+	exec := newDefaultExecutor(10, 10)
+	defer should.Close(exec, "closing executor")
 
 	numCallbacks := 100
 	done := make(chan error, numCallbacks)
@@ -580,8 +581,8 @@ func TestDefaultExecutor_StressTest(t *testing.T) {
 func TestDefaultExecutor_GoContext_SemaphoreTokenReturn(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(2)
-	defer exec.Close()
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
 
 	done := make(chan error, 4)
 
@@ -606,8 +607,8 @@ func TestDefaultExecutor_GoContext_SemaphoreTokenReturn(t *testing.T) {
 func TestDefaultExecutor_ExecuteCallback_ContextPassthrough(t *testing.T) {
 	t.Parallel()
 
-	exec := newDefaultExecutor(1)
-	defer exec.Close()
+	exec := newDefaultExecutor(1, 1)
+	defer should.Close(exec, "closing executor")
 
 	type contextKey string
 

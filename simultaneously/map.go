@@ -295,7 +295,8 @@ func FlatMapGoMapWithExecutor[InKey comparable, InVal any, OutKey comparable, Ou
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, 100)
+//	expectedSize := 100 // expected number of tasks per batch
+//	exec := newDefaultExecutor(2, expectedSize)
 //	defer exec.Close()
 //
 //	output, err := FlatMapGoMapCtxWithExecutor(ctx, exec, input,

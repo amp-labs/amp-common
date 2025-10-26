@@ -42,6 +42,13 @@ type defaultExecutor struct {
 // The executor manages parallel execution of functions while respecting the maxConcurrent limit.
 // It uses a semaphore-based approach to control how many functions can run simultaneously.
 //
+// This creates an executor with a fixed concurrency limit that does not adapt to the size
+// of input data. Use this when you want consistent concurrency across multiple batches with
+// varying sizes.
+//
+// For single-use transformations, prefer the base functions (MapSlice, Do, etc.) which create
+// optimally-sized internal executors automatically that adapt to your data size.
+//
 // Parameters:
 //   - maxConcurrent: Maximum number of functions that can execute concurrently.
 //     If less than 1, defaults to 1 (sequential execution).

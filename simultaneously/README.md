@@ -415,22 +415,25 @@ if errors.Is(err, context.DeadlineExceeded) {
 
 ### 5. Handle Panics Gracefully
 
-The package recovers panics automatically, but log them for debugging:
+The package recovers panics automatically and converts them to errors with stack traces:
 
 ```go
 err := simultaneously.Do(2,
     func(ctx context.Context) error {
-        defer func() {
-            if r := recover(); r != nil {
-                log.Printf("Unexpected panic: %v", r)
-                panic(r) // Re-panic to let simultaneously handle it
-            }
-        }()
-        // Risky operation
-        return nil
+        // Risky operation - panics are recovered automatically
+        // and converted to errors with stack traces
+        return riskyOperation(ctx)
     },
 )
+
+if err != nil {
+    // Panic has already been recovered and logged with stack trace
+    // Just handle the error normally
+    log.Printf("Operation failed: %v", err)
+}
 ```
+
+You don't need to recover panics yourself - the library handles this for you.
 
 ## Error Handling
 

@@ -39,15 +39,15 @@ func MapSliceCtx[Input, Output any](
 	maxConcurrent int,
 	values []Input,
 	transform func(ctx context.Context, value Input) (Output, error),
-) ([]Output, error) {
+) (result []Output, err error) {
 	exec := newDefaultExecutor(maxConcurrent, len(values))
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := MapSliceCtxWithExecutor(ctx, exec, values, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return MapSliceCtxWithExecutor(ctx, exec, values, transform)
 }
 
 // MapSliceWithExecutor transforms a slice of values in parallel by applying a function to each element,
@@ -164,15 +164,15 @@ func FlatMapSliceCtx[Input, Output any](
 	maxConcurrent int,
 	values []Input,
 	transform func(ctx context.Context, value Input) ([]Output, error),
-) ([]Output, error) {
+) (result []Output, err error) {
 	exec := newDefaultExecutor(maxConcurrent, len(values))
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := FlatMapSliceCtxWithExecutor(ctx, exec, values, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return FlatMapSliceCtxWithExecutor(ctx, exec, values, transform)
 }
 
 // FlatMapSliceWithExecutor transforms a slice of values in parallel where each input produces

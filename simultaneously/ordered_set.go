@@ -205,19 +205,19 @@ func FlatMapOrderedSetCtx[InElem Collectable[InElem], OutElem Collectable[OutEle
 	maxConcurrent int,
 	input set.OrderedSet[InElem],
 	transform func(ctx context.Context, elem InElem) (set.OrderedSet[OutElem], error),
-) (set.OrderedSet[OutElem], error) {
+) (result set.OrderedSet[OutElem], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := FlatMapOrderedSetCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return FlatMapOrderedSetCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // MapOrderedSetWithExecutor transforms an OrderedSet by applying a transform function to each element

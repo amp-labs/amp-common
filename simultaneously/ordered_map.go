@@ -88,19 +88,19 @@ func MapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[Ou
 	maxConcurrent int,
 	input maps.OrderedMap[InKey, InVal],
 	transform func(ctx context.Context, key InKey, val InVal) (OutKey, OutVal, error),
-) (maps.OrderedMap[OutKey, OutVal], error) {
+) (result maps.OrderedMap[OutKey, OutVal], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := MapOrderedMapCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return MapOrderedMapCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // FlatMapOrderedMap transforms an OrderedMap by applying a transform function to each key-value pair
@@ -191,19 +191,19 @@ func FlatMapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectabl
 	maxConcurrent int,
 	input maps.OrderedMap[InKey, InVal],
 	transform func(ctx context.Context, key InKey, val InVal) (maps.OrderedMap[OutKey, OutVal], error),
-) (maps.OrderedMap[OutKey, OutVal], error) {
+) (result maps.OrderedMap[OutKey, OutVal], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := FlatMapOrderedMapCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return FlatMapOrderedMapCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // MapOrderedMapWithExecutor transforms an OrderedMap by applying a transform function to each key-value pair

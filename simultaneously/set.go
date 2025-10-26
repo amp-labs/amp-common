@@ -82,19 +82,19 @@ func MapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	maxConcurrent int,
 	input set.Set[InElem],
 	transform func(ctx context.Context, elem InElem) (OutElem, error),
-) (set.Set[OutElem], error) {
+) (result set.Set[OutElem], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := MapSetCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return MapSetCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // FlatMapSet transforms a Set by applying a transform function to each element
@@ -189,19 +189,19 @@ func FlatMapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	maxConcurrent int,
 	input set.Set[InElem],
 	transform func(ctx context.Context, elem InElem) (set.Set[OutElem], error),
-) (set.Set[OutElem], error) {
+) (result set.Set[OutElem], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := FlatMapSetCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return FlatMapSetCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // MapSetWithExecutor transforms a Set by applying a transform function to each element

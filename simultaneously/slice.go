@@ -74,7 +74,7 @@ func MapSliceWithExecutor[Input, Output any](
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, 5) // Create reusable executor with max concurrency of 2
+//	exec := NewDefaultExecutor(2) // Create reusable executor with max concurrency of 2
 //	defer exec.Close()
 //
 //	numbers := []int{1, 2, 3, 4, 5}
@@ -200,7 +200,7 @@ func FlatMapSliceWithExecutor[Input, Output any](
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, 2)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	words := []string{"hello", "world"}

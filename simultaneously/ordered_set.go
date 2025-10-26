@@ -248,7 +248,7 @@ func MapOrderedSetWithExecutor[InElem Collectable[InElem], OutElem Collectable[O
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, expectedSize)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := MapOrderedSetCtxWithExecutor(ctx, exec, input,
@@ -317,7 +317,7 @@ func FlatMapOrderedSetWithExecutor[InElem Collectable[InElem], OutElem Collectab
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, input.Size())
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := FlatMapOrderedSetCtxWithExecutor(ctx, exec, input,

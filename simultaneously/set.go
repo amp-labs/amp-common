@@ -233,7 +233,7 @@ func MapSetWithExecutor[InElem Collectable[InElem], OutElem Collectable[OutElem]
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, input.Size())
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := MapSetCtxWithExecutor(ctx, exec, input,
@@ -319,7 +319,7 @@ func FlatMapSetWithExecutor[InElem Collectable[InElem], OutElem Collectable[OutE
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, input.Size())
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := FlatMapSetCtxWithExecutor(ctx, exec, input,

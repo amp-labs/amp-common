@@ -21,7 +21,127 @@ var (
 	errSecond        = errors.New("second")
 )
 
-func TestNewDefaultExecutor(t *testing.T) {
+func TestNewDefaultExecutor_PublicAPI(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                string
+		maxConcurrent       int
+		expectedConcurrency int
+	}{
+		{
+			name:                "positive concurrency",
+			maxConcurrent:       5,
+			expectedConcurrency: 5,
+		},
+		{
+			name:                "zero defaults to 1",
+			maxConcurrent:       0,
+			expectedConcurrency: 1,
+		},
+		{
+			name:                "negative defaults to 1",
+			maxConcurrent:       -1,
+			expectedConcurrency: 1,
+		},
+		{
+			name:                "single concurrent",
+			maxConcurrent:       1,
+			expectedConcurrency: 1,
+		},
+		{
+			name:                "high concurrency",
+			maxConcurrent:       100,
+			expectedConcurrency: 100,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			exec := NewDefaultExecutor(testCase.maxConcurrent)
+			defer should.Close(exec, "closing executor")
+
+			require.NotNil(t, exec)
+
+			// Verify it's the expected implementation
+			defaultExec, ok := exec.(*defaultExecutor)
+			require.True(t, ok, "should return *defaultExecutor")
+			assert.Equal(t, testCase.expectedConcurrency, defaultExec.maxConcurrent)
+			assert.NotNil(t, defaultExec.sem)
+			assert.Equal(t, testCase.expectedConcurrency, cap(defaultExec.sem))
+			assert.NotNil(t, defaultExec.closed)
+			assert.False(t, defaultExec.closed.Load())
+		})
+	}
+}
+
+func TestNewDefaultExecutor_CanExecuteWork(t *testing.T) {
+	t.Parallel()
+
+	exec := NewDefaultExecutor(3)
+	defer should.Close(exec, "closing executor")
+
+	// Test that it can actually execute work
+	var executed atomic.Int32
+
+	done := make(chan error, 3)
+
+	for range 3 {
+		exec.Go(func(ctx context.Context) error {
+			executed.Add(1)
+
+			return nil
+		}, func(err error) {
+			done <- err
+		})
+	}
+
+	// Wait for all executions
+	for range 3 {
+		err := <-done
+		require.NoError(t, err)
+	}
+
+	assert.Equal(t, int32(3), executed.Load())
+}
+
+func TestNewDefaultExecutor_CloseWorks(t *testing.T) {
+	t.Parallel()
+
+	exec := NewDefaultExecutor(5)
+
+	// Should close without error
+	err := exec.Close()
+	require.NoError(t, err)
+
+	// Second close should return error
+	err = exec.Close()
+	assert.ErrorIs(t, err, ErrExecutorClosed)
+}
+
+func TestNewDefaultExecutor_RejectsWorkAfterClose(t *testing.T) {
+	t.Parallel()
+
+	exec := NewDefaultExecutor(3)
+	should.Close(exec, "closing executor")
+
+	// Try to execute after close
+	done := make(chan error, 1)
+
+	exec.Go(func(ctx context.Context) error {
+		return nil
+	}, func(err error) {
+		done <- err
+	})
+
+	// Should receive error immediately
+	err := <-done
+	assert.ErrorIs(t, err, ErrExecutorClosed)
+}
+
+func TestNewDefaultExecutor_Internal(t *testing.T) {
 	t.Parallel()
 
 	exec := newDefaultExecutor(5, 5)
@@ -32,6 +152,105 @@ func TestNewDefaultExecutor(t *testing.T) {
 	assert.NotNil(t, exec.sem)
 	assert.NotNil(t, exec.closed)
 	assert.False(t, exec.closed.Load())
+}
+
+func TestNewDefaultExecutor_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		maxConcurrent int
+		itemCount     int
+		expectedMax   int
+	}{
+		{
+			name:          "both zero",
+			maxConcurrent: 0,
+			itemCount:     0,
+			expectedMax:   1,
+		},
+		{
+			name:          "negative max with positive items",
+			maxConcurrent: -1,
+			itemCount:     5,
+			expectedMax:   5,
+		},
+		{
+			name:          "max exceeds items",
+			maxConcurrent: 10,
+			itemCount:     5,
+			expectedMax:   5,
+		},
+		{
+			name:          "negative items with positive max",
+			maxConcurrent: 5,
+			itemCount:     -1,
+			expectedMax:   1,
+		},
+		{
+			name:          "both negative",
+			maxConcurrent: -1,
+			itemCount:     -1,
+			expectedMax:   1,
+		},
+		{
+			name:          "max equals items",
+			maxConcurrent: 5,
+			itemCount:     5,
+			expectedMax:   5,
+		},
+		{
+			name:          "max less than items",
+			maxConcurrent: 3,
+			itemCount:     10,
+			expectedMax:   3,
+		},
+		{
+			name:          "zero max with positive items",
+			maxConcurrent: 0,
+			itemCount:     10,
+			expectedMax:   10,
+		},
+		{
+			name:          "positive max with zero items",
+			maxConcurrent: 5,
+			itemCount:     0,
+			expectedMax:   1,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			exec := newDefaultExecutor(testCase.maxConcurrent, testCase.itemCount)
+			defer should.Close(exec, "closing executor")
+
+			require.NotNil(t, exec)
+			assert.Equal(t, testCase.expectedMax, exec.maxConcurrent, "maxConcurrent should match expected value")
+			assert.Equal(t, testCase.expectedMax, cap(exec.sem), "semaphore capacity should match maxConcurrent")
+
+			// Verify semaphore is pre-filled with correct number of tokens
+			tokensAvailable := 0
+
+			for range testCase.expectedMax {
+				select {
+				case <-exec.sem:
+					tokensAvailable++
+				default:
+					break
+				}
+			}
+
+			assert.Equal(t, testCase.expectedMax, tokensAvailable, "semaphore should be pre-filled with expected tokens")
+
+			// Return tokens for cleanup
+
+			for range tokensAvailable {
+				exec.sem <- struct{}{}
+			}
+		})
+	}
 }
 
 func TestDefaultExecutor_Go(t *testing.T) {

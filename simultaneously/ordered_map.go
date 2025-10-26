@@ -234,7 +234,7 @@ func MapOrderedMapWithExecutor[InKey Collectable[InKey], InVal any, OutKey Colle
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, expectedSize)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := MapOrderedMapCtxWithExecutor(ctx, exec, input,
@@ -323,7 +323,7 @@ func FlatMapOrderedMapWithExecutor[InKey Collectable[InKey], InVal any, OutKey C
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, expectedSize)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := FlatMapOrderedMapCtxWithExecutor(ctx, exec, input,

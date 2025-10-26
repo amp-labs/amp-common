@@ -126,8 +126,7 @@ func MapGoMapWithExecutor[InKey comparable, InVal any, OutKey comparable, OutVal
 //
 // Example:
 //
-//	expectedSize := 100
-//	exec := newDefaultExecutor(2, expectedSize)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := MapGoMapCtxWithExecutor(ctx, exec, input,
@@ -296,8 +295,7 @@ func FlatMapGoMapWithExecutor[InKey comparable, InVal any, OutKey comparable, Ou
 //
 // Example:
 //
-//	expectedSize := 100 // expected number of tasks per batch
-//	exec := newDefaultExecutor(2, expectedSize)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := FlatMapGoMapCtxWithExecutor(ctx, exec, input,
@@ -458,8 +456,7 @@ func MapMapWithExecutor[InKey Collectable[InKey], InVal any, OutKey Collectable[
 //
 // Example:
 //
-//	expectedSize := input.Size() // or set to the expected number of tasks
-//	exec := newDefaultExecutor(2, expectedSize)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := MapMapCtxWithExecutor(ctx, exec, input,
@@ -658,8 +655,7 @@ func FlatMapMapWithExecutor[InKey Collectable[InKey], InVal any, OutKey Collecta
 //
 // Example:
 //
-//	expectedSize := input.Size() // or set to the expected number of tasks
-//	exec := newDefaultExecutor(2, expectedSize)
+//	exec := NewDefaultExecutor(2)
 //	defer exec.Close()
 //
 //	output, err := FlatMapMapCtxWithExecutor(ctx, exec, input,

@@ -317,7 +317,7 @@ func FlatMapOrderedSetWithExecutor[InElem Collectable[InElem], OutElem Collectab
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2)
+//	exec := newDefaultExecutor(2, input.Size())
 //	defer exec.Close()
 //
 //	output, err := FlatMapOrderedSetCtxWithExecutor(ctx, exec, input,

@@ -85,19 +85,19 @@ func MapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any](
 	maxConcurrent int,
 	input map[InKey]InVal,
 	transform func(ctx context.Context, key InKey, val InVal) (OutKey, OutVal, error),
-) (map[OutKey]OutVal, error) {
+) (result map[OutKey]OutVal, err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, len(input))
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := MapGoMapCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return MapGoMapCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // MapGoMapWithExecutor transforms a standard Go map by applying a transform function to each key-value pair
@@ -250,19 +250,19 @@ func FlatMapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any]
 	maxConcurrent int,
 	input map[InKey]InVal,
 	transform func(ctx context.Context, key InKey, val InVal) (map[OutKey]OutVal, error),
-) (map[OutKey]OutVal, error) {
+) (result map[OutKey]OutVal, err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, len(input))
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := FlatMapGoMapCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return FlatMapGoMapCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // FlatMapGoMapWithExecutor transforms a standard Go map by applying a transform function to each key-value pair
@@ -411,19 +411,19 @@ func MapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], 
 	maxConcurrent int,
 	input maps.Map[InKey, InVal],
 	transform func(ctx context.Context, key InKey, val InVal) (OutKey, OutVal, error),
-) (maps.Map[OutKey, OutVal], error) {
+) (result maps.Map[OutKey, OutVal], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := MapMapCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return MapMapCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // MapMapWithExecutor transforms an amp-common Map by applying a transform function to each key-value pair
@@ -605,19 +605,19 @@ func FlatMapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKe
 	maxConcurrent int,
 	input maps.Map[InKey, InVal],
 	transform func(ctx context.Context, key InKey, val InVal) (maps.Map[OutKey, OutVal], error),
-) (maps.Map[OutKey, OutVal], error) {
+) (result maps.Map[OutKey, OutVal], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result, err := FlatMapMapCtxWithExecutor(ctx, exec, input, transform)
-	if closeErr := exec.Close(); closeErr != nil && err == nil {
-		return nil, closeErr
-	}
-
-	return result, err
+	return FlatMapMapCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // FlatMapMapWithExecutor transforms an amp-common Map by applying a transform function to each key-value pair

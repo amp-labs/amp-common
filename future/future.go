@@ -46,6 +46,24 @@ var (
 	ErrNilFunction = errors.New("nil function provided to Map")
 )
 
+// callbackWithContext stores a context-aware callback along with its associated context.
+//
+// This type is used internally to manage callbacks registered via OnSuccessContext,
+// OnErrorContext, and OnResultContext. It pairs each callback with the context that
+// should be passed to it when the future completes.
+//
+// Design notes:
+//   - The Context field is intentionally embedded (generally don't do this but in this case it makes sense)
+//   - Storing the context here allows each callback to have its own independent context
+//   - This is safer than sharing a single context across all callbacks
+//   - The context is captured at registration time, not at invocation time
+//
+// Thread safety: This struct is only accessed while holding the Future's mu lock.
+type callbackWithContext[T any] struct {
+	Context  context.Context //nolint:containedctx
+	Callback func(context.Context, T)
+}
+
 // Future represents the read-only side of an asynchronous computation.
 // It provides methods to await the result of a computation that may not yet be complete.
 //
@@ -65,6 +83,17 @@ type Future[T any] struct {
 	result      try.Try[T]    // Stores the final result (value + error)
 	resultReady chan struct{} // Closed when result is available (broadcast signal)
 	cancelFunc  func()        // A callback to cancel the underlying computation, if supported
+
+	// Callback support for OnSuccess/OnError/OnResult
+	mu sync.Mutex // Protects callback lists
+
+	successCallbacks []func(T)          // Callbacks to invoke on successful completion
+	errorCallbacks   []func(error)      // Callbacks to invoke on error completion
+	resultCallbacks  []func(try.Try[T]) // Callbacks to invoke on any completion
+
+	successCtxCallbacks []callbackWithContext[T]          // Callbacks to invoke on successful completion
+	errorCtxCallbacks   []callbackWithContext[error]      // Callbacks to invoke on error completion
+	resultCtxCallbacks  []callbackWithContext[try.Try[T]] // Callbacks to invoke on any completion
 }
 
 // New creates a new Future/Promise pair for manual async computation management.
@@ -298,9 +327,396 @@ func (f *Future[T]) AwaitContext(ctx context.Context) (T, error) { //nolint:iret
 	}
 }
 
+// OnResult registers a callback to be invoked when the future completes, regardless of success or error.
+//
+// The callback is invoked exactly once when the future completes, receiving the full result
+// (both value and error) as a try.Try[T]. This is useful when you need to handle both success
+// and error cases in the same callback, or when you need access to the result type directly.
+//
+// Behavior:
+//   - If the future is already complete, the callback is invoked immediately in a goroutine
+//   - If the future is not yet complete, the callback is stored and invoked when fulfillment occurs
+//   - The callback is always invoked in a separate goroutine to avoid blocking
+//   - Multiple callbacks can be registered - all will be invoked
+//   - Nil callbacks are safely ignored
+//   - Returns the future to allow method chaining
+//
+// The callback receives a try.Try[T] which contains:
+//   - Value: The successful result (if Error is nil)
+//   - Error: The error (if the future failed)
+//
+// This is useful for unified result handling or logging that needs both paths.
+//
+// Example:
+//
+//	future := future.Go(fetchUser)
+//	future.OnResult(func(result try.Try[User]) {
+//	    if result.Error != nil {
+//	        log.Printf("Failed: %v", result.Error)
+//	        metrics.RecordError()
+//	    } else {
+//	        log.Printf("Success: %s", result.Value.Name)
+//	        metrics.RecordSuccess()
+//	    }
+//	})
+//
+// Thread safety: Safe to call from any goroutine, even concurrently with fulfillment.
+func (f *Future[T]) OnResult(callback func(try.Try[T])) *Future[T] {
+	// Ignore nil callbacks
+	if callback == nil {
+		return f
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Check if already fulfilled
+	select {
+	case <-f.resultReady:
+		invokeCallback("OnResult", callback, f.result)
+	default:
+		// Not yet complete - register for later invocation
+		f.resultCallbacks = append(f.resultCallbacks, callback)
+	}
+
+	return f
+}
+
+// OnResultContext registers a context-aware callback to be invoked when the future completes.
+//
+// This is the context-aware version of OnResult. The callback receives both the result
+// and a context, which is useful when the callback needs to perform context-dependent
+// operations like database queries, HTTP requests, or respecting cancellation.
+//
+// Behavior:
+//   - If the future is already complete, the callback is invoked immediately in a goroutine
+//   - If the future is not yet complete, the callback and context are stored for later invocation
+//   - The callback is always invoked in a separate goroutine to avoid blocking
+//   - The context passed at registration time is used when invoking the callback
+//   - Multiple callbacks can be registered - all will be invoked
+//   - Nil callbacks are safely ignored
+//   - Returns the future to allow method chaining
+//
+// The callback receives:
+//   - A context (the one provided to OnResultContext, wrapped in a child context)
+//   - A try.Try[T] containing both the value and error
+//
+// This is useful for callbacks that need context for operations like:
+//   - Making HTTP requests with timeouts
+//   - Database queries with context
+//   - Logging with trace IDs from context
+//   - Respecting cancellation signals
+//
+// Example:
+//
+//	future := future.GoContext(ctx, fetchUser)
+//	future.OnResultContext(ctx, func(ctx context.Context, result try.Try[User]) {
+//	    if result.Error != nil {
+//	        log.ErrorContext(ctx, "Failed to fetch user", "error", result.Error)
+//	    } else {
+//	        db.SaveUserContext(ctx, result.Value)
+//	    }
+//	})
+//
+// Thread safety: Safe to call from any goroutine, even concurrently with fulfillment.
+func (f *Future[T]) OnResultContext(ctx context.Context, callback func(context.Context, try.Try[T])) *Future[T] {
+	// Ignore nil callbacks
+	if callback == nil {
+		return f
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Check if already fulfilled
+	select {
+	case <-f.resultReady:
+		invokeCallbackContext(ctx, "OnResultContext", callback, f.result)
+	default:
+		// Not yet complete - register for later invocation
+		f.resultCtxCallbacks = append(f.resultCtxCallbacks, callbackWithContext[try.Try[T]]{
+			Context:  ctx,
+			Callback: callback,
+		})
+	}
+
+	return f
+}
+
+// OnSuccess registers a callback to be invoked when the future completes successfully.
+//
+// The callback is invoked exactly once if the future completes with a value (no error).
+// If the future completes with an error, the callback is never invoked.
+//
+// Behavior:
+//   - If the future is already complete and successful, the callback is invoked immediately in a goroutine
+//   - If the future is already complete with an error, the callback is never invoked
+//   - If the future is not yet complete, the callback is stored and invoked when fulfillment occurs
+//   - The callback is always invoked in a separate goroutine to avoid blocking
+//   - Multiple callbacks can be registered - all will be invoked
+//   - Nil callbacks are safely ignored
+//
+// This is useful for fire-and-forget side effects that should only occur on success.
+//
+// Example:
+//
+//	future := future.Go(fetchUser)
+//	future.OnSuccess(func(user User) {
+//	    log.Printf("Successfully fetched user: %s", user.Name)
+//	    metrics.RecordSuccess()
+//	})
+//	future.OnError(func(err error) {
+//	    log.Printf("Failed to fetch user: %v", err)
+//	    metrics.RecordError()
+//	})
+//
+// Thread safety: Safe to call from any goroutine, even concurrently with fulfillment.
+func (f *Future[T]) OnSuccess(callback func(T)) *Future[T] {
+	// Ignore nil callbacks
+	if callback == nil {
+		return f
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Check if already fulfilled
+	select {
+	case <-f.resultReady:
+		// Already complete - invoke immediately if successful
+		if f.result.Error == nil {
+			invokeCallback("OnSuccess", callback, f.result.Value)
+		}
+	default:
+		// Not yet complete - register for later invocation
+		f.successCallbacks = append(f.successCallbacks, callback)
+	}
+
+	return f
+}
+
+// OnSuccessContext registers a context-aware callback to be invoked when the future completes successfully.
+//
+// This is the context-aware version of OnSuccess. The callback receives both the successful
+// value and a context, which is useful when the callback needs to perform context-dependent
+// operations like database queries, HTTP requests, or respecting cancellation.
+//
+// Behavior:
+//   - If the future is already complete and successful, the callback is invoked immediately in a goroutine
+//   - If the future is already complete with an error, the callback is never invoked
+//   - If the future is not yet complete, the callback and context are stored for later invocation
+//   - The callback is always invoked in a separate goroutine to avoid blocking
+//   - The context passed at registration time is used when invoking the callback
+//   - Multiple callbacks can be registered - all will be invoked
+//   - Nil callbacks are safely ignored
+//   - Returns the future to allow method chaining
+//
+// The callback receives:
+//   - A context (the one provided to OnSuccessContext, wrapped in a child context)
+//   - The successful value of type T
+//
+// This is useful for success-only side effects that need context, such as:
+//   - Saving results to a database with context
+//   - Making follow-up HTTP requests with timeouts
+//   - Logging with trace IDs from context
+//   - Publishing to message queues with cancellation support
+//
+// Example:
+//
+//	future := future.GoContext(ctx, fetchUser)
+//	future.OnSuccessContext(ctx, func(ctx context.Context, user User) {
+//	    if err := db.SaveUserContext(ctx, user); err != nil {
+//	        log.ErrorContext(ctx, "Failed to save user", "error", err)
+//	    }
+//	    metrics.RecordSuccess()
+//	})
+//
+// Thread safety: Safe to call from any goroutine, even concurrently with fulfillment.
+func (f *Future[T]) OnSuccessContext(ctx context.Context, callback func(context.Context, T)) *Future[T] {
+	// Ignore nil callbacks
+	if callback == nil {
+		return f
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Check if already fulfilled
+	select {
+	case <-f.resultReady:
+		// Already complete - invoke immediately if successful
+		if f.result.Error == nil {
+			invokeCallbackContext(ctx, "OnSuccessContext", callback, f.result.Value)
+		}
+	default:
+		// Not yet complete - register for later invocation
+		f.successCtxCallbacks = append(f.successCtxCallbacks, callbackWithContext[T]{
+			Context:  ctx,
+			Callback: callback,
+		})
+	}
+
+	return f
+}
+
+// OnError registers a callback to be invoked when the future completes with an error.
+//
+// The callback is invoked exactly once if the future completes with an error.
+// If the future completes successfully, the callback is never invoked.
+//
+// Behavior:
+//   - If the future is already complete with an error, the callback is invoked immediately in a goroutine
+//   - If the future is already complete successfully, the callback is never invoked
+//   - If the future is not yet complete, the callback is stored and invoked when fulfillment occurs
+//   - The callback is always invoked in a separate goroutine to avoid blocking
+//   - Multiple callbacks can be registered - all will be invoked
+//   - Nil callbacks are safely ignored
+//
+// This is useful for error handling side effects like logging, metrics, or cleanup.
+//
+// Example:
+//
+//	future := future.Go(fetchUser)
+//	future.OnError(func(err error) {
+//	    log.Printf("Failed to fetch user: %v", err)
+//	    metrics.RecordError()
+//	    alerting.NotifyOnCall()
+//	})
+//	future.OnSuccess(func(user User) {
+//	    log.Printf("Successfully fetched user: %s", user.Name)
+//	})
+//
+// Thread safety: Safe to call from any goroutine, even concurrently with fulfillment.
+func (f *Future[T]) OnError(callback func(error)) *Future[T] {
+	// Ignore nil callbacks
+	if callback == nil {
+		return f
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Check if already fulfilled
+	select {
+	case <-f.resultReady:
+		// Already complete - invoke immediately if error
+		if f.result.Error != nil {
+			invokeCallback("OnError", callback, f.result.Error)
+		}
+	default:
+		// Not yet complete - register for later invocation
+		f.errorCallbacks = append(f.errorCallbacks, callback)
+	}
+
+	return f
+}
+
+// OnErrorContext registers a context-aware callback to be invoked when the future completes with an error.
+//
+// This is the context-aware version of OnError. The callback receives both the error
+// and a context, which is useful when the callback needs to perform context-dependent
+// error handling like database rollbacks, HTTP requests, or respecting cancellation.
+//
+// Behavior:
+//   - If the future is already complete with an error, the callback is invoked immediately in a goroutine
+//   - If the future is already complete successfully, the callback is never invoked
+//   - If the future is not yet complete, the callback and context are stored for later invocation
+//   - The callback is always invoked in a separate goroutine to avoid blocking
+//   - The context passed at registration time is used when invoking the callback
+//   - Multiple callbacks can be registered - all will be invoked
+//   - Nil callbacks are safely ignored
+//   - Returns the future to allow method chaining
+//
+// The callback receives:
+//   - A context (the one provided to OnErrorContext, wrapped in a child context)
+//   - The error that caused the future to fail
+//
+// This is useful for error handling side effects that need context, such as:
+//   - Logging errors with trace IDs from context
+//   - Recording metrics with context metadata
+//   - Sending alerts or notifications with timeouts
+//   - Rolling back transactions with database context
+//   - Publishing error events to message queues
+//
+// Example:
+//
+//	future := future.GoContext(ctx, fetchUser)
+//	future.OnErrorContext(ctx, func(ctx context.Context, err error) {
+//	    log.ErrorContext(ctx, "Failed to fetch user", "error", err)
+//	    metrics.RecordError()
+//	    if err := alerting.NotifyContext(ctx, err); err != nil {
+//	        log.WarnContext(ctx, "Failed to send alert", "error", err)
+//	    }
+//	})
+//
+// Thread safety: Safe to call from any goroutine, even concurrently with fulfillment.
+func (f *Future[T]) OnErrorContext(ctx context.Context, callback func(context.Context, error)) *Future[T] {
+	// Ignore nil callbacks
+	if callback == nil {
+		return f
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Check if already fulfilled
+	select {
+	case <-f.resultReady:
+		// Already complete - invoke immediately if error
+		if f.result.Error != nil {
+			invokeCallbackContext(ctx, "OnErrorContext", callback, f.result.Error)
+		}
+	default:
+		// Not yet complete - register for later invocation
+		f.errorCtxCallbacks = append(f.errorCtxCallbacks, callbackWithContext[error]{
+			Context:  ctx,
+			Callback: callback,
+		})
+	}
+
+	return f
+}
+
 // ToChannel returns a channel that will receive the result when the future completes.
 //
-// This allows integration with select statements and channel-based workflows.
+// This bridges futures with Go's channel-based concurrency, allowing you to use
+// futures in select statements and other channel-based workflows.
+//
+// Behavior:
+//   - Returns a buffered channel (capacity 1) that receives exactly one result
+//   - The channel is closed after the result is sent
+//   - Awaits the future in a separate goroutine (non-blocking)
+//   - The result is wrapped in a try.Try[T] containing both value and error
+//
+// Use cases:
+//   - Combining futures with channels in select statements
+//   - Integrating with channel-based APIs
+//   - Converting futures to channels for compatibility
+//   - Waiting on multiple futures with channels
+//
+// Example:
+//
+//	fut1 := future.Go(operation1)
+//	fut2 := future.Go(operation2)
+//
+//	select {
+//	case result := <-fut1.ToChannel():
+//	    if result.Error != nil {
+//	        log.Printf("Operation 1 failed: %v", result.Error)
+//	    }
+//	case result := <-fut2.ToChannel():
+//	    if result.Error != nil {
+//	        log.Printf("Operation 2 failed: %v", result.Error)
+//	    }
+//	case <-time.After(5 * time.Second):
+//	    log.Printf("Timeout waiting for operations")
+//	}
+//
+// Design notes:
+//   - The channel is buffered to prevent goroutine leaks if receiver stops reading
+//   - A goroutine is spawned to avoid blocking the caller
+//   - The channel is closed to signal completion to range loops
+//   - For context-aware timeout/cancellation, use ToChannelContext instead
 func (f *Future[T]) ToChannel() <-chan try.Try[T] {
 	ch := make(chan try.Try[T], 1)
 
@@ -313,10 +729,53 @@ func (f *Future[T]) ToChannel() <-chan try.Try[T] {
 	return ch
 }
 
-// ToChannelContext is the context-aware version of Channel.
+// ToChannelContext is the context-aware version of ToChannel.
 //
-// This allows waiting for the future result with context support, enabling
-// cancellation and timeouts when using the channel in select statements.
+// This bridges futures with Go's channel-based concurrency while respecting context
+// cancellation and timeouts. Use this when you need to convert a future to a channel
+// with cancellation support.
+//
+// Behavior:
+//   - Returns a buffered channel (capacity 1) that receives exactly one result
+//   - The channel is closed after the result is sent
+//   - Awaits the future with context support in a separate goroutine (non-blocking)
+//   - If context is canceled before future completes, sends the context error
+//   - The result is wrapped in a try.Try[T] containing both value and error
+//
+// Use cases:
+//   - Combining futures with channels in select statements with timeout
+//   - Integrating with context-aware channel-based APIs
+//   - Converting futures to channels with cancellation support
+//   - Waiting on multiple futures with a shared timeout context
+//
+// Example with timeout:
+//
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	fut := future.GoContext(ctx, fetchData)
+//
+//	select {
+//	case result := <-fut.ToChannelContext(ctx):
+//	    if result.Error != nil {
+//	        if errors.Is(result.Error, context.DeadlineExceeded) {
+//	            log.Printf("Operation timed out")
+//	        } else {
+//	            log.Printf("Operation failed: %v", result.Error)
+//	        }
+//	    } else {
+//	        log.Printf("Success: %v", result.Value)
+//	    }
+//	case <-ctx.Done():
+//	    log.Printf("Context canceled externally")
+//	}
+//
+// Design notes:
+//   - Uses AwaitContext internally to respect context cancellation
+//   - The channel is buffered to prevent goroutine leaks if receiver stops reading
+//   - A goroutine is spawned to avoid blocking the caller
+//   - The channel is closed to signal completion to range loops
+//   - Context cancellation results in a try.Try with context.Canceled/DeadlineExceeded error
 func (f *Future[T]) ToChannelContext(ctx context.Context) <-chan try.Try[T] {
 	ch := make(chan try.Try[T], 1)
 

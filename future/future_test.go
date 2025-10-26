@@ -3,9 +3,11 @@ package future
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/amp-labs/amp-common/try"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1607,4 +1609,1209 @@ func TestDefaultGoExecutor_GoContext_PanicRecovery(t *testing.T) {
 	assert.Contains(t, err.Error(), "recovered from panic: test panic in GoContext")
 	assert.Contains(t, err.Error(), "stack trace:")
 	assert.Equal(t, "", result)
+}
+
+// OnSuccess/OnError callback tests
+
+func TestOnSuccess_CalledAfterFulfillment(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback before fulfillment
+	fut.OnSuccess(func(val int) {
+		called <- val
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Callback should be invoked
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnSuccess_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Fulfill before registering callback
+	promise.Success(42)
+
+	// Wait to ensure fulfillment completes
+	_, err := fut.Await()
+	require.NoError(t, err)
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback after fulfillment
+	fut.OnSuccess(func(val int) {
+		called <- val
+	})
+
+	// Callback should be invoked immediately
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnSuccess_NotCalledOnError(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to detect if callback is incorrectly invoked
+	called := make(chan struct{}, 1)
+
+	// Register success callback
+	fut.OnSuccess(func(val int) {
+		called <- struct{}{}
+	})
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Callback should NOT be invoked
+	select {
+	case <-called:
+		t.Fatal("success callback should not be invoked on error")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func TestOnSuccess_MultipleCallbacks(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channels to track multiple callbacks
+	called1 := make(chan int, 1)
+	called2 := make(chan int, 1)
+	called3 := make(chan int, 1)
+
+	// Register multiple callbacks
+	fut.OnSuccess(func(val int) { called1 <- val })
+	fut.OnSuccess(func(val int) { called2 <- val })
+	fut.OnSuccess(func(val int) { called3 <- val })
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// All callbacks should be invoked
+	for i, ch := range []chan int{called1, called2, called3} {
+		select {
+		case val := <-ch:
+			assert.Equal(t, 42, val, "callback %d", i+1)
+		case <-time.After(100 * time.Millisecond):
+			t.Fatalf("callback %d was not invoked", i+1)
+		}
+	}
+}
+
+func TestOnSuccess_NilCallback(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register nil callback - should not panic
+	require.NotPanics(t, func() {
+		fut.OnSuccess(nil)
+	})
+
+	// Fulfill should still work
+	promise.Success(42)
+
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+func TestOnError_CalledAfterFulfillment(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan error, 1)
+
+	// Register callback before fulfillment
+	fut.OnError(func(err error) {
+		called <- err
+	})
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Callback should be invoked
+	select {
+	case err := <-called:
+		assert.Equal(t, errTest, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnError_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Fulfill with error before registering callback
+	promise.Failure(errTest)
+
+	// Wait to ensure fulfillment completes
+	_, err := fut.Await()
+	require.Error(t, err)
+
+	// Channel to signal callback was invoked
+	called := make(chan error, 1)
+
+	// Register callback after fulfillment
+	fut.OnError(func(err error) {
+		called <- err
+	})
+
+	// Callback should be invoked immediately
+	select {
+	case err := <-called:
+		assert.Equal(t, errTest, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnError_NotCalledOnSuccess(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to detect if callback is incorrectly invoked
+	called := make(chan struct{}, 1)
+
+	// Register error callback
+	fut.OnError(func(err error) {
+		called <- struct{}{}
+	})
+
+	// Fulfill with success
+	promise.Success(42)
+
+	// Callback should NOT be invoked
+	select {
+	case <-called:
+		t.Fatal("error callback should not be invoked on success")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func TestOnError_MultipleCallbacks(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channels to track multiple callbacks
+	called1 := make(chan error, 1)
+	called2 := make(chan error, 1)
+	called3 := make(chan error, 1)
+
+	// Register multiple callbacks
+	fut.OnError(func(err error) { called1 <- err })
+	fut.OnError(func(err error) { called2 <- err })
+	fut.OnError(func(err error) { called3 <- err })
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// All callbacks should be invoked
+	for i, ch := range []chan error{called1, called2, called3} {
+		select {
+		case err := <-ch:
+			assert.Equal(t, errTest, err, "callback %d", i+1)
+		case <-time.After(100 * time.Millisecond):
+			t.Fatalf("callback %d was not invoked", i+1)
+		}
+	}
+}
+
+func TestOnError_NilCallback(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register nil callback - should not panic
+	require.NotPanics(t, func() {
+		fut.OnError(nil)
+	})
+
+	// Fulfill should still work
+	promise.Failure(errTest)
+
+	result, err := fut.Await()
+	require.Error(t, err)
+	assert.Equal(t, errTest, err)
+	assert.Equal(t, 0, result)
+}
+
+func TestOnSuccessAndOnError_BothRegistered(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success case", func(t *testing.T) {
+		t.Parallel()
+
+		fut, promise := New[int]()
+
+		successCalled := make(chan int, 1)
+		errorCalled := make(chan struct{}, 1)
+
+		fut.OnSuccess(func(val int) { successCalled <- val })
+		fut.OnError(func(err error) { errorCalled <- struct{}{} })
+
+		promise.Success(42)
+
+		// Only success callback should fire
+		select {
+		case val := <-successCalled:
+			assert.Equal(t, 42, val)
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("success callback was not invoked")
+		}
+
+		select {
+		case <-errorCalled:
+			t.Fatal("error callback should not be invoked on success")
+		case <-time.After(50 * time.Millisecond):
+		}
+	})
+
+	t.Run("error case", func(t *testing.T) {
+		t.Parallel()
+
+		fut, promise := New[int]()
+
+		successCalled := make(chan struct{}, 1)
+		errorCalled := make(chan error, 1)
+
+		fut.OnSuccess(func(val int) { successCalled <- struct{}{} })
+		fut.OnError(func(err error) { errorCalled <- err })
+
+		promise.Failure(errTest)
+
+		// Only error callback should fire
+		select {
+		case err := <-errorCalled:
+			assert.Equal(t, errTest, err)
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("error callback was not invoked")
+		}
+
+		select {
+		case <-successCalled:
+			t.Fatal("success callback should not be invoked on error")
+		case <-time.After(50 * time.Millisecond):
+		}
+	})
+}
+
+func TestOnSuccess_ConcurrentRegistration(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register callbacks concurrently with fulfillment
+	const numCallbacks = 10
+	called := make(chan int, numCallbacks)
+
+	// Start goroutines that register callbacks
+	for range numCallbacks {
+		go func() {
+			fut.OnSuccess(func(val int) {
+				called <- val
+			})
+		}()
+	}
+
+	// Small delay to let some callbacks register
+	time.Sleep(10 * time.Millisecond)
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// All registered callbacks should eventually be invoked
+	// Note: Due to timing, we might get anywhere from 1 to numCallbacks invocations
+	// But we should get at least one
+	timeout := time.After(200 * time.Millisecond)
+	count := 0
+
+	for {
+		select {
+		case val := <-called:
+			assert.Equal(t, 42, val)
+
+			count++
+			if count == numCallbacks {
+				return
+			}
+		case <-timeout:
+			// It's ok if not all callbacks registered in time
+			// But we should have gotten at least one
+			assert.Positive(t, count, "at least one callback should have been invoked")
+
+			return
+		}
+	}
+}
+
+func TestOnError_ConcurrentRegistration(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register callbacks concurrently with fulfillment
+	const numCallbacks = 10
+	called := make(chan error, numCallbacks)
+
+	// Start goroutines that register callbacks
+	for range numCallbacks {
+		go func() {
+			fut.OnError(func(err error) {
+				called <- err
+			})
+		}()
+	}
+
+	// Small delay to let some callbacks register
+	time.Sleep(10 * time.Millisecond)
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Collect invocations
+	timeout := time.After(200 * time.Millisecond)
+	count := 0
+
+	for {
+		select {
+		case err := <-called:
+			assert.Equal(t, errTest, err)
+
+			count++
+			if count == numCallbacks {
+				return
+			}
+		case <-timeout:
+			assert.Positive(t, count, "at least one callback should have been invoked")
+
+			return
+		}
+	}
+}
+
+func TestOnSuccess_WithGo(t *testing.T) {
+	t.Parallel()
+
+	called := make(chan string, 1)
+
+	fut := Go(func() (string, error) {
+		time.Sleep(20 * time.Millisecond)
+
+		return helloString, nil
+	})
+
+	fut.OnSuccess(func(val string) {
+		called <- val
+	})
+
+	select {
+	case val := <-called:
+		assert.Equal(t, helloString, val)
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnError_WithGo(t *testing.T) {
+	t.Parallel()
+
+	called := make(chan error, 1)
+
+	fut := Go(func() (string, error) {
+		time.Sleep(20 * time.Millisecond)
+
+		return "", errTest
+	})
+
+	fut.OnError(func(err error) {
+		called <- err
+	})
+
+	select {
+	case err := <-called:
+		assert.Equal(t, errTest, err)
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnSuccess_CallbackPanicDoesNotAffectFuture(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register callback that panics
+	fut.OnSuccess(func(val int) {
+		panic("callback panic")
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Future should still be accessible
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+
+	// Give callback goroutine time to panic (and be recovered by Go runtime)
+	time.Sleep(20 * time.Millisecond)
+}
+
+func TestOnSuccess_InvokedOnlyOnce(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	invocations := make(chan int, 10)
+
+	fut.OnSuccess(func(val int) {
+		invocations <- val
+	})
+
+	// Try to fulfill multiple times
+	promise.Success(42)
+	promise.Success(43) // Should be ignored
+	promise.Success(44) // Should be ignored
+
+	// Should only get one invocation
+	select {
+	case val := <-invocations:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+
+	// Should not get additional invocations
+	select {
+	case <-invocations:
+		t.Fatal("callback should only be invoked once")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+// --- OnSuccessContext/OnErrorContext/OnResultContext Tests ---
+
+func TestOnSuccessContext_CalledAfterFulfillment(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback before fulfillment
+	fut.OnSuccessContext(t.Context(), func(ctx context.Context, val int) {
+		assert.NotNil(t, ctx)
+		called <- val
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Callback should be invoked
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnSuccessContext_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Fulfill before registering callback
+	promise.Success(42)
+
+	// Wait to ensure fulfillment completes
+	_, err := fut.Await()
+	require.NoError(t, err)
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback after fulfillment
+	fut.OnSuccessContext(t.Context(), func(ctx context.Context, val int) {
+		assert.NotNil(t, ctx)
+		called <- val
+	})
+
+	// Callback should be invoked immediately
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnSuccessContext_NotCalledOnError(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to detect if callback is incorrectly invoked
+	called := make(chan struct{}, 1)
+
+	// Register success callback
+	fut.OnSuccessContext(t.Context(), func(ctx context.Context, val int) {
+		called <- struct{}{}
+	})
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Callback should NOT be invoked
+	select {
+	case <-called:
+		t.Fatal("success callback should not be invoked on error")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func TestOnSuccessContext_NilCallback(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register nil callback - should not panic
+	require.NotPanics(t, func() {
+		fut.OnSuccessContext(t.Context(), nil)
+	})
+
+	// Fulfill should still work
+	promise.Success(42)
+
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+func TestOnSuccessContext_NilContext(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback with nil context
+	fut.OnSuccessContext(nil, func(ctx context.Context, val int) { //nolint:staticcheck
+		// Should receive a valid context (not nil)
+		assert.NotNil(t, ctx)
+		called <- val
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Callback should be invoked
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnSuccessContext_CallbackPanicDoesNotAffectFuture(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register callback that panics
+	fut.OnSuccessContext(t.Context(), func(ctx context.Context, val int) {
+		panic("callback panic")
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Future should still be accessible
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+
+	// Give callback goroutine time to panic (and be recovered)
+	time.Sleep(20 * time.Millisecond)
+}
+
+func TestOnErrorContext_CalledAfterFulfillment(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan error, 1)
+
+	// Register callback before fulfillment
+	fut.OnErrorContext(t.Context(), func(ctx context.Context, err error) {
+		assert.NotNil(t, ctx)
+		called <- err
+	})
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Callback should be invoked
+	select {
+	case err := <-called:
+		assert.Equal(t, errTest, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnErrorContext_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Fulfill with error before registering callback
+	promise.Failure(errTest)
+
+	// Wait to ensure fulfillment completes
+	_, err := fut.Await()
+	require.Error(t, err)
+
+	// Channel to signal callback was invoked
+	called := make(chan error, 1)
+
+	// Register callback after fulfillment
+	fut.OnErrorContext(t.Context(), func(ctx context.Context, err error) {
+		assert.NotNil(t, ctx)
+		called <- err
+	})
+
+	// Callback should be invoked immediately
+	select {
+	case err := <-called:
+		assert.Equal(t, errTest, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnErrorContext_NotCalledOnSuccess(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to detect if callback is incorrectly invoked
+	called := make(chan struct{}, 1)
+
+	// Register error callback
+	fut.OnErrorContext(t.Context(), func(ctx context.Context, err error) {
+		called <- struct{}{}
+	})
+
+	// Fulfill with success
+	promise.Success(42)
+
+	// Callback should NOT be invoked
+	select {
+	case <-called:
+		t.Fatal("error callback should not be invoked on success")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func TestOnErrorContext_NilCallback(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register nil callback - should not panic
+	require.NotPanics(t, func() {
+		fut.OnErrorContext(t.Context(), nil)
+	})
+
+	// Fulfill should still work
+	promise.Failure(errTest)
+
+	result, err := fut.Await()
+	require.Error(t, err)
+	assert.Equal(t, errTest, err)
+	assert.Equal(t, 0, result)
+}
+
+func TestOnErrorContext_NilContext(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan error, 1)
+
+	// Register callback with nil context
+	fut.OnErrorContext(nil, func(ctx context.Context, err error) { //nolint:staticcheck
+		// Should receive a valid context (not nil)
+		assert.NotNil(t, ctx)
+		called <- err
+	})
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Callback should be invoked
+	select {
+	case err := <-called:
+		assert.Equal(t, errTest, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnErrorContext_CallbackPanicDoesNotAffectFuture(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register callback that panics
+	fut.OnErrorContext(t.Context(), func(ctx context.Context, err error) {
+		panic("callback panic")
+	})
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Future should still be accessible
+	result, err := fut.Await()
+	require.Error(t, err)
+	assert.Equal(t, errTest, err)
+	assert.Equal(t, 0, result)
+
+	// Give callback goroutine time to panic (and be recovered)
+	time.Sleep(20 * time.Millisecond)
+}
+
+func TestOnResultContext_CalledAfterFulfillment_Success(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback before fulfillment
+	fut.OnResultContext(t.Context(), func(ctx context.Context, result try.Try[int]) {
+		assert.NotNil(t, ctx)
+		require.NoError(t, result.Error)
+		called <- result.Value
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Callback should be invoked
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnResultContext_CalledAfterFulfillment_Error(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan error, 1)
+
+	// Register callback before fulfillment
+	fut.OnResultContext(t.Context(), func(ctx context.Context, result try.Try[int]) {
+		assert.NotNil(t, ctx)
+		require.Error(t, result.Error)
+		called <- result.Error
+	})
+
+	// Fulfill with error
+	promise.Failure(errTest)
+
+	// Callback should be invoked
+	select {
+	case err := <-called:
+		assert.Equal(t, errTest, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnResultContext_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Fulfill before registering callback
+	promise.Success(42)
+
+	// Wait to ensure fulfillment completes
+	_, err := fut.Await()
+	require.NoError(t, err)
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback after fulfillment
+	fut.OnResultContext(t.Context(), func(ctx context.Context, result try.Try[int]) {
+		assert.NotNil(t, ctx)
+		require.NoError(t, result.Error)
+		called <- result.Value
+	})
+
+	// Callback should be invoked immediately
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnResultContext_NilCallback(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register nil callback - should not panic
+	require.NotPanics(t, func() {
+		fut.OnResultContext(t.Context(), nil)
+	})
+
+	// Fulfill should still work
+	promise.Success(42)
+
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+func TestOnResultContext_NilContext(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Channel to signal callback was invoked
+	called := make(chan int, 1)
+
+	// Register callback with nil context
+	fut.OnResultContext(nil, func(ctx context.Context, result try.Try[int]) { //nolint:staticcheck
+		// Should receive a valid context (not nil)
+		assert.NotNil(t, ctx)
+		require.NoError(t, result.Error)
+		called <- result.Value
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Callback should be invoked
+	select {
+	case val := <-called:
+		assert.Equal(t, 42, val)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("callback was not invoked")
+	}
+}
+
+func TestOnResultContext_CallbackPanicDoesNotAffectFuture(t *testing.T) {
+	t.Parallel()
+
+	fut, promise := New[int]()
+
+	// Register callback that panics
+	fut.OnResultContext(t.Context(), func(ctx context.Context, result try.Try[int]) {
+		panic("callback panic")
+	})
+
+	// Fulfill the promise
+	promise.Success(42)
+
+	// Future should still be accessible
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+
+	// Give callback goroutine time to panic (and be recovered)
+	time.Sleep(20 * time.Millisecond)
+}
+
+// --- Future.Cancel() Tests ---
+
+func TestFutureCancel_WithGoContext(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	fut := GoContext(ctx, func(ctx context.Context) (int, error) {
+		<-ctx.Done()
+
+		return 0, ctx.Err()
+	})
+
+	// Cancel the future
+	fut.Cancel()
+
+	// Should complete with context.Canceled
+	result, err := fut.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, context.Canceled, err)
+	assert.Equal(t, 0, result)
+}
+
+func TestFutureCancel_WithoutCancelFunc(t *testing.T) {
+	t.Parallel()
+
+	// Create future without cancel function
+	fut, promise := New[int]()
+
+	// Cancel should not panic
+	require.NotPanics(t, func() {
+		fut.Cancel()
+	})
+
+	// Future should still be usable
+	promise.Success(42)
+
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+func TestFutureCancel_MultipleCalls(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	fut := GoContext(ctx, func(ctx context.Context) (int, error) {
+		<-ctx.Done()
+
+		return 0, ctx.Err()
+	})
+
+	// Cancel multiple times - should be safe
+	require.NotPanics(t, func() {
+		fut.Cancel()
+		fut.Cancel()
+		fut.Cancel()
+	})
+
+	// Should complete with context.Canceled
+	result, err := fut.Await()
+
+	require.Error(t, err)
+	assert.Equal(t, context.Canceled, err)
+	assert.Equal(t, 0, result)
+}
+
+func TestFutureCancel_AfterCompletion(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 42, nil
+	})
+
+	// Wait for completion
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+
+	// Cancel after completion - should be safe
+	require.NotPanics(t, func() {
+		fut.Cancel()
+	})
+
+	// Future should still return the same result
+	result2, err2 := fut.Await()
+	require.NoError(t, err2)
+	assert.Equal(t, 42, result2)
+}
+
+// --- New() with cancel functions Tests ---
+
+func TestNew_WithCancelFunc(t *testing.T) {
+	t.Parallel()
+
+	called := make(chan struct{}, 1)
+
+	fut, promise := New[int](func() {
+		called <- struct{}{}
+	})
+
+	// Cancel the future
+	fut.Cancel()
+
+	// Cancel function should be called
+	select {
+	case <-called:
+		// Expected
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("cancel function was not invoked")
+	}
+
+	// Future should still be usable
+	promise.Success(42)
+
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+func TestNew_WithMultipleCancelFuncs(t *testing.T) {
+	t.Parallel()
+
+	called1 := make(chan struct{}, 1)
+	called2 := make(chan struct{}, 1)
+	called3 := make(chan struct{}, 1)
+
+	fut, promise := New[int](
+		func() { called1 <- struct{}{} },
+		func() { called2 <- struct{}{} },
+		func() { called3 <- struct{}{} },
+	)
+
+	// Cancel the future
+	fut.Cancel()
+
+	// All cancel functions should be called
+	for i, ch := range []chan struct{}{called1, called2, called3} {
+		select {
+		case <-ch:
+			// Expected
+		case <-time.After(100 * time.Millisecond):
+			t.Fatalf("cancel function %d was not invoked", i+1)
+		}
+	}
+
+	// Future should still be usable
+	promise.Success(42)
+
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+func TestNew_CancelFuncsCalledOnlyOnce(t *testing.T) {
+	t.Parallel()
+
+	callCount := 0
+	mut := &sync.Mutex{}
+
+	fut, promise := New[int](func() {
+		mut.Lock()
+		defer mut.Unlock()
+
+		callCount++
+	})
+
+	// Cancel multiple times
+	fut.Cancel()
+	fut.Cancel()
+	fut.Cancel()
+
+	// Give time for cancels to execute
+	time.Sleep(20 * time.Millisecond)
+
+	// Cancel function should only be called once
+	mut.Lock()
+	defer mut.Unlock()
+	assert.Equal(t, 1, callCount)
+
+	// Future should still be usable
+	promise.Success(42)
+
+	result, err := fut.Await()
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+// --- AwaitContext with nil context Tests ---
+
+func TestAwaitContext_NilContext(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 42, nil
+	})
+
+	// nil context should behave like regular Await (no cancellation)
+	result, err := fut.AwaitContext(nil) //nolint:staticcheck
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+}
+
+func TestAwaitContext_NilContext_Error(t *testing.T) {
+	t.Parallel()
+
+	fut := Go(func() (int, error) {
+		return 0, errTest
+	})
+
+	// nil context should behave like regular Await
+	result, err := fut.AwaitContext(nil) //nolint:staticcheck
+
+	require.Error(t, err)
+	assert.Equal(t, errTest, err)
+	assert.Equal(t, 0, result)
+}
+
+// --- Combine with empty futures Tests ---
+
+func TestCombine_EmptyFutures(t *testing.T) {
+	t.Parallel()
+
+	combined := Combine[int]()
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Nil(t, results)
+}
+
+func TestCombineNoShortCircuit_EmptyFutures(t *testing.T) {
+	t.Parallel()
+
+	combined := CombineNoShortCircuit[int]()
+
+	results, err := combined.Await()
+
+	require.NoError(t, err)
+	assert.Equal(t, []int{}, results)
 }

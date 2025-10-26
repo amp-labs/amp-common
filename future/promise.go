@@ -54,6 +54,7 @@ func (p *Promise[T]) cancel() {
 // This is the core mechanism for promise completion. It:
 //   - Stores the result (value + error) in the future
 //   - Closes the resultReady channel to broadcast completion
+//   - Invokes all registered OnSuccess, OnError, or OnResult callbacks
 //   - Is idempotent (safe to call multiple times)
 //
 // Thread safety is provided by sync.Once, which ensures only the first call succeeds.
@@ -63,6 +64,8 @@ func (p *Promise[T]) cancel() {
 // Design notes:
 //   - Uses try.Try[T] to store both value and error together
 //   - Channel close is a broadcast - all waiters are unblocked simultaneously
+//   - Callbacks are invoked in goroutines to avoid blocking
+//   - The mutex is held while closing the channel to ensure callbacks are collected atomically
 //   - Recover is defensive programming - shouldn't be needed but provides safety
 //   - This is internal (unexported) - callers use Success/Failure/Complete
 func (p *Promise[T]) fulfill(result try.Try[T]) {
@@ -77,9 +80,66 @@ func (p *Promise[T]) fulfill(result try.Try[T]) {
 		// Store the result for later retrieval
 		p.future.result = result
 
+		// Acquire mutex before closing channel to ensure atomicity with callback registration
+		// This prevents a race where a callback is registered after the channel is closed
+		// but before we collect the callbacks to invoke
+		p.future.mu.Lock()
+
 		// Close channel to broadcast completion to all waiters
 		// A closed channel immediately returns to all receivers
 		close(p.future.resultReady)
+
+		// Collect and clear callbacks while holding the lock
+		successCallbacks := p.future.successCallbacks
+		errorCallbacks := p.future.errorCallbacks
+		resultCallbacks := p.future.resultCallbacks
+		successCtxCallbacks := p.future.successCtxCallbacks
+		errorCtxCallbacks := p.future.errorCtxCallbacks
+		resultCtxCallbacks := p.future.resultCtxCallbacks
+
+		// Ensure that callbacks only get called once.
+		// Also allows GC to do its thing after being called.
+		p.future.successCallbacks = nil
+		p.future.errorCallbacks = nil
+		p.future.resultCallbacks = nil
+		p.future.successCtxCallbacks = nil
+		p.future.errorCtxCallbacks = nil
+		p.future.resultCtxCallbacks = nil
+
+		p.future.mu.Unlock()
+
+		// Invoke appropriate callbacks based on result
+		// Callbacks are invoked in separate goroutines to:
+		// 1. Avoid blocking the fulfill operation
+		// 2. Allow callbacks to perform I/O or other blocking operations
+		// 3. Prevent callback panics from affecting the future
+		for _, callback := range resultCallbacks {
+			invokeCallback("OnResult", callback, result)
+		}
+
+		for _, cb := range resultCtxCallbacks {
+			invokeCallbackContext(cb.Context, "OnResultContext", cb.Callback, result)
+		}
+
+		if result.Error == nil {
+			// Success case - invoke all success callbacks
+			for _, callback := range successCallbacks {
+				invokeCallback("OnSuccess", callback, result.Value)
+			}
+
+			for _, cb := range successCtxCallbacks {
+				invokeCallbackContext(cb.Context, "OnSuccessContext", cb.Callback, result.Value)
+			}
+		} else {
+			// Error case - invoke all error callbacks
+			for _, callback := range errorCallbacks {
+				invokeCallback("OnError", callback, result.Error)
+			}
+
+			for _, cb := range errorCtxCallbacks {
+				invokeCallbackContext(cb.Context, "OnErrorContext", cb.Callback, result.Error)
+			}
+		}
 	})
 }
 

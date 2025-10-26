@@ -126,7 +126,8 @@ func MapGoMapWithExecutor[InKey comparable, InVal any, OutKey comparable, OutVal
 //
 // Example:
 //
-//	exec := newDefaultExecutor(2, 100)
+//	expectedSize := 100
+//	exec := newDefaultExecutor(2, expectedSize)
 //	defer exec.Close()
 //
 //	output, err := MapGoMapCtxWithExecutor(ctx, exec, input,

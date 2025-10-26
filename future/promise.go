@@ -77,9 +77,6 @@ func (p *Promise[T]) fulfill(result try.Try[T]) {
 
 	// Only the first call to once.Do executes - others are no-ops
 	p.future.once.Do(func() {
-		// Store the result for later retrieval
-		p.future.result = result
-
 		// Acquire mutex to ensure atomicity with callback registration
 		p.future.mu.Lock()
 
@@ -101,10 +98,11 @@ func (p *Promise[T]) fulfill(result try.Try[T]) {
 		p.future.errorCtxCallbacks = nil
 		p.future.resultCtxCallbacks = nil
 
+		// Store the result for later retrieval
+		p.future.result = result
+
 		// Close channel to broadcast completion to all waiters
 		// A closed channel immediately returns to all receivers
-		// This is done AFTER collecting callbacks to prevent a race where a callback
-		// could be registered after the channel is closed but before callbacks are collected
 		close(p.future.resultReady)
 
 		p.future.mu.Unlock()
@@ -114,34 +112,97 @@ func (p *Promise[T]) fulfill(result try.Try[T]) {
 		// 1. Avoid blocking the fulfill operation
 		// 2. Allow callbacks to perform I/O or other blocking operations
 		// 3. Prevent callback panics from affecting the future
-		for _, callback := range resultCallbacks {
-			invokeCallback("OnResult", callback, result)
-		}
-
-		for _, cb := range resultCtxCallbacks {
-			invokeCallbackContext(cb.Context, "OnResultContext", cb.Callback, result)
-		}
+		invokeResultCallbacks(resultCallbacks, resultCtxCallbacks, result)
 
 		if result.Error == nil {
-			// Success case - invoke all success callbacks
-			for _, callback := range successCallbacks {
-				invokeCallback("OnSuccess", callback, result.Value)
-			}
-
-			for _, cb := range successCtxCallbacks {
-				invokeCallbackContext(cb.Context, "OnSuccessContext", cb.Callback, result.Value)
-			}
+			invokeSuccessCallbacks(successCallbacks, successCtxCallbacks, result.Value)
 		} else {
-			// Error case - invoke all error callbacks
-			for _, callback := range errorCallbacks {
-				invokeCallback("OnError", callback, result.Error)
-			}
-
-			for _, cb := range errorCtxCallbacks {
-				invokeCallbackContext(cb.Context, "OnErrorContext", cb.Callback, result.Error)
-			}
+			invokeErrorCallbacks(errorCallbacks, errorCtxCallbacks, result.Error)
 		}
 	})
+}
+
+// invokeResultCallbacks invokes all registered OnResult callbacks (both context-aware and regular).
+//
+// This is an internal helper used by fulfill() to trigger callbacks when a future completes,
+// regardless of whether it succeeded or failed. It handles both non-context and context-aware
+// callbacks, delegating to invokeCallback and invokeCallbackContext for the actual invocation.
+//
+// Parameters:
+//   - resultCallbacks: Regular OnResult callbacks to invoke
+//   - resultCtxCallbacks: Context-aware OnResultContext callbacks to invoke
+//   - result: The try.Try[T] containing both the value and error to pass to callbacks
+//
+// Design note: This function is called while NOT holding the future's mutex, allowing
+// callbacks to perform blocking operations without deadlocking.
+func invokeResultCallbacks[T any](
+	resultCallbacks []func(try.Try[T]),
+	resultCtxCallbacks []callbackWithContext[try.Try[T]],
+	result try.Try[T],
+) {
+	for _, callback := range resultCallbacks {
+		invokeCallback("OnResult", callback, result)
+	}
+
+	for _, cb := range resultCtxCallbacks {
+		invokeCallbackContext(cb.Context, "OnResultContext", cb.Callback, result)
+	}
+}
+
+// invokeSuccessCallbacks invokes all registered OnSuccess callbacks (both context-aware and regular).
+//
+// This is an internal helper used by fulfill() to trigger callbacks when a future completes
+// successfully (i.e., with no error). It handles both non-context and context-aware callbacks,
+// delegating to invokeCallback and invokeCallbackContext for the actual invocation.
+//
+// Parameters:
+//   - successCallbacks: Regular OnSuccess callbacks to invoke
+//   - successCtxCallbacks: Context-aware OnSuccessContext callbacks to invoke
+//   - result: The successful value of type T to pass to callbacks
+//
+// Design note: This function is called while NOT holding the future's mutex, allowing
+// callbacks to perform blocking operations without deadlocking. It is only called when
+// the future completes with no error (result.Error == nil).
+func invokeSuccessCallbacks[T any](
+	successCallbacks []func(T),
+	successCtxCallbacks []callbackWithContext[T],
+	result T,
+) {
+	for _, callback := range successCallbacks {
+		invokeCallback("OnSuccess", callback, result)
+	}
+
+	for _, cb := range successCtxCallbacks {
+		invokeCallbackContext(cb.Context, "OnSuccessContext", cb.Callback, result)
+	}
+}
+
+// invokeErrorCallbacks invokes all registered OnError callbacks (both context-aware and regular).
+//
+// This is an internal helper used by fulfill() to trigger callbacks when a future completes
+// with an error. It handles both non-context and context-aware callbacks, delegating to
+// invokeCallback and invokeCallbackContext for the actual invocation.
+//
+// Parameters:
+//   - errorCallbacks: Regular OnError callbacks to invoke
+//   - errorCtxCallbacks: Context-aware OnErrorContext callbacks to invoke
+//   - result: The error that caused the future to fail
+//
+// Design note: This function is called while NOT holding the future's mutex, allowing
+// callbacks to perform blocking operations without deadlocking. It is only called when
+// the future completes with an error (result.Error != nil).
+func invokeErrorCallbacks(
+	errorCallbacks []func(error),
+	errorCtxCallbacks []callbackWithContext[error],
+	result error,
+) {
+	for _, callback := range errorCallbacks {
+		invokeCallback("OnError", callback, result)
+	}
+
+	for _, cb := range errorCtxCallbacks {
+		invokeCallbackContext(cb.Context, "OnErrorContext", cb.Callback, result)
+	}
 }
 
 // Success fulfills the promise with a successful value.

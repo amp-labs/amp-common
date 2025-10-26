@@ -9,6 +9,24 @@ import (
 	"github.com/amp-labs/amp-common/utils"
 )
 
+// callbackWithContext stores a context-aware callback along with its associated context.
+//
+// This type is used internally to manage callbacks registered via OnSuccessContext,
+// OnErrorContext, and OnResultContext. It pairs each callback with the context that
+// should be passed to it when the future completes.
+//
+// Design notes:
+//   - The Context field is intentionally embedded (generally don't do this but in this case it makes sense)
+//   - Storing the context here allows each callback to have its own independent context
+//   - This is safer than sharing a single context across all callbacks
+//   - The context is captured at registration time, not at invocation time
+//
+// Thread safety: This struct is only accessed while holding the Future's mu lock.
+type callbackWithContext[T any] struct {
+	Context  context.Context //nolint:containedctx
+	Callback func(context.Context, T)
+}
+
 // invokeCallback invokes a callback in a separate goroutine with panic recovery and logging.
 //
 // This is the internal helper used by OnSuccess, OnError, and OnResult to safely invoke

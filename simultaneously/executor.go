@@ -37,9 +37,88 @@ type defaultExecutor struct {
 	closed        *atomic.Bool  // Thread-safe flag indicating if executor is closed
 }
 
+// NewDefaultExecutor creates a new executor with the specified concurrency limit.
+//
+// The executor manages parallel execution of functions while respecting the maxConcurrent limit.
+// It uses a semaphore-based approach to control how many functions can run simultaneously.
+//
+// This creates an executor with a fixed concurrency limit that does not adapt to the size
+// of input data. Use this when you want consistent concurrency across multiple batches with
+// varying sizes.
+//
+// For single-use transformations, prefer the base functions (MapSlice, Do, etc.) which create
+// optimally-sized internal executors automatically that adapt to your data size.
+//
+// Parameters:
+//   - maxConcurrent: Maximum number of functions that can execute concurrently.
+//     If less than 1, defaults to 1 (sequential execution).
+//
+// Returns:
+//   - An Executor that can be used with DoWithExecutor, MapSliceWithExecutor,
+//     and other *WithExecutor variant functions.
+//
+// The executor must be closed when no longer needed to release resources:
+//
+//	exec := NewDefaultExecutor(5)
+//	defer exec.Close()
+//
+// Example usage:
+//
+//	// Create executor with max 3 concurrent operations
+//	exec := NewDefaultExecutor(3)
+//	defer exec.Close()
+//
+//	// Use with DoWithExecutor to reuse across multiple batches
+//	batch1 := []func(context.Context) error{...}
+//	batch2 := []func(context.Context) error{...}
+//
+//	if err := DoWithExecutor(exec, batch1...); err != nil {
+//	    return err
+//	}
+//	if err := DoWithExecutor(exec, batch2...); err != nil {
+//	    return err
+//	}
+//
+// Executor reuse is beneficial when processing multiple batches of work
+// as it avoids the overhead of creating and destroying executors repeatedly.
+func NewDefaultExecutor(maxConcurrent int) Executor {
+	// If maxConcurrent not specified (< 1), use 1 as the limit
+	if maxConcurrent < 1 {
+		maxConcurrent = 1
+	}
+
+	sem := make(chan struct{}, maxConcurrent)
+
+	// Fill the semaphore with maxConcurrent empty structs (tokens).
+	// Each token represents an available execution slot.
+	for range maxConcurrent {
+		sem <- struct{}{}
+	}
+
+	return &defaultExecutor{
+		maxConcurrent: maxConcurrent,
+		sem:           sem,
+		closed:        &atomic.Bool{},
+	}
+}
+
 // newDefaultExecutor creates a new executor with the specified concurrency limit.
 // The semaphore is pre-filled with tokens, allowing up to maxConcurrent operations.
-func newDefaultExecutor(maxConcurrent int) *defaultExecutor {
+// If maxConcurrent is less than 1, itemCount is used to determine the buffer size.
+func newDefaultExecutor(maxConcurrent, itemCount int) *defaultExecutor {
+	// If maxConcurrent not specified (< 1), use itemCount as the limit
+	if maxConcurrent < 1 {
+		maxConcurrent = itemCount
+	}
+
+	if maxConcurrent > itemCount {
+		maxConcurrent = itemCount
+	}
+
+	if maxConcurrent < 1 {
+		maxConcurrent = 1
+	}
+
 	sem := make(chan struct{}, maxConcurrent)
 
 	// Fill the semaphore with maxConcurrent empty structs (tokens).

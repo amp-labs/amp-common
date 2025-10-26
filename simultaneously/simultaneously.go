@@ -26,11 +26,7 @@ func Do(maxConcurrent int, f ...func(ctx context.Context) error) error {
 // Panics that occur within the callback functions are automatically recovered and converted to errors.
 // This prevents a single panicking function from crashing the entire process.
 func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.Context) error) error {
-	if maxConcurrent < 1 {
-		maxConcurrent = len(callback)
-	}
-
-	de := newDefaultExecutor(maxConcurrent)
+	de := newDefaultExecutor(maxConcurrent, len(callback))
 
 	errs := errors.Collection{}
 

@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/maps"
+	"github.com/amp-labs/amp-common/should"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -454,4 +456,258 @@ func TestFlatMapOrderedMap_OrderPreservation(t *testing.T) {
 		assert.Equal(t, i*10+1, entries[baseIdx+1].Key.Key)
 		assert.Equal(t, 1, entries[baseIdx+1].Value)
 	}
+}
+
+// TestMapOrderedMapWithExecutor_SuccessfulExecution tests MapOrderedMapWithExecutor with successful transformation.
+func TestMapOrderedMapWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 1))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "c"}, 3))
+
+	output, err := MapOrderedMapWithExecutor(exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 3, output.Size())
+}
+
+// TestMapOrderedMapWithExecutor_ExecutorReuse tests executor reuse for MapOrderedMap.
+func TestMapOrderedMapWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 5)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input1.Add(maps.Key[string]{Key: "a"}, 1))
+
+	output1, err := MapOrderedMapWithExecutor(exec, input1,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, output1.Size())
+
+	// Second batch
+	input2 := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input2.Add(maps.Key[string]{Key: "x"}, 10))
+	require.NoError(t, input2.Add(maps.Key[string]{Key: "y"}, 20))
+
+	output2, err := MapOrderedMapWithExecutor(exec, input2,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, output2.Size())
+}
+
+// TestMapOrderedMapCtxWithExecutor_SuccessfulExecution tests
+// MapOrderedMapCtxWithExecutor with successful transformation.
+//
+//nolint:dupl // Test code duplicated across map types for clarity and independence
+func TestMapOrderedMapCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 1))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "c"}, 3))
+
+	output, err := MapOrderedMapCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.Key[int], string, error) {
+			return maps.Key[int]{Key: v}, strings.ToUpper(k.Key), nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 3, output.Size())
+}
+
+// TestMapOrderedMapCtxWithExecutor_ContextCancellation tests context cancellation for MapOrderedMapCtxWithExecutor.
+func TestMapOrderedMapCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := maps.NewOrderedHashMap[maps.Key[int], int](hashing.Sha256)
+	for i := range 10 {
+		require.NoError(t, input.Add(maps.Key[int]{Key: i}, i))
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	output, err := MapOrderedMapCtxWithExecutor(ctx, exec, input,
+		func(ctx context.Context, k maps.Key[int], v int) (maps.Key[int], int, error) {
+			time.Sleep(100 * time.Millisecond)
+
+			return k, v, nil
+		})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
+}
+
+// TestFlatMapOrderedMapWithExecutor_SuccessfulExecution tests FlatMapOrderedMapWithExecutor with successful expansion.
+func TestFlatMapOrderedMapWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 3))
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapOrderedMapWithExecutor(exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.OrderedMap[maps.Key[string], int], error) {
+			result := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 5, output.Size())
+}
+
+// TestFlatMapOrderedMapWithExecutor_ExecutorReuse tests executor reuse for FlatMapOrderedMap.
+func TestFlatMapOrderedMapWithExecutor_ExecutorReuse(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 3)
+	defer should.Close(exec, "closing executor")
+
+	// First batch
+	input1 := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input1.Add(maps.Key[string]{Key: "a"}, 2))
+
+	//nolint:lll // Type signature is unavoidably long
+	output1, err := FlatMapOrderedMapWithExecutor(exec, input1,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.OrderedMap[maps.Key[string], int], error) {
+			result := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, output1.Size())
+
+	// Second batch
+	input2 := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input2.Add(maps.Key[string]{Key: "x"}, 3))
+
+	//nolint:lll // Type signature is unavoidably long
+	output2, err := FlatMapOrderedMapWithExecutor(exec, input2,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.OrderedMap[maps.Key[string], int], error) {
+			result := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, output2.Size())
+}
+
+// TestFlatMapOrderedMapCtxWithExecutor_SuccessfulExecution tests
+// FlatMapOrderedMapCtxWithExecutor with successful expansion.
+func TestFlatMapOrderedMapCtxWithExecutor_SuccessfulExecution(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 2)
+	defer should.Close(exec, "closing executor")
+
+	input := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 2))
+	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 3))
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapOrderedMapCtxWithExecutor(t.Context(), exec, input,
+		func(ctx context.Context, k maps.Key[string], v int) (maps.OrderedMap[maps.Key[string], int], error) {
+			result := maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256)
+
+			for i := range v {
+				key := maps.Key[string]{Key: fmt.Sprintf("%s%d", k.Key, i)}
+				require.NoError(t, result.Add(key, i))
+			}
+
+			return result, nil
+		})
+
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	assert.Equal(t, 5, output.Size())
+}
+
+// TestFlatMapOrderedMapCtxWithExecutor_ContextCancellation tests
+// context cancellation for FlatMapOrderedMapCtxWithExecutor.
+func TestFlatMapOrderedMapCtxWithExecutor_ContextCancellation(t *testing.T) {
+	t.Parallel()
+
+	exec := newDefaultExecutor(2, 10)
+	defer should.Close(exec, "closing executor")
+
+	ctx, cancel := context.WithCancel(t.Context())
+
+	input := maps.NewOrderedHashMap[maps.Key[int], int](hashing.Sha256)
+	for i := range 10 {
+		require.NoError(t, input.Add(maps.Key[int]{Key: i}, 2))
+	}
+
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	//nolint:lll // Type signature is unavoidably long
+	output, err := FlatMapOrderedMapCtxWithExecutor(ctx, exec, input,
+		func(ctx context.Context, k maps.Key[int], v int) (maps.OrderedMap[maps.Key[int], int], error) {
+			time.Sleep(100 * time.Millisecond)
+
+			result := maps.NewOrderedHashMap[maps.Key[int], int](hashing.Sha256)
+			require.NoError(t, result.Add(k, v))
+
+			return result, nil
+		})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, output)
 }

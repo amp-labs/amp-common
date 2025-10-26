@@ -82,44 +82,19 @@ func MapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	maxConcurrent int,
 	input set.Set[InElem],
 	transform func(ctx context.Context, elem InElem) (OutElem, error),
-) (set.Set[OutElem], error) {
+) (result set.Set[OutElem], err error) {
 	if input == nil {
 		return nil, nil
 	}
 
-	var mut sync.Mutex
+	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	out := set.NewSet[OutElem](input.HashFunction())
-
-	callbacks := make([]func(context.Context) error, 0, input.Size())
-
-	for elem := range input.Seq() {
-		func(elem InElem) {
-			callbacks = append(callbacks, func(ctx context.Context) error {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-				}
-
-				result, err := transform(ctx, elem)
-				if err != nil {
-					return err
-				}
-
-				mut.Lock()
-				defer mut.Unlock()
-
-				return out.Add(result)
-			})
-		}(elem)
-	}
-
-	if err := DoCtx(ctx, maxConcurrent, callbacks...); err != nil {
-		return nil, err
-	}
-
-	return out, nil
+	return MapSetCtxWithExecutor(ctx, exec, input, transform)
 }
 
 // FlatMapSet transforms a Set by applying a transform function to each element
@@ -214,6 +189,152 @@ func FlatMapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	maxConcurrent int,
 	input set.Set[InElem],
 	transform func(ctx context.Context, elem InElem) (set.Set[OutElem], error),
+) (result set.Set[OutElem], err error) {
+	if input == nil {
+		return nil, nil
+	}
+
+	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	defer func() {
+		if closeErr := exec.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
+	return FlatMapSetCtxWithExecutor(ctx, exec, input, transform)
+}
+
+// MapSetWithExecutor transforms a Set by applying a transform function to each element
+// in parallel, producing a new Set with potentially different element types, using a custom executor.
+// See MapSetCtxWithExecutor for more information.
+func MapSetWithExecutor[InElem Collectable[InElem], OutElem Collectable[OutElem]](
+	exec Executor,
+	input set.Set[InElem],
+	transform func(ctx context.Context, elem InElem) (OutElem, error),
+) (set.Set[OutElem], error) {
+	return MapSetCtxWithExecutor[InElem, OutElem](context.Background(), exec, input, transform)
+}
+
+// MapSetCtxWithExecutor transforms a Set by applying a transform function to each element
+// in parallel, producing a new Set with potentially different element types, using a custom executor.
+//
+// This is useful when you want to reuse an executor across multiple batches of work or when you need
+// custom execution behavior. The executor is not closed by this function, allowing it to be reused.
+//
+// The transform function is called for each element in the input set with the provided context.
+// If any transform returns an error, the operation stops and returns that error immediately,
+// canceling any remaining transforms.
+//
+// Returns nil if the input set is nil. The output set uses the same hash function as the input.
+// The output set may have fewer elements if the transform produces duplicate elements.
+//
+// Thread-safety: The output set is built with a mutex to handle concurrent additions,
+// ensuring thread-safe construction even when transforms execute in parallel.
+//
+// Example:
+//
+//	exec := NewDefaultExecutor(2)
+//	defer exec.Close()
+//
+//	output, err := MapSetCtxWithExecutor(ctx, exec, input,
+//	    func(ctx context.Context, s hashing.HashableString) (hashing.HashableInt, error) {
+//	        return hashing.HashableInt(len(s)), nil
+//	    })
+func MapSetCtxWithExecutor[InElem Collectable[InElem], OutElem Collectable[OutElem]](
+	ctx context.Context,
+	exec Executor,
+	input set.Set[InElem],
+	transform func(ctx context.Context, elem InElem) (OutElem, error),
+) (set.Set[OutElem], error) {
+	if input == nil {
+		return nil, nil
+	}
+
+	var mut sync.Mutex
+
+	out := set.NewSet[OutElem](input.HashFunction())
+
+	callbacks := make([]func(context.Context) error, 0, input.Size())
+
+	for elem := range input.Seq() {
+		func(elem InElem) {
+			callbacks = append(callbacks, func(ctx context.Context) error {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+				}
+
+				result, err := transform(ctx, elem)
+				if err != nil {
+					return err
+				}
+
+				mut.Lock()
+				defer mut.Unlock()
+
+				return out.Add(result)
+			})
+		}(elem)
+	}
+
+	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// FlatMapSetWithExecutor transforms a Set by applying a transform function to each element
+// in parallel, where each transform can produce multiple output elements (flattening), using a custom executor.
+// See FlatMapSetCtxWithExecutor for more information.
+func FlatMapSetWithExecutor[InElem Collectable[InElem], OutElem Collectable[OutElem]](
+	exec Executor,
+	input set.Set[InElem],
+	transform func(ctx context.Context, elem InElem) (set.Set[OutElem], error),
+) (set.Set[OutElem], error) {
+	return FlatMapSetCtxWithExecutor[InElem, OutElem](context.Background(), exec, input, transform)
+}
+
+// FlatMapSetCtxWithExecutor transforms a Set by applying a transform function to each element
+// in parallel, where each transform can produce multiple output elements (flattening), using a custom executor.
+//
+// This is useful when you want to reuse an executor across multiple batches of work or when you need
+// custom execution behavior. The executor is not closed by this function, allowing it to be reused.
+//
+// Unlike MapSetCtxWithExecutor which produces one output element per input element, FlatMapSetCtxWithExecutor
+// allows each transform to return an entire Set of results, which are then merged into the final output set.
+//
+// The transform function is called for each element in the input set with the provided context.
+// If any transform returns an error, the operation stops and returns that error immediately,
+// canceling any remaining transforms.
+//
+// Returns nil if the input set is nil. The output set uses the same hash function as the input.
+// If multiple transforms produce the same output element, duplicates are automatically handled
+// by the set semantics.
+//
+// Thread-safety: The output set is built with a mutex to handle concurrent additions from
+// all the flattened results, ensuring thread-safe construction even when transforms execute
+// in parallel.
+//
+// Example:
+//
+//	exec := NewDefaultExecutor(2)
+//	defer exec.Close()
+//
+//	output, err := FlatMapSetCtxWithExecutor(ctx, exec, input,
+//	    func(ctx context.Context, s hashing.HashableString) (set.Set[hashing.HashableString], error) {
+//	        result := set.NewSet[hashing.HashableString](hashing.Sha256)
+//	        for _, ch := range string(s) {
+//	            result.Add(hashing.HashableString(string(ch)))
+//	        }
+//	        return result, nil
+//	    })
+func FlatMapSetCtxWithExecutor[InElem Collectable[InElem], OutElem Collectable[OutElem]](
+	ctx context.Context,
+	exec Executor,
+	input set.Set[InElem],
+	transform func(ctx context.Context, elem InElem) (set.Set[OutElem], error),
 ) (set.Set[OutElem], error) {
 	if input == nil {
 		return nil, nil
@@ -253,7 +374,7 @@ func FlatMapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 		}(elem)
 	}
 
-	if err := DoCtx(ctx, maxConcurrent, callbacks...); err != nil {
+	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
 		return nil, err
 	}
 

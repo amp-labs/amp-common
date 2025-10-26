@@ -80,16 +80,11 @@ func (p *Promise[T]) fulfill(result try.Try[T]) {
 		// Store the result for later retrieval
 		p.future.result = result
 
-		// Acquire mutex before closing channel to ensure atomicity with callback registration
-		// This prevents a race where a callback is registered after the channel is closed
-		// but before we collect the callbacks to invoke
+		// Acquire mutex to ensure atomicity with callback registration
 		p.future.mu.Lock()
 
-		// Close channel to broadcast completion to all waiters
-		// A closed channel immediately returns to all receivers
-		close(p.future.resultReady)
-
-		// Collect and clear callbacks while holding the lock
+		// Collect callbacks first while holding the lock
+		// This ensures all currently-registered callbacks are captured
 		successCallbacks := p.future.successCallbacks
 		errorCallbacks := p.future.errorCallbacks
 		resultCallbacks := p.future.resultCallbacks
@@ -97,14 +92,20 @@ func (p *Promise[T]) fulfill(result try.Try[T]) {
 		errorCtxCallbacks := p.future.errorCtxCallbacks
 		resultCtxCallbacks := p.future.resultCtxCallbacks
 
-		// Ensure that callbacks only get called once.
-		// Also allows GC to do its thing after being called.
+		// Clear callbacks to ensure they only get called once
+		// Also allows GC to do its thing after being called
 		p.future.successCallbacks = nil
 		p.future.errorCallbacks = nil
 		p.future.resultCallbacks = nil
 		p.future.successCtxCallbacks = nil
 		p.future.errorCtxCallbacks = nil
 		p.future.resultCtxCallbacks = nil
+
+		// Close channel to broadcast completion to all waiters
+		// A closed channel immediately returns to all receivers
+		// This is done AFTER collecting callbacks to prevent a race where a callback
+		// could be registered after the channel is closed but before callbacks are collected
+		close(p.future.resultReady)
 
 		p.future.mu.Unlock()
 

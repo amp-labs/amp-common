@@ -6,6 +6,7 @@ import (
 	"github.com/amp-labs/amp-common/collectable"
 	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/hashing"
+	"github.com/amp-labs/amp-common/zero"
 )
 
 // Map is a generic hash map interface for storing key-value pairs where keys must be
@@ -18,7 +19,15 @@ import (
 //
 // Thread-safety: Implementations are not guaranteed to be thread-safe unless
 // explicitly documented. Concurrent access must be synchronized by the caller.
+//
+//nolint:interfacebloat // Map interface intentionally has 11 methods for cohesive API design
 type Map[K collectable.Collectable[K], V any] interface {
+	// Get retrieves the value for the given key from the hash map.
+	// If the key exists, returns the value with found=true. If the key doesn't exist, returns
+	// a zero value with found=false.
+	// Returns ErrHashCollision if a different key with the same hash exists in the map.
+	Get(key K) (value V, found bool, err error)
+
 	// Add inserts or updates a key-value pair in the map.
 	// If the key already exists, its value is replaced.
 	// Returns ErrHashCollision if the hash function produces a collision with a different key.
@@ -133,6 +142,28 @@ func NewHashMapWithSize[K collectable.Collectable[K], V any](hash hashing.HashFu
 type hashMap[K collectable.Collectable[K], V any] struct {
 	hash hashing.HashFunc              // Hash function for converting keys to string hashes
 	data map[string]KeyValuePair[K, V] // Internal storage indexed by hash values
+}
+
+// Get retrieves the value for the given key from the hash map.
+// If the key exists, returns the value with found=true. If the key doesn't exist, returns
+// a zero value with found=false.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
+func (h *hashMap[K, V]) Get(key K) (value V, found bool, errOut error) {
+	hashVal, err := h.hash(key)
+	if err != nil {
+		return zero.Value[V](), false, err
+	}
+
+	kv, ok := h.data[hashVal]
+	if !ok {
+		return zero.Value[V](), false, nil
+	}
+
+	if !kv.Key.Equals(key) {
+		return zero.Value[V](), false, errors2.ErrHashCollision
+	}
+
+	return kv.Value, true, nil
 }
 
 // Add inserts or updates a key-value pair in the hash map.

@@ -6,6 +6,7 @@ import (
 	"github.com/amp-labs/amp-common/collectable"
 	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/hashing"
+	"github.com/amp-labs/amp-common/zero"
 )
 
 // OrderedMap is a generic ordered hash map interface for storing key-value pairs where keys must be
@@ -19,7 +20,15 @@ import (
 //
 // Thread-safety: Implementations are not guaranteed to be thread-safe unless
 // explicitly documented. Concurrent access must be synchronized by the caller.
+//
+//nolint:interfacebloat // OrderedMap interface intentionally has 11 methods for cohesive API design
 type OrderedMap[K collectable.Collectable[K], V any] interface {
+	// Get retrieves the value for the given key from the hash map.
+	// If the key exists, returns the value with found=true. If the key doesn't exist, returns
+	// a zero value with found=false.
+	// Returns ErrHashCollision if a different key with the same hash exists in the map.
+	Get(key K) (value V, found bool, err error)
+
 	// Add inserts or updates a key-value pair in the map.
 	// If the key already exists, its value is replaced without changing the insertion order.
 	// If the key is new, it's appended to the end of the insertion order.
@@ -117,6 +126,28 @@ type orderedHashMap[K collectable.Collectable[K], V any] struct {
 	orderedKeys []K                           // Slice of keys in insertion order
 	hash        hashing.HashFunc              // Hash function for converting keys to string hashes
 	data        map[string]KeyValuePair[K, V] // Internal storage indexed by hash values
+}
+
+// Get retrieves the value for the given key from the ordered hash map.
+// If the key exists, returns the value with found=true. If the key doesn't exist, returns
+// a zero value with found=false.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
+func (o *orderedHashMap[K, V]) Get(key K) (value V, found bool, err error) {
+	hashVal, err := o.hash(key)
+	if err != nil {
+		return zero.Value[V](), false, err
+	}
+
+	kv, ok := o.data[hashVal]
+	if !ok {
+		return zero.Value[V](), false, nil
+	}
+
+	if !kv.Key.Equals(key) {
+		return zero.Value[V](), false, errors2.ErrHashCollision
+	}
+
+	return kv.Value, true, nil
 }
 
 // Add inserts or updates a key-value pair in the ordered hash map.

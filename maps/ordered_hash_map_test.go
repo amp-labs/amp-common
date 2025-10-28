@@ -786,3 +786,205 @@ func TestOrderedHashMap_Clone(t *testing.T) {
 		}
 	})
 }
+
+func TestOrderedHashMap_Get(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns value for existing key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, "expected")
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, "expected", value)
+	})
+
+	t.Run("returns zero value and false for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "missing"}
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Equal(t, "", value)
+	})
+
+	t.Run("returns zero value and false for missing key with int type", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		key := testKey{value: "missing"}
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Equal(t, 0, value)
+	})
+
+	t.Run("returns most recent value for updated key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, "first")
+		require.NoError(t, err)
+
+		err = m.Add(key, "second")
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, "second", value)
+	})
+
+	t.Run("handles multiple keys correctly", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		expected := map[string]int{
+			"key1": 10,
+			"key2": 20,
+			"key3": 30,
+		}
+
+		for k, v := range expected {
+			err := m.Add(testKey{value: k}, v)
+			require.NoError(t, err)
+		}
+
+		for k, expectedValue := range expected {
+			value, found, err := m.Get(testKey{value: k})
+			require.NoError(t, err)
+			assert.True(t, found)
+			assert.Equal(t, expectedValue, value)
+		}
+	})
+
+	t.Run("returns error on hash collision", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[collidingKey, string](hashing.Sha256)
+
+		// Add first key with a specific hash
+		key1 := collidingKey{id: 1, hash: "samehash"}
+		err := m.Add(key1, "value1")
+		require.NoError(t, err)
+
+		// Try to get with a different key but same hash
+		key2 := collidingKey{id: 2, hash: "samehash"}
+		value, found, err := m.Get(key2)
+		require.Error(t, err)
+		assert.False(t, found)
+		assert.Equal(t, "", value)
+	})
+
+	t.Run("handles nil/empty values correctly", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, *string](hashing.Sha256)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, nil)
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Nil(t, value)
+	})
+
+	t.Run("returns false after key removal", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+
+		err = m.Remove(key)
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Equal(t, "", value)
+	})
+
+	t.Run("returns false after clear", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+
+		m.Clear()
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Equal(t, "", value)
+	})
+
+	t.Run("handles struct values correctly", func(t *testing.T) {
+		t.Parallel()
+
+		type testValue struct {
+			name string
+			age  int
+		}
+
+		m := maps.NewOrderedHashMap[testKey, testValue](hashing.Sha256)
+		key := testKey{value: "test"}
+		expected := testValue{name: "Alice", age: 30}
+
+		err := m.Add(key, expected)
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, expected, value)
+	})
+
+	t.Run("Get does not affect insertion order", func(t *testing.T) {
+		t.Parallel()
+
+		//nolint:varnamelen // Short name acceptable in test context
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		keys := []testKey{
+			{value: "first"},
+			{value: "second"},
+			{value: "third"},
+		}
+
+		for i, key := range keys {
+			err := m.Add(key, i)
+			require.NoError(t, err)
+		}
+
+		// Get middle key
+		_, found, err := m.Get(keys[1])
+		require.NoError(t, err)
+		assert.True(t, found)
+
+		// Verify order is unchanged
+		idx := 0
+		for _, entry := range m.Seq() {
+			assert.Equal(t, keys[idx], entry.Key)
+
+			idx++
+		}
+	})
+}

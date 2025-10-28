@@ -27,6 +27,8 @@ type comparableWrapper[T comparable] struct {
 	value T
 }
 
+var _ Collectable[any] = (*comparableWrapper[any])(nil)
+
 // UpdateHash implements hashing.Hashable by delegating to the appropriate
 // HashableX type based on the actual type of the value.
 func (w *comparableWrapper[T]) UpdateHash(h hash.Hash) error { //nolint:varnamelen

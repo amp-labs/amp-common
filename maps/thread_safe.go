@@ -44,6 +44,17 @@ type threadSafeMap[K collectable.Collectable[K], V any] struct {
 	internal Map[K, V]    // Underlying map implementation
 }
 
+// Get retrieves the value for the given key with shared read lock protection.
+// Acquires a read lock, allowing multiple concurrent Get calls without blocking each other.
+// Returns the value and found=true if the key exists, or zero value and found=false if not.
+// Returns ErrHashCollision if a hash collision occurs.
+func (t *threadSafeMap[K, V]) Get(key K) (value V, found bool, err error) {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return t.internal.Get(key)
+}
+
 // Add inserts or updates a key-value pair in the map with exclusive lock protection.
 // Acquires a write lock to ensure no other goroutines can read or write during the operation.
 func (t *threadSafeMap[K, V]) Add(key K, value V) error {

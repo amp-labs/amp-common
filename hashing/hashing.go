@@ -2,15 +2,20 @@ package hashing
 
 import (
 	"bytes"
-	"crypto/md5"  //nolint:gosec
+	"crypto/md5" //nolint:gosec
+	"crypto/rand"
 	"crypto/sha1" //nolint:gosec
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"hash"
 	"math"
+
+	"github.com/OneOfOne/xxhash"
+	"github.com/zeebo/xxh3"
 )
 
 // HashFunc is a function that takes a Hashable object
@@ -52,6 +57,27 @@ func Sha256(hashable Hashable) (string, error) {
 // update the hash, an error is returned.
 func Sha512(hashable Hashable) (string, error) {
 	return HashHex(hashable, sha512.New())
+}
+
+// XxHash32 returns the xxHash 32-bit hash of the given Hashable
+// as a hex-encoded string. If the Hashable fails to
+// update the hash, an error is returned.
+func XxHash32(hashable Hashable) (string, error) {
+	return HashHex(hashable, xxhash.NewHash32())
+}
+
+// XxHash64 returns the xxHash 64-bit hash of the given Hashable
+// as a hex-encoded string. If the Hashable fails to
+// update the hash, an error is returned.
+func XxHash64(hashable Hashable) (string, error) {
+	return HashHex(hashable, xxhash.NewHash64())
+}
+
+// Xxh3 returns the xxHash3 hash of the given Hashable
+// as a hex-encoded string. If the Hashable fails to
+// update the hash, an error is returned.
+func Xxh3(hashable Hashable) (string, error) {
+	return HashHex(hashable, xxh3.New())
 }
 
 // HashHex is a helper function that applies a hash function to a Hashable
@@ -291,16 +317,33 @@ func (u HashableUint64) Equals(other HashableUint64) bool {
 type HashableFloat32 float32
 
 // UpdateHash writes the float32 value to the hash using its IEEE 754 binary representation in little-endian encoding.
+// If the value is NaN, random bytes are written to ensure NaN values produce different hashes.
 func (f HashableFloat32) UpdateHash(h hash.Hash) error {
 	buf := make([]byte, 4) //nolint:mnd
-	binary.LittleEndian.PutUint32(buf, math.Float32bits(float32(f)))
+
+	if math.IsNaN(float64(f)) {
+		// For NaN values, write random bytes to ensure different hashes
+		_, err := rand.Read(buf)
+		if err != nil {
+			return fmt.Errorf("failed to generate random bytes for NaN: %w", err)
+		}
+	} else {
+		binary.LittleEndian.PutUint32(buf, math.Float32bits(float32(f)))
+	}
+
 	_, err := h.Write(buf)
 
 	return err
 }
 
 // Equals returns true if the two HashableFloat32 values are equal.
+// Returns false if either value is NaN, as NaN is never equal to anything (including itself).
 func (f HashableFloat32) Equals(other HashableFloat32) bool {
+	// NaN is never equal to anything, including itself
+	if math.IsNaN(float64(f)) || math.IsNaN(float64(other)) {
+		return false
+	}
+
 	return float32(f) == float32(other)
 }
 
@@ -308,16 +351,33 @@ func (f HashableFloat32) Equals(other HashableFloat32) bool {
 type HashableFloat64 float64
 
 // UpdateHash writes the float64 value to the hash using its IEEE 754 binary representation in little-endian encoding.
+// If the value is NaN, random bytes are written to ensure NaN values produce different hashes.
 func (f HashableFloat64) UpdateHash(h hash.Hash) error {
 	buf := make([]byte, 8) //nolint:mnd
-	binary.LittleEndian.PutUint64(buf, math.Float64bits(float64(f)))
+
+	if math.IsNaN(float64(f)) {
+		// For NaN values, write random bytes to ensure different hashes
+		_, err := rand.Read(buf)
+		if err != nil {
+			return fmt.Errorf("failed to generate random bytes for NaN: %w", err)
+		}
+	} else {
+		binary.LittleEndian.PutUint64(buf, math.Float64bits(float64(f)))
+	}
+
 	_, err := h.Write(buf)
 
 	return err
 }
 
 // Equals returns true if the two HashableFloat64 values are equal.
+// Returns false if either value is NaN, as NaN is never equal to anything (including itself).
 func (f HashableFloat64) Equals(other HashableFloat64) bool {
+	// NaN is never equal to anything, including itself
+	if math.IsNaN(float64(f)) || math.IsNaN(float64(other)) {
+		return false
+	}
+
 	return float64(f) == float64(other)
 }
 

@@ -58,6 +58,11 @@ type Set[T collectable.Collectable[T]] interface {
 
 	// HashFunction returns the hash function used by this set.
 	HashFunction() hashing.HashFunc
+
+	// Clone creates a shallow copy of the set, duplicating its structure and entries.
+	// The keys themselves are not deep-copied; they are referenced as-is.
+	// Returns a new Set instance with the same entries.
+	Clone() Set[T]
 }
 
 type setImpl[T collectable.Collectable[T]] struct {
@@ -71,6 +76,16 @@ func NewSet[T collectable.Collectable[T]](hash hashing.HashFunc) Set[T] {
 	return &setImpl[T]{
 		hash:     hash,
 		elements: make(map[string]T),
+	}
+}
+
+// NewSetWithSize creates a new Set with the provided hash function and pre-allocated capacity.
+// The size parameter specifies the initial capacity of the underlying map, which can improve
+// performance when the expected size is known in advance.
+func NewSetWithSize[T collectable.Collectable[T]](hash hashing.HashFunc, size int) Set[T] {
+	return &setImpl[T]{
+		hash:     hash,
+		elements: make(map[string]T, size),
 	}
 }
 
@@ -205,6 +220,23 @@ func (s *setImpl[T]) HashFunction() hashing.HashFunc {
 	return s.hash
 }
 
+// Clone creates a shallow copy of the set, duplicating its structure and entries.
+// The elements themselves are not deep-copied; they are referenced as-is.
+// Returns a new Set instance with the same entries.
+func (s *setImpl[T]) Clone() Set[T] {
+	if s == nil {
+		return nil
+	}
+
+	cloned := NewSet[T](s.hash)
+
+	for _, v := range s.elements {
+		_ = cloned.Add(v)
+	}
+
+	return cloned
+}
+
 // StringSet is a specialized Set implementation for string elements.
 // It provides additional methods for sorting entries.
 type StringSet struct {
@@ -335,6 +367,23 @@ func (s *StringSet) Intersection(other *StringSet) (*StringSet, error) {
 	}, nil
 }
 
+// Clone creates a shallow copy of the StringSet, duplicating its structure and entries.
+// The strings themselves are not deep-copied (strings in Go are immutable).
+// Returns a new StringSet instance with the same entries.
+func (s *StringSet) Clone() *StringSet {
+	if s == nil {
+		return nil
+	}
+
+	cloned := NewStringSet(s.hash)
+
+	for v := range s.Seq() {
+		_ = cloned.Add(v)
+	}
+
+	return cloned
+}
+
 // OrderedSet is a Set that maintains insertion order of elements.
 // Unlike the regular Set where Entries() returns elements in arbitrary order,
 // OrderedSet.Entries() returns elements in the order they were added.
@@ -385,6 +434,11 @@ type OrderedSet[T collectable.Collectable[T]] interface {
 
 	// HashFunction returns the hash function used by this ordered set.
 	HashFunction() hashing.HashFunc
+
+	// Clone creates a shallow copy of the set, duplicating its structure and entries.
+	// The keys themselves are not deep-copied; they are referenced as-is.
+	// Returns a new OrderedSet instance with the same entries in the same order.
+	Clone() OrderedSet[T]
 }
 
 type orderedSetImpl[T collectable.Collectable[T]] struct {
@@ -538,6 +592,23 @@ func (s *orderedSetImpl[T]) HashFunction() hashing.HashFunc {
 	return s.hash
 }
 
+// Clone creates a shallow copy of the ordered set, duplicating its structure and entries.
+// The elements themselves are not deep-copied; they are referenced as-is.
+// Returns a new OrderedSet instance with the same entries in the same insertion order.
+func (s *orderedSetImpl[T]) Clone() OrderedSet[T] {
+	if s == nil {
+		return nil
+	}
+
+	copied := NewOrderedSet[T](s.hash)
+
+	for _, k := range s.Seq() {
+		_ = copied.Add(k)
+	}
+
+	return copied
+}
+
 // StringOrderedSet is a specialized OrderedSet implementation for string elements
 // that maintains insertion order. It provides additional methods for sorted access
 // while preserving the original insertion order in the main Entries() method.
@@ -681,4 +752,21 @@ func (s *StringOrderedSet) Intersection(other *StringOrderedSet) (*StringOrdered
 // HashFunction returns the hash function used by this set.
 func (s *StringOrderedSet) HashFunction() hashing.HashFunc {
 	return s.hash
+}
+
+// Clone creates a shallow copy of the StringOrderedSet, duplicating its structure and entries.
+// The strings themselves are not deep-copied (strings in Go are immutable).
+// Returns a new StringOrderedSet instance with the same entries.
+func (s *StringOrderedSet) Clone() *StringSet {
+	if s == nil {
+		return nil
+	}
+
+	cloned := NewStringSet(s.hash)
+
+	for _, v := range s.Seq() {
+		_ = cloned.Add(v)
+	}
+
+	return cloned
 }

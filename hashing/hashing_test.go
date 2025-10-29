@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"hash"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -1218,4 +1219,344 @@ func TestHashableBool_Equals(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestXxHash32(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input Hashable
+	}{
+		{
+			name:  "empty string",
+			input: HashableString(""),
+		},
+		{
+			name:  "simple string",
+			input: HashableString("hello"),
+		},
+		{
+			name:  "string with spaces",
+			input: HashableString("hello world"),
+		},
+		{
+			name:  "bytes",
+			input: HashableBytes([]byte("test")),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := XxHash32(tt.input)
+			require.NoError(t, err)
+			assert.NotEmpty(t, result)
+			assert.Len(t, result, 8, "xxHash32 should produce 8 hex characters (4 bytes)")
+		})
+	}
+}
+
+func TestXxHash64(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input Hashable
+	}{
+		{
+			name:  "empty string",
+			input: HashableString(""),
+		},
+		{
+			name:  "simple string",
+			input: HashableString("hello"),
+		},
+		{
+			name:  "string with spaces",
+			input: HashableString("hello world"),
+		},
+		{
+			name:  "bytes",
+			input: HashableBytes([]byte("test")),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := XxHash64(tt.input)
+			require.NoError(t, err)
+			assert.NotEmpty(t, result)
+			assert.Len(t, result, 16, "xxHash64 should produce 16 hex characters (8 bytes)")
+		})
+	}
+}
+
+func TestXxh3(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input Hashable
+	}{
+		{
+			name:  "empty string",
+			input: HashableString(""),
+		},
+		{
+			name:  "simple string",
+			input: HashableString("hello"),
+		},
+		{
+			name:  "string with spaces",
+			input: HashableString("hello world"),
+		},
+		{
+			name:  "bytes",
+			input: HashableBytes([]byte("test")),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := Xxh3(tt.input)
+			require.NoError(t, err)
+			assert.NotEmpty(t, result)
+			assert.Len(t, result, 16, "xxh3 should produce 16 hex characters (8 bytes)")
+		})
+	}
+}
+
+func TestXxHashConsistency(t *testing.T) {
+	t.Parallel()
+
+	input := HashableString("consistency test")
+
+	t.Run("XxHash32 consistency", func(t *testing.T) {
+		t.Parallel()
+
+		hash1, err1 := XxHash32(input)
+		require.NoError(t, err1)
+
+		hash2, err2 := XxHash32(input)
+		require.NoError(t, err2)
+
+		assert.Equal(t, hash1, hash2)
+	})
+
+	t.Run("XxHash64 consistency", func(t *testing.T) {
+		t.Parallel()
+
+		hash1, err1 := XxHash64(input)
+		require.NoError(t, err1)
+
+		hash2, err2 := XxHash64(input)
+		require.NoError(t, err2)
+
+		assert.Equal(t, hash1, hash2)
+	})
+
+	t.Run("Xxh3 consistency", func(t *testing.T) {
+		t.Parallel()
+
+		hash1, err1 := Xxh3(input)
+		require.NoError(t, err1)
+
+		hash2, err2 := Xxh3(input)
+		require.NoError(t, err2)
+
+		assert.Equal(t, hash1, hash2)
+	})
+}
+
+func TestXxHashDifferentInputs(t *testing.T) {
+	t.Parallel()
+
+	input1 := HashableString("hello")
+	input2 := HashableString("world")
+
+	t.Run("XxHash32 different inputs", func(t *testing.T) {
+		t.Parallel()
+
+		hash1, err1 := XxHash32(input1)
+		require.NoError(t, err1)
+
+		hash2, err2 := XxHash32(input2)
+		require.NoError(t, err2)
+
+		assert.NotEqual(t, hash1, hash2)
+	})
+
+	t.Run("XxHash64 different inputs", func(t *testing.T) {
+		t.Parallel()
+
+		hash1, err1 := XxHash64(input1)
+		require.NoError(t, err1)
+
+		hash2, err2 := XxHash64(input2)
+		require.NoError(t, err2)
+
+		assert.NotEqual(t, hash1, hash2)
+	})
+
+	t.Run("Xxh3 different inputs", func(t *testing.T) {
+		t.Parallel()
+
+		hash1, err1 := Xxh3(input1)
+		require.NoError(t, err1)
+
+		hash2, err2 := Xxh3(input2)
+		require.NoError(t, err2)
+
+		assert.NotEqual(t, hash1, hash2)
+	})
+}
+
+func TestXxHashError(t *testing.T) {
+	t.Parallel()
+
+	mock := mockHashable{err: errHashTest}
+
+	t.Run("XxHash32 error", func(t *testing.T) {
+		t.Parallel()
+
+		result, err := XxHash32(mock)
+		require.Error(t, err)
+		assert.Equal(t, errHashTest, err)
+		assert.Empty(t, result)
+	})
+
+	t.Run("XxHash64 error", func(t *testing.T) {
+		t.Parallel()
+
+		result, err := XxHash64(mock)
+		require.Error(t, err)
+		assert.Equal(t, errHashTest, err)
+		assert.Empty(t, result)
+	})
+
+	t.Run("Xxh3 error", func(t *testing.T) {
+		t.Parallel()
+
+		result, err := Xxh3(mock)
+		require.Error(t, err)
+		assert.Equal(t, errHashTest, err)
+		assert.Empty(t, result)
+	})
+}
+
+func TestHashBase64_Error(t *testing.T) {
+	t.Parallel()
+
+	mock := mockHashable{err: errHashTest}
+
+	result, err := HashBase64(mock, sha256.New())
+	require.Error(t, err)
+	assert.Equal(t, errHashTest, err)
+	assert.Empty(t, result)
+}
+
+func TestHashableFloat32_NaN(t *testing.T) {
+	t.Parallel()
+
+	t.Run("NaN produces different hashes", func(t *testing.T) {
+		t.Parallel()
+
+		// Create two NaN values
+		nan1 := HashableFloat32(float32(math.NaN()))
+		nan2 := HashableFloat32(float32(math.NaN()))
+
+		// Hash them multiple times
+		hash1, err1 := Sha256(nan1)
+		require.NoError(t, err1)
+
+		hash2, err2 := Sha256(nan2)
+		require.NoError(t, err2)
+
+		// NaN values should produce different random hashes
+		assert.NotEqual(t, hash1, hash2, "NaN values should produce different hashes")
+	})
+
+	t.Run("NaN Equals returns false", func(t *testing.T) {
+		t.Parallel()
+
+		nan1 := HashableFloat32(float32(math.NaN()))
+		nan2 := HashableFloat32(float32(math.NaN()))
+		normalValue := HashableFloat32(3.14)
+
+		// NaN != NaN
+		assert.False(t, nan1.Equals(nan2), "NaN should not equal NaN")
+
+		// NaN != normal value
+		assert.False(t, nan1.Equals(normalValue), "NaN should not equal normal value")
+		assert.False(t, normalValue.Equals(nan1), "normal value should not equal NaN")
+	})
+}
+
+func TestHashableFloat64_NaN(t *testing.T) {
+	t.Parallel()
+
+	t.Run("NaN produces different hashes", func(t *testing.T) {
+		t.Parallel()
+
+		// Create two NaN values
+		nan1 := HashableFloat64(math.NaN())
+		nan2 := HashableFloat64(math.NaN())
+
+		// Hash them multiple times
+		hash1, err1 := Sha256(nan1)
+		require.NoError(t, err1)
+
+		hash2, err2 := Sha256(nan2)
+		require.NoError(t, err2)
+
+		// NaN values should produce different random hashes
+		assert.NotEqual(t, hash1, hash2, "NaN values should produce different hashes")
+	})
+
+	t.Run("NaN Equals returns false", func(t *testing.T) {
+		t.Parallel()
+
+		nan1 := HashableFloat64(math.NaN())
+		nan2 := HashableFloat64(math.NaN())
+		normalValue := HashableFloat64(3.14159265359)
+
+		// NaN != NaN
+		assert.False(t, nan1.Equals(nan2), "NaN should not equal NaN")
+
+		// NaN != normal value
+		assert.False(t, nan1.Equals(normalValue), "NaN should not equal normal value")
+		assert.False(t, normalValue.Equals(nan1), "normal value should not equal NaN")
+	})
+}
+
+func TestHashHex(t *testing.T) {
+	t.Parallel()
+
+	t.Run("produces hex output", func(t *testing.T) {
+		t.Parallel()
+
+		input := HashableString("test")
+		result, err := HashHex(input, sha256.New())
+		require.NoError(t, err)
+		assert.NotEmpty(t, result)
+
+		// Verify it's valid hex (should only contain 0-9, a-f)
+		assert.Regexp(t, "^[0-9a-f]+$", result)
+	})
+
+	t.Run("error handling", func(t *testing.T) {
+		t.Parallel()
+
+		mock := mockHashable{err: errHashTest}
+		result, err := HashHex(mock, sha256.New())
+		require.Error(t, err)
+		assert.Equal(t, errHashTest, err)
+		assert.Empty(t, result)
+	})
 }

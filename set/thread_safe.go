@@ -176,6 +176,16 @@ func (t *threadSafeSet[T]) HashFunction() hashing.HashFunc {
 	return t.internal.HashFunction()
 }
 
+// Clone creates a deep copy of the set with independent thread-safe access.
+// Acquires a read lock on this set during the clone operation.
+// The returned set is a new thread-safe instance that can be modified independently.
+func (t *threadSafeSet[T]) Clone() Set[T] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return NewThreadSafeSet(t.internal.Clone())
+}
+
 // NewThreadSafeOrderedSet wraps an existing OrderedSet implementation with thread-safe access using sync.RWMutex.
 // It provides concurrent read/write access to the underlying ordered set while preserving the OrderedSet interface.
 //
@@ -347,28 +357,19 @@ func (t *threadSafeOrderedSet[T]) HashFunction() hashing.HashFunc {
 	return t.internal.HashFunction()
 }
 
-// NewThreadSafeStringSet wraps an existing StringSet with thread-safe access.
-// Returns a StringSet that can be safely used from multiple goroutines.
-func NewThreadSafeStringSet(s *StringSet) *StringSet {
-	if s == nil {
+// Clone creates a deep copy of the ordered set with independent thread-safe access.
+// Acquires a read lock on this set during the clone operation.
+// The returned set is a new thread-safe instance that can be modified independently.
+func (t *threadSafeOrderedSet[T]) Clone() OrderedSet[T] {
+	if t == nil {
 		return nil
 	}
 
-	return &StringSet{
-		hash: s.hash,
-		set:  NewThreadSafeSet(s.set),
-	}
-}
+	t.mutex.RLock()
+	s := t.internal.Clone()
+	t.mutex.RUnlock()
 
-// NewThreadSafeStringOrderedSet wraps an existing StringOrderedSet with thread-safe access.
-// Returns a StringOrderedSet that can be safely used from multiple goroutines.
-func NewThreadSafeStringOrderedSet(s *StringOrderedSet) *StringOrderedSet {
-	if s == nil {
-		return nil
-	}
-
-	return &StringOrderedSet{
-		hash: s.hash,
-		set:  NewThreadSafeOrderedSet(s.set),
+	return &threadSafeOrderedSet[T]{
+		internal: s,
 	}
 }

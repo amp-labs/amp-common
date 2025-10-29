@@ -937,3 +937,240 @@ func TestThreadSafeOrderedMap_RaceConditions(t *testing.T) {
 		waitGroup.Wait()
 	})
 }
+
+func TestThreadSafeOrderedMap_Get(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns value for existing key", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m := maps.NewThreadSafeOrderedMap(base)
+		key := testKey{value: "test"}
+		err := m.Add(key, "expected")
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, "expected", value)
+	})
+
+	t.Run("returns zero value and false for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m := maps.NewThreadSafeOrderedMap(base)
+		key := testKey{value: "missing"}
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Equal(t, "", value)
+	})
+
+	t.Run("returns most recent value for updated key", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m := maps.NewThreadSafeOrderedMap(base)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, "first")
+		require.NoError(t, err)
+
+		err = m.Add(key, "second")
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, "second", value)
+	})
+
+	t.Run("handles multiple keys correctly", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewThreadSafeOrderedMap(base)
+		expected := map[string]int{
+			"key1": 10,
+			"key2": 20,
+			"key3": 30,
+		}
+
+		for k, v := range expected {
+			err := m.Add(testKey{value: k}, v)
+			require.NoError(t, err)
+		}
+
+		for k, expectedValue := range expected {
+			value, found, err := m.Get(testKey{value: k})
+			require.NoError(t, err)
+			assert.True(t, found)
+			assert.Equal(t, expectedValue, value)
+		}
+	})
+
+	t.Run("concurrent reads are safe", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		threadSafeMap := maps.NewThreadSafeOrderedMap(base)
+
+		// Populate map
+		for i := range 100 {
+			err := threadSafeMap.Add(testKey{value: fmt.Sprintf("key%d", i)}, i)
+			require.NoError(t, err)
+		}
+
+		// Multiple goroutines reading concurrently
+		var waitGroup sync.WaitGroup
+		for range 10 {
+			waitGroup.Add(1)
+
+			go func() {
+				defer waitGroup.Done()
+
+				for i := range 100 {
+					value, found, err := threadSafeMap.Get(testKey{value: fmt.Sprintf("key%d", i)})
+					assert.NoError(t, err)
+					assert.True(t, found)
+					assert.Equal(t, i, value)
+				}
+			}()
+		}
+
+		waitGroup.Wait()
+	})
+
+	//nolint:dupl // Test structure mirrors thread_safe_test.go for consistency
+	t.Run("concurrent read and write are safe", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		threadSafeMap := maps.NewThreadSafeOrderedMap(base)
+
+		// Initialize with some data
+		for i := range 50 {
+			err := threadSafeMap.Add(testKey{value: fmt.Sprintf("key%d", i)}, i)
+			require.NoError(t, err)
+		}
+
+		var waitGroup sync.WaitGroup
+
+		// Writer goroutines
+		for range 5 {
+			waitGroup.Add(1)
+
+			go func() {
+				defer waitGroup.Done()
+
+				for i := range 20 {
+					key := testKey{value: fmt.Sprintf("key%d", i)}
+					_ = threadSafeMap.Add(key, i*100)
+				}
+			}()
+		}
+
+		// Reader goroutines
+		for range 10 {
+			waitGroup.Add(1)
+
+			go func() {
+				defer waitGroup.Done()
+
+				for i := range 50 {
+					key := testKey{value: fmt.Sprintf("key%d", i)}
+					_, _, _ = threadSafeMap.Get(key)
+				}
+			}()
+		}
+
+		waitGroup.Wait()
+	})
+
+	t.Run("returns false after key removal", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m := maps.NewThreadSafeOrderedMap(base)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+
+		err = m.Remove(key)
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Equal(t, "", value)
+	})
+
+	t.Run("returns false after clear", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m := maps.NewThreadSafeOrderedMap(base)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, "value")
+		require.NoError(t, err)
+
+		m.Clear()
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.False(t, found)
+		assert.Equal(t, "", value)
+	})
+
+	t.Run("handles nil/empty values correctly", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, *string](hashing.Sha256)
+		m := maps.NewThreadSafeOrderedMap(base)
+		key := testKey{value: "test"}
+
+		err := m.Add(key, nil)
+		require.NoError(t, err)
+
+		value, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Nil(t, value)
+	})
+
+	t.Run("Get does not affect insertion order", func(t *testing.T) {
+		t.Parallel()
+
+		base := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		//nolint:varnamelen // Short name acceptable in test context
+		m := maps.NewThreadSafeOrderedMap(base)
+		keys := []testKey{
+			{value: "first"},
+			{value: "second"},
+			{value: "third"},
+		}
+
+		for i, key := range keys {
+			err := m.Add(key, i)
+			require.NoError(t, err)
+		}
+
+		// Get middle key
+		_, found, err := m.Get(keys[1])
+		require.NoError(t, err)
+		assert.True(t, found)
+
+		// Verify order is unchanged
+		idx := 0
+		for _, entry := range m.Seq() {
+			assert.Equal(t, keys[idx], entry.Key)
+
+			idx++
+		}
+	})
+}

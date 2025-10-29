@@ -201,3 +201,18 @@ func (d *defaultOrderedSet[T]) Intersection(other OrderedSet[T]) (OrderedSet[T],
 func (d *defaultOrderedSet[T]) HashFunction() hashing.HashFunc {
 	return d.s.HashFunction()
 }
+
+// Clone creates a shallow copy of the ordered set, duplicating its structure and entries.
+// The elements themselves are not deep-copied; they are referenced as-is.
+// The returned set uses the same default value function as this set.
+// Returns a new OrderedSet instance with the same entries in the same order.
+func (d *defaultOrderedSet[T]) Clone() OrderedSet[T] {
+	if d == nil {
+		return nil
+	}
+
+	return &defaultOrderedSet[T]{
+		s: d.s.Clone(),
+		f: d.f,
+	}
+}

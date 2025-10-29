@@ -6,6 +6,8 @@ import (
 	"github.com/amp-labs/amp-common/collectable"
 	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/hashing"
+	"github.com/amp-labs/amp-common/optional"
+	"github.com/amp-labs/amp-common/set"
 	"github.com/amp-labs/amp-common/zero"
 )
 
@@ -20,13 +22,17 @@ import (
 // Thread-safety: Implementations are not guaranteed to be thread-safe unless
 // explicitly documented. Concurrent access must be synchronized by the caller.
 //
-//nolint:interfacebloat // Map interface intentionally has 11 methods for cohesive API design
+//nolint:interfacebloat,dupl // Map interface intentionally has 11 methods for cohesive API design
 type Map[K collectable.Collectable[K], V any] interface {
 	// Get retrieves the value for the given key from the hash map.
 	// If the key exists, returns the value with found=true. If the key doesn't exist, returns
 	// a zero value with found=false.
 	// Returns ErrHashCollision if a different key with the same hash exists in the map.
 	Get(key K) (value V, found bool, err error)
+
+	// GetOrElse retrieves the value for the given key, or returns defaultValue if the key doesn't exist.
+	// Returns ErrHashCollision if a different key with the same hash exists in the map.
+	GetOrElse(key K, defaultValue V) (value V, err error)
 
 	// Add inserts or updates a key-value pair in the map.
 	// If the key already exists, its value is replaced.
@@ -79,6 +85,51 @@ type Map[K collectable.Collectable[K], V any] interface {
 	//   - Verifying two maps use compatible hash functions before merging
 	//   - Debugging hash collision issues
 	HashFunction() hashing.HashFunc
+
+	// Keys returns a set containing all keys from the map.
+	// The returned set is a new instance and modifications to it do not affect the original map.
+	Keys() set.Set[K]
+
+	// ForEach applies the given function to each key-value pair in the map.
+	// The iteration order is non-deterministic. This method is used for side effects only
+	// and does not return a value.
+	ForEach(f func(key K, value V))
+
+	// ForAll tests whether a predicate holds for all key-value pairs in the map.
+	// Returns true if the predicate returns true for all entries, false otherwise.
+	// The iteration stops early if the predicate returns false for any entry.
+	ForAll(predicate func(key K, value V) bool) bool
+
+	// Filter creates a new map containing only key-value pairs for which the predicate returns true.
+	// The predicate function is applied to each entry, and only matching entries are included
+	// in the result map.
+	Filter(predicate func(key K, value V) bool) Map[K, V]
+
+	// FilterNot creates a new map containing only key-value pairs for which the predicate returns false.
+	// This is the inverse of Filter - it excludes entries where the predicate returns true.
+	FilterNot(predicate func(key K, value V) bool) Map[K, V]
+
+	// Map transforms all key-value pairs in the map by applying the given function to each entry.
+	// The function receives each key-value pair and returns a new key-value pair.
+	// Returns a new map containing the transformed entries.
+	// Note: If the transformation produces duplicate keys, the behavior depends on insertion order.
+	Map(f func(key K, value V) (K, V)) Map[K, V]
+
+	// FlatMap applies the given function to each key-value pair and flattens the results into a single map.
+	// Each function call returns a map, and all returned maps are merged together.
+	// Returns a new map containing all entries from the flattened results.
+	// If duplicate keys exist across multiple results, later values take precedence.
+	FlatMap(f func(key K, value V) Map[K, V]) Map[K, V]
+
+	// Exists tests whether at least one key-value pair in the map satisfies the given predicate.
+	// Returns true if the predicate returns true for any entry, false otherwise.
+	// The iteration stops early as soon as a matching entry is found.
+	Exists(predicate func(key K, value V) bool) bool
+
+	// FindFirst searches for the first key-value pair that satisfies the given predicate.
+	// Returns Some(KeyValuePair) if a matching entry is found, None otherwise.
+	// The iteration order is non-deterministic, so "first" is not guaranteed to be consistent.
+	FindFirst(predicate func(key K, value V) bool) optional.Value[KeyValuePair[K, V]]
 }
 
 // NewHashMap creates a new hash-based Map implementation using the provided hash function.
@@ -164,6 +215,21 @@ func (h *hashMap[K, V]) Get(key K) (value V, found bool, errOut error) {
 	}
 
 	return kv.Value, true, nil
+}
+
+// GetOrElse retrieves the value for the given key, or returns defaultValue if the key doesn't exist.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
+func (h *hashMap[K, V]) GetOrElse(key K, defaultValue V) (value V, err error) {
+	value, found, err := h.Get(key)
+	if err != nil {
+		return zero.Value[V](), err
+	}
+
+	if !found {
+		return defaultValue, nil
+	}
+
+	return value, nil
 }
 
 // Add inserts or updates a key-value pair in the hash map.
@@ -353,4 +419,125 @@ func (h *hashMap[K, V]) Clone() Map[K, V] {
 // This allows callers to inspect or reuse the hash function for creating compatible maps.
 func (h *hashMap[K, V]) HashFunction() hashing.HashFunc {
 	return h.hash
+}
+
+// Keys returns a set containing all keys from the map.
+// The returned set is a new instance and modifications to it do not affect the original map.
+func (h *hashMap[K, V]) Keys() set.Set[K] {
+	keys := set.NewSet[K](h.hash)
+
+	for key := range h.Seq() {
+		_ = keys.Add(key) // Add should not fail for existing keys
+	}
+
+	return keys
+}
+
+// ForEach applies the given function to each key-value pair in the map.
+// The iteration order is non-deterministic. This method is used for side effects only
+// and does not return a value.
+func (h *hashMap[K, V]) ForEach(f func(key K, value V)) {
+	for key, value := range h.Seq() {
+		f(key, value)
+	}
+}
+
+// ForAll tests whether a predicate holds for all key-value pairs in the map.
+// Returns true if the predicate returns true for all entries, false otherwise.
+// The iteration stops early if the predicate returns false for any entry.
+func (h *hashMap[K, V]) ForAll(predicate func(key K, value V) bool) bool {
+	for key, value := range h.Seq() {
+		if !predicate(key, value) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Filter creates a new map containing only key-value pairs for which the predicate returns true.
+// The predicate function is applied to each entry, and only matching entries are included
+// in the result map.
+func (h *hashMap[K, V]) Filter(predicate func(key K, value V) bool) Map[K, V] {
+	result := NewHashMap[K, V](h.hash)
+
+	for key, value := range h.Seq() {
+		if predicate(key, value) {
+			_ = result.Add(key, value) // Add should not fail for valid keys
+		}
+	}
+
+	return result
+}
+
+// FilterNot creates a new map containing only key-value pairs for which the predicate returns false.
+// This is the inverse of Filter - it excludes entries where the predicate returns true.
+func (h *hashMap[K, V]) FilterNot(predicate func(key K, value V) bool) Map[K, V] {
+	result := NewHashMap[K, V](h.hash)
+
+	for key, value := range h.Seq() {
+		if !predicate(key, value) {
+			_ = result.Add(key, value) // Add should not fail for valid keys
+		}
+	}
+
+	return result
+}
+
+// Map transforms all key-value pairs in the map by applying the given function to each entry.
+// The function receives each key-value pair and returns a new key-value pair.
+// Returns a new map containing the transformed entries.
+// Note: If the transformation produces duplicate keys, the behavior depends on insertion order.
+func (h *hashMap[K, V]) Map(f func(key K, value V) (K, V)) Map[K, V] {
+	result := NewHashMap[K, V](h.hash)
+
+	for key, value := range h.Seq() {
+		newKey, newValue := f(key, value)
+		_ = result.Add(newKey, newValue) // Duplicate keys will be overwritten
+	}
+
+	return result
+}
+
+// FlatMap applies the given function to each key-value pair and flattens the results into a single map.
+// Each function call returns a map, and all returned maps are merged together.
+// Returns a new map containing all entries from the flattened results.
+// If duplicate keys exist across multiple results, later values take precedence.
+func (h *hashMap[K, V]) FlatMap(f func(key K, value V) Map[K, V]) Map[K, V] {
+	result := NewHashMap[K, V](h.hash)
+
+	for key, value := range h.Seq() {
+		mappedResult := f(key, value)
+		for newKey, newValue := range mappedResult.Seq() {
+			_ = result.Add(newKey, newValue) // Duplicate keys will be overwritten
+		}
+	}
+
+	return result
+}
+
+// Exists tests whether at least one key-value pair in the map satisfies the given predicate.
+// Returns true if the predicate returns true for any entry, false otherwise.
+// The iteration stops early as soon as a matching entry is found.
+func (h *hashMap[K, V]) Exists(predicate func(key K, value V) bool) bool {
+	for key, value := range h.Seq() {
+		if predicate(key, value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// FindFirst searches for the first key-value pair that satisfies the given predicate.
+// Returns Some(KeyValuePair) if a matching entry is found, None otherwise.
+// The iteration order is non-deterministic, so "first" is not guaranteed to be consistent.
+func (h *hashMap[K, V]) FindFirst(predicate func(key K, value V) bool) optional.Value[KeyValuePair[K, V]] {
+	for key, value := range h.Seq() {
+		if predicate(key, value) {
+			return optional.Some(KeyValuePair[K, V]{Key: key, Value: value})
+		}
+	}
+
+	return optional.None[KeyValuePair[K, V]]()
 }

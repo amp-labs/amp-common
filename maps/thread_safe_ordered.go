@@ -6,6 +6,8 @@ import (
 
 	"github.com/amp-labs/amp-common/collectable"
 	"github.com/amp-labs/amp-common/hashing"
+	"github.com/amp-labs/amp-common/optional"
+	"github.com/amp-labs/amp-common/set"
 )
 
 // NewThreadSafeOrderedMap wraps an existing OrderedMap implementation with thread-safe access using sync.RWMutex.
@@ -53,6 +55,16 @@ func (t *threadSafeOrderedMap[K, V]) Get(key K) (value V, found bool, err error)
 	defer t.mutex.RUnlock()
 
 	return t.internal.Get(key)
+}
+
+// GetOrElse retrieves the value for the given key, or returns defaultValue if the key doesn't exist.
+// Acquires a read lock during the operation.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
+func (t *threadSafeOrderedMap[K, V]) GetOrElse(key K, defaultValue V) (value V, err error) {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return t.internal.GetOrElse(key, defaultValue)
 }
 
 // Add inserts or updates a key-value pair in the map with exclusive lock protection.
@@ -181,4 +193,145 @@ func (t *threadSafeOrderedMap[K, V]) Clone() OrderedMap[K, V] {
 // This allows callers to inspect or reuse the hash function for creating compatible maps.
 func (t *threadSafeOrderedMap[K, V]) HashFunction() hashing.HashFunc {
 	return t.internal.HashFunction()
+}
+
+// Keys returns a set containing all keys from the map, in insertion order.
+// Acquires a read lock during the operation.
+// The returned set is a new instance and modifications to it do not affect the original map.
+func (t *threadSafeOrderedMap[K, V]) Keys() set.OrderedSet[K] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return t.internal.Keys()
+}
+
+// ForEach applies the given function to each key-value pair in the map.
+// Acquires a read lock only during snapshot creation to avoid holding the lock during callback execution.
+// The iteration is performed on a snapshot of the map in insertion order.
+func (t *threadSafeOrderedMap[K, V]) ForEach(f func(key K, value V)) {
+	t.mutex.RLock()
+	// Create snapshot under read lock
+	accum := make([]KeyValuePair[K, V], 0, t.internal.Size())
+
+	for _, entry := range t.internal.Seq() {
+		accum = append(accum, entry)
+	}
+	t.mutex.RUnlock()
+
+	// Execute function on snapshot without holding lock
+	for _, kv := range accum {
+		f(kv.Key, kv.Value)
+	}
+}
+
+// ForAll tests whether a predicate holds for all key-value pairs in the map.
+// Acquires a read lock only during snapshot creation to avoid holding the lock during callback execution.
+// Returns true if the predicate returns true for all entries, false otherwise.
+// The iteration is performed on a snapshot of the map in insertion order.
+func (t *threadSafeOrderedMap[K, V]) ForAll(predicate func(key K, value V) bool) bool {
+	t.mutex.RLock()
+	// Create snapshot under read lock
+	accum := make([]KeyValuePair[K, V], 0, t.internal.Size())
+
+	for _, entry := range t.internal.Seq() {
+		accum = append(accum, entry)
+	}
+	t.mutex.RUnlock()
+
+	// Test predicate on snapshot without holding lock
+	for _, kv := range accum {
+		if !predicate(kv.Key, kv.Value) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Filter creates a new thread-safe ordered map containing only key-value pairs for which the predicate returns true.
+// Acquires a read lock on this map during the operation. The returned map is also thread-safe.
+// The insertion order is preserved for matching entries.
+func (t *threadSafeOrderedMap[K, V]) Filter(predicate func(key K, value V) bool) OrderedMap[K, V] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return NewThreadSafeOrderedMap(t.internal.Filter(predicate))
+}
+
+// FilterNot creates a new thread-safe ordered map containing only key-value pairs
+// for which the predicate returns false.
+// Acquires a read lock on this map during the operation. The returned map is also thread-safe.
+// The insertion order is preserved for matching entries.
+func (t *threadSafeOrderedMap[K, V]) FilterNot(predicate func(key K, value V) bool) OrderedMap[K, V] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return NewThreadSafeOrderedMap(t.internal.FilterNot(predicate))
+}
+
+// Map transforms all key-value pairs in the map by applying the given function to each entry.
+// Acquires a read lock on this map during the operation. The returned map is also thread-safe.
+// The insertion order is preserved in the result.
+func (t *threadSafeOrderedMap[K, V]) Map(f func(key K, value V) (K, V)) OrderedMap[K, V] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return NewThreadSafeOrderedMap(t.internal.Map(f))
+}
+
+// FlatMap applies the given function to each key-value pair and flattens the results into a single ordered map.
+// Acquires a read lock on this map during the operation. The returned map is also thread-safe.
+func (t *threadSafeOrderedMap[K, V]) FlatMap(f func(key K, value V) OrderedMap[K, V]) OrderedMap[K, V] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	return NewThreadSafeOrderedMap(t.internal.FlatMap(f))
+}
+
+// Exists tests whether at least one key-value pair in the map satisfies the given predicate.
+// Acquires a read lock only during snapshot creation to avoid holding the lock during callback execution.
+// Returns true if the predicate returns true for any entry, false otherwise.
+// The iteration is performed on a snapshot of the map in insertion order.
+func (t *threadSafeOrderedMap[K, V]) Exists(predicate func(key K, value V) bool) bool {
+	t.mutex.RLock()
+	// Create snapshot under read lock
+	accum := make([]KeyValuePair[K, V], 0, t.internal.Size())
+
+	for _, entry := range t.internal.Seq() {
+		accum = append(accum, entry)
+	}
+	t.mutex.RUnlock()
+
+	// Test predicate on snapshot without holding lock
+	for _, kv := range accum {
+		if predicate(kv.Key, kv.Value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// FindFirst searches for the first key-value pair that satisfies the given predicate.
+// Acquires a read lock only during snapshot creation to avoid holding the lock during callback execution.
+// Returns Some(KeyValuePair) if a matching entry is found, None otherwise.
+// The iteration is performed on a snapshot of the map in insertion order.
+func (t *threadSafeOrderedMap[K, V]) FindFirst(predicate func(key K, value V) bool) optional.Value[KeyValuePair[K, V]] {
+	t.mutex.RLock()
+	// Create snapshot under read lock
+	accum := make([]KeyValuePair[K, V], 0, t.internal.Size())
+
+	for _, entry := range t.internal.Seq() {
+		accum = append(accum, entry)
+	}
+	t.mutex.RUnlock()
+
+	// Search in snapshot without holding lock
+	for _, kv := range accum {
+		if predicate(kv.Key, kv.Value) {
+			return optional.Some(kv)
+		}
+	}
+
+	return optional.None[KeyValuePair[K, V]]()
 }

@@ -6,6 +6,8 @@ import (
 
 	"github.com/amp-labs/amp-common/collectable"
 	"github.com/amp-labs/amp-common/hashing"
+	"github.com/amp-labs/amp-common/optional"
+	"github.com/amp-labs/amp-common/set"
 	"github.com/amp-labs/amp-common/zero"
 )
 
@@ -96,6 +98,30 @@ func (d *defaultOrderedMap[K, V]) Get(key K) (value V, found bool, err error) {
 	}
 
 	return newVal, true, nil
+}
+
+// GetOrElse retrieves the value for the given key, or returns defaultValue if the key doesn't exist.
+// If the key doesn't exist, the default value function is NOT invoked - the provided defaultValue
+// parameter is returned directly instead.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
+func (d *defaultOrderedMap[K, V]) GetOrElse(key K, defaultValue V) (value V, err error) {
+	var found bool
+
+	value, found, err = d.m.Get(key)
+	if found || err != nil {
+		return value, err
+	}
+
+	newVal, added, err := d.addDefaultForKey(key)
+	if err != nil {
+		return zero.Value[V](), err
+	}
+
+	if !added {
+		return defaultValue, nil
+	}
+
+	return newVal, nil
 }
 
 // Add inserts or updates a key-value pair in the map.
@@ -242,4 +268,82 @@ func (d *defaultOrderedMap[K, V]) Clone() OrderedMap[K, V] {
 // This allows callers to inspect the hash function or create compatible maps.
 func (d *defaultOrderedMap[K, V]) HashFunction() hashing.HashFunc {
 	return d.m.HashFunction()
+}
+
+// Keys returns a set containing all keys from the map, in insertion order.
+// The returned set is a new instance and modifications to it do not affect the original map.
+func (d *defaultOrderedMap[K, V]) Keys() set.OrderedSet[K] {
+	return d.m.Keys()
+}
+
+// ForEach applies the given function to each key-value pair in the map.
+// The iteration follows insertion order. This method is used for side effects only
+// and does not return a value.
+func (d *defaultOrderedMap[K, V]) ForEach(f func(key K, value V)) {
+	d.m.ForEach(f)
+}
+
+// ForAll tests whether a predicate holds for all key-value pairs in the map.
+// Returns true if the predicate returns true for all entries, false otherwise.
+// The iteration follows insertion order and stops early if the predicate returns false for any entry.
+func (d *defaultOrderedMap[K, V]) ForAll(predicate func(key K, value V) bool) bool {
+	return d.m.ForAll(predicate)
+}
+
+// Filter creates a new defaultOrderedMap containing only key-value pairs for which the predicate returns true.
+// The predicate function is applied to each entry in insertion order, and only matching entries are
+// included in the result map. The returned map uses the same default value function as this map.
+func (d *defaultOrderedMap[K, V]) Filter(predicate func(key K, value V) bool) OrderedMap[K, V] {
+	return &defaultOrderedMap[K, V]{
+		m: d.m.Filter(predicate),
+		f: d.f,
+	}
+}
+
+// FilterNot creates a new defaultOrderedMap containing only key-value pairs for which the predicate returns false.
+// This is the inverse of Filter - it excludes entries where the predicate returns true.
+// The returned map uses the same default value function as this map.
+func (d *defaultOrderedMap[K, V]) FilterNot(predicate func(key K, value V) bool) OrderedMap[K, V] {
+	return &defaultOrderedMap[K, V]{
+		m: d.m.FilterNot(predicate),
+		f: d.f,
+	}
+}
+
+// Map transforms all key-value pairs in the map by applying the given function to each entry.
+// The function receives each key-value pair in insertion order and returns a new key-value pair.
+// Returns a new defaultOrderedMap containing the transformed entries with the same default value function.
+// Note: If the transformation produces duplicate keys, the behavior depends on insertion order.
+func (d *defaultOrderedMap[K, V]) Map(f func(key K, value V) (K, V)) OrderedMap[K, V] {
+	return &defaultOrderedMap[K, V]{
+		m: d.m.Map(f),
+		f: d.f,
+	}
+}
+
+// FlatMap applies the given function to each key-value pair and flattens the results into a single ordered map.
+// Each function call receives entries in insertion order and returns an ordered map. All returned maps are
+// merged together in the order they were produced.
+// Returns a new defaultOrderedMap containing all entries from the flattened results
+// with the same default value function.
+// If duplicate keys exist across multiple results, later values take precedence.
+func (d *defaultOrderedMap[K, V]) FlatMap(f func(key K, value V) OrderedMap[K, V]) OrderedMap[K, V] {
+	return &defaultOrderedMap[K, V]{
+		m: d.m.FlatMap(f),
+		f: d.f,
+	}
+}
+
+// Exists tests whether at least one key-value pair in the map satisfies the given predicate.
+// Returns true if the predicate returns true for any entry, false otherwise.
+// The iteration follows insertion order and stops early as soon as a matching entry is found.
+func (d *defaultOrderedMap[K, V]) Exists(predicate func(key K, value V) bool) bool {
+	return d.m.Exists(predicate)
+}
+
+// FindFirst searches for the first key-value pair that satisfies the given predicate.
+// Returns Some(KeyValuePair) if a matching entry is found, None otherwise.
+// The iteration follows insertion order, so "first" refers to the earliest inserted entry that matches.
+func (d *defaultOrderedMap[K, V]) FindFirst(predicate func(key K, value V) bool) optional.Value[KeyValuePair[K, V]] {
+	return d.m.FindFirst(predicate)
 }

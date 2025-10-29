@@ -988,3 +988,435 @@ func TestOrderedHashMap_Get(t *testing.T) {
 		}
 	})
 }
+
+func TestOrderedHashMap_GetOrElse(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns value for existing key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "test"}
+		err := m.Add(key, "actual")
+		require.NoError(t, err)
+
+		value, err := m.GetOrElse(key, "default")
+		require.NoError(t, err)
+		assert.Equal(t, "actual", value)
+	})
+
+	t.Run("returns default value for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		key := testKey{value: "missing"}
+
+		value, err := m.GetOrElse(key, "default")
+		require.NoError(t, err)
+		assert.Equal(t, "default", value)
+	})
+}
+
+func TestOrderedHashMap_Keys(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns all keys from ordered map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		keys := []testKey{
+			{value: "key1"},
+			{value: "key2"},
+			{value: "key3"},
+		}
+
+		for i, k := range keys {
+			err := m.Add(k, i)
+			require.NoError(t, err)
+		}
+
+		keySet := m.Keys()
+		require.NotNil(t, keySet)
+		assert.Equal(t, 3, keySet.Size())
+
+		for _, k := range keys {
+			contains, err := keySet.Contains(k)
+			require.NoError(t, err)
+			assert.True(t, contains)
+		}
+	})
+
+	t.Run("returns empty set for empty ordered map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		keySet := m.Keys()
+		require.NotNil(t, keySet)
+		assert.Equal(t, 0, keySet.Size())
+	})
+}
+
+func TestOrderedHashMap_ForEach(t *testing.T) {
+	t.Parallel()
+
+	t.Run("calls function for each entry in order", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		keys := []testKey{
+			{value: "first"},
+			{value: "second"},
+			{value: "third"},
+		}
+
+		for i, k := range keys {
+			err := m.Add(k, i)
+			require.NoError(t, err)
+		}
+
+		visitedKeys := []testKey{}
+
+		m.ForEach(func(key testKey, value int) {
+			visitedKeys = append(visitedKeys, key)
+		})
+
+		assert.Equal(t, keys, visitedKeys)
+	})
+
+	t.Run("handles empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		callCount := 0
+
+		m.ForEach(func(key testKey, value string) {
+			callCount++
+		})
+
+		assert.Equal(t, 0, callCount)
+	})
+}
+
+func TestOrderedHashMap_ForAll(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns true when predicate holds for all entries", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 2) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 4) //nolint:errcheck
+		m.Add(testKey{value: "c"}, 6) //nolint:errcheck
+
+		result := m.ForAll(func(key testKey, value int) bool {
+			return value%2 == 0
+		})
+
+		assert.True(t, result)
+	})
+
+	t.Run("returns false when predicate fails for any entry", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 2) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 3) //nolint:errcheck
+		m.Add(testKey{value: "c"}, 4) //nolint:errcheck
+
+		result := m.ForAll(func(key testKey, value int) bool {
+			return value%2 == 0
+		})
+
+		assert.False(t, result)
+	})
+
+	t.Run("returns true for empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+
+		result := m.ForAll(func(key testKey, value int) bool {
+			return false
+		})
+
+		assert.True(t, result)
+	})
+}
+
+func TestOrderedHashMap_Filter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns ordered map with entries matching predicate", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		for i := 1; i <= 5; i++ {
+			m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
+		}
+
+		result := m.Filter(func(key testKey, value int) bool {
+			return value%2 == 0
+		})
+
+		assert.Equal(t, 2, result.Size())
+
+		// Verify order is preserved
+		expected := []testKey{
+			{value: "key2"},
+			{value: "key4"},
+		}
+		idx := 0
+
+		for _, entry := range result.Seq() {
+			assert.Equal(t, expected[idx], entry.Key)
+
+			idx++
+		}
+	})
+
+	t.Run("original map is not modified", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		result := m.Filter(func(key testKey, value int) bool {
+			return value == 1
+		})
+
+		assert.Equal(t, 1, result.Size())
+		assert.Equal(t, 2, m.Size())
+	})
+}
+
+func TestOrderedHashMap_FilterNot(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns ordered map with entries not matching predicate", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		for i := 1; i <= 5; i++ {
+			m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
+		}
+
+		result := m.FilterNot(func(key testKey, value int) bool {
+			return value%2 == 0
+		})
+
+		assert.Equal(t, 3, result.Size())
+
+		// Verify order is preserved
+		expected := []testKey{
+			{value: "key1"},
+			{value: "key3"},
+			{value: "key5"},
+		}
+		idx := 0
+
+		for _, entry := range result.Seq() {
+			assert.Equal(t, expected[idx], entry.Key)
+
+			idx++
+		}
+	})
+}
+
+func TestOrderedHashMap_Map(t *testing.T) {
+	t.Parallel()
+
+	t.Run("transforms all entries preserving order", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		m.Add(testKey{value: "c"}, 3) //nolint:errcheck
+
+		result := m.Map(func(key testKey, value int) (testKey, int) {
+			return testKey{value: key.value + "_new"}, value * 2
+		})
+
+		assert.Equal(t, 3, result.Size())
+
+		// Verify order is preserved
+		expected := []testKey{
+			{value: "a_new"},
+			{value: "b_new"},
+			{value: "c_new"},
+		}
+		idx := 0
+
+		for _, entry := range result.Seq() {
+			assert.Equal(t, expected[idx], entry.Key)
+			assert.Equal(t, (idx+1)*2, entry.Value)
+
+			idx++
+		}
+	})
+
+	t.Run("original map is not modified", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+
+		result := m.Map(func(key testKey, value int) (testKey, int) {
+			return key, value * 10
+		})
+
+		val, found, _ := m.Get(testKey{value: "a"})
+		assert.True(t, found)
+		assert.Equal(t, 1, val)
+
+		val, found, _ = result.Get(testKey{value: "a"})
+		assert.True(t, found)
+		assert.Equal(t, 10, val)
+	})
+}
+
+func TestOrderedHashMap_FlatMap(t *testing.T) {
+	t.Parallel()
+
+	t.Run("flattens nested maps preserving order", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		result := m.FlatMap(func(key testKey, value int) maps.OrderedMap[testKey, int] {
+			nested := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+			nested.Add(testKey{value: key.value + "_1"}, value)   //nolint:errcheck
+			nested.Add(testKey{value: key.value + "_2"}, value*2) //nolint:errcheck
+
+			return nested
+		})
+
+		assert.Equal(t, 4, result.Size())
+
+		// Verify order: a_1, a_2, b_1, b_2
+		expected := []testKey{
+			{value: "a_1"},
+			{value: "a_2"},
+			{value: "b_1"},
+			{value: "b_2"},
+		}
+		idx := 0
+
+		for _, entry := range result.Seq() {
+			assert.Equal(t, expected[idx], entry.Key)
+
+			idx++
+		}
+	})
+
+	t.Run("handles empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+
+		result := m.FlatMap(func(key testKey, value int) maps.OrderedMap[testKey, int] {
+			nested := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+			nested.Add(key, value) //nolint:errcheck
+
+			return nested
+		})
+
+		assert.Equal(t, 0, result.Size())
+	})
+}
+
+func TestOrderedHashMap_Exists(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns true when at least one entry matches", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		m.Add(testKey{value: "c"}, 3) //nolint:errcheck
+
+		result := m.Exists(func(key testKey, value int) bool {
+			return value == 2
+		})
+
+		assert.True(t, result)
+	})
+
+	t.Run("returns false when no entries match", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		result := m.Exists(func(key testKey, value int) bool {
+			return value > 10
+		})
+
+		assert.False(t, result)
+	})
+
+	t.Run("returns false for empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+
+		result := m.Exists(func(key testKey, value int) bool {
+			return true
+		})
+
+		assert.False(t, result)
+	})
+}
+
+func TestOrderedHashMap_FindFirst(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns first matching entry in insertion order", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 5) //nolint:errcheck
+		m.Add(testKey{value: "c"}, 3) //nolint:errcheck
+
+		result := m.FindFirst(func(key testKey, value int) bool {
+			return value > 1
+		})
+
+		assert.True(t, result.NonEmpty())
+		pair := result.GetOrPanic()
+		assert.Equal(t, "b", pair.Key.value)
+		assert.Equal(t, 5, pair.Value)
+	})
+
+	t.Run("returns None when no match found", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		result := m.FindFirst(func(key testKey, value int) bool {
+			return value > 10
+		})
+
+		assert.True(t, result.Empty())
+	})
+
+	t.Run("returns None for empty map", func(t *testing.T) {
+		t.Parallel()
+
+		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+
+		result := m.FindFirst(func(key testKey, value int) bool {
+			return true
+		})
+
+		assert.True(t, result.Empty())
+	})
+}

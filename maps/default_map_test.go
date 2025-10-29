@@ -538,3 +538,268 @@ func TestDefaultMapHashFunction(t *testing.T) {
 		assert.NotNil(t, hashFunc)
 	})
 }
+
+func TestDefaultMap_GetOrElse(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns value for existing key", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 88, nil
+		})
+
+		key := testKey{value: "test"}
+		m.Add(key, 42) //nolint:errcheck
+
+		value, err := m.GetOrElse(key, 99)
+		require.NoError(t, err)
+		assert.Equal(t, 42, value)
+	})
+}
+
+func TestDefaultMap_Keys(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns all keys", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 0, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		keySet := m.Keys()
+		assert.Equal(t, 2, keySet.Size())
+	})
+}
+
+func TestDefaultMap_ForEach(t *testing.T) {
+	t.Parallel()
+
+	t.Run("calls function for each entry", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 0, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		sum := 0
+
+		m.ForEach(func(key testKey, value int) {
+			sum += value
+		})
+
+		assert.Equal(t, 3, sum)
+	})
+}
+
+func TestDefaultMap_ForAll(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns true when predicate holds", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 0, nil
+		})
+
+		m.Add(testKey{value: "a"}, 2) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 4) //nolint:errcheck
+
+		result := m.ForAll(func(key testKey, value int) bool {
+			return value%2 == 0
+		})
+
+		assert.True(t, result)
+	})
+}
+
+func TestDefaultMap_Filter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("filters entries and preserves default function", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 99, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		m.Add(testKey{value: "c"}, 3) //nolint:errcheck
+
+		result := m.Filter(func(key testKey, value int) bool {
+			return value%2 == 0
+		})
+
+		assert.Equal(t, 1, result.Size())
+
+		// Verify default function is preserved
+		val, found, err := result.Get(testKey{value: "missing"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 99, val)
+	})
+}
+
+func TestDefaultMap_FilterNot(t *testing.T) {
+	t.Parallel()
+
+	t.Run("filters entries and preserves default function", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 99, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		result := m.FilterNot(func(key testKey, value int) bool {
+			return value%2 == 0
+		})
+
+		assert.Equal(t, 1, result.Size())
+
+		// Verify default function is preserved
+		val, found, err := result.Get(testKey{value: "missing"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 99, val)
+	})
+}
+
+func TestDefaultMap_Map(t *testing.T) {
+	t.Parallel()
+
+	t.Run("transforms entries and preserves default function", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 99, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+
+		result := m.Map(func(key testKey, value int) (testKey, int) {
+			return key, value * 10
+		})
+
+		val, found, err := result.Get(testKey{value: "a"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 10, val)
+
+		// Verify default function is preserved
+		val, found, err = result.Get(testKey{value: "missing"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 99, val)
+	})
+}
+
+func TestDefaultMap_FlatMap(t *testing.T) {
+	t.Parallel()
+
+	t.Run("flattens maps and preserves default function", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 99, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+
+		result := m.FlatMap(func(key testKey, value int) maps.Map[testKey, int] {
+			nested := maps.NewHashMap[testKey, int](hashing.Sha256)
+			nested.Add(testKey{value: key.value + "_1"}, value) //nolint:errcheck
+
+			return nested
+		})
+
+		assert.Equal(t, 1, result.Size())
+
+		// Verify default function is preserved
+		val, found, err := result.Get(testKey{value: "missing"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 99, val)
+	})
+}
+
+func TestDefaultMap_Exists(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns true when entry matches", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 0, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+
+		result := m.Exists(func(key testKey, value int) bool {
+			return value == 2
+		})
+
+		assert.True(t, result)
+	})
+}
+
+func TestDefaultMap_FindFirst(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns first matching entry", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 0, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		m.Add(testKey{value: "b"}, 5) //nolint:errcheck
+
+		result := m.FindFirst(func(key testKey, value int) bool {
+			return value > 1
+		})
+
+		assert.True(t, result.NonEmpty())
+		pair := result.GetOrPanic()
+		assert.Equal(t, 5, pair.Value)
+	})
+
+	t.Run("returns None when no match", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultMap(baseMap, func(k testKey) (int, error) {
+			return 0, nil
+		})
+
+		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+
+		result := m.FindFirst(func(key testKey, value int) bool {
+			return value > 10
+		})
+
+		assert.True(t, result.Empty())
+	})
+}

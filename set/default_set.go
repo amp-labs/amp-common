@@ -194,3 +194,14 @@ func (d *defaultSet[T]) Intersection(other Set[T]) (Set[T], error) {
 func (d *defaultSet[T]) HashFunction() hashing.HashFunc {
 	return d.s.HashFunction()
 }
+
+// Clone creates a shallow copy of the set, duplicating its structure and entries.
+// The elements themselves are not deep-copied; they are referenced as-is.
+// The returned set uses the same default value function as this set.
+// Returns a new Set instance with the same entries.
+func (d *defaultSet[T]) Clone() Set[T] {
+	return &defaultSet[T]{
+		s: d.s.Clone(),
+		f: d.f,
+	}
+}

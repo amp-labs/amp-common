@@ -6,6 +6,8 @@ import (
 	"github.com/amp-labs/amp-common/collectable"
 	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/hashing"
+	"github.com/amp-labs/amp-common/optional"
+	"github.com/amp-labs/amp-common/set"
 	"github.com/amp-labs/amp-common/zero"
 )
 
@@ -21,13 +23,17 @@ import (
 // Thread-safety: Implementations are not guaranteed to be thread-safe unless
 // explicitly documented. Concurrent access must be synchronized by the caller.
 //
-//nolint:interfacebloat // OrderedMap interface intentionally has 11 methods for cohesive API design
+//nolint:interfacebloat,dupl // OrderedMap interface intentionally has 11 methods for cohesive API design
 type OrderedMap[K collectable.Collectable[K], V any] interface {
 	// Get retrieves the value for the given key from the hash map.
 	// If the key exists, returns the value with found=true. If the key doesn't exist, returns
 	// a zero value with found=false.
 	// Returns ErrHashCollision if a different key with the same hash exists in the map.
 	Get(key K) (value V, found bool, err error)
+
+	// GetOrElse retrieves the value for the given key, or returns defaultValue if the key doesn't exist.
+	// Returns ErrHashCollision if a different key with the same hash exists in the map.
+	GetOrElse(key K, defaultValue V) (value V, err error)
 
 	// Add inserts or updates a key-value pair in the map.
 	// If the key already exists, its value is replaced without changing the insertion order.
@@ -85,6 +91,51 @@ type OrderedMap[K collectable.Collectable[K], V any] interface {
 	//   - Verifying two ordered maps use compatible hash functions before merging
 	//   - Debugging hash collision issues
 	HashFunction() hashing.HashFunc
+
+	// Keys returns a set containing all keys from the map, in insertion order.
+	// The returned set is a new instance and modifications to it do not affect the original map.
+	Keys() set.OrderedSet[K]
+
+	// ForEach applies the given function to each key-value pair in the map.
+	// The iteration order is non-deterministic. This method is used for side effects only
+	// and does not return a value.
+	ForEach(f func(key K, value V))
+
+	// ForAll tests whether a predicate holds for all key-value pairs in the map.
+	// Returns true if the predicate returns true for all entries, false otherwise.
+	// The iteration stops early if the predicate returns false for any entry.
+	ForAll(predicate func(key K, value V) bool) bool
+
+	// Filter creates a new map containing only key-value pairs for which the predicate returns true.
+	// The predicate function is applied to each entry, and only matching entries are included
+	// in the result map.
+	Filter(predicate func(key K, value V) bool) OrderedMap[K, V]
+
+	// FilterNot creates a new map containing only key-value pairs for which the predicate returns false.
+	// This is the inverse of Filter - it excludes entries where the predicate returns true.
+	FilterNot(predicate func(key K, value V) bool) OrderedMap[K, V]
+
+	// Map transforms all key-value pairs in the map by applying the given function to each entry.
+	// The function receives each key-value pair and returns a new key-value pair.
+	// Returns a new map containing the transformed entries.
+	// Note: If the transformation produces duplicate keys, the behavior depends on insertion order.
+	Map(f func(key K, value V) (K, V)) OrderedMap[K, V]
+
+	// FlatMap applies the given function to each key-value pair and flattens the results into a single map.
+	// Each function call returns a map, and all returned maps are merged together.
+	// Returns a new map containing all entries from the flattened results.
+	// If duplicate keys exist across multiple results, later values take precedence.
+	FlatMap(f func(key K, value V) OrderedMap[K, V]) OrderedMap[K, V]
+
+	// Exists tests whether at least one key-value pair in the map satisfies the given predicate.
+	// Returns true if the predicate returns true for any entry, false otherwise.
+	// The iteration stops early as soon as a matching entry is found.
+	Exists(predicate func(key K, value V) bool) bool
+
+	// FindFirst searches for the first key-value pair that satisfies the given predicate.
+	// Returns Some(KeyValuePair) if a matching entry is found, None otherwise.
+	// The iteration order is non-deterministic, so "first" is not guaranteed to be consistent.
+	FindFirst(predicate func(key K, value V) bool) optional.Value[KeyValuePair[K, V]]
 }
 
 // NewOrderedHashMap creates a new ordered hash-based OrderedMap implementation using the provided hash function.
@@ -148,6 +199,21 @@ func (o *orderedHashMap[K, V]) Get(key K) (value V, found bool, err error) {
 	}
 
 	return kv.Value, true, nil
+}
+
+// GetOrElse retrieves the value for the given key, or returns defaultValue if the key doesn't exist.
+// Returns ErrHashCollision if a different key with the same hash exists in the map.
+func (o *orderedHashMap[K, V]) GetOrElse(key K, defaultValue V) (value V, err error) {
+	value, found, err := o.Get(key)
+	if err != nil {
+		return zero.Value[V](), err
+	}
+
+	if !found {
+		return defaultValue, nil
+	}
+
+	return value, nil
 }
 
 // Add inserts or updates a key-value pair in the ordered hash map.
@@ -379,4 +445,127 @@ func (o *orderedHashMap[K, V]) Clone() OrderedMap[K, V] {
 // This allows callers to inspect or reuse the hash function for creating compatible maps.
 func (o *orderedHashMap[K, V]) HashFunction() hashing.HashFunc {
 	return o.hash
+}
+
+// Keys returns a set containing all keys from the map, in insertion order.
+// The returned set is a new instance and modifications to it do not affect the original map.
+func (o *orderedHashMap[K, V]) Keys() set.OrderedSet[K] {
+	keys := set.NewOrderedSet[K](o.hash)
+
+	for _, entry := range o.Seq() {
+		_ = keys.Add(entry.Key) // Add should not fail for existing keys
+	}
+
+	return keys
+}
+
+// ForEach applies the given function to each key-value pair in the map.
+// The iteration follows insertion order. This method is used for side effects only
+// and does not return a value.
+func (o *orderedHashMap[K, V]) ForEach(f func(key K, value V)) {
+	for _, entry := range o.Seq() {
+		f(entry.Key, entry.Value)
+	}
+}
+
+// ForAll tests whether a predicate holds for all key-value pairs in the map.
+// Returns true if the predicate returns true for all entries, false otherwise.
+// The iteration follows insertion order and stops early if the predicate returns false for any entry.
+func (o *orderedHashMap[K, V]) ForAll(predicate func(key K, value V) bool) bool {
+	for _, entry := range o.Seq() {
+		if !predicate(entry.Key, entry.Value) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Filter creates a new ordered map containing only key-value pairs for which the predicate returns true.
+// The predicate function is applied to each entry in insertion order, and only matching entries are
+// included in the result map, preserving their relative insertion order.
+func (o *orderedHashMap[K, V]) Filter(predicate func(key K, value V) bool) OrderedMap[K, V] {
+	result := NewOrderedHashMap[K, V](o.hash)
+
+	for _, entry := range o.Seq() {
+		if predicate(entry.Key, entry.Value) {
+			_ = result.Add(entry.Key, entry.Value) // Add should not fail for valid keys
+		}
+	}
+
+	return result
+}
+
+// FilterNot creates a new ordered map containing only key-value pairs for which the predicate returns false.
+// This is the inverse of Filter - it excludes entries where the predicate returns true.
+// The insertion order is preserved for matching entries.
+func (o *orderedHashMap[K, V]) FilterNot(predicate func(key K, value V) bool) OrderedMap[K, V] {
+	result := NewOrderedHashMap[K, V](o.hash)
+
+	for _, entry := range o.Seq() {
+		if !predicate(entry.Key, entry.Value) {
+			_ = result.Add(entry.Key, entry.Value) // Add should not fail for valid keys
+		}
+	}
+
+	return result
+}
+
+// Map transforms all key-value pairs in the map by applying the given function to each entry.
+// The function receives each key-value pair in insertion order and returns a new key-value pair.
+// Returns a new ordered map containing the transformed entries in the same relative order.
+// Note: If the transformation produces duplicate keys, the behavior depends on insertion order.
+func (o *orderedHashMap[K, V]) Map(f func(key K, value V) (K, V)) OrderedMap[K, V] {
+	result := NewOrderedHashMap[K, V](o.hash)
+
+	for _, entry := range o.Seq() {
+		newKey, newValue := f(entry.Key, entry.Value)
+		_ = result.Add(newKey, newValue) // Duplicate keys will be overwritten
+	}
+
+	return result
+}
+
+// FlatMap applies the given function to each key-value pair and flattens the results into a single ordered map.
+// Each function call receives entries in insertion order and returns an ordered map. All returned maps are
+// merged together in the order they were produced.
+// Returns a new ordered map containing all entries from the flattened results.
+// If duplicate keys exist across multiple results, later values take precedence.
+func (o *orderedHashMap[K, V]) FlatMap(f func(key K, value V) OrderedMap[K, V]) OrderedMap[K, V] {
+	result := NewOrderedHashMap[K, V](o.hash)
+
+	for _, entry := range o.Seq() {
+		mappedResult := f(entry.Key, entry.Value)
+		for _, newEntry := range mappedResult.Seq() {
+			_ = result.Add(newEntry.Key, newEntry.Value) // Duplicate keys will be overwritten
+		}
+	}
+
+	return result
+}
+
+// Exists tests whether at least one key-value pair in the map satisfies the given predicate.
+// Returns true if the predicate returns true for any entry, false otherwise.
+// The iteration follows insertion order and stops early as soon as a matching entry is found.
+func (o *orderedHashMap[K, V]) Exists(predicate func(key K, value V) bool) bool {
+	for _, entry := range o.Seq() {
+		if predicate(entry.Key, entry.Value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// FindFirst searches for the first key-value pair that satisfies the given predicate.
+// Returns Some(KeyValuePair) if a matching entry is found, None otherwise.
+// The iteration follows insertion order, so "first" refers to the earliest inserted entry that matches.
+func (o *orderedHashMap[K, V]) FindFirst(predicate func(key K, value V) bool) optional.Value[KeyValuePair[K, V]] {
+	for _, entry := range o.Seq() {
+		if predicate(entry.Key, entry.Value) {
+			return optional.Some(entry)
+		}
+	}
+
+	return optional.None[KeyValuePair[K, V]]()
 }

@@ -453,9 +453,7 @@ func TestWith(t *testing.T) { //nolint:paralleltest
 }
 
 // TestConfigureLoggingWithOptions tests various configuration options.
-func TestConfigureLoggingWithOptions(t *testing.T) {
-	t.Parallel()
-
+func TestConfigureLoggingWithOptions(t *testing.T) { //nolint:paralleltest
 	tests := []struct {
 		name string
 		opts Options
@@ -494,10 +492,8 @@ func TestConfigureLoggingWithOptions(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) { //nolint:paralleltest
 			logger := ConfigureLoggingWithOptions(tt.opts)
 			assert.NotNil(t, logger)
 		})
@@ -605,9 +601,7 @@ func TestConfigureLogging(t *testing.T) { //nolint:paralleltest
 }
 
 // TestLoggerIntegration tests the complete flow with all context values.
-func TestLoggerIntegration(t *testing.T) {
-	t.Parallel()
-
+func TestLoggerIntegration(t *testing.T) { //nolint:paralleltest
 	var buf bytes.Buffer
 
 	ConfigureLoggingWithOptions(Options{
@@ -672,9 +666,7 @@ func TestSlackIntegration(t *testing.T) { //nolint:paralleltest
 }
 
 // TestSensitiveLogging tests that sensitive logs don't include customer info.
-func TestSensitiveLogging(t *testing.T) {
-	t.Parallel()
-
+func TestSensitiveLogging(t *testing.T) { //nolint:paralleltest
 	var buf bytes.Buffer
 
 	ConfigureLoggingWithOptions(Options{
@@ -698,9 +690,7 @@ func TestSensitiveLogging(t *testing.T) {
 }
 
 // TestContextChaining tests chaining multiple context operations.
-func TestContextChaining(t *testing.T) {
-	t.Parallel()
-
+func TestContextChaining(t *testing.T) { //nolint:paralleltest
 	// Test that multiple context values can be chained
 	ctx := t.Context()
 	ctx = WithCustomerId(ctx, "cust1")

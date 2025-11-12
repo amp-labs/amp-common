@@ -72,21 +72,33 @@ type setImpl[T collectable.Collectable[T]] struct {
 
 // NewSet creates a new Set with the provided hash function.
 // The hash function is used to determine uniqueness of elements.
-func NewSet[T collectable.Collectable[T]](hash hashing.HashFunc) Set[T] {
-	return &setImpl[T]{
+func NewSet[T collectable.Collectable[T]](hash hashing.HashFunc, items ...T) Set[T] {
+	s := &setImpl[T]{
 		hash:     hash,
 		elements: make(map[string]T),
 	}
+
+	if len(items) > 0 {
+		_ = s.AddAll(items...)
+	}
+
+	return s
 }
 
 // NewSetWithSize creates a new Set with the provided hash function and pre-allocated capacity.
 // The size parameter specifies the initial capacity of the underlying map, which can improve
 // performance when the expected size is known in advance.
-func NewSetWithSize[T collectable.Collectable[T]](hash hashing.HashFunc, size int) Set[T] {
-	return &setImpl[T]{
+func NewSetWithSize[T collectable.Collectable[T]](hash hashing.HashFunc, size int, items ...T) Set[T] {
+	s := &setImpl[T]{
 		hash:     hash,
 		elements: make(map[string]T, size),
 	}
+
+	if len(items) > 0 {
+		_ = s.AddAll(items...)
+	}
+
+	return s
 }
 
 func (s *setImpl[T]) AddAll(element ...T) error {

@@ -433,6 +433,203 @@ func TestBulkParseUUIDs(t *testing.T) {
 		assert.Contains(t, err.Error(), "must be *uuid.UUID in output struct")
 		assert.Contains(t, err.Error(), "Value1")
 	})
+
+	t.Run("uses custom name from struct tag in error messages", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID string `name:"project ID"`
+		}
+
+		type UUIDs struct {
+			ProjectID uuid.UUID
+		}
+
+		inputs := &StringUUIDs{
+			ProjectID: "not-a-valid-uuid",
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "error parsing UUID")
+		assert.Contains(t, err.Error(), "project ID")   // Should use custom name from tag
+		assert.NotContains(t, err.Error(), "ProjectID") // Should not use struct field name
+	})
+
+	t.Run("uses custom name from struct tag with valid UUIDs", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID string `name:"project ID"`
+			UserID    string `name:"user ID"`
+		}
+
+		type UUIDs struct {
+			ProjectID uuid.UUID
+			UserID    uuid.UUID
+		}
+
+		inputs := &StringUUIDs{
+			ProjectID: "798f9d41-f89b-4b90-a3ae-c560c3c99203",
+			UserID:    "5d77349b-df0c-42d7-b351-b30b499b73b9",
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.NoError(t, err)
+
+		expectedProjectID, _ := uuid.Parse("798f9d41-f89b-4b90-a3ae-c560c3c99203")
+		expectedUserID, _ := uuid.Parse("5d77349b-df0c-42d7-b351-b30b499b73b9")
+
+		assert.Equal(t, expectedProjectID, outputs.ProjectID)
+		assert.Equal(t, expectedUserID, outputs.UserID)
+	})
+
+	t.Run("uses custom name from struct tag with pointer fields", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID *string `name:"project ID"`
+		}
+
+		type UUIDs struct {
+			ProjectID *uuid.UUID
+		}
+
+		projectID := "798f9d41-f89b-4b90-a3ae-c560c3c99203"
+		inputs := &StringUUIDs{
+			ProjectID: &projectID,
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.NoError(t, err)
+
+		expectedProjectID, _ := uuid.Parse("798f9d41-f89b-4b90-a3ae-c560c3c99203")
+
+		require.NotNil(t, outputs.ProjectID)
+		assert.Equal(t, expectedProjectID, *outputs.ProjectID)
+	})
+
+	t.Run("uses custom name from struct tag in pointer field error", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID *string `name:"project ID"`
+		}
+
+		type UUIDs struct {
+			ProjectID *uuid.UUID
+		}
+
+		invalidUUID := "not-a-valid-uuid"
+		inputs := &StringUUIDs{
+			ProjectID: &invalidUUID,
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "error parsing UUID")
+		assert.Contains(t, err.Error(), "project ID") // Should use custom name from tag
+	})
+
+	t.Run("handles mixed fields with and without name tags", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID string  `name:"project ID"`
+			UserID    string  // No custom name tag
+			TeamID    *string `name:"team ID"`
+			OrgID     *string // No custom name tag
+		}
+
+		type UUIDs struct {
+			ProjectID uuid.UUID
+			UserID    uuid.UUID
+			TeamID    *uuid.UUID
+			OrgID     *uuid.UUID
+		}
+
+		teamID := "11111111-1111-1111-1111-111111111111"
+		orgID := "22222222-2222-2222-2222-222222222222"
+
+		inputs := &StringUUIDs{
+			ProjectID: "798f9d41-f89b-4b90-a3ae-c560c3c99203",
+			UserID:    "5d77349b-df0c-42d7-b351-b30b499b73b9",
+			TeamID:    &teamID,
+			OrgID:     &orgID,
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.NoError(t, err)
+
+		expectedProjectID, _ := uuid.Parse("798f9d41-f89b-4b90-a3ae-c560c3c99203")
+		expectedUserID, _ := uuid.Parse("5d77349b-df0c-42d7-b351-b30b499b73b9")
+		expectedTeamID, _ := uuid.Parse("11111111-1111-1111-1111-111111111111")
+		expectedOrgID, _ := uuid.Parse("22222222-2222-2222-2222-222222222222")
+
+		assert.Equal(t, expectedProjectID, outputs.ProjectID)
+		assert.Equal(t, expectedUserID, outputs.UserID)
+		require.NotNil(t, outputs.TeamID)
+		assert.Equal(t, expectedTeamID, *outputs.TeamID)
+		require.NotNil(t, outputs.OrgID)
+		assert.Equal(t, expectedOrgID, *outputs.OrgID)
+	})
+
+	t.Run("uses custom name in type mismatch errors", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID int `name:"project ID"`
+		}
+
+		type UUIDs struct {
+			ProjectID uuid.UUID
+		}
+
+		inputs := &StringUUIDs{
+			ProjectID: 123,
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must be string in input struct")
+		assert.Contains(t, err.Error(), "project ID") // Should use custom name from tag
+	})
+
+	t.Run("uses custom name in pointer mismatch errors", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID *string `name:"project ID"`
+		}
+
+		type UUIDs struct {
+			ProjectID uuid.UUID // Not a pointer, should cause mismatch
+		}
+
+		projectID := "798f9d41-f89b-4b90-a3ae-c560c3c99203"
+		inputs := &StringUUIDs{
+			ProjectID: &projectID,
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pointer mismatch")
+		assert.Contains(t, err.Error(), "project ID") // Should use custom name from tag
+	})
 }
 
 func TestUUIDBulkParser(t *testing.T) {

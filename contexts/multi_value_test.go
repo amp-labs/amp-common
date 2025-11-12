@@ -158,7 +158,7 @@ func TestMultiValueCtxValue(t *testing.T) {
 	t.Run("local values take precedence over parent", func(t *testing.T) {
 		t.Parallel()
 
-		parent := context.WithValue(t.Context(), contextKey("key"), "parentValue")
+		parent := context.WithValue(t.Context(), "key", "parentValue") //nolint:staticcheck
 		vals := map[string]any{"key": "localValue"}
 
 		multiCtx := WithMultipleValues(parent, vals)
@@ -169,7 +169,7 @@ func TestMultiValueCtxValue(t *testing.T) {
 	t.Run("falls back to parent context for missing keys", func(t *testing.T) {
 		t.Parallel()
 
-		parent := context.WithValue(t.Context(), contextKey("parentKey"), "parentValue")
+		parent := context.WithValue(t.Context(), "parentKey", "parentValue") //nolint:staticcheck
 		vals := map[string]any{"localKey": "localValue"}
 
 		multiCtx := WithMultipleValues(parent, vals)
@@ -181,7 +181,7 @@ func TestMultiValueCtxValue(t *testing.T) {
 	t.Run("returns nil for keys not in local or parent", func(t *testing.T) {
 		t.Parallel()
 
-		parent := context.WithValue(t.Context(), contextKey("parentKey"), "parentValue")
+		parent := context.WithValue(t.Context(), "parentKey", "parentValue") //nolint:staticcheck
 		vals := map[string]any{"localKey": "localValue"}
 
 		multiCtx := WithMultipleValues(parent, vals)
@@ -267,7 +267,7 @@ func TestMultiValueCtxString(t *testing.T) {
 	t.Run("includes parent context name", func(t *testing.T) {
 		t.Parallel()
 
-		parent := context.WithValue(t.Context(), contextKey("parentKey"), "parentValue")
+		parent := context.WithValue(t.Context(), "parentKey", "parentValue") //nolint:staticcheck
 		vals := map[string]any{"localKey": "localValue"}
 
 		multiCtx := WithMultipleValues(parent, vals)
@@ -393,12 +393,12 @@ func TestWithMultipleValuesIntegration(t *testing.T) {
 
 		// Build a complex context chain
 		ctx := t.Context()
-		ctx = context.WithValue(ctx, contextKey("base"), "baseValue")
+		ctx = context.WithValue(ctx, "base", "baseValue") //nolint:staticcheck
 
 		vals1 := map[string]any{"layer1": "value1"}
 		ctx = WithMultipleValues(ctx, vals1)
 
-		ctx = context.WithValue(ctx, contextKey("middle"), "middleValue")
+		ctx = context.WithValue(ctx, "middle", "middleValue") //nolint:staticcheck
 
 		vals2 := map[string]any{"layer2": "value2"}
 		ctx = WithMultipleValues(ctx, vals2)
@@ -506,11 +506,11 @@ func BenchmarkWithMultipleValuesVsChainedWithValue(b *testing.B) {
 		b.ResetTimer()
 
 		for range b.N {
-			chainedCtx := context.WithValue(ctx, contextKey("key1"), "value1")
-			chainedCtx = context.WithValue(chainedCtx, contextKey("key2"), "value2")
-			chainedCtx = context.WithValue(chainedCtx, contextKey("key3"), "value3")
-			chainedCtx = context.WithValue(chainedCtx, contextKey("key4"), "value4")
-			chainedCtx = context.WithValue(chainedCtx, contextKey("key5"), "value5")
+			chainedCtx := context.WithValue(ctx, "key1", "value1")       //nolint:staticcheck
+			chainedCtx = context.WithValue(chainedCtx, "key2", "value2") //nolint:staticcheck
+			chainedCtx = context.WithValue(chainedCtx, "key3", "value3") //nolint:staticcheck
+			chainedCtx = context.WithValue(chainedCtx, "key4", "value4") //nolint:staticcheck
+			chainedCtx = context.WithValue(chainedCtx, "key5", "value5") //nolint:staticcheck
 			_ = chainedCtx.Value("key3")
 		}
 	})

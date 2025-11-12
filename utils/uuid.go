@@ -45,6 +45,7 @@ func (up *UUIDBulkParser) Parse() (map[string]uuid.UUID, error) {
 // Both inputs and outputs must be pointers to structs. Fields are matched by name.
 // Input fields must be string or *string, output fields must be uuid.UUID or *uuid.UUID.
 // If a field is a pointer in the input, it must also be a pointer in the output (and vice versa).
+// The "name" struct tag can be used to customize the field name in error messages (e.g., `name:"customName"`).
 //
 //nolint:err113,nestif // Validation errors need dynamic context; nested structure is clearer than alternatives
 func BulkParseUUIDs(inputs, outputs interface{}) error {
@@ -79,21 +80,27 @@ func BulkParseUUIDs(inputs, outputs interface{}) error {
 	for i := range inputVal.NumField() {
 		inputField := inputVal.Field(i)
 		inputFieldType := inputType.Field(i)
-		fieldName := inputFieldType.Name
+		structFieldName := inputFieldType.Name
+
+		// Get display name from "name" tag if present, otherwise use reflected field name
+		displayName := inputFieldType.Tag.Get("name")
+		if displayName == "" {
+			displayName = structFieldName
+		}
 
 		// Skip unexported fields
 		if !inputField.CanInterface() {
 			continue
 		}
 
-		// Find corresponding output field
-		outputField := outputVal.FieldByName(fieldName)
+		// Find corresponding output field (always use actual struct field name)
+		outputField := outputVal.FieldByName(structFieldName)
 		if !outputField.IsValid() {
-			return fmt.Errorf("field %s not found in output struct", fieldName)
+			return fmt.Errorf("field %s not found in output struct", displayName)
 		}
 
 		if !outputField.CanSet() {
-			return fmt.Errorf("field %s in output struct cannot be set (unexported?)", fieldName)
+			return fmt.Errorf("field %s in output struct cannot be set (unexported?)", displayName)
 		}
 
 		// Handle pointer vs non-pointer field types
@@ -103,7 +110,7 @@ func BulkParseUUIDs(inputs, outputs interface{}) error {
 		if inputIsPtr != outputIsPtr {
 			return fmt.Errorf(
 				"field %s pointer mismatch: input is pointer=%v, output is pointer=%v",
-				fieldName, inputIsPtr, outputIsPtr,
+				displayName, inputIsPtr, outputIsPtr,
 			)
 		}
 
@@ -119,12 +126,12 @@ func BulkParseUUIDs(inputs, outputs interface{}) error {
 			// Dereference pointers for validation and parsing
 			inputFieldDeref := inputField.Elem()
 			if inputFieldDeref.Kind() != reflect.String {
-				return fmt.Errorf("field %s must be *string in input struct, got *%s", fieldName, inputFieldDeref.Kind())
+				return fmt.Errorf("field %s must be *string in input struct, got *%s", displayName, inputFieldDeref.Kind())
 			}
 
 			// Validate output is *uuid.UUID
 			if outputField.Type() != reflect.TypeOf((*uuid.UUID)(nil)) {
-				return fmt.Errorf("field %s must be *uuid.UUID in output struct, got %s", fieldName, outputField.Type())
+				return fmt.Errorf("field %s must be *uuid.UUID in output struct, got %s", displayName, outputField.Type())
 			}
 
 			// Parse UUID
@@ -132,7 +139,7 @@ func BulkParseUUIDs(inputs, outputs interface{}) error {
 
 			parsedUUID, err := uuid.Parse(uuidStr)
 			if err != nil {
-				return fmt.Errorf("error parsing UUID %s for field %s: %w", uuidStr, fieldName, err)
+				return fmt.Errorf("error parsing UUID %s for field %s: %w", uuidStr, displayName, err)
 			}
 
 			// Create new pointer and set the value
@@ -142,12 +149,12 @@ func BulkParseUUIDs(inputs, outputs interface{}) error {
 		} else {
 			// Handle non-pointer fields (required values)
 			if inputField.Kind() != reflect.String {
-				return fmt.Errorf("field %s must be string in input struct, got %s", fieldName, inputField.Kind())
+				return fmt.Errorf("field %s must be string in input struct, got %s", displayName, inputField.Kind())
 			}
 
 			// Validate output is uuid.UUID
 			if outputField.Type() != reflect.TypeOf(uuid.UUID{}) {
-				return fmt.Errorf("field %s must be uuid.UUID in output struct, got %s", fieldName, outputField.Type())
+				return fmt.Errorf("field %s must be uuid.UUID in output struct, got %s", displayName, outputField.Type())
 			}
 
 			// Parse UUID
@@ -155,7 +162,7 @@ func BulkParseUUIDs(inputs, outputs interface{}) error {
 
 			parsedUUID, err := uuid.Parse(uuidStr)
 			if err != nil {
-				return fmt.Errorf("error parsing UUID %s for field %s: %w", uuidStr, fieldName, err)
+				return fmt.Errorf("error parsing UUID %s for field %s: %w", uuidStr, displayName, err)
 			}
 
 			outputField.Set(reflect.ValueOf(parsedUUID))

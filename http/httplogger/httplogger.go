@@ -41,10 +41,13 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/http/printable"
 	"github.com/amp-labs/amp-common/http/redact"
 	"github.com/amp-labs/amp-common/logger"
 )
+
+type contextKey string
 
 const (
 	// DefaultTruncationLength defines the maximum size (in bytes) for HTTP request/response bodies in logs.
@@ -62,7 +65,34 @@ const (
 	// DefaultLogErrorMessage is the default log message used when logging HTTP errors.
 	// This can be overridden using LogErrorParams.DefaultMessage or LogErrorParams.MessageOverride.
 	DefaultLogErrorMessage = "HTTP request failed"
+
+	// contextKeyArchive is the context key for marking HTTP logs for archival.
+	// This is used internally to tag logs that should be archived for long-term storage.
+	contextKeyArchive contextKey = "archive"
 )
+
+// WithArchive returns a new context with the archive flag set to the specified value.
+// When archive is true, HTTP logs will include an "archive": "1" field to indicate
+// they should be preserved for long-term storage or analysis.
+//
+// This is typically used for important requests that need to be auditable or
+// debuggable after the standard log retention period.
+//
+// Example:
+//
+//	ctx := httplogger.WithArchive(context.Background(), true)
+//	// Logs made with this context will be marked for archival
+func WithArchive(ctx context.Context, archive bool) context.Context {
+	return contexts.WithValue[contextKey, bool](ctx, contextKeyArchive, archive)
+}
+
+// shouldArchive checks if the context has been marked for log archival.
+// Returns true if the archive flag is set and true, false otherwise.
+func shouldArchive(ctx context.Context) bool {
+	value, found := contexts.GetValue[contextKey, bool](ctx, contextKeyArchive)
+
+	return found && value
+}
 
 // LogRequestParams configures how HTTP requests are logged.
 type LogRequestParams struct {
@@ -220,9 +250,16 @@ func (p *LogRequestParams) getLogMessage(request *http.Request) string {
 }
 
 // log writes the log entry using the configured logger, level, and message.
+// If the context is marked for archival (via WithArchive), an "archive": "1" field
+// is added to indicate the log should be preserved for long-term storage.
 func (p *LogRequestParams) log(ctx context.Context, request *http.Request, details map[string]any) {
-	p.getLogger(ctx).Log(ctx, p.getLevel(request),
-		p.getLogMessage(request), "details", details)
+	if shouldArchive(ctx) {
+		p.getLogger(ctx).Log(ctx, p.getLevel(request),
+			p.getLogMessage(request), "details", details, "archive", "1")
+	} else {
+		p.getLogger(ctx).Log(ctx, p.getLevel(request),
+			p.getLogMessage(request), "details", details)
+	}
 }
 
 // LogResponseParams configures how HTTP responses are logged.
@@ -381,9 +418,16 @@ func (p *LogResponseParams) getLogMessage(resp *http.Response) string {
 }
 
 // log writes the log entry using the configured logger, level, and message.
+// If the context is marked for archival (via WithArchive), an "archive": "1" field
+// is added to indicate the log should be preserved for long-term storage.
 func (p *LogResponseParams) log(ctx context.Context, resp *http.Response, details map[string]any) {
-	p.getLogger(ctx).Log(ctx, p.getLevel(resp),
-		p.getLogMessage(resp), "details", details)
+	if shouldArchive(ctx) {
+		p.getLogger(ctx).Log(ctx, p.getLevel(resp),
+			p.getLogMessage(resp), "details", details, "archive", "1")
+	} else {
+		p.getLogger(ctx).Log(ctx, p.getLevel(resp),
+			p.getLogMessage(resp), "details", details)
+	}
 }
 
 // LogErrorParams configures how HTTP errors are logged.
@@ -485,9 +529,16 @@ func (p *LogErrorParams) getLogMessage(err error) string {
 }
 
 // log writes the log entry using the configured logger, level, and message.
+// If the context is marked for archival (via WithArchive), an "archive": "1" field
+// is added to indicate the log should be preserved for long-term storage.
 func (p *LogErrorParams) log(ctx context.Context, err error, details map[string]any) {
-	p.getLogger(ctx).Log(ctx, p.getLevel(err),
-		p.getLogMessage(err), "details", details)
+	if shouldArchive(ctx) {
+		p.getLogger(ctx).Log(ctx, p.getLevel(err),
+			p.getLogMessage(err), "details", details, "archive", "1")
+	} else {
+		p.getLogger(ctx).Log(ctx, p.getLevel(err),
+			p.getLogMessage(err), "details", details)
+	}
 }
 
 // cloneURL creates a shallow copy of a URL.

@@ -186,7 +186,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "error parsing UUID")
+		assert.Contains(t, err.Error(), "invalid UUID")
 		assert.Contains(t, err.Error(), "Value1")
 	})
 
@@ -289,7 +289,8 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "field Value2 not found in output struct")
+		assert.Contains(t, err.Error(), "field not found in output struct")
+		assert.Contains(t, err.Error(), "Value2")
 	})
 
 	t.Run("returns error for pointer mismatch - input pointer, output not", func(t *testing.T) {
@@ -359,7 +360,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "must be string in input struct")
+		assert.Contains(t, err.Error(), "input field must be string or *string")
 		assert.Contains(t, err.Error(), "Value1")
 	})
 
@@ -383,7 +384,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "must be *string in input struct")
+		assert.Contains(t, err.Error(), "input field must be string or *string")
 		assert.Contains(t, err.Error(), "Value1")
 	})
 
@@ -406,7 +407,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "must be uuid.UUID in output struct")
+		assert.Contains(t, err.Error(), "output field must be uuid.UUID or *uuid.UUID")
 		assert.Contains(t, err.Error(), "Value1")
 	})
 
@@ -430,7 +431,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "must be *uuid.UUID in output struct")
+		assert.Contains(t, err.Error(), "output field must be uuid.UUID or *uuid.UUID")
 		assert.Contains(t, err.Error(), "Value1")
 	})
 
@@ -453,7 +454,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "error parsing UUID")
+		assert.Contains(t, err.Error(), "invalid UUID")
 		assert.Contains(t, err.Error(), "project ID")   // Should use custom name from tag
 		assert.NotContains(t, err.Error(), "ProjectID") // Should not use struct field name
 	})
@@ -535,7 +536,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "error parsing UUID")
+		assert.Contains(t, err.Error(), "invalid UUID")
 		assert.Contains(t, err.Error(), "project ID") // Should use custom name from tag
 	})
 
@@ -603,7 +604,7 @@ func TestBulkParseUUIDs(t *testing.T) {
 
 		err := BulkParseUUIDs(inputs, outputs)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "must be string in input struct")
+		assert.Contains(t, err.Error(), "input field must be string or *string")
 		assert.Contains(t, err.Error(), "project ID") // Should use custom name from tag
 	})
 
@@ -629,6 +630,199 @@ func TestBulkParseUUIDs(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "pointer mismatch")
 		assert.Contains(t, err.Error(), "project ID") // Should use custom name from tag
+	})
+
+	t.Run("returns combined error for multiple invalid UUIDs", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			Value1 string
+			Value2 string
+			Value3 string
+		}
+
+		type UUIDs struct {
+			Value1 uuid.UUID
+			Value2 uuid.UUID
+			Value3 uuid.UUID
+		}
+
+		inputs := &StringUUIDs{
+			Value1: "not-a-valid-uuid-1",
+			Value2: "not-a-valid-uuid-2",
+			Value3: "not-a-valid-uuid-3",
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+
+		// Check that the error indicates multiple invalid UUIDs
+		assert.Contains(t, err.Error(), "multiple invalid UUIDs")
+		assert.Contains(t, err.Error(), "(found 3)")
+
+		// Check that all three field names are mentioned in the error
+		assert.Contains(t, err.Error(), "Value1")
+		assert.Contains(t, err.Error(), "Value2")
+		assert.Contains(t, err.Error(), "Value3")
+
+		// Verify that the error can be identified with errors.Is
+		require.ErrorIs(t, err, ErrMultipleInvalidUUIDs, "should wrap ErrMultipleInvalidUUIDs")
+		require.ErrorIs(t, err, ErrInvalidUUID, "should wrap ErrInvalidUUID")
+	})
+
+	t.Run("returns combined error for multiple invalid UUIDs with pointer fields", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			Value1 *string
+			Value2 *string
+		}
+
+		type UUIDs struct {
+			Value1 *uuid.UUID
+			Value2 *uuid.UUID
+		}
+
+		val1 := "not-a-valid-uuid-1"
+		val2 := "not-a-valid-uuid-2"
+
+		inputs := &StringUUIDs{
+			Value1: &val1,
+			Value2: &val2,
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+
+		// Check that the error indicates multiple invalid UUIDs
+		assert.Contains(t, err.Error(), "multiple invalid UUIDs")
+		assert.Contains(t, err.Error(), "(found 2)")
+
+		// Check that both field names are mentioned in the error
+		assert.Contains(t, err.Error(), "Value1")
+		assert.Contains(t, err.Error(), "Value2")
+	})
+
+	t.Run("returns combined error for mix of valid and invalid UUIDs", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			Valid1   string
+			Invalid  string
+			Valid2   string
+			Invalid2 string
+		}
+
+		type UUIDs struct {
+			Valid1   uuid.UUID
+			Invalid  uuid.UUID
+			Valid2   uuid.UUID
+			Invalid2 uuid.UUID
+		}
+
+		inputs := &StringUUIDs{
+			Valid1:   "798f9d41-f89b-4b90-a3ae-c560c3c99203",
+			Invalid:  "not-a-valid-uuid",
+			Valid2:   "5d77349b-df0c-42d7-b351-b30b499b73b9",
+			Invalid2: "also-not-valid",
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+
+		// Check that the error indicates multiple invalid UUIDs
+		assert.Contains(t, err.Error(), "multiple invalid UUIDs")
+		assert.Contains(t, err.Error(), "(found 2)")
+
+		// Check that only invalid field names are mentioned
+		assert.Contains(t, err.Error(), "Invalid")
+		assert.Contains(t, err.Error(), "Invalid2")
+	})
+	t.Run("returns combined error with custom field names", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			ProjectID string `name:"project ID"`
+			UserID    string `name:"user ID"`
+			TeamID    string `name:"team ID"`
+		}
+
+		type UUIDs struct {
+			ProjectID uuid.UUID
+			UserID    uuid.UUID
+			TeamID    uuid.UUID
+		}
+
+		inputs := &StringUUIDs{
+			ProjectID: "invalid-project",
+			UserID:    "invalid-user",
+			TeamID:    "invalid-team",
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+
+		// Check that the error indicates multiple invalid UUIDs
+		assert.Contains(t, err.Error(), "multiple invalid UUIDs")
+		assert.Contains(t, err.Error(), "(found 3)")
+
+		// Check that custom field names (not struct field names) are mentioned
+		assert.Contains(t, err.Error(), "project ID")
+		assert.Contains(t, err.Error(), "user ID")
+		assert.Contains(t, err.Error(), "team ID")
+	})
+
+	t.Run("returns combined error for multiple invalid optional fields", func(t *testing.T) {
+		t.Parallel()
+
+		type StringUUIDs struct {
+			Valid    *string
+			Invalid1 *string
+			Invalid2 *string
+			Nil      *string
+		}
+
+		type UUIDs struct {
+			Valid    *uuid.UUID
+			Invalid1 *uuid.UUID
+			Invalid2 *uuid.UUID
+			Nil      *uuid.UUID
+		}
+
+		validVal := "798f9d41-f89b-4b90-a3ae-c560c3c99203"
+		invalidVal1 := "not-valid-1"
+		invalidVal2 := "not-valid-2"
+
+		inputs := &StringUUIDs{
+			Valid:    &validVal,
+			Invalid1: &invalidVal1,
+			Invalid2: &invalidVal2,
+			Nil:      nil,
+		}
+
+		outputs := &UUIDs{}
+
+		err := BulkParseUUIDs(inputs, outputs)
+		require.Error(t, err)
+
+		// Check that the error indicates multiple invalid UUIDs
+		assert.Contains(t, err.Error(), "multiple invalid UUIDs")
+		assert.Contains(t, err.Error(), "(found 2)")
+
+		// Check that both invalid field names are mentioned
+		assert.Contains(t, err.Error(), "Invalid1")
+		assert.Contains(t, err.Error(), "Invalid2")
+
+		// Verify that the error can be identified with errors.Is
+		require.ErrorIs(t, err, ErrMultipleInvalidUUIDs, "should wrap ErrMultipleInvalidUUIDs")
 	})
 }
 
@@ -661,7 +855,7 @@ func TestUUIDBulkParser(t *testing.T) {
 		result, err := parser.Parse()
 		require.Error(t, err)
 		assert.Nil(t, result)
-		assert.Contains(t, err.Error(), "error parsing UUID")
+		assert.Contains(t, err.Error(), "invalid UUID")
 		assert.Contains(t, err.Error(), "id1")
 	})
 

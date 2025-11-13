@@ -499,11 +499,12 @@ func TestWithCheckValid_RejectsInvalidObjects(t *testing.T) {
 
 	// Track which object IDs are invalid
 	invalidIDs := make(map[int]bool)
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	checkValid := func(obj *mockCloser) error {
-		mu.Lock()
-		defer mu.Unlock()
+		mutex.Lock()
+		defer mutex.Unlock()
 
 		if invalidIDs[obj.id] {
 			return errInvalid
@@ -525,9 +526,9 @@ func TestWithCheckValid_RejectsInvalidObjects(t *testing.T) {
 	assert.Equal(t, 1, factory.CreatedCount())
 
 	// Mark it as invalid
-	mu.Lock()
+	mutex.Lock()
 	invalidIDs[obj1.id] = true
-	mu.Unlock()
+	mutex.Unlock()
 
 	// Put it back
 	pool.Put(obj1)
@@ -646,11 +647,12 @@ func TestWithCheckValid_CloseIdleValidatesObjects(t *testing.T) {
 
 	// Track which object IDs are invalid
 	invalidIDs := make(map[int]bool)
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	checkValid := func(obj *mockCloser) error {
-		mu.Lock()
-		defer mu.Unlock()
+		mutex.Lock()
+		defer mutex.Unlock()
 
 		if invalidIDs[obj.id] {
 			return errInvalid
@@ -673,9 +675,9 @@ func TestWithCheckValid_CloseIdleValidatesObjects(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mark obj1 as invalid
-	mu.Lock()
+	mutex.Lock()
 	invalidIDs[obj1.id] = true
-	mu.Unlock()
+	mutex.Unlock()
 
 	// Put them back
 	pool.Put(obj1)
@@ -708,11 +710,12 @@ func TestWithCheckValid_ConcurrentValidation(t *testing.T) {
 
 	// Randomly mark some objects as invalid
 	invalidIDs := make(map[int]bool)
-	var mu sync.Mutex
+
+	var mutex sync.Mutex
 
 	checkValid := func(obj *mockCloser) error {
-		mu.Lock()
-		defer mu.Unlock()
+		mutex.Lock()
+		defer mutex.Unlock()
 
 		if invalidIDs[obj.id] {
 			return errInvalid
@@ -748,9 +751,9 @@ func TestWithCheckValid_ConcurrentValidation(t *testing.T) {
 
 				// Randomly mark some objects as invalid
 				if obj.id%3 == 0 {
-					mu.Lock()
+					mutex.Lock()
 					invalidIDs[obj.id] = true
-					mu.Unlock()
+					mutex.Unlock()
 				}
 
 				// Simulate some work

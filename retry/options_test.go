@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/amp-labs/amp-common/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,11 @@ func TestWithAttempts_Option(t *testing.T) {
 		callCount++
 
 		return errors.New("always fail") //nolint:err113 // Test error
-	}, WithAttempts(7))
+	}, WithAttempts(7), WithBackoff(ExpBackoff{
+		Base:   100 * time.Millisecond,
+		Max:    500 * time.Millisecond,
+		Factor: 1.1,
+	}))
 
 	require.Error(t, err)
 	assert.Equal(t, 7, callCount)
@@ -58,7 +63,7 @@ func TestWithTimeout_Option(t *testing.T) {
 	err := Do(t.Context(), func(ctx context.Context) error {
 		callCount++
 		if callCount == 1 {
-			time.Sleep(150 * time.Millisecond)
+			return utils.SleepCtx(ctx, 150*time.Millisecond)
 		}
 
 		return nil

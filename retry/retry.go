@@ -29,9 +29,11 @@ package retry
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/amp-labs/amp-common/zero"
+	"go.uber.org/atomic"
 )
 
 const (
@@ -172,6 +174,10 @@ func (v valueRunnerImpl[T]) Do(ctx context.Context, f func(ctx context.Context) 
 //   - The last error if all retries are exhausted
 func do(ctx context.Context, opts *options, operation func(ctx context.Context) error) error {
 	var err error
+	var mut sync.Mutex
+
+	running := atomic.NewBool(true)
+	defer running.Store(false)
 
 	// Loop until we reach the maximum attempts or attempts is 0 (infinite retries)
 	for attemptIndex := uint(0); Attempts(attemptIndex) < opts.attempts || opts.attempts == 0; attemptIndex++ {
@@ -189,9 +195,18 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 
 		// Execute the operation in a goroutine to support timeout handling
 		go func(ctx context.Context) {
+			defer close(ch)
+
 			if opts.timeout != 0 {
-				ch <- callWithTimeout(ctx, operation, opts.timeout)
+				ch <- callWithTimeout(ctx, operation, opts.timeout, &mut, running)
 			} else {
+				mut.Lock()
+				defer mut.Unlock()
+
+				if !running.Load() {
+					return
+				}
+
 				ch <- operation(ctx)
 			}
 		}(ctx)
@@ -238,14 +253,28 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 
 // callWithTimeout wraps a function call with a timeout. If the function does not complete
 // within the specified timeout, it returns context.DeadlineExceeded.
-func callWithTimeout(ctx context.Context, cb func(context.Context) error, timeout Timeout) error {
+func callWithTimeout(ctx context.Context, cb func(context.Context) error, timeout Timeout, mut *sync.Mutex, running *atomic.Bool) error {
+	mut.Lock()
+	mut.Unlock()
+
+	if !running.Load() {
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout))
 	defer cancel()
 
-	ch := make(chan error)
+	ch := make(chan error, 1)
 
 	go func(ctx context.Context) {
 		defer close(ch)
+
+		mut.Lock()
+		defer mut.Unlock()
+
+		if !running.Load() {
+			return
+		}
 
 		ch <- cb(ctx)
 	}(ctx)

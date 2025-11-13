@@ -3,11 +3,14 @@ package retry
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/amp-labs/amp-common/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 )
 
 func TestDo_Success(t *testing.T) {
@@ -249,11 +252,14 @@ func TestCallWithTimeout_Success(t *testing.T) {
 	t.Parallel()
 
 	called := false
+	var mut sync.Mutex
+	running := atomic.NewBool(true)
+
 	err := callWithTimeout(t.Context(), func(ctx context.Context) error {
 		called = true
 
 		return nil
-	}, Timeout(1*time.Second))
+	}, Timeout(1*time.Second), &mut, running)
 
 	require.NoError(t, err)
 	assert.True(t, called)
@@ -262,11 +268,12 @@ func TestCallWithTimeout_Success(t *testing.T) {
 func TestCallWithTimeout_Exceeds(t *testing.T) {
 	t.Parallel()
 
-	err := callWithTimeout(t.Context(), func(ctx context.Context) error {
-		time.Sleep(200 * time.Millisecond)
+	var mut sync.Mutex
+	running := atomic.NewBool(true)
 
-		return nil
-	}, Timeout(50*time.Millisecond))
+	err := callWithTimeout(t.Context(), func(ctx context.Context) error {
+		return utils.SleepCtx(ctx, 200*time.Millisecond)
+	}, Timeout(50*time.Millisecond), &mut, running)
 
 	require.Error(t, err)
 	assert.Equal(t, context.DeadlineExceeded, err)
@@ -278,11 +285,11 @@ func TestDo_RespectsContextDeadline(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 	defer cancel()
 
-	callCount := 0
+	callCount := atomic.NewInt64(0)
 	err := Do(ctx, func(ctx context.Context) error {
-		callCount++
+		callCount.Inc()
 
-		time.Sleep(30 * time.Millisecond)
+		_ = utils.SleepCtx(ctx, 30*time.Millisecond)
 
 		return errors.New("should timeout") //nolint:err113 // Test error
 	}, WithAttempts(10), WithBackoff(ExpBackoff{
@@ -294,6 +301,6 @@ func TestDo_RespectsContextDeadline(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, context.DeadlineExceeded, err)
 	// Should have attempted at least once but not all 10 times
-	assert.GreaterOrEqual(t, callCount, 1)
-	assert.Less(t, callCount, 10)
+	assert.GreaterOrEqual(t, callCount.Load(), int64(1))
+	assert.Less(t, callCount.Load(), int64(10))
 }

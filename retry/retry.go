@@ -174,6 +174,7 @@ func (v valueRunnerImpl[T]) Do(ctx context.Context, f func(ctx context.Context) 
 //   - The last error if all retries are exhausted
 func do(ctx context.Context, opts *options, operation func(ctx context.Context) error) error {
 	var err error
+
 	var mut sync.Mutex
 
 	running := atomic.NewBool(true)
@@ -191,14 +192,14 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 
 		// Create a new channel for each attempt to avoid race conditions
 		// with goroutines from previous attempts
-		ch := make(chan error, 1)
+		errChan := make(chan error, 1)
 
 		// Execute the operation in a goroutine to support timeout handling
 		go func(ctx context.Context) {
-			defer close(ch)
+			defer close(errChan)
 
 			if opts.timeout != 0 {
-				ch <- callWithTimeout(ctx, operation, opts.timeout, &mut, running)
+				errChan <- callWithTimeout(ctx, operation, opts.timeout, &mut, running)
 			} else {
 				mut.Lock()
 				defer mut.Unlock()
@@ -207,7 +208,7 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 					return
 				}
 
-				ch <- operation(ctx)
+				errChan <- operation(ctx)
 			}
 		}(ctx)
 
@@ -215,7 +216,7 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case err = <-ch:
+		case err = <-errChan:
 			if err == nil {
 				return nil
 			}
@@ -253,9 +254,16 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 
 // callWithTimeout wraps a function call with a timeout. If the function does not complete
 // within the specified timeout, it returns context.DeadlineExceeded.
-func callWithTimeout(ctx context.Context, cb func(context.Context) error, timeout Timeout, mut *sync.Mutex, running *atomic.Bool) error {
+func callWithTimeout(
+	ctx context.Context,
+	callback func(context.Context) error,
+	timeout Timeout,
+	mut *sync.Mutex,
+	running *atomic.Bool,
+) error {
+	// Brief lock/unlock provides a memory barrier to ensure visibility of running flag
 	mut.Lock()
-	mut.Unlock()
+	mut.Unlock() //nolint:staticcheck
 
 	if !running.Load() {
 		return nil
@@ -264,10 +272,10 @@ func callWithTimeout(ctx context.Context, cb func(context.Context) error, timeou
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout))
 	defer cancel()
 
-	ch := make(chan error, 1)
+	errChan := make(chan error, 1)
 
 	go func(ctx context.Context) {
-		defer close(ch)
+		defer close(errChan)
 
 		mut.Lock()
 		defer mut.Unlock()
@@ -276,13 +284,13 @@ func callWithTimeout(ctx context.Context, cb func(context.Context) error, timeou
 			return
 		}
 
-		ch <- cb(ctx)
+		errChan <- callback(ctx)
 	}(ctx)
 
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case err := <-ch:
+	case err := <-errChan:
 		return err
 	}
 }

@@ -252,7 +252,9 @@ func TestCallWithTimeout_Success(t *testing.T) {
 	t.Parallel()
 
 	called := false
+
 	var mut sync.Mutex
+
 	running := atomic.NewBool(true)
 
 	err := callWithTimeout(t.Context(), func(ctx context.Context) error {
@@ -269,6 +271,7 @@ func TestCallWithTimeout_Exceeds(t *testing.T) {
 	t.Parallel()
 
 	var mut sync.Mutex
+
 	running := atomic.NewBool(true)
 
 	err := callWithTimeout(t.Context(), func(ctx context.Context) error {

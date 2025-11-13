@@ -128,13 +128,16 @@ func (c *multiValueCtx[T]) String() string {
 //
 // It implements the context.Context interface's Value method. The lookup strategy is:
 //
-//  1. Try to cast the key to type T (the generic Key type parameter)
-//  2. If successful, look up the key in the local vals map
+//  1. Check if the key's type is exactly T (the generic Key type parameter)
+//  2. If so, look up the key in the local vals map
 //  3. If found in the map, return the value
 //  4. If not found locally, delegate to the parent context
 //
 // This delegation pattern ensures that values from parent contexts remain accessible,
 // while local values take precedence when keys conflict.
+//
+// Note: This uses strict type checking - the key must be exactly type T, not just
+// convertible to T. This respects the context contract and prevents type confusion.
 //
 // Example:
 //
@@ -145,8 +148,11 @@ func (c *multiValueCtx[T]) String() string {
 //	fmt.Println(ctx.Value("parentKey"))  // "parentValue" (from parent)
 func (c *multiValueCtx[T]) Value(key any) any {
 	if c.vals != nil {
-		typedKey, ok := key.(T)
-		if ok {
+		// Check if key's type is exactly T (not just convertible to T)
+		if reflect.TypeOf(key) == reflect.TypeFor[T]() {
+			//nolint:forcetypeassert
+			typedKey := key.(T) // Safe because we verified the exact type
+
 			v, found := c.vals[typedKey]
 			if found {
 				return v

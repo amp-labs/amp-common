@@ -87,7 +87,7 @@ func TestNew(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	require.NotNil(t, pool)
 
@@ -99,7 +99,7 @@ func TestGetAndPut(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	defer func() {
 		_ = pool.Close()
@@ -133,7 +133,7 @@ func TestPoolGrowth(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	defer func() {
 		_ = pool.Close()
@@ -167,7 +167,7 @@ func TestCloseIdle(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	defer func() {
 		_ = pool.Close()
@@ -205,7 +205,7 @@ func TestCloseIdleMinTime(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	defer func() {
 		_ = pool.Close()
@@ -231,7 +231,7 @@ func TestClose(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	// Get multiple objects at once (so they don't get reused)
 	obj1, err := pool.Get()
@@ -267,7 +267,7 @@ func TestFactoryError(t *testing.T) {
 	factory := newMockFactory()
 	factory.createErr = errFactory
 
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 	defer func() {
 		_ = pool.Close()
 	}()
@@ -284,7 +284,7 @@ func TestCloseError(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	// Get an object
 	obj, err := pool.Get()
@@ -306,7 +306,7 @@ func TestConcurrentAccess(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	defer func() {
 		_ = pool.Close()
@@ -350,7 +350,7 @@ func TestErrPoolClosed(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	// Close the pool
 	err := pool.Close()
@@ -382,7 +382,7 @@ func TestPoolWithName(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("custom-name"))
+	pool := New(factory.create, WithName[*mockCloser]("custom-name"))
 
 	defer func() {
 		_ = pool.Close()
@@ -405,14 +405,14 @@ func TestPoolDefaultName(t *testing.T) {
 
 	poolImpl, ok := pool.(*poolImpl[*mockCloser])
 	require.True(t, ok)
-	assert.Equal(t, "pool", poolImpl.name)
+	assert.Equal(t, "pool-pool.mockCloser", poolImpl.name)
 }
 
 func TestMultipleGetsPutsReuse(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	defer func() {
 		_ = pool.Close()
@@ -462,7 +462,7 @@ func TestCloseWithOutstandingObjects(t *testing.T) {
 	t.Parallel()
 
 	factory := newMockFactory()
-	pool := New(factory.create, WithName("test-pool"))
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
 
 	// Get an object but don't put it back
 	obj, err := pool.Get()
@@ -488,4 +488,378 @@ func TestCloseWithOutstandingObjects(t *testing.T) {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Close did not complete after returning object")
 	}
+}
+
+var errInvalid = errors.New("object is invalid")
+
+func TestWithCheckValid_RejectsInvalidObjects(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+
+	// Track which object IDs are invalid
+	invalidIDs := make(map[int]bool)
+	var mu sync.Mutex
+
+	checkValid := func(obj *mockCloser) error {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if invalidIDs[obj.id] {
+			return errInvalid
+		}
+
+		return nil
+	}
+
+	pool := New(factory.create, WithCheckValid(checkValid), WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	// Get first object - should be valid
+	obj1, err := pool.Get()
+	require.NoError(t, err)
+	require.NotNil(t, obj1)
+	assert.Equal(t, 1, factory.CreatedCount())
+
+	// Mark it as invalid
+	mu.Lock()
+	invalidIDs[obj1.id] = true
+	mu.Unlock()
+
+	// Put it back
+	pool.Put(obj1)
+	time.Sleep(10 * time.Millisecond)
+
+	// Get again - should reject the invalid object and create a new one
+	obj2, err := pool.Get()
+	require.NoError(t, err)
+	require.NotNil(t, obj2)
+	assert.Equal(t, 2, factory.CreatedCount(), "should create new object after rejecting invalid one")
+	assert.NotEqual(t, obj1.id, obj2.id, "should get a different object")
+
+	// Verify the invalid object was closed
+	assert.True(t, obj1.IsClosed(), "invalid object should be closed")
+
+	// Put the valid object back
+	pool.Put(obj2)
+	time.Sleep(10 * time.Millisecond)
+}
+
+func TestWithCheckValid_ReuseValidObjects(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+
+	checkValid := func(obj *mockCloser) error {
+		// All objects are valid
+		return nil
+	}
+
+	pool := New(factory.create, WithCheckValid(checkValid), WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	// Get and put object
+	obj1, err := pool.Get()
+	require.NoError(t, err)
+	pool.Put(obj1)
+	time.Sleep(10 * time.Millisecond)
+
+	// Get again - should reuse the same object
+	obj2, err := pool.Get()
+	require.NoError(t, err)
+	assert.Equal(t, 1, factory.CreatedCount(), "should reuse valid object")
+	assert.Equal(t, obj1.id, obj2.id)
+
+	pool.Put(obj2)
+	time.Sleep(10 * time.Millisecond)
+}
+
+func TestWithCheckValid_MultipleInvalidObjects(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+
+	// All objects are invalid
+	checkValid := func(obj *mockCloser) error {
+		return errInvalid
+	}
+
+	pool := New(factory.create, WithCheckValid(checkValid), WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	// Get 3 objects
+	obj1, err := pool.Get()
+	require.NoError(t, err)
+
+	obj2, err := pool.Get()
+	require.NoError(t, err)
+
+	obj3, err := pool.Get()
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, factory.CreatedCount())
+
+	// Put them all back
+	pool.Put(obj1)
+	pool.Put(obj2)
+	pool.Put(obj3)
+	time.Sleep(50 * time.Millisecond)
+
+	// Get 3 more - all pooled objects should be rejected, creating 3 new ones
+	newObj1, err := pool.Get()
+	require.NoError(t, err)
+
+	newObj2, err := pool.Get()
+	require.NoError(t, err)
+
+	newObj3, err := pool.Get()
+	require.NoError(t, err)
+
+	// Should have created 3 more objects (total 6)
+	assert.Equal(t, 6, factory.CreatedCount())
+
+	// All original objects should be closed
+	assert.True(t, obj1.IsClosed())
+	assert.True(t, obj2.IsClosed())
+	assert.True(t, obj3.IsClosed())
+
+	// Put new objects back so Close doesn't hang
+	pool.Put(newObj1)
+	pool.Put(newObj2)
+	pool.Put(newObj3)
+	time.Sleep(10 * time.Millisecond)
+}
+
+func TestWithCheckValid_CloseIdleValidatesObjects(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+
+	// Track which object IDs are invalid
+	invalidIDs := make(map[int]bool)
+	var mu sync.Mutex
+
+	checkValid := func(obj *mockCloser) error {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if invalidIDs[obj.id] {
+			return errInvalid
+		}
+
+		return nil
+	}
+
+	pool := New(factory.create, WithCheckValid(checkValid), WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	// Get two objects
+	obj1, err := pool.Get()
+	require.NoError(t, err)
+
+	obj2, err := pool.Get()
+	require.NoError(t, err)
+
+	// Mark obj1 as invalid
+	mu.Lock()
+	invalidIDs[obj1.id] = true
+	mu.Unlock()
+
+	// Put them back
+	pool.Put(obj1)
+	pool.Put(obj2)
+	time.Sleep(10 * time.Millisecond)
+
+	// CloseIdle with high threshold (objects aren't old enough to close by age)
+	// But invalid objects should still be closed
+	closed, err := pool.CloseIdle(1 * time.Hour)
+	require.NoError(t, err)
+	assert.Equal(t, 1, closed, "should close the invalid object even though it's not old enough")
+
+	// Verify obj1 was closed but obj2 was not
+	assert.True(t, obj1.IsClosed(), "invalid object should be closed")
+	assert.False(t, obj2.IsClosed(), "valid object should not be closed")
+
+	// Get again - should reuse obj2 (the still-valid one)
+	obj3, err := pool.Get()
+	require.NoError(t, err)
+	assert.Equal(t, obj2.id, obj3.id, "should reuse the valid object")
+
+	pool.Put(obj3)
+	time.Sleep(10 * time.Millisecond)
+}
+
+func TestWithCheckValid_ConcurrentValidation(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+
+	// Randomly mark some objects as invalid
+	invalidIDs := make(map[int]bool)
+	var mu sync.Mutex
+
+	checkValid := func(obj *mockCloser) error {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if invalidIDs[obj.id] {
+			return errInvalid
+		}
+
+		return nil
+	}
+
+	pool := New(factory.create, WithCheckValid(checkValid), WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	const (
+		goroutines = 10
+		iterations = 20
+	)
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	for range goroutines {
+		go func() {
+			defer waitGroup.Done()
+
+			for range iterations {
+				obj, err := pool.Get()
+				if err != nil {
+					continue
+				}
+
+				// Randomly mark some objects as invalid
+				if obj.id%3 == 0 {
+					mu.Lock()
+					invalidIDs[obj.id] = true
+					mu.Unlock()
+				}
+
+				// Simulate some work
+				time.Sleep(1 * time.Millisecond)
+
+				pool.Put(obj)
+			}
+		}()
+	}
+
+	waitGroup.Wait()
+
+	// Validation should work correctly even under concurrent access
+	assert.Positive(t, factory.CreatedCount())
+}
+
+func TestWithCheckValid_NilCheckValidWorks(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+	// Don't provide WithCheckValid - should use default (always valid)
+	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	// Get and put object
+	obj1, err := pool.Get()
+	require.NoError(t, err)
+	pool.Put(obj1)
+	time.Sleep(10 * time.Millisecond)
+
+	// Get again - should reuse (no validation rejections)
+	obj2, err := pool.Get()
+	require.NoError(t, err)
+	assert.Equal(t, 1, factory.CreatedCount())
+	assert.Equal(t, obj1.id, obj2.id)
+
+	pool.Put(obj2)
+	time.Sleep(10 * time.Millisecond)
+}
+
+func TestWithCheckValid_ValidationErrorDuringCloseIdle(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+
+	checkValid := func(obj *mockCloser) error {
+		return errInvalid
+	}
+
+	pool := New(factory.create, WithCheckValid(checkValid), WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	// Get multiple objects at once (so they don't get reused)
+	obj1, err := pool.Get()
+	require.NoError(t, err)
+
+	obj2, err := pool.Get()
+	require.NoError(t, err)
+
+	// Put them back
+	pool.Put(obj1)
+	pool.Put(obj2)
+
+	time.Sleep(50 * time.Millisecond)
+
+	// CloseIdle should validate and close invalid objects
+	closed, err := pool.CloseIdle(1 * time.Millisecond)
+	require.NoError(t, err)
+	assert.Equal(t, 2, closed, "should close both invalid objects")
+
+	// Both should be closed
+	assert.True(t, obj1.IsClosed())
+	assert.True(t, obj2.IsClosed())
+}
+
+func TestWithCheckValid_CloseErrorDuringValidation(t *testing.T) {
+	t.Parallel()
+
+	factory := newMockFactory()
+
+	checkValid := func(obj *mockCloser) error {
+		return errInvalid
+	}
+
+	pool := New(factory.create, WithCheckValid(checkValid), WithName[*mockCloser]("test-pool"))
+
+	defer func() {
+		_ = pool.Close()
+	}()
+
+	// Get an object
+	obj1, err := pool.Get()
+	require.NoError(t, err)
+
+	// Set it to return error on close
+	obj1.closeErr = errClose
+
+	pool.Put(obj1)
+	time.Sleep(10 * time.Millisecond)
+
+	// CloseIdle should try to close the invalid object and encounter the close error
+	closed, err := pool.CloseIdle(1 * time.Hour)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "close error")
+	assert.Equal(t, 0, closed, "should not count as successfully closed")
 }

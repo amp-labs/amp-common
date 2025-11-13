@@ -5,19 +5,26 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/amp-labs/amp-common/closer"
 	"github.com/amp-labs/amp-common/should"
 	"github.com/amp-labs/amp-common/try"
 	"go.uber.org/atomic"
 )
 
 const (
-	getTimeout       = 5 * time.Second
-	putTimeout       = 10 * time.Second
+	// getTimeout is the maximum time to wait when attempting to fetch an object from the pool.
+	getTimeout = 5 * time.Second
+	// putTimeout is the maximum time to wait when attempting to return an object to the pool.
+	putTimeout = 10 * time.Second
+	// closeIdleTimeout is the maximum time to wait when attempting to close idle objects.
 	closeIdleTimeout = 30 * time.Second
 
+	// tickerFrequency determines how often the pool shuffles its idle objects to prevent starvation.
 	tickerFrequency = 30 * time.Second
 )
 
@@ -72,33 +79,61 @@ type closeIdleRequest struct {
 	doneChan chan closeIdleResponse
 }
 
-type poolOptions struct {
-	name string
+// poolOptions holds configuration options for creating a new Pool.
+// It is used internally by the Option pattern to customize pool behavior.
+type poolOptions[C io.Closer] struct {
+	name       string
+	checkValid func(C) error
 }
 
 // Option is a functional option for configuring a Pool during creation.
 // Options are passed to New and applied in order to customize pool behavior.
-type Option func(*poolOptions)
+type Option[C io.Closer] func(*poolOptions[C])
 
 // WithName sets a custom name for the pool, which is used in Prometheus metrics labels
 // to distinguish between different pools in monitoring and observability systems.
 // If not specified, the default name "pool" is used.
-func WithName(name string) Option {
-	return func(p *poolOptions) {
+func WithName[C io.Closer](name string) Option[C] {
+	return func(p *poolOptions[C]) {
 		p.name = name
 	}
+}
+
+// WithCheckValid sets a validation function that is called to verify an object's validity
+// before reusing it from the pool. If the validation function returns an error, the object
+// is closed and discarded, and a new object is created instead. This is useful for detecting
+// stale connections or corrupted resources.
+func WithCheckValid[C io.Closer](check func(C) error) Option[C] {
+	return func(p *poolOptions[C]) {
+		p.checkValid = check
+	}
+}
+
+// getTypeName will return the name of the type.
+// If the type is a pointer, it will be dereferenced.
+func getTypeName[C any]() string {
+	var zero C
+
+	tpe := fmt.Sprintf("%T", zero)
+	tpe = strings.TrimPrefix(tpe, "*")
+
+	return tpe
 }
 
 // New will create a new Pool which will grow dynamically as demand
 // increases. All objects are kept indefinitely, until CloseIdle or
 // Close is called.
-func New[C io.Closer](factory func() (C, error), opts ...Option) Pool[C] {
-	options := &poolOptions{
-		name: "pool",
+func New[C io.Closer](factory func() (C, error), opts ...Option[C]) Pool[C] {
+	options := &poolOptions[C]{
+		name: "pool-" + getTypeName[C](),
 	}
 
 	for _, opt := range opts {
 		opt(options)
+	}
+
+	if options.checkValid == nil {
+		options.checkValid = func(C) error { return nil }
 	}
 
 	poolInst := &poolImpl[C]{
@@ -108,6 +143,7 @@ func New[C io.Closer](factory func() (C, error), opts ...Option) Pool[C] {
 		ciCh:        make(chan closeIdleRequest),
 		closeCh:     make(chan error, 1),
 		create:      factory,
+		checkValid:  options.checkValid,
 		running:     atomic.NewBool(true),
 		outstanding: atomic.NewInt64(0),
 	}
@@ -128,19 +164,28 @@ func New[C io.Closer](factory func() (C, error), opts ...Option) Pool[C] {
 	return poolInst
 }
 
+// poolImpl is the concrete implementation of the Pool interface.
+// It manages a collection of io.Closer objects using a channel-based architecture
+// where all operations are coordinated through a central loop goroutine to ensure
+// thread-safety without explicit locking. Objects are stored in an in-memory slice
+// and Prometheus metrics are maintained for observability.
 type poolImpl[C io.Closer] struct {
-	name    string
-	create  func() (C, error)
-	getCh   chan getRequest[C]
-	putCh   chan putRequest[C]
-	ciCh    chan closeIdleRequest
-	drain   sync.WaitGroup
-	closeCh chan error
+	name       string
+	create     func() (C, error)
+	checkValid func(C) error
+	getCh      chan getRequest[C]
+	putCh      chan putRequest[C]
+	ciCh       chan closeIdleRequest
+	drain      sync.WaitGroup
+	closeCh    chan error
 
 	outstanding *atomic.Int64
 	running     *atomic.Bool
 }
 
+// createObject calls the factory function to create a new pooled object and updates
+// Prometheus metrics to track creation successes and failures. This method is used both
+// when the pool is empty and when Get operations time out.
 func (g *poolImpl[C]) createObject() (C, error) {
 	obj, err := g.create()
 	if err != nil {
@@ -155,22 +200,56 @@ func (g *poolImpl[C]) createObject() (C, error) {
 	}
 }
 
+// poolObject wraps a pooled object along with metadata needed for pool management.
+// The closer is a wrapped version of the object that handles panics and ensures Close
+// is only called once. The lastTouched timestamp tracks when the object was last returned
+// to the pool, enabling idle timeout logic in CloseIdle.
 type poolObject[C io.Closer] struct {
 	obj         C
+	closer      io.Closer
 	lastTouched time.Time
 }
 
+// handleGet processes a Get request by attempting to reuse an existing idle object from the pool.
+// It iterates through idle objects, validating each one with checkValid. Invalid objects are closed
+// and discarded. If a valid object is found, it is returned to the caller and marked as in-use.
+// If no valid objects exist in the pool, a new object is created via the factory function.
+// This method runs within the pool's central loop goroutine and updates Prometheus metrics.
 func (g *poolImpl[C]) handleGet(get getRequest[C], objectPool *[]poolObject[C]) {
-	if len(*objectPool) > 0 {
+	foundValid := false
+
+	for len(*objectPool) > 0 {
 		obj := (*objectPool)[0]
 		*objectPool = (*objectPool)[1:]
+
+		poolObjectsIdle.WithLabelValues(g.name).Dec()
+
+		if checkErr := g.checkValid(obj.obj); checkErr != nil {
+			slog.Warn("pool object is invalid, closing and discarding it", "error", checkErr)
+
+			poolObjectsTotal.WithLabelValues(g.name).Dec()
+
+			if err := obj.closer.Close(); err != nil { //nolint:typecheck
+				slog.Warn("unable to close pool object", "error", err)
+
+				objectsClosedErrors.WithLabelValues(g.name).Inc()
+			}
+
+			continue
+		}
+
+		foundValid = true
+
 		get.resultChan <- try.Try[C]{Value: obj.obj}
 
 		g.outstanding.Inc()
 		poolObjectsInUse.WithLabelValues(g.name).Inc()
-		poolObjectsIdle.WithLabelValues(g.name).Dec()
 		close(get.resultChan)
-	} else {
+
+		break
+	}
+
+	if !foundValid {
 		obj, err := g.createObject()
 		get.resultChan <- try.Try[C]{
 			Value: obj,
@@ -186,9 +265,15 @@ func (g *poolImpl[C]) handleGet(get getRequest[C], objectPool *[]poolObject[C]) 
 	}
 }
 
+// handlePut processes a Put request by adding the returned object back to the idle pool.
+// The object is wrapped with a panic-safe closer that ensures Close is only called once,
+// and its lastTouched timestamp is set to the current time for idle tracking. Prometheus
+// metrics are updated to reflect the state transition from in-use to idle.
+// This method runs within the pool's central loop goroutine.
 func (g *poolImpl[C]) handlePut(put putRequest[C], objectPool *[]poolObject[C]) {
 	*objectPool = append(*objectPool, poolObject[C]{
 		obj:         put.obj,
+		closer:      closer.CloseOnce(closer.HandlePanic(put.obj)),
 		lastTouched: time.Now(),
 	})
 
@@ -199,6 +284,12 @@ func (g *poolImpl[C]) handlePut(put putRequest[C], objectPool *[]poolObject[C]) 
 	close(put.doneChan)
 }
 
+// handleCloseIdle processes a CloseIdle request by iterating through all idle objects and closing
+// those that have been idle for longer than the specified minIdle duration. Objects that haven't
+// reached the idle threshold are validated with checkValid - invalid objects are closed immediately
+// regardless of age. Objects that fail to close are kept in the pool and their errors are collected.
+// Returns the count of successfully closed objects and any errors encountered.
+// This method runs within the pool's central loop goroutine and updates Prometheus metrics.
 func (g *poolImpl[C]) handleCloseIdle(closeIdleReq closeIdleRequest, objectPool *[]poolObject[C]) closeIdleResponse {
 	var errs []error
 
@@ -209,12 +300,37 @@ func (g *poolImpl[C]) handleCloseIdle(closeIdleReq closeIdleRequest, objectPool 
 	for _, obj := range *objectPool {
 		age := time.Since(obj.lastTouched)
 		if age < closeIdleReq.minIdle {
-			remainder = append(remainder, obj)
+			// Check if object is valid
+			err := g.checkValid(obj.obj)
+			if err == nil {
+				// Object is valid, keep it
+				remainder = append(remainder, obj)
+
+				continue
+			}
+
+			// Object is invalid, close and discard it
+			slog.Warn("pool object is invalid, closing and discarding it", "error", err)
+
+			poolObjectsTotal.WithLabelValues(g.name).Dec()
+
+			if err := obj.closer.Close(); err != nil { //nolint:typecheck
+				errs = append(errs, err)
+				remainder = append(remainder, obj)
+
+				objectsClosedErrors.WithLabelValues(g.name).Inc()
+			} else {
+				poolObjectsTotal.WithLabelValues(g.name).Dec()
+				poolObjectsIdle.WithLabelValues(g.name).Dec()
+				objectsClosed.WithLabelValues(g.name).Inc()
+
+				purged++
+			}
 
 			continue
 		}
 
-		if err := obj.obj.Close(); err != nil { //nolint:typecheck
+		if err := obj.closer.Close(); err != nil { //nolint:typecheck
 			errs = append(errs, err)
 			remainder = append(remainder, obj)
 
@@ -236,6 +352,19 @@ func (g *poolImpl[C]) handleCloseIdle(closeIdleReq closeIdleRequest, objectPool 
 	}
 }
 
+// loop is the central event loop that coordinates all pool operations in a single goroutine,
+// providing thread-safety without explicit locking. It processes requests from three channels:
+// getCh for Get operations, putCh for Put operations, and ciCh for CloseIdle operations.
+// The loop also periodically shuffles the object pool to prevent starvation issues.
+//
+// Shutdown is coordinated through channel closures: when Close() is called, channels are closed
+// in sequence (getCh first, then putCh, then ciCh). The loop continues processing until all three
+// channels are closed AND there are no outstanding in-use objects. This ensures graceful shutdown
+// where all borrowed objects are returned before final cleanup.
+//
+// The drain WaitGroup is used to signal when it's safe to close putCh - this happens after getCh
+// is closed and all outstanding objects have been returned. After the loop exits, all remaining
+// idle objects are closed and Prometheus metrics are reset to zero.
 func (g *poolImpl[C]) loop() {
 	defer g.running.Store(false)
 	defer poolAlive.WithLabelValues(g.name).Set(0)
@@ -279,6 +408,11 @@ func (g *poolImpl[C]) loop() {
 				done++
 			}
 		case <-ticker.C:
+			// Shuffle the object pool occasionally to avoid any potential
+			// starvation issues.
+			rand.Shuffle(len(objectPool), func(i, j int) {
+				objectPool[i], objectPool[j] = objectPool[j], objectPool[i]
+			})
 		}
 
 		outstanding := g.outstanding.Load()
@@ -302,7 +436,7 @@ func (g *poolImpl[C]) loop() {
 	var errs []error
 
 	for _, d := range objectPool {
-		if err := d.obj.Close(); err != nil { //nolint:typecheck
+		if err := d.closer.Close(); err != nil { //nolint:typecheck
 			errs = append(errs, err)
 
 			objectsClosedErrors.WithLabelValues(g.name).Inc()
@@ -319,6 +453,9 @@ func (g *poolImpl[C]) loop() {
 	close(g.closeCh)
 }
 
+// joinErrors combines multiple errors into a single error. It returns nil if there are no errors,
+// returns the single error directly if there's only one, and uses errors.Join for multiple errors.
+// This helper avoids unnecessary allocations when there are zero or one errors.
 func joinErrors(errs ...error) error {
 	switch {
 	case len(errs) == 0:

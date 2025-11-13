@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 make test       # Run all tests
+make race       # Run tests with race detection
 go test -v ./...  # Run tests with verbose output
 ```
 
@@ -116,6 +117,8 @@ go test -v -run TestName ./package-name
 - **`build`** - Build information utilities
 - **`http/transport`** - HTTP transport configuration with DNS caching
 - **`channels`** - Channel utilities (`CloseChannelIgnorePanic`)
+- **`closer`** - Resource management utilities for `io.Closer` (`Closer` collector, `CloseOnce`, `HandlePanic`, `CustomCloser`)
+- **`collectable`** - Interface combining `Hashable` and `Comparable` for use in Map/Set data structures
 - **`optional`** - Type-safe Optional/Maybe type (`Some[T]`, `None[T]`, `Map`, `FlatMap`)
 - **`pointer`** - Pointer utilities (`To[T]`, `Value[T]`)
 - **`stage`** - Environment detection (local, test, dev, staging, prod)
@@ -124,6 +127,7 @@ go test -v -run TestName ./package-name
 - **`envtypes`** - Common environment variable types (HostPort, Path)
 - **`contexts`** - Context utilities (`EnsureContext`, `IsContextAlive`, `WithValue[K,V]`, `GetValue[K,V]`)
 - **`emoji`** - Emoji constants for terminal output and UI (Rocket, Fire, ThumbsUp, Warning, etc.)
+- **`zero`** - Zero value utilities for generic types (`Value[T]()`, `IsZero[T](value)`)
 - **`debug`** - Debugging utilities (for local development only, not for production use)
 
 ## Dependency Management

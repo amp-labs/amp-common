@@ -283,3 +283,183 @@ func TestType_CustomTypes(t *testing.T) {
 		require.ErrorIs(t, err, commonerrors.ErrWrongType)
 	})
 }
+
+func TestTrue(t *testing.T) {
+	t.Parallel()
+
+	t.Run("does not panic when value is true", func(t *testing.T) {
+		t.Parallel()
+
+		require.NotPanics(t, func() {
+			assert.True(true)
+		})
+	})
+
+	t.Run("panics with default message when value is false", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "assertion failed", func() {
+			assert.True(false)
+		})
+	})
+
+	t.Run("panics with custom message when value is false", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "custom error message", func() {
+			assert.True(false, "custom error message")
+		})
+	})
+
+	t.Run("panics with formatted message when value is false", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "expected 42 but got 0", func() {
+			assert.True(false, "expected %d but got %d", 42, 0)
+		})
+	})
+
+	t.Run("panics with args when first arg is not string", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "assertion failed: [42 test]", func() {
+			assert.True(false, 42, "test")
+		})
+	})
+}
+
+func TestFalse(t *testing.T) {
+	t.Parallel()
+
+	t.Run("does not panic when value is false", func(t *testing.T) {
+		t.Parallel()
+
+		require.NotPanics(t, func() {
+			assert.False(false)
+		})
+	})
+
+	t.Run("panics with default message when value is true", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "assertion failed", func() {
+			assert.False(true)
+		})
+	})
+
+	t.Run("panics with custom message when value is true", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "expected false but got true", func() {
+			assert.False(true, "expected false but got true")
+		})
+	})
+
+	t.Run("panics with formatted message when value is true", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "expected false", func() {
+			assert.False(true, "expected %s", "false")
+		})
+	})
+}
+
+func TestNil(t *testing.T) {
+	t.Parallel()
+
+	t.Run("does not panic when value is nil", func(t *testing.T) {
+		t.Parallel()
+
+		require.NotPanics(t, func() {
+			assert.Nil(nil)
+		})
+	})
+
+	t.Run("panics when typed nil pointer is not recognized as nil", func(t *testing.T) {
+		t.Parallel()
+
+		// This is a Go gotcha: typed nil pointers are not nil when passed as any
+		// because the interface contains type information
+		var ptr *int
+
+		require.PanicsWithValue(t, "assertion failed", func() {
+			assert.Nil(ptr)
+		})
+	})
+
+	t.Run("panics with default message when value is not nil", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "assertion failed", func() {
+			assert.Nil("not nil")
+		})
+	})
+
+	t.Run("panics with custom message when value is not nil", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "expected nil value", func() {
+			assert.Nil(42, "expected nil value")
+		})
+	})
+
+	t.Run("panics when non-nil pointer", func(t *testing.T) {
+		t.Parallel()
+
+		val := 42
+
+		require.PanicsWithValue(t, "pointer should be nil", func() {
+			assert.Nil(&val, "pointer should be nil")
+		})
+	})
+}
+
+func TestNotNil(t *testing.T) {
+	t.Parallel()
+
+	t.Run("does not panic when value is not nil", func(t *testing.T) {
+		t.Parallel()
+
+		require.NotPanics(t, func() {
+			assert.NotNil("not nil")
+		})
+	})
+
+	t.Run("does not panic when non-nil pointer", func(t *testing.T) {
+		t.Parallel()
+
+		val := 42
+
+		require.NotPanics(t, func() {
+			assert.NotNil(&val)
+		})
+	})
+
+	t.Run("panics with default message when value is nil", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "assertion failed", func() {
+			assert.NotNil(nil)
+		})
+	})
+
+	t.Run("panics with custom message when value is nil", func(t *testing.T) {
+		t.Parallel()
+
+		require.PanicsWithValue(t, "value must not be nil", func() {
+			assert.NotNil(nil, "value must not be nil")
+		})
+	})
+
+	t.Run("does not panic for typed nil pointer", func(t *testing.T) {
+		t.Parallel()
+
+		// This is a Go gotcha: typed nil pointers are not nil when passed as any
+		// because the interface contains type information
+		var ptr *int
+
+		require.NotPanics(t, func() {
+			assert.NotNil(ptr)
+		})
+	})
+}

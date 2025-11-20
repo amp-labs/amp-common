@@ -134,6 +134,37 @@ func ConfigureLogging(app string, opts ...Option) *slog.Logger {
 	return ConfigureLoggingWithOptions(options)
 }
 
+// WithMuted adds a muted flag to the context. When muted is true, all logging
+// operations on this context will be suppressed (no log output will be produced).
+// This is useful for silencing logs in specific code paths, such as health checks
+// or other high-frequency operations that would otherwise create excessive log noise.
+func WithMuted(ctx context.Context, muted bool) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	return context.WithValue(ctx, contextKey("mute"), muted)
+}
+
+// isMuted checks if the context has the muted flag set to true.
+// Returns false if the context is nil or if the mute flag is not set.
+// This is used internally by getBaseLogger to determine whether to return
+// a nullLogger that suppresses all output.
+func isMuted(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+
+	val := ctx.Value(contextKey("mute"))
+	if val == nil {
+		return false
+	}
+
+	muted, ok := val.(bool)
+
+	return ok && muted
+}
+
 // WithSensitive adds a sensitive flag to the context. If the sensitive flag is set to true,
 // the logger will not log the customer ID. This is useful for logging sensitive information
 // that should not be exposed to customers.
@@ -399,8 +430,43 @@ func IsSensitiveMessage(ctx context.Context) bool {
 	return isSensitive
 }
 
+// nullHandler is a slog.Handler implementation that discards all log output.
+// It is used to implement the muted logging feature. All methods are no-ops:
+// - Enabled always returns false (no log levels are enabled)
+// - Handle does nothing with log records
+// - WithAttrs and WithGroup return the same handler (no-op transformations)
+type nullHandler struct{}
+
+func (n *nullHandler) Enabled(_ context.Context, _ slog.Level) bool {
+	return false
+}
+
+func (n *nullHandler) Handle(_ context.Context, _ slog.Record) error {
+	return nil
+}
+
+func (n *nullHandler) WithAttrs(_ []slog.Attr) slog.Handler {
+	return n
+}
+
+func (n *nullHandler) WithGroup(_ string) slog.Handler {
+	return n
+}
+
+// nullLogger is a logger that discards all output. It is returned by getBaseLogger
+// when the context has the muted flag set to true. This allows code to call logging
+// methods without producing any output, useful for suppressing logs from health checks
+// and other high-frequency operations.
+var nullLogger = slog.New(&nullHandler{})
+
 // getBaseLogger returns a logger with the subsystem and pod name already set.
 func getBaseLogger(ctx context.Context) *slog.Logger {
+	// If the logger is muted, we still return a logger,
+	// but the logger is incapable of outputting anything.
+	if isMuted(ctx) {
+		return nullLogger
+	}
+
 	// Get the default logger
 	logger := slog.Default()
 

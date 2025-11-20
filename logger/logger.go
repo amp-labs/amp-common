@@ -434,7 +434,7 @@ func IsSensitiveMessage(ctx context.Context) bool {
 // It is used to implement the muted logging feature. All methods are no-ops:
 // - Enabled always returns false (no log levels are enabled)
 // - Handle does nothing with log records
-// - WithAttrs and WithGroup return the same handler (no-op transformations)
+// - WithAttrs and WithGroup return the same handler (no-op transformations).
 type nullHandler struct{}
 
 func (n *nullHandler) Enabled(_ context.Context, _ slog.Level) bool {

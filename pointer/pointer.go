@@ -33,3 +33,62 @@ func Value[T any](p *T) (T, bool) {
 
 	return *p, true
 }
+
+// ValueOrDefault safely dereferences a pointer and returns the value.
+// If the pointer is nil, it returns the provided default value.
+// If the pointer is non-nil, it returns the dereferenced value.
+//
+// Example:
+//
+//	var p *string
+//	val := pointer.ValueOrDefault(p, "default")  // "default"
+//
+//	s := pointer.To("hello")
+//	val := pointer.ValueOrDefault(s, "default")  // "hello"
+func ValueOrDefault[T any](p *T, def T) T {
+	if p == nil {
+		return def
+	}
+
+	return *p
+}
+
+// ValueOrZero safely dereferences a pointer and returns the value.
+// If the pointer is nil, it returns the zero value of type T.
+// If the pointer is non-nil, it returns the dereferenced value.
+//
+// Example:
+//
+//	var p *string
+//	val := pointer.ValueOrZero(p)  // ""
+//
+//	s := pointer.To("hello")
+//	val := pointer.ValueOrZero(s)  // "hello"
+func ValueOrZero[T any](p *T) T {
+	if p == nil {
+		var zero T
+
+		return zero
+	}
+
+	return *p
+}
+
+// ValueOrPanic dereferences a pointer and returns the value.
+// If the pointer is nil, it panics with a message "pointer is nil".
+// Use this when a nil pointer represents a programming error.
+//
+// Example:
+//
+//	s := pointer.To("hello")
+//	val := pointer.ValueOrPanic(s)  // "hello"
+//
+//	var p *string
+//	val := pointer.ValueOrPanic(p)  // panics
+func ValueOrPanic[T any](p *T) T {
+	if p == nil {
+		panic("pointer is nil")
+	}
+
+	return *p
+}

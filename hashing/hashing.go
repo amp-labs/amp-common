@@ -15,6 +15,7 @@ import (
 	"math"
 
 	"github.com/OneOfOne/xxhash"
+	"github.com/google/uuid"
 	"github.com/zeebo/xxh3"
 )
 
@@ -401,4 +402,19 @@ func (b HashableBool) UpdateHash(h hash.Hash) error {
 // Equals returns true if the two HashableBool values are equal.
 func (b HashableBool) Equals(other HashableBool) bool {
 	return bool(b) == bool(other)
+}
+
+// HashableUUID is a UUID type that implements the Hashable and Comparable interfaces.
+type HashableUUID uuid.UUID
+
+// UpdateHash writes the UUID bytes to the hash.
+func (u HashableUUID) UpdateHash(h hash.Hash) error {
+	_, err := h.Write(u[:])
+
+	return err
+}
+
+// Equals returns true if the two HashableUUID values are equal.
+func (u HashableUUID) Equals(other HashableUUID) bool {
+	return bytes.Equal(u[:], other[:])
 }

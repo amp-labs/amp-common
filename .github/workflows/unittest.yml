@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Predefined action from marketplace. Clones the source code.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Predefined action from marketplace. Installs go on the system.
       - name: Set up go

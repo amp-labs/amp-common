@@ -4,8 +4,7 @@ on:
     types: [created, edited]
 jobs:
   auto-approve:
-    runs-on:
-      group: Ampersand Private
+    runs-on: ubuntu-latest
     if: github.event.issue.pull_request && contains(github.event.comment.body, '/on-call-override')
     permissions:
       pull-requests: write

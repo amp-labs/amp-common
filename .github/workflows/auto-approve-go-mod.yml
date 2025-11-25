@@ -6,8 +6,7 @@ on:
       - 'go.sum'
 jobs:
   auto-approve:
-    runs-on:
-      group: Ampersand Private
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:

@@ -2,8 +2,7 @@ name: Go Report Card
 on: [push]
 jobs:
   report_card:
-    runs-on:
-      group: Ampersand Private
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 

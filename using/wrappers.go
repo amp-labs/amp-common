@@ -1,6 +1,7 @@
 package using
 
 import (
+	"fmt"
 	"io"
 	"os"
 )
@@ -8,7 +9,7 @@ import (
 // CreateFile returns a Resource that creates a new file at the given path.
 // The file will be created with mode 0666 (before umask) and truncated if it already exists.
 // The file is automatically closed when the Resource is used.
-func CreateFile(path string) Resource[*os.File] {
+func CreateFile(path string) *Resource[*os.File] {
 	return NewResource(func() (*os.File, Closer, error) {
 		f, err := os.Create(path)
 		if err != nil {
@@ -21,7 +22,7 @@ func CreateFile(path string) Resource[*os.File] {
 
 // OpenFile returns a Resource that opens an existing file at the given path for reading.
 // The file is automatically closed when the Resource is used.
-func OpenFile(path string) Resource[*os.File] {
+func OpenFile(path string) *Resource[*os.File] {
 	return NewResource(func() (*os.File, Closer, error) {
 		f, err := os.Open(path)
 		if err != nil {
@@ -34,7 +35,7 @@ func OpenFile(path string) Resource[*os.File] {
 
 // File wraps an existing *os.File as a Resource.
 // The file is automatically closed when the Resource is used.
-func File(file *os.File) Resource[*os.File] {
+func File(file *os.File) *Resource[*os.File] {
 	return NewResource(func() (*os.File, Closer, error) {
 		return file, WrapCloser(file), nil
 	})
@@ -43,7 +44,7 @@ func File(file *os.File) Resource[*os.File] {
 // Writer wraps an io.Writer as a Resource.
 // If the writer implements io.WriteCloser, it will be closed automatically.
 // Otherwise, a no-op closer is used.
-func Writer(writer io.Writer) Resource[io.Writer] {
+func Writer(writer io.Writer) *Resource[io.Writer] {
 	wc, ok := writer.(io.WriteCloser)
 	if ok {
 		return NewResource(func() (io.Writer, Closer, error) {
@@ -61,7 +62,7 @@ func Writer(writer io.Writer) Resource[io.Writer] {
 // Reader wraps an io.Reader as a Resource.
 // If the reader implements io.ReadCloser, it will be closed automatically.
 // Otherwise, a no-op closer is used.
-func Reader(reader io.Reader) Resource[io.Reader] {
+func Reader(reader io.Reader) *Resource[io.Reader] {
 	rc, ok := reader.(io.ReadCloser)
 	if ok {
 		return NewResource(func() (io.Reader, Closer, error) {
@@ -79,7 +80,7 @@ func Reader(reader io.Reader) Resource[io.Reader] {
 // ReadWriter wraps an io.ReadWriter as a Resource.
 // If the reader/writer implements io.ReadWriteCloser, it will be closed automatically.
 // Otherwise, a no-op closer is used.
-func ReadWriter(rw io.ReadWriter) Resource[io.ReadWriter] {
+func ReadWriter(rw io.ReadWriter) *Resource[io.ReadWriter] {
 	rwc, ok := rw.(io.ReadWriteCloser)
 	if ok {
 		return NewResource(func() (io.ReadWriter, Closer, error) {
@@ -92,6 +93,54 @@ func ReadWriter(rw io.ReadWriter) Resource[io.ReadWriter] {
 			}, nil
 		})
 	}
+}
+
+// TempDir returns a Resource that creates a temporary directory.
+// The directory will be created in the specified dir with the given pattern.
+// If dir is empty, the default temporary directory is used.
+// The directory and all its contents are automatically removed when the Resource is used.
+func TempDir(dir, pattern string) *Resource[string] {
+	return NewResource(func() (string, Closer, error) {
+		path, err := os.MkdirTemp(dir, pattern)
+		if err != nil {
+			return "", nil, err
+		}
+
+		return path, func() error {
+			if err := os.RemoveAll(path); err != nil {
+				return fmt.Errorf("failed to remove temporary directory %q: %w", path, err)
+			}
+
+			return nil
+		}, nil
+	})
+}
+
+// TempFile returns a Resource that creates a temporary file.
+// The file will be created in the specified dir with the given pattern.
+// If dir is empty, the default temporary directory is used.
+// The file is automatically closed and removed when the Resource is used.
+func TempFile(dir, pattern string) *Resource[*os.File] {
+	return NewResource(func() (*os.File, Closer, error) {
+		file, err := os.CreateTemp(dir, pattern)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return file, func() error {
+			name := file.Name()
+
+			if err := file.Close(); err != nil {
+				return fmt.Errorf("error closing temp file %q: %w", name, err)
+			}
+
+			if err := os.Remove(name); err != nil {
+				return fmt.Errorf("error removing temp file %q: %w", name, err)
+			}
+
+			return nil
+		}, nil
+	})
 }
 
 // WrapCloser converts an io.Closer into a Closer function.

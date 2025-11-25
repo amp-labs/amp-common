@@ -6,8 +6,7 @@ on:
   pull_request: {}
 jobs:
   race-tests:
-    runs-on:
-      group: Ampersand Private
+    runs-on: ubuntu-latest
     steps:
       # Predefined action from marketplace. Clones the source code.
       - uses: actions/checkout@v5

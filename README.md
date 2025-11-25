@@ -4,6 +4,8 @@
 
 This repository contains shared Go libraries and utilities used across Ampersand projects. It provides a collection of reusable packages for common functionality like actor models, object pooling, concurrent execution, environment variable parsing, telemetry, and more.
 
+![amp-common logo](https://raw.githubusercontent.com/amp-labs/amp-common/refs/heads/main/docs/logo.png)
+
 ## Overview
 
 `amp-common` is a Go library (not a standalone application) that provides shared utilities and packages. It uses Go 1.24.6 and is published as `github.com/amp-labs/amp-common`.

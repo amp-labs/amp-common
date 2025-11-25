@@ -74,6 +74,10 @@ func create(cfg *config) *http.Transport {
 		envutil.Default(defaultExpectContinueTimeout)).
 		ValueOrElse(defaultExpectContinueTimeout)
 
+	disableHTTP2 := envutil.Bool("HTTP_TRANSPORT_DISABLE_HTTP2",
+		envutil.Default(true)).
+		ValueOrElse(true)
+
 	forceAttemptHTTP2 := envutil.Bool("HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2",
 		envutil.Default(defaultForceAttemptHTTP2)).
 		ValueOrElse(defaultForceAttemptHTTP2)
@@ -96,6 +100,10 @@ func create(cfg *config) *http.Transport {
 		IdleConnTimeout:       idleConnTimeout,
 		TLSHandshakeTimeout:   tlsHandshakeTimeout,
 		ExpectContinueTimeout: expectContinueTimeout,
+	}
+
+	if disableHTTP2 {
+		transport.TLSNextProto = map[string]func(string, *tls.Conn) http.RoundTripper{}
 	}
 
 	if cfg.DisableConnectionPooling {

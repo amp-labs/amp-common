@@ -1560,3 +1560,94 @@ func TestHashHex(t *testing.T) {
 		assert.Empty(t, result)
 	})
 }
+
+func TestHashableUUID_UpdateHash(t *testing.T) {
+	t.Parallel()
+
+	u := HashableUUID{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
+	h := &mockHash{}
+
+	err := u.UpdateHash(h)
+	require.NoError(t, err)
+	assert.Len(t, h.data, 16)
+	assert.Equal(t, u[:], h.data)
+}
+
+func TestHashableUUID_Equals(t *testing.T) {
+	t.Parallel()
+
+	uuid1 := HashableUUID{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
+	uuid2 := HashableUUID{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
+	uuid3 := HashableUUID{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	zeroUUID := HashableUUID{}
+
+	tests := []struct {
+		name     string
+		a        HashableUUID
+		b        HashableUUID
+		expected bool
+	}{
+		{
+			name:     "equal UUIDs",
+			a:        uuid1,
+			b:        uuid2,
+			expected: true,
+		},
+		{
+			name:     "different UUIDs",
+			a:        uuid1,
+			b:        uuid3,
+			expected: false,
+		},
+		{
+			name:     "zero UUIDs",
+			a:        zeroUUID,
+			b:        HashableUUID{},
+			expected: true,
+		},
+		{
+			name:     "zero vs non-zero",
+			a:        zeroUUID,
+			b:        uuid1,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result := tt.a.Equals(tt.b)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHashableUUID_HashConsistency(t *testing.T) {
+	t.Parallel()
+
+	uuid := HashableUUID{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
+
+	hash1, err1 := Sha256(uuid)
+	require.NoError(t, err1)
+
+	hash2, err2 := Sha256(uuid)
+	require.NoError(t, err2)
+
+	assert.Equal(t, hash1, hash2, "same UUID should produce same hash")
+}
+
+func TestHashableUUID_DifferentInputs(t *testing.T) {
+	t.Parallel()
+
+	uuid1 := HashableUUID{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
+	uuid2 := HashableUUID{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+
+	hash1, err1 := Sha256(uuid1)
+	require.NoError(t, err1)
+
+	hash2, err2 := Sha256(uuid2)
+	require.NoError(t, err2)
+
+	assert.NotEqual(t, hash1, hash2, "different UUIDs should produce different hashes")
+}

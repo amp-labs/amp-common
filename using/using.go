@@ -46,6 +46,10 @@ type Resource[V any] struct {
 // is properly closed afterward. If both the function and closer return errors, both
 // are collected and returned as a combined error.
 func (p *Resource[V]) Use(userFunc func(value V) error) (errOut error) {
+	if p == nil {
+		return ErrResourceNil
+	}
+
 	p.released = false
 
 	return use(p, userFunc)

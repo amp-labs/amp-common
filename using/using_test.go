@@ -43,7 +43,7 @@ func TestUse_Success(t *testing.T) {
 func TestUse_NilResource(t *testing.T) {
 	t.Parallel()
 
-	var resource Resource[string]
+	var resource *Resource[string]
 
 	err := resource.Use(func(value string) error {
 		return nil

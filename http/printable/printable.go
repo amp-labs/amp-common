@@ -249,7 +249,8 @@ func (p *Payload) IsTruncated() bool {
 		return false
 	}
 
-	return p.GetTruncatedLength() < p.Length
+	// Redaction makes this logic a bit weird
+	return p.GetTruncatedLength() != p.Length
 }
 
 // Clone creates a deep copy of the payload. Returns nil if the original is nil.
@@ -564,13 +565,26 @@ func getDataAndMimeType(bcr bodyContentReader) (data []byte, mimeType string, ch
 		return nil, "", "", nil
 	}
 
+	rawData, err := peekBody(bcr)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("error peeking body: %w", err)
+	}
+
+	if rawData == nil {
+		return nil, "", "", nil
+	}
+
 	// Check MIME type
 	contentType := bcr.GetHeaders().Get("Content-Type")
+
+	if len(contentType) == 0 {
+		contentType = sniffContentType(rawData, bcr.GetHeaders())
+	}
 
 	mimeType, params, err := mime.ParseMediaType(contentType)
 	if err != nil {
 		// If parsing fails, fallback to sniffing the content
-		mimeType = ""
+		mimeType = sniffContentType(rawData, bcr.GetHeaders())
 	}
 
 	charsetStr := ""
@@ -578,16 +592,21 @@ func getDataAndMimeType(bcr bodyContentReader) (data []byte, mimeType string, ch
 		charsetStr = strings.ToLower(cs)
 	}
 
-	rawData, err := peekBody(bcr)
-	if err != nil {
-		return nil, "", "", fmt.Errorf("error peeking response body: %w", err)
-	}
-
-	if rawData == nil {
-		return nil, "", "", nil
-	}
-
 	return rawData, mimeType, charsetStr, nil
+}
+
+// sniffContentType attempts to detect the MIME type of the given data by inspecting its content.
+// If the X-Content-Type-Options header is set to "nosniff", it returns "application/octet-stream"
+// to respect the browser's nosniff directive. Otherwise, it uses http.DetectContentType to sniff
+// the content type from the data bytes.
+func sniffContentType(data []byte, headers http.Header) string {
+	opts := headers.Get("X-Content-Type-Options")
+
+	if strings.ToLower(strings.TrimSpace(opts)) == "nosniff" {
+		return "application/octet-stream"
+	} else {
+		return http.DetectContentType(data)
+	}
 }
 
 // getDataAsUtf8 attempts to decode the given data as UTF-8 using the provided charset hint.

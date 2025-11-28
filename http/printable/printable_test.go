@@ -842,3 +842,163 @@ func TestPayload_TruncatePreservesTruncationInfo(t *testing.T) {
 	assert.Equal(t, int64(10), truncated2.TruncatedLength)
 	assert.True(t, truncated2.IsTruncated())
 }
+
+// Test X-Content-Type-Options: nosniff header handling
+
+func TestRequest_NosniffWithoutContentType(t *testing.T) {
+	t.Parallel()
+
+	// Text that would normally be detected as text/plain, but nosniff should force binary
+	textBody := "This is plain text that would normally be detected as text/plain"
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+	require.NoError(t, err)
+
+	// No Content-Type header, but set X-Content-Type-Options to nosniff
+	req.Header.Set("X-Content-Type-Options", "nosniff")
+
+	payload, err := printable.Request(req, nil)
+	require.NoError(t, err)
+	require.NotNil(t, payload)
+
+	// With nosniff, content should be treated as application/octet-stream (binary)
+	// and therefore base64 encoded
+	assert.True(t, payload.IsBase64(), "Content should be base64 encoded when nosniff is set")
+	assert.Equal(t, int64(len(textBody)), payload.GetLength())
+
+	// Verify we can decode it back
+	decoded, err := payload.GetContentBytes()
+	require.NoError(t, err)
+	assert.Equal(t, []byte(textBody), decoded)
+}
+
+func TestRequest_NosniffWithInvalidContentType(t *testing.T) {
+	t.Parallel()
+
+	textBody := "Some text content"
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+	require.NoError(t, err)
+
+	// Invalid Content-Type header (will fail to parse)
+	req.Header.Set("Content-Type", "invalid/content/type/format")
+	req.Header.Set("X-Content-Type-Options", "nosniff")
+
+	payload, err := printable.Request(req, nil)
+	require.NoError(t, err)
+	require.NotNil(t, payload)
+
+	// Should be base64 encoded due to nosniff
+	assert.True(t, payload.IsBase64(), "Content should be base64 encoded when nosniff is set")
+}
+
+func TestRequest_NosniffWithWhitespace(t *testing.T) {
+	t.Parallel()
+
+	textBody := "Text content"
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+	require.NoError(t, err)
+
+	// X-Content-Type-Options with leading/trailing whitespace
+	req.Header.Set("X-Content-Type-Options", "  nosniff  ")
+
+	payload, err := printable.Request(req, nil)
+	require.NoError(t, err)
+	require.NotNil(t, payload)
+
+	// Should be base64 encoded because whitespace is trimmed
+	assert.True(t, payload.IsBase64(), "Content should be base64 encoded when nosniff is set with whitespace")
+}
+
+func TestRequest_NosniffNotSet(t *testing.T) {
+	t.Parallel()
+
+	textBody := "This is plain text"
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+	require.NoError(t, err)
+
+	// No Content-Type header and no X-Content-Type-Options
+	// Content should be sniffed and detected as text
+
+	payload, err := printable.Request(req, nil)
+	require.NoError(t, err)
+	require.NotNil(t, payload)
+
+	// Should NOT be base64 encoded - should be detected as text
+	assert.False(t, payload.IsBase64(), "Content should not be base64 encoded when nosniff is not set")
+	assert.Equal(t, textBody, payload.GetContent())
+}
+
+func TestRequest_NosniffDifferentValue(t *testing.T) {
+	t.Parallel()
+
+	textBody := "This is plain text"
+	req, err := http.NewRequestWithContext(
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+	require.NoError(t, err)
+
+	// X-Content-Type-Options set to something other than "nosniff"
+	req.Header.Set("X-Content-Type-Options", "other-value")
+
+	payload, err := printable.Request(req, nil)
+	require.NoError(t, err)
+	require.NotNil(t, payload)
+
+	// Should be detected as text (nosniff check should fail)
+	assert.False(t, payload.IsBase64(), "Content should not be base64 encoded when nosniff is not the value")
+	assert.Equal(t, textBody, payload.GetContent())
+}
+
+func TestResponse_NosniffWithoutContentType(t *testing.T) {
+	t.Parallel()
+
+	textBody := "Response text content"
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{},
+		Body:       io.NopCloser(strings.NewReader(textBody)),
+	}
+
+	// No Content-Type but set X-Content-Type-Options to nosniff
+	resp.Header.Set("X-Content-Type-Options", "nosniff")
+
+	payload, err := printable.Response(resp, nil)
+	require.NoError(t, err)
+	require.NotNil(t, payload)
+
+	// Should be base64 encoded due to nosniff
+	assert.True(t, payload.IsBase64(), "Response content should be base64 encoded when nosniff is set")
+	assert.Equal(t, int64(len(textBody)), payload.GetLength())
+
+	// Verify we can decode it back
+	decoded, err := payload.GetContentBytes()
+	require.NoError(t, err)
+	assert.Equal(t, []byte(textBody), decoded)
+}
+
+func TestResponse_NosniffWithValidContentType(t *testing.T) {
+	t.Parallel()
+
+	jsonBody := `{"key":"value"}`
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{},
+		Body:       io.NopCloser(strings.NewReader(jsonBody)),
+	}
+
+	// Valid Content-Type header - nosniff should have no effect
+	// because the Content-Type header is present and valid
+	resp.Header.Set("Content-Type", "application/json")
+	resp.Header.Set("X-Content-Type-Options", "nosniff")
+
+	payload, err := printable.Response(resp, nil)
+	require.NoError(t, err)
+	require.NotNil(t, payload)
+
+	// Should NOT be base64 encoded because Content-Type is valid
+	// and application/json is a printable MIME type
+	assert.False(t, payload.IsBase64(), "JSON should not be base64 encoded when Content-Type is valid")
+	assert.JSONEq(t, jsonBody, payload.GetContent())
+}

@@ -470,3 +470,147 @@ func CancelableCloser(c io.Closer) (closer io.Closer, cancel func()) {
 
 	return cc, cc.cancel
 }
+
+// writer is an internal implementation that combines an io.Writer with an io.Closer
+// to create an io.WriteCloser. This allows attaching custom cleanup logic to any writer.
+type writer struct {
+	w io.Writer // The underlying writer for Write operations
+	c io.Closer // The closer to invoke when Close() is called
+}
+
+// Write delegates to the underlying writer.
+func (w *writer) Write(p []byte) (n int, err error) {
+	return w.w.Write(p)
+}
+
+// Close invokes the attached closer's Close() method.
+func (w *writer) Close() error {
+	return w.c.Close()
+}
+
+// ForWriter creates an io.WriteCloser by combining an io.Writer with an io.Closer.
+// This is useful when you have a writer that doesn't implement Close() (like bytes.Buffer),
+// but you want to attach cleanup logic to create an io.WriteCloser.
+//
+// The writer handles Write() operations, while the closer handles Close() operations.
+// This allows you to add resource cleanup to any writer without modifying it.
+//
+// Special cases:
+//   - Panics if w is nil (a writer is required)
+//   - If c is nil, uses a no-op closer that always returns nil
+//
+// Example usage - adding cleanup to bytes.Buffer:
+//
+//	var buf bytes.Buffer
+//	cleanup := func() error {
+//	    log.Println("buffer processing complete")
+//	    return nil
+//	}
+//	wc := ForWriter(&buf, CustomCloser(cleanup))
+//	defer wc.Close()
+//
+//	wc.Write([]byte("data"))
+//
+// Example usage - combining writer with file cleanup:
+//
+//	file, err := os.Create("output.txt")
+//	if err != nil {
+//	    return err
+//	}
+//	// Use a different writer (e.g., compressed) but close the file
+//	gzWriter := gzip.NewWriter(file)
+//	wc := ForWriter(gzWriter, file)
+//	defer wc.Close() // Closes the file, not the gzip writer
+//
+// Example usage - no cleanup needed:
+//
+//	var buf bytes.Buffer
+//	wc := ForWriter(&buf, nil) // No cleanup, just satisfies io.WriteCloser interface
+//	wc.Write([]byte("data"))
+//	wc.Close() // No-op
+func ForWriter(w io.Writer, c io.Closer) io.WriteCloser {
+	if w == nil {
+		panic("writer is nil")
+	}
+
+	if c == nil {
+		c = CustomCloser(func() error { return nil })
+	}
+
+	return &writer{w: w, c: c}
+}
+
+// reader is an internal implementation that combines an io.Reader with an io.Closer
+// to create an io.ReadCloser. This allows attaching custom cleanup logic to any reader.
+type reader struct {
+	r io.Reader // The underlying reader for Read operations
+	c io.Closer // The closer to invoke when Close() is called
+}
+
+// Read delegates to the underlying reader.
+func (r *reader) Read(p []byte) (n int, err error) {
+	return r.r.Read(p)
+}
+
+// Close invokes the attached closer's Close() method.
+func (r *reader) Close() error {
+	return r.c.Close()
+}
+
+// ForReader creates an io.ReadCloser by combining an io.Reader with an io.Closer.
+// This is useful when you have a reader that doesn't implement Close() (like bytes.Reader),
+// but you want to attach cleanup logic to create an io.ReadCloser.
+//
+// The reader handles Read() operations, while the closer handles Close() operations.
+// This allows you to add resource cleanup to any reader without modifying it.
+//
+// Special cases:
+//   - Panics if r is nil (a reader is required)
+//   - If c is nil, uses a no-op closer that always returns nil
+//
+// Example usage - adding cleanup to bytes.Reader:
+//
+//	data := []byte("example data")
+//	reader := bytes.NewReader(data)
+//	cleanup := func() error {
+//	    log.Println("reading complete")
+//	    return nil
+//	}
+//	rc := ForReader(reader, CustomCloser(cleanup))
+//	defer rc.Close()
+//
+//	io.ReadAll(rc)
+//
+// Example usage - combining reader with file cleanup:
+//
+//	file, err := os.Open("input.txt")
+//	if err != nil {
+//	    return err
+//	}
+//	// Use a different reader (e.g., decompressed) but close the file
+//	gzReader, err := gzip.NewReader(file)
+//	if err != nil {
+//	    file.Close()
+//	    return err
+//	}
+//	rc := ForReader(gzReader, file)
+//	defer rc.Close() // Closes the file, not the gzip reader
+//
+// Example usage - no cleanup needed:
+//
+//	data := []byte("example")
+//	reader := bytes.NewReader(data)
+//	rc := ForReader(reader, nil) // No cleanup, just satisfies io.ReadCloser interface
+//	io.ReadAll(rc)
+//	rc.Close() // No-op
+func ForReader(r io.Reader, c io.Closer) io.ReadCloser {
+	if r == nil {
+		panic("reader is nil")
+	}
+
+	if c == nil {
+		c = CustomCloser(func() error { return nil })
+	}
+
+	return &reader{r: r, c: c}
+}

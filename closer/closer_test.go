@@ -1,8 +1,11 @@
 package closer
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"testing"
 
@@ -2044,4 +2047,706 @@ func TestCancelableCloser_RaceConditionCancelAndClose(t *testing.T) {
 	// The close count will vary depending on timing
 	closeCount := mock.getCloseCount()
 	assert.GreaterOrEqual(t, goroutines, closeCount, "Close count should be reasonable")
+}
+
+// Tests for ForWriter
+
+func TestForWriter_NilWriter(t *testing.T) {
+	t.Parallel()
+
+	assert.Panics(t, func() {
+		ForWriter(nil, &mockCloser{})
+	}, "ForWriter should panic with nil writer")
+}
+
+func TestForWriter_NilCloser(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	wc := ForWriter(&buf, nil)
+
+	require.NotNil(t, wc)
+
+	// Should be able to write
+	n, err := wc.Write([]byte("test"))
+	require.NoError(t, err)
+	assert.Equal(t, 4, n)
+	assert.Equal(t, "test", buf.String())
+
+	// Close should not error (uses no-op closer)
+	err = wc.Close()
+	require.NoError(t, err)
+}
+
+func TestForWriter_BasicWriteAndClose(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	mock := &mockCloser{}
+
+	wc := ForWriter(&buf, mock)
+	require.NotNil(t, wc)
+
+	// Write some data
+	n, err := wc.Write([]byte("hello world"))
+	require.NoError(t, err)
+	assert.Equal(t, 11, n)
+	assert.Equal(t, "hello world", buf.String())
+
+	// Close should call the closer
+	err = wc.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForWriter_MultipleWrites(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	mock := &mockCloser{}
+
+	wc := ForWriter(&buf, mock)
+
+	// Write multiple times
+	_, _ = wc.Write([]byte("hello"))
+	_, _ = wc.Write([]byte(" "))
+	_, _ = wc.Write([]byte("world"))
+
+	assert.Equal(t, "hello world", buf.String())
+
+	err := wc.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForWriter_CloseError(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	mock := &mockCloser{closeError: errCloseFailed}
+
+	wc := ForWriter(&buf, mock)
+
+	// Write should succeed
+	n, err := wc.Write([]byte("data"))
+	require.NoError(t, err)
+	assert.Equal(t, 4, n)
+
+	// Close should return the error
+	err = wc.Close()
+	require.ErrorIs(t, err, errCloseFailed)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForWriter_WithCustomCloser(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	closeCalled := false
+
+	cleanup := CustomCloser(func() error {
+		closeCalled = true
+
+		return nil
+	})
+
+	wc := ForWriter(&buf, cleanup)
+
+	_, _ = wc.Write([]byte("test"))
+
+	err := wc.Close()
+	require.NoError(t, err)
+	assert.True(t, closeCalled, "Custom closer should be called")
+}
+
+func TestForWriter_WithCloseOnce(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	mock := &mockCloser{}
+
+	wc := ForWriter(&buf, CloseOnce(mock))
+
+	// Close multiple times
+	err1 := wc.Close()
+	err2 := wc.Close()
+	err3 := wc.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.NoError(t, err3)
+	assert.Equal(t, 1, mock.getCloseCount(), "CloseOnce should ensure single close")
+}
+
+func TestForWriter_WithHandlePanic(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	panicCloser := &panicCloser{panicMessage: "close panic"}
+
+	wc := ForWriter(&buf, HandlePanic(panicCloser))
+
+	_, _ = wc.Write([]byte("data"))
+
+	err := wc.Close()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "close panic")
+}
+
+func TestForWriter_WithCloserCollector(t *testing.T) {
+	t.Parallel()
+
+	var buf1, buf2, buf3 bytes.Buffer
+
+	mock1 := &mockCloser{}
+	mock2 := &mockCloser{}
+	mock3 := &mockCloser{}
+
+	wc1 := ForWriter(&buf1, mock1)
+	wc2 := ForWriter(&buf2, mock2)
+	wc3 := ForWriter(&buf3, mock3)
+
+	collector := NewCloser(wc1, wc2, wc3)
+
+	// Write to each
+	_, _ = wc1.Write([]byte("first"))
+	_, _ = wc2.Write([]byte("second"))
+	_, _ = wc3.Write([]byte("third"))
+
+	// Close all via collector
+	err := collector.Close()
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, mock1.getCloseCount())
+	assert.Equal(t, 1, mock2.getCloseCount())
+	assert.Equal(t, 1, mock3.getCloseCount())
+}
+
+func TestForWriter_MultipleCloses(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	mock := &mockCloser{}
+
+	wc := ForWriter(&buf, mock)
+
+	// ForWriter itself doesn't prevent multiple closes (that's CloseOnce's job)
+	err1 := wc.Close()
+	err2 := wc.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.Equal(t, 2, mock.getCloseCount(), "ForWriter allows multiple closes")
+}
+
+func TestForWriter_DifferentWriterTypes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("bytes.Buffer", func(t *testing.T) {
+		t.Parallel()
+
+		var buf bytes.Buffer
+		wc := ForWriter(&buf, nil)
+
+		_, _ = wc.Write([]byte("buffer"))
+
+		assert.Equal(t, "buffer", buf.String())
+
+		err := wc.Close()
+		require.NoError(t, err)
+	})
+
+	t.Run("strings.Builder", func(t *testing.T) {
+		t.Parallel()
+
+		var sb strings.Builder
+		wc := ForWriter(&sb, nil)
+
+		_, _ = wc.Write([]byte("builder"))
+
+		assert.Equal(t, "builder", sb.String())
+
+		err := wc.Close()
+		require.NoError(t, err)
+	})
+}
+
+func TestForWriter_ConcurrentWrites(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	var mutex sync.Mutex
+
+	// Wrap buffer with mutex for thread safety
+	safeWriter := writerFunc(func(p []byte) (int, error) {
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		return buf.Write(p)
+	})
+
+	writeCloser := ForWriter(safeWriter, nil)
+
+	const goroutines = 10
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	for i := range goroutines {
+		go func(id int) {
+			defer waitGroup.Done()
+
+			_, _ = writeCloser.Write([]byte(fmt.Sprintf("%d,", id)))
+		}(i)
+	}
+
+	waitGroup.Wait()
+
+	err := writeCloser.Close()
+	require.NoError(t, err)
+
+	// Should have all IDs (order may vary)
+	result := buf.String()
+	assert.Len(t, result, goroutines*2) // Each write is "N,"
+}
+
+func TestForWriter_TypeAssertion(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	wc := ForWriter(&buf, nil)
+
+	// Verify that the returned value is of the correct type
+	_, ok := wc.(*writer)
+	assert.True(t, ok, "ForWriter should return a *writer")
+}
+
+// Tests for ForReader
+
+func TestForReader_NilReader(t *testing.T) {
+	t.Parallel()
+
+	assert.Panics(t, func() {
+		ForReader(nil, &mockCloser{})
+	}, "ForReader should panic with nil reader")
+}
+
+func TestForReader_NilCloser(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("test data")
+	reader := bytes.NewReader(data)
+	rc := ForReader(reader, nil)
+
+	require.NotNil(t, rc)
+
+	// Should be able to read
+	buf := make([]byte, 9)
+	n, err := rc.Read(buf)
+	require.NoError(t, err)
+	assert.Equal(t, 9, n)
+	assert.Equal(t, "test data", string(buf))
+
+	// Close should not error (uses no-op closer)
+	err = rc.Close()
+	require.NoError(t, err)
+}
+
+func TestForReader_BasicReadAndClose(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("hello world")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{}
+
+	rc := ForReader(reader, mock)
+	require.NotNil(t, rc)
+
+	// Read some data
+	buf := make([]byte, 11)
+	n, err := rc.Read(buf)
+	require.NoError(t, err)
+	assert.Equal(t, 11, n)
+	assert.Equal(t, "hello world", string(buf))
+
+	// Close should call the closer
+	err = rc.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForReader_MultipleReads(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("hello world")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{}
+
+	readCloser := ForReader(reader, mock)
+
+	// Read in chunks
+	buf1 := make([]byte, 5)
+	buf2 := make([]byte, 6)
+
+	n1, err := readCloser.Read(buf1)
+	require.NoError(t, err)
+	assert.Equal(t, 5, n1)
+	assert.Equal(t, "hello", string(buf1))
+
+	n2, err := readCloser.Read(buf2)
+	require.NoError(t, err)
+	assert.Equal(t, 6, n2)
+	assert.Equal(t, " world", string(buf2))
+
+	err = readCloser.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForReader_ReadAll(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("complete data stream")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{}
+
+	rc := ForReader(reader, mock)
+
+	// Read all data
+	result, err := io.ReadAll(rc)
+	require.NoError(t, err)
+	assert.Equal(t, "complete data stream", string(result))
+
+	err = rc.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForReader_CloseError(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("data")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{closeError: errCloseFailed}
+
+	rc := ForReader(reader, mock)
+
+	// Read should succeed
+	buf := make([]byte, 4)
+	n, err := rc.Read(buf)
+	require.NoError(t, err)
+	assert.Equal(t, 4, n)
+
+	// Close should return the error
+	err = rc.Close()
+	require.ErrorIs(t, err, errCloseFailed)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForReader_WithCustomCloser(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("test")
+	reader := bytes.NewReader(data)
+	closeCalled := false
+
+	cleanup := CustomCloser(func() error {
+		closeCalled = true
+
+		return nil
+	})
+
+	rc := ForReader(reader, cleanup)
+
+	_, _ = io.ReadAll(rc)
+
+	err := rc.Close()
+	require.NoError(t, err)
+	assert.True(t, closeCalled, "Custom closer should be called")
+}
+
+func TestForReader_WithCloseOnce(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("test")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{}
+
+	rc := ForReader(reader, CloseOnce(mock))
+
+	// Close multiple times
+	err1 := rc.Close()
+	err2 := rc.Close()
+	err3 := rc.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.NoError(t, err3)
+	assert.Equal(t, 1, mock.getCloseCount(), "CloseOnce should ensure single close")
+}
+
+func TestForReader_WithHandlePanic(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("data")
+	reader := bytes.NewReader(data)
+	panicCloser := &panicCloser{panicMessage: "close panic"}
+
+	rc := ForReader(reader, HandlePanic(panicCloser))
+
+	_, _ = io.ReadAll(rc)
+
+	err := rc.Close()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "close panic")
+}
+
+func TestForReader_WithCloserCollector(t *testing.T) {
+	t.Parallel()
+
+	data1 := []byte("first")
+	data2 := []byte("second")
+	data3 := []byte("third")
+
+	mock1 := &mockCloser{}
+	mock2 := &mockCloser{}
+	mock3 := &mockCloser{}
+
+	rc1 := ForReader(bytes.NewReader(data1), mock1)
+	rc2 := ForReader(bytes.NewReader(data2), mock2)
+	rc3 := ForReader(bytes.NewReader(data3), mock3)
+
+	collector := NewCloser(rc1, rc2, rc3)
+
+	// Read from each
+	_, _ = io.ReadAll(rc1)
+	_, _ = io.ReadAll(rc2)
+	_, _ = io.ReadAll(rc3)
+
+	// Close all via collector
+	err := collector.Close()
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, mock1.getCloseCount())
+	assert.Equal(t, 1, mock2.getCloseCount())
+	assert.Equal(t, 1, mock3.getCloseCount())
+}
+
+func TestForReader_MultipleCloses(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("test")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{}
+
+	rc := ForReader(reader, mock)
+
+	// ForReader itself doesn't prevent multiple closes (that's CloseOnce's job)
+	err1 := rc.Close()
+	err2 := rc.Close()
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+	assert.Equal(t, 2, mock.getCloseCount(), "ForReader allows multiple closes")
+}
+
+func TestForReader_DifferentReaderTypes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("bytes.Reader", func(t *testing.T) {
+		t.Parallel()
+
+		data := []byte("bytes reader")
+		rc := ForReader(bytes.NewReader(data), nil)
+
+		result, err := io.ReadAll(rc)
+		require.NoError(t, err)
+		assert.Equal(t, "bytes reader", string(result))
+
+		err = rc.Close()
+		require.NoError(t, err)
+	})
+
+	t.Run("strings.Reader", func(t *testing.T) {
+		t.Parallel()
+
+		rc := ForReader(strings.NewReader("strings reader"), nil)
+
+		result, err := io.ReadAll(rc)
+		require.NoError(t, err)
+		assert.Equal(t, "strings reader", string(result))
+
+		err = rc.Close()
+		require.NoError(t, err)
+	})
+
+	t.Run("io.LimitReader", func(t *testing.T) {
+		t.Parallel()
+
+		data := []byte("limited reader test")
+		limited := io.LimitReader(bytes.NewReader(data), 7)
+
+		rc := ForReader(limited, nil)
+
+		result, err := io.ReadAll(rc)
+		require.NoError(t, err)
+		assert.Equal(t, "limited", string(result))
+
+		err = rc.Close()
+		require.NoError(t, err)
+	})
+}
+
+func TestForReader_EOF(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("short")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{}
+
+	rc := ForReader(reader, mock)
+
+	// Read all data
+	buf := make([]byte, 10)
+	n, err := rc.Read(buf)
+	require.Equal(t, 5, n)
+	require.NoError(t, err)
+
+	// Next read should return EOF
+	n, err = rc.Read(buf)
+	assert.Equal(t, 0, n)
+	assert.Equal(t, io.EOF, err)
+
+	// Close should still work
+	err = rc.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 1, mock.getCloseCount())
+}
+
+func TestForReader_ConcurrentReads(t *testing.T) {
+	t.Parallel()
+
+	// Create a reader that can be read concurrently
+	data := bytes.Repeat([]byte("a"), 1000)
+	reader := bytes.NewReader(data)
+
+	var mutex sync.Mutex
+
+	safeReader := readerFunc(func(p []byte) (int, error) {
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		return reader.Read(p)
+	})
+
+	readCloser := ForReader(safeReader, nil)
+
+	const goroutines = 10
+
+	var waitGroup sync.WaitGroup
+
+	waitGroup.Add(goroutines)
+
+	totalBytesRead := 0
+
+	var countMutex sync.Mutex
+
+	for range goroutines {
+		go func() {
+			defer waitGroup.Done()
+
+			buf := make([]byte, 50)
+			n, _ := readCloser.Read(buf)
+
+			countMutex.Lock()
+			totalBytesRead += n
+			countMutex.Unlock()
+		}()
+	}
+
+	waitGroup.Wait()
+
+	err := readCloser.Close()
+	require.NoError(t, err)
+
+	// Total bytes read should be goroutines * 50 or less (if EOF hit)
+	assert.Positive(t, totalBytesRead)
+}
+
+func TestForReader_TypeAssertion(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("test")
+	rc := ForReader(bytes.NewReader(data), nil)
+
+	// Verify that the returned value is of the correct type
+	_, ok := rc.(*reader)
+	assert.True(t, ok, "ForReader should return a *reader")
+}
+
+func TestForReader_WithCancelableCloser(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("test data")
+	reader := bytes.NewReader(data)
+	mock := &mockCloser{}
+
+	cancelable, cancel := CancelableCloser(mock)
+	rc := ForReader(reader, cancelable)
+
+	// Read data
+	_, _ = io.ReadAll(rc)
+
+	// Cancel before close
+	cancel()
+
+	// Close should not call the underlying closer
+	err := rc.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 0, mock.getCloseCount(), "Should not close after cancel")
+}
+
+func TestForWriter_WithCancelableCloser(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	mock := &mockCloser{}
+
+	cancelable, cancel := CancelableCloser(mock)
+	wc := ForWriter(&buf, cancelable)
+
+	// Write data
+	_, _ = wc.Write([]byte("test"))
+
+	// Cancel before close
+	cancel()
+
+	// Close should not call the underlying closer
+	err := wc.Close()
+	require.NoError(t, err)
+	assert.Equal(t, 0, mock.getCloseCount(), "Should not close after cancel")
+}
+
+// Helper types for testing
+
+type writerFunc func([]byte) (int, error)
+
+func (f writerFunc) Write(p []byte) (int, error) {
+	return f(p)
+}
+
+type readerFunc func([]byte) (int, error)
+
+func (f readerFunc) Read(p []byte) (int, error) {
+	return f(p)
 }

@@ -18,7 +18,7 @@ import (
 // is returned.
 //
 //nolint:interfacebloat // Set requires these methods for complete functionality
-type Set[T collectable.Collectable[T]] interface {
+type Set[T any] interface {
 	// AddAll adds multiple elements to the set. Returns an error if any element
 	// causes a hash collision or if hashing fails.
 	AddAll(elements ...T) error

@@ -1,17 +1,3 @@
-// Package maps provides a red-black tree implementation of the Map interface.
-// This file contains redBlackTreeMap, a self-balancing binary search tree that
-// maintains sorted key-value pairs with guaranteed O(log n) performance for
-// insertions, deletions, and lookups.
-//
-// Red-black trees enforce the following properties to maintain balance:
-//  1. Every node is either red or black
-//  2. The root is always black
-//  3. All leaves (nil nodes) are considered black
-//  4. Red nodes cannot have red children (no two consecutive red nodes on any path)
-//  5. Every path from root to leaf contains the same number of black nodes
-//
-// These properties ensure the tree remains approximately balanced, preventing
-// the worst-case O(n) behavior of unbalanced binary search trees.
 package maps
 
 import (

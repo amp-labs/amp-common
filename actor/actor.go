@@ -49,16 +49,6 @@ func New[Request, Response any](
 	}
 }
 
-// createMessageChannel creates a message channel with the specified buffer size.
-// A size of 0 creates an unbuffered channel.
-func createMessageChannel[Request, Response any](size int) chan Message[Request, Response] {
-	if size == 0 {
-		return make(chan Message[Request, Response])
-	} else {
-		return make(chan Message[Request, Response], size)
-	}
-}
-
 // getPanicErr wraps a panic value into an error, preserving the original error if possible.
 func getPanicErr(name string, err any) error {
 	if e, ok := err.(error); ok {
@@ -142,9 +132,13 @@ func (a *Actor[Request, Response]) runProcessor(
 // buffer size (0 for unbuffered). The actor runs until the context is canceled or Stop is called
 // on the returned reference.
 func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth int) *Ref[Request, Response] {
+	w, r, count := channels.Create[Message[Request, Response]](depth)
+
 	ref := &Ref[Request, Response]{
-		inbox: createMessageChannel[Request, Response](depth),
-		name:  name,
+		inboxRead:  r,
+		inboxWrite: w,
+		getCount:   count,
+		name:       name,
 	}
 
 	ref.wg.Add(1)
@@ -193,7 +187,7 @@ func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth i
 
 				// Due to a race this might already be closed.
 				// If it is, we don't want to panic.
-				channels.CloseChannelIgnorePanic(ref.inbox)
+				channels.CloseChannelIgnorePanic(ref.inboxWrite)
 
 				ref.dead = true
 			case <-ticker.C:
@@ -203,9 +197,9 @@ func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth i
 				wasBusy = true
 
 				if depth > 0 {
-					enqueuedMessages.WithLabelValues(subsystem, name).Set(float64(len(ref.inbox)))
+					enqueuedMessages.WithLabelValues(subsystem, name).Set(float64(ref.getCount()))
 				}
-			case msg, ok := <-ref.inbox:
+			case msg, ok := <-ref.inboxRead:
 				actorIdle.WithLabelValues(subsystem, name).Dec()
 				actorBusy.WithLabelValues(subsystem, name).Inc()
 
@@ -233,10 +227,12 @@ func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth i
 // Ref is a reference to a running actor. It provides methods to send messages,
 // make requests, and control the actor's lifecycle.
 type Ref[Request, Response any] struct {
-	wg    sync.WaitGroup
-	inbox chan Message[Request, Response]
-	dead  bool
-	name  string
+	wg         sync.WaitGroup
+	inboxRead  <-chan Message[Request, Response]
+	inboxWrite chan<- Message[Request, Response]
+	getCount   func() int
+	dead       bool
+	name       string
 }
 
 // Name returns the actor's name.
@@ -256,7 +252,7 @@ func (r *Ref[Request, Response]) Stop() {
 		return
 	}
 
-	channels.CloseChannelIgnorePanic(r.inbox)
+	channels.CloseChannelIgnorePanic(r.inboxWrite)
 	r.dead = true
 }
 
@@ -281,7 +277,7 @@ func (r *Ref[Request, Response]) submit(ctx context.Context, message Message[Req
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case r.inbox <- message:
+	case r.inboxWrite <- message:
 		break
 	}
 

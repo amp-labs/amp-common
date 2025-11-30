@@ -23,7 +23,7 @@ import (
 // explicitly documented. Concurrent access must be synchronized by the caller.
 //
 //nolint:interfacebloat,dupl // Map interface intentionally has 11 methods for cohesive API design
-type Map[K collectable.Collectable[K], V any] interface {
+type Map[K any, V any] interface {
 	// Get retrieves the value for the given key from the hash map.
 	// If the key exists, returns the value with found=true. If the key doesn't exist, returns
 	// a zero value with found=false.

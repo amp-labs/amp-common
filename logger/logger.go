@@ -10,9 +10,11 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/lazy"
+	"github.com/amp-labs/amp-common/shutdown"
 )
 
 // Used for logging customer-specific messages (so the caller can know which part of the system is generating the log).
@@ -31,6 +33,11 @@ type contextKey string
 // Fatal logs an error message and exits the application.
 func Fatal(msg string, args ...any) {
 	slog.Error(msg, args...)
+
+	shutdown.Shutdown()
+
+	time.Sleep(time.Second)
+
 	os.Exit(1)
 }
 

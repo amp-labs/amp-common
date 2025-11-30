@@ -198,7 +198,7 @@ func (t *threadSafeSet[T]) Clone() Set[T] {
 //	unsafeSet := set.NewOrderedSet[string](hashing.Sha256)
 //	safeSet := set.NewThreadSafeOrderedSet(unsafeSet)
 //	safeSet.Add("element") // thread-safe
-func NewThreadSafeOrderedSet[T collectable.Collectable[T]](s OrderedSet[T]) OrderedSet[T] {
+func NewThreadSafeOrderedSet[T any](s OrderedSet[T]) OrderedSet[T] {
 	if s == nil {
 		return nil
 	}
@@ -217,7 +217,7 @@ func NewThreadSafeOrderedSet[T collectable.Collectable[T]](s OrderedSet[T]) Orde
 // threadSafeOrderedSet is a decorator that wraps any OrderedSet implementation with thread-safe access.
 // It uses sync.RWMutex to coordinate concurrent access, allowing multiple simultaneous
 // readers or a single exclusive writer.
-type threadSafeOrderedSet[T collectable.Collectable[T]] struct {
+type threadSafeOrderedSet[T any] struct {
 	mutex    sync.RWMutex  // Protects access to internal ordered set
 	internal OrderedSet[T] // Underlying ordered set implementation
 }
@@ -372,4 +372,54 @@ func (t *threadSafeOrderedSet[T]) Clone() OrderedSet[T] {
 	return &threadSafeOrderedSet[T]{
 		internal: s,
 	}
+}
+
+// Filter returns a new thread-safe set containing only elements that satisfy the predicate.
+// The predicate function is called for each element; if it returns true, the element is included.
+// Acquires a read lock during the operation. The returned set is also thread-safe.
+func (t *threadSafeSet[T]) Filter(predicate func(T) bool) Set[T] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	out := t.internal.Filter(predicate)
+
+	return NewThreadSafeSet(out)
+}
+
+// FilterNot returns a new thread-safe set containing only elements that do not satisfy the predicate.
+// The predicate function is called for each element; if it returns false, the element is included.
+// Acquires a read lock during the operation. The returned set is also thread-safe.
+func (t *threadSafeSet[T]) FilterNot(predicate func(T) bool) Set[T] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	out := t.internal.FilterNot(predicate)
+
+	return NewThreadSafeSet(out)
+}
+
+// Filter returns a new thread-safe ordered set containing only elements that satisfy the predicate.
+// The predicate function is called for each element; if it returns true, the element is included.
+// The insertion order is preserved in the resulting set.
+// Acquires a read lock during the operation. The returned set is also thread-safe.
+func (t *threadSafeOrderedSet[T]) Filter(predicate func(T) bool) OrderedSet[T] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	out := t.internal.Filter(predicate)
+
+	return NewThreadSafeOrderedSet(out)
+}
+
+// FilterNot returns a new thread-safe ordered set containing only elements that do not satisfy the predicate.
+// The predicate function is called for each element; if it returns false, the element is included.
+// The insertion order is preserved in the resulting set.
+// Acquires a read lock during the operation. The returned set is also thread-safe.
+func (t *threadSafeOrderedSet[T]) FilterNot(predicate func(T) bool) OrderedSet[T] {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+
+	out := t.internal.FilterNot(predicate)
+
+	return NewThreadSafeOrderedSet(out)
 }

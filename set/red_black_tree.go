@@ -735,3 +735,33 @@ func (r *redBlackTreeSet[K]) getMinimum(x *rbtNode[K]) *rbtNode[K] {
 		}
 	}
 }
+
+// Filter returns a new red-black tree set containing only elements that satisfy the predicate.
+// The predicate function is called for each element; if it returns true, the element is included.
+// Elements in the resulting set are maintained in sorted order.
+func (r *redBlackTreeSet[K]) Filter(predicate func(K) bool) Set[K] {
+	out := NewRedBlackTreeSet[K]()
+
+	for value := range r.Seq() {
+		if predicate(value) {
+			_ = out.Add(value)
+		}
+	}
+
+	return out
+}
+
+// FilterNot returns a new red-black tree set containing only elements that do not satisfy the predicate.
+// The predicate function is called for each element; if it returns false, the element is included.
+// Elements in the resulting set are maintained in sorted order.
+func (r *redBlackTreeSet[K]) FilterNot(predicate func(K) bool) Set[K] {
+	out := NewRedBlackTreeSet[K]()
+
+	for value := range r.Seq() {
+		if !predicate(value) {
+			_ = out.Add(value)
+		}
+	}
+
+	return out
+}

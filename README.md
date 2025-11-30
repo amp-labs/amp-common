@@ -117,35 +117,59 @@ The linting stack includes:
 * Methods: `SetDir()`, `SetStdin()`, `SetStdout()`, `SetStderr()`, `AppendEnv()`, etc.
 * Returns exit code and error separately
 
-### Utility Packages
+### Data Structures & Collections
 
-* **`lazy`** - Lazy initialization with thread-safety
-* **`try`** - Result type for error handling (`Try[T]` with `Value` and `Error`)
+* **`maps`** - Generic map utilities with red-black tree implementation
+* **`set`** - Generic set implementation with red-black tree backing
+* **`tuple`** - Generic tuple types
+* **`collectable`** - Interface combining `Hashable` and `Comparable` for use in Map/Set data structures
+* **`sortable`** - Sortable interface with `LessThan` comparison for ordering
+
+### Resource Management
+
+* **`closer`** - Resource management utilities for `io.Closer` (`Closer` collector, `CloseOnce`, `HandlePanic`, `CustomCloser`)
+* **`using`** - Resource management pattern (try-with-resources/using statement)
 * **`should`** - Utilities for cleanup operations (e.g., `should.Close()`)
 * **`shutdown`** - Graceful shutdown coordination
-* **`bgworker`** - Background worker management
-* **`utils`** - Misc utilities (channels, context, JSON, sleep, dedup)
-* **`xform`** - Type transformations and conversions
-* **`maps`** - Generic map utilities
-* **`set`** - Generic set implementation
-* **`tuple`** - Generic tuple types
-* **`compare`** - Comparison utilities
+
+### Error Handling & Control Flow
+
+* **`retry`** - Flexible retry mechanism with exponential backoff, jitter, and retry budgets
 * **`errors`** - Error utilities with collection support
-* **`assert`** - Assertion utilities for testing
+* **`try`** - Result type for error handling (`Try[T]` with `Value` and `Error`)
+
+### Data Processing & Transformation
+
+* **`jsonpath`** - JSONPath bracket notation utilities for field mapping
+* **`xform`** - Type transformations and conversions
 * **`hashing`** - Hashing utilities
 * **`sanitize`** - String sanitization
+* **`compare`** - Comparison utilities
+* **`zero`** - Zero value utilities for generic types (`Value[T]()`, `IsZero[T](value)`)
+
+### Async & Concurrency Utilities
+
+* **`future`** - Future/Promise implementation for async programming (`Go`, `GoContext`, `Await`, `Map`, `Combine`)
+* **`bgworker`** - Background worker management
+* **`lazy`** - Lazy initialization with thread-safety
+
+### Optional & Pointer Utilities
+
+* **`optional`** - Type-safe Optional/Maybe type (`Some[T]`, `None[T]`, `Map`, `FlatMap`)
+* **`pointer`** - Pointer utilities (`To[T]`, `Value[T]`)
+
+### Misc Utilities
+
+* **`utils`** - Misc utilities (channels, context, JSON, sleep, dedup)
+* **`channels`** - Channel utilities (`CloseChannelIgnorePanic`)
+* **`contexts`** - Context utilities (`EnsureContext`, `IsContextAlive`, `WithValue[K,V]`, `GetValue[K,V]`)
+* **`envtypes`** - Common environment variable types (HostPort, Path)
+* **`emoji`** - Emoji constants for terminal output and UI (Rocket, Fire, ThumbsUp, Warning, etc.)
+* **`stage`** - Environment detection (local, test, dev, staging, prod)
 * **`script`** - Script execution utilities
 * **`build`** - Build information utilities
 * **`http/transport`** - HTTP transport configuration with DNS caching
-* **`channels`** - Channel utilities (`CloseChannelIgnorePanic`)
-* **`optional`** - Type-safe Optional/Maybe type (`Some[T]`, `None[T]`, `Map`, `FlatMap`)
-* **`pointer`** - Pointer utilities (`To[T]`, `Value[T]`)
-* **`stage`** - Environment detection (local, test, dev, staging, prod)
-* **`using`** - Resource management pattern (try-with-resources/using statement)
-* **`future`** - Future/Promise implementation for async programming (`Go`, `GoContext`, `Await`, `Map`, `Combine`)
-* **`envtypes`** - Common environment variable types (HostPort, Path)
-* **`contexts`** - Context utilities (`EnsureContext`, `IsContextAlive`, `WithValue[K,V]`, `GetValue[K,V]`)
-* **`emoji`** - Emoji constants for terminal output and UI (Rocket, Fire, ThumbsUp, Warning, etc.)
+* **`assert`** - Assertion utilities for testing
 * **`debug`** - Debugging utilities (for local development only, not for production use)
 
 ## Dependency Management

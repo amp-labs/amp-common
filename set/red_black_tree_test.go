@@ -926,6 +926,229 @@ func TestRedBlackTreeSet_MultipleOperations(t *testing.T) {
 	})
 }
 
+func TestRedBlackTreeSet_Filter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Filter maintains sorted order", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		// Add elements in random order
+		elements := []int{10, 3, 7, 1, 9, 5, 2, 8, 4, 6}
+		for _, elem := range elements {
+			err := s.Add(sortable.Int(elem))
+			require.NoError(t, err)
+		}
+
+		// Filter for even numbers
+		filtered := s.Filter(func(item sortable.Int) bool {
+			return int(item)%2 == 0
+		})
+
+		assert.Equal(t, 5, filtered.Size())
+
+		// Verify filtered set is in sorted order
+		expected := []int{2, 4, 6, 8, 10}
+		i := 0
+
+		for elem := range filtered.Seq() {
+			assert.Equal(t, sortable.Int(expected[i]), elem)
+
+			i++
+		}
+	})
+
+	t.Run("Filter with no matches", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		for i := 1; i <= 10; i++ {
+			err := s.Add(sortable.Int(i))
+			require.NoError(t, err)
+		}
+
+		// Filter for numbers > 100 (none match)
+		filtered := s.Filter(func(item sortable.Int) bool {
+			return int(item) > 100
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("Filter with all matches", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		for i := 1; i <= 5; i++ {
+			err := s.Add(sortable.Int(i))
+			require.NoError(t, err)
+		}
+
+		// Filter for all numbers (all match)
+		filtered := s.Filter(func(item sortable.Int) bool {
+			return true
+		})
+
+		assert.Equal(t, 5, filtered.Size())
+
+		// Verify same elements in sorted order
+		entries := filtered.Entries()
+		expected := []sortable.Int{
+			sortable.Int(1),
+			sortable.Int(2),
+			sortable.Int(3),
+			sortable.Int(4),
+			sortable.Int(5),
+		}
+		assert.Equal(t, expected, entries)
+	})
+
+	t.Run("Filter on empty set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		filtered := s.Filter(func(item sortable.Int) bool {
+			return true
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+	})
+
+	t.Run("Filter does not modify original set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		for i := 1; i <= 10; i++ {
+			err := s.Add(sortable.Int(i))
+			require.NoError(t, err)
+		}
+
+		_ = s.Filter(func(item sortable.Int) bool {
+			return int(item)%2 == 0
+		})
+
+		// Original set should be unchanged
+		assert.Equal(t, 10, s.Size())
+	})
+}
+
+func TestRedBlackTreeSet_FilterNot(t *testing.T) {
+	t.Parallel()
+
+	t.Run("FilterNot maintains sorted order", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		// Add elements in random order
+		elements := []int{10, 3, 7, 1, 9, 5, 2, 8, 4, 6}
+		for _, elem := range elements {
+			err := s.Add(sortable.Int(elem))
+			require.NoError(t, err)
+		}
+
+		// FilterNot for even numbers (exclude those, keep odd)
+		filtered := s.FilterNot(func(item sortable.Int) bool {
+			return int(item)%2 == 0
+		})
+
+		assert.Equal(t, 5, filtered.Size())
+
+		// Verify filtered set is in sorted order
+		expected := []int{1, 3, 5, 7, 9}
+		i := 0
+
+		for elem := range filtered.Seq() {
+			assert.Equal(t, sortable.Int(expected[i]), elem)
+
+			i++
+		}
+	})
+
+	t.Run("FilterNot with no matches includes all", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		for i := 1; i <= 5; i++ {
+			err := s.Add(sortable.Int(i))
+			require.NoError(t, err)
+		}
+
+		// FilterNot for numbers > 100 (none match, so all included)
+		filtered := s.FilterNot(func(item sortable.Int) bool {
+			return int(item) > 100
+		})
+
+		assert.Equal(t, 5, filtered.Size())
+
+		entries := filtered.Entries()
+		expected := []sortable.Int{
+			sortable.Int(1),
+			sortable.Int(2),
+			sortable.Int(3),
+			sortable.Int(4),
+			sortable.Int(5),
+		}
+		assert.Equal(t, expected, entries)
+	})
+
+	t.Run("FilterNot with all matches returns empty", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		for i := 1; i <= 5; i++ {
+			err := s.Add(sortable.Int(i))
+			require.NoError(t, err)
+		}
+
+		// FilterNot for all numbers (all match, so none included)
+		filtered := s.FilterNot(func(item sortable.Int) bool {
+			return true
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("FilterNot on empty set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		filtered := s.FilterNot(func(item sortable.Int) bool {
+			return false
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+	})
+
+	t.Run("FilterNot does not modify original set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewRedBlackTreeSet[sortable.Int]()
+
+		for i := 1; i <= 10; i++ {
+			err := s.Add(sortable.Int(i))
+			require.NoError(t, err)
+		}
+
+		_ = s.FilterNot(func(item sortable.Int) bool {
+			return int(item)%2 == 0
+		})
+
+		// Original set should be unchanged
+		assert.Equal(t, 10, s.Size())
+	})
+}
+
 func BenchmarkRedBlackTreeSet_Add(b *testing.B) {
 	s := NewRedBlackTreeSet[sortable.Int]()
 

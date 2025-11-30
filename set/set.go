@@ -59,6 +59,14 @@ type Set[T any] interface {
 	// HashFunction returns the hash function used by this set.
 	HashFunction() hashing.HashFunc
 
+	// Filter returns a new set containing only elements that satisfy the predicate.
+	// The predicate function is called for each element; if it returns true, the element is included.
+	Filter(predicate func(T) bool) Set[T]
+
+	// FilterNot returns a new set containing only elements that do not satisfy the predicate.
+	// The predicate function is called for each element; if it returns false, the element is included.
+	FilterNot(predicate func(T) bool) Set[T]
+
 	// Clone creates a shallow copy of the set, duplicating its structure and entries.
 	// The keys themselves are not deep-copied; they are referenced as-is.
 	// Returns a new Set instance with the same entries.
@@ -249,6 +257,34 @@ func (s *setImpl[T]) Clone() Set[T] {
 	return cloned
 }
 
+// Filter returns a new set containing only elements that satisfy the predicate.
+// The predicate function is called for each element; if it returns true, the element is included.
+func (s *setImpl[T]) Filter(predicate func(T) bool) Set[T] {
+	out := NewSet[T](s.hash)
+
+	for item := range s.Seq() {
+		if predicate(item) {
+			_ = out.Add(item)
+		}
+	}
+
+	return out
+}
+
+// FilterNot returns a new set containing only elements that do not satisfy the predicate.
+// The predicate function is called for each element; if it returns false, the element is included.
+func (s *setImpl[T]) FilterNot(predicate func(T) bool) Set[T] {
+	out := NewSet[T](s.hash)
+
+	for item := range s.Seq() {
+		if !predicate(item) {
+			_ = out.Add(item)
+		}
+	}
+
+	return out
+}
+
 // StringSet is a specialized Set implementation for string elements.
 // It provides additional methods for sorting entries.
 type StringSet struct {
@@ -401,7 +437,7 @@ func (s *StringSet) Clone() *StringSet {
 // OrderedSet.Entries() returns elements in the order they were added.
 //
 //nolint:interfacebloat // OrderedSet requires these methods for complete functionality
-type OrderedSet[T collectable.Collectable[T]] interface {
+type OrderedSet[T any] interface {
 	// AddAll adds multiple elements to the set in order. Returns an error if any element
 	// causes a hash collision or if hashing fails. If an element already exists, it is not
 	// added again and its position in the order is not changed.
@@ -446,6 +482,16 @@ type OrderedSet[T collectable.Collectable[T]] interface {
 
 	// HashFunction returns the hash function used by this ordered set.
 	HashFunction() hashing.HashFunc
+
+	// Filter returns a new ordered set containing only elements that satisfy the predicate.
+	// The predicate function is called for each element; if it returns true, the element is included.
+	// The insertion order is preserved in the resulting set.
+	Filter(predicate func(T) bool) OrderedSet[T]
+
+	// FilterNot returns a new ordered set containing only elements that do not satisfy the predicate.
+	// The predicate function is called for each element; if it returns false, the element is included.
+	// The insertion order is preserved in the resulting set.
+	FilterNot(predicate func(T) bool) OrderedSet[T]
 
 	// Clone creates a shallow copy of the set, duplicating its structure and entries.
 	// The keys themselves are not deep-copied; they are referenced as-is.
@@ -781,4 +827,34 @@ func (s *StringOrderedSet) Clone() *StringSet {
 	}
 
 	return cloned
+}
+
+// Filter returns a new ordered set containing only elements that satisfy the predicate.
+// The predicate function is called for each element; if it returns true, the element is included.
+// The insertion order is preserved in the resulting set.
+func (s *orderedSetImpl[T]) Filter(predicate func(T) bool) OrderedSet[T] {
+	out := NewOrderedSet[T](s.hash)
+
+	for _, k := range s.Seq() {
+		if predicate(k) {
+			_ = out.Add(k)
+		}
+	}
+
+	return out
+}
+
+// FilterNot returns a new ordered set containing only elements that do not satisfy the predicate.
+// The predicate function is called for each element; if it returns false, the element is included.
+// The insertion order is preserved in the resulting set.
+func (s *orderedSetImpl[T]) FilterNot(predicate func(T) bool) OrderedSet[T] {
+	out := NewOrderedSet[T](s.hash)
+
+	for _, k := range s.Seq() {
+		if !predicate(k) {
+			_ = out.Add(k)
+		}
+	}
+
+	return out
 }

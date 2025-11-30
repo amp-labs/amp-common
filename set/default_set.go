@@ -205,3 +205,35 @@ func (d *defaultSet[T]) Clone() Set[T] {
 		f: d.f,
 	}
 }
+
+// Filter returns a new defaultSet containing only elements that satisfy the predicate.
+// The predicate function is called for each element; if it returns true, the element is included.
+// The returned set uses the same default value function as this set.
+func (d *defaultSet[T]) Filter(predicate func(T) bool) Set[T] {
+	out := d.Clone()
+	out.Clear()
+
+	for value := range d.Seq() {
+		if predicate(value) {
+			_ = out.Add(value)
+		}
+	}
+
+	return out
+}
+
+// FilterNot returns a new defaultSet containing only elements that do not satisfy the predicate.
+// The predicate function is called for each element; if it returns false, the element is included.
+// The returned set uses the same default value function as this set.
+func (d *defaultSet[T]) FilterNot(predicate func(T) bool) Set[T] {
+	out := d.Clone()
+	out.Clear()
+
+	for value := range d.Seq() {
+		if !predicate(value) {
+			_ = out.Add(value)
+		}
+	}
+
+	return out
+}

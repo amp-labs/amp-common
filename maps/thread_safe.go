@@ -4,7 +4,6 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/amp-labs/amp-common/collectable"
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/optional"
 	"github.com/amp-labs/amp-common/set"
@@ -22,7 +21,7 @@ import (
 //	unsafeMap := maps.New[string, int]()
 //	safeMap := maps.NewThreadSafeMap(unsafeMap)
 //	safeMap.Add("key", 42) // thread-safe
-func NewThreadSafeMap[K collectable.Collectable[K], V any](m Map[K, V]) Map[K, V] {
+func NewThreadSafeMap[K any, V any](m Map[K, V]) Map[K, V] {
 	if m == nil {
 		return nil
 	}
@@ -41,7 +40,7 @@ func NewThreadSafeMap[K collectable.Collectable[K], V any](m Map[K, V]) Map[K, V
 // threadSafeMap is a decorator that wraps any Map implementation with thread-safe access.
 // It uses sync.RWMutex to coordinate concurrent access, allowing multiple simultaneous
 // readers or a single exclusive writer.
-type threadSafeMap[K collectable.Collectable[K], V any] struct {
+type threadSafeMap[K any, V any] struct {
 	mutex    sync.RWMutex // Protects access to internal map
 	internal Map[K, V]    // Underlying map implementation
 }

@@ -216,3 +216,37 @@ func (d *defaultOrderedSet[T]) Clone() OrderedSet[T] {
 		f: d.f,
 	}
 }
+
+// Filter returns a new defaultOrderedSet containing only elements that satisfy the predicate.
+// The predicate function is called for each element; if it returns true, the element is included.
+// The insertion order is preserved in the resulting set.
+// The returned set uses the same default value function as this set.
+func (d *defaultOrderedSet[T]) Filter(predicate func(T) bool) OrderedSet[T] {
+	out := d.Clone()
+	out.Clear()
+
+	for _, value := range d.Seq() {
+		if predicate(value) {
+			_ = out.Add(value)
+		}
+	}
+
+	return out
+}
+
+// FilterNot returns a new defaultOrderedSet containing only elements that do not satisfy the predicate.
+// The predicate function is called for each element; if it returns false, the element is included.
+// The insertion order is preserved in the resulting set.
+// The returned set uses the same default value function as this set.
+func (d *defaultOrderedSet[T]) FilterNot(predicate func(T) bool) OrderedSet[T] {
+	out := d.Clone()
+	out.Clear()
+
+	for _, value := range d.Seq() {
+		if !predicate(value) {
+			_ = out.Add(value)
+		}
+	}
+
+	return out
+}

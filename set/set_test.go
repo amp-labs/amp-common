@@ -1419,3 +1419,362 @@ func TestStringOrderedSet(t *testing.T) {
 		assert.Equal(t, []string{"a", "c", "d"}, items)
 	})
 }
+
+// TestSetFilter tests the Filter method on Set implementations.
+func TestSetFilter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Filter with some matches", func(t *testing.T) { //nolint:dupl // Test duplication is acceptable
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("apple"),
+			hashing.HashableString("banana"),
+			hashing.HashableString("cherry"),
+			hashing.HashableString("apricot"),
+		)
+		require.NoError(t, err)
+
+		// Filter for strings starting with 'a'
+		filtered := s.Filter(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'a'
+		})
+
+		assert.Equal(t, 2, filtered.Size())
+
+		contains, err := filtered.Contains(hashing.HashableString("apple"))
+		require.NoError(t, err)
+		assert.True(t, contains)
+
+		contains, err = filtered.Contains(hashing.HashableString("apricot"))
+		require.NoError(t, err)
+		assert.True(t, contains)
+
+		contains, err = filtered.Contains(hashing.HashableString("banana"))
+		require.NoError(t, err)
+		assert.False(t, contains)
+	})
+
+	t.Run("Filter with no matches", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		// Filter for strings starting with 'x' (none match)
+		filtered := s.Filter(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'x'
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("Filter with all matches", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		// Filter for all strings (all match)
+		filtered := s.Filter(func(item hashing.HashableString) bool {
+			return true
+		})
+
+		assert.Equal(t, 3, filtered.Size())
+		assert.ElementsMatch(t, s.Entries(), filtered.Entries())
+	})
+
+	t.Run("Filter on empty set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		filtered := s.Filter(func(item hashing.HashableString) bool {
+			return true
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("Filter does not modify original set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		_ = s.Filter(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'b'
+		})
+
+		// Original set should be unchanged
+		assert.Equal(t, 3, s.Size())
+	})
+}
+
+// TestSetFilterNot tests the FilterNot method on Set implementations.
+func TestSetFilterNot(t *testing.T) {
+	t.Parallel()
+
+	t.Run("FilterNot with some matches", func(t *testing.T) { //nolint:dupl // Test duplication is acceptable
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("apple"),
+			hashing.HashableString("banana"),
+			hashing.HashableString("cherry"),
+			hashing.HashableString("apricot"),
+		)
+		require.NoError(t, err)
+
+		// FilterNot for strings starting with 'a' (exclude those)
+		filtered := s.FilterNot(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'a'
+		})
+
+		assert.Equal(t, 2, filtered.Size())
+
+		contains, err := filtered.Contains(hashing.HashableString("banana"))
+		require.NoError(t, err)
+		assert.True(t, contains)
+
+		contains, err = filtered.Contains(hashing.HashableString("cherry"))
+		require.NoError(t, err)
+		assert.True(t, contains)
+
+		contains, err = filtered.Contains(hashing.HashableString("apple"))
+		require.NoError(t, err)
+		assert.False(t, contains)
+	})
+
+	t.Run("FilterNot with no matches", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		// FilterNot for strings starting with 'x' (none match, so all included)
+		filtered := s.FilterNot(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'x'
+		})
+
+		assert.Equal(t, 3, filtered.Size())
+		assert.ElementsMatch(t, s.Entries(), filtered.Entries())
+	})
+
+	t.Run("FilterNot with all matches", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		// FilterNot for all strings (all match, so none included)
+		filtered := s.FilterNot(func(item hashing.HashableString) bool {
+			return true
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("FilterNot on empty set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		filtered := s.FilterNot(func(item hashing.HashableString) bool {
+			return true
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("FilterNot does not modify original set", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		_ = s.FilterNot(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'b'
+		})
+
+		// Original set should be unchanged
+		assert.Equal(t, 3, s.Size())
+	})
+}
+
+// TestOrderedSetFilter tests the Filter method on OrderedSet implementations.
+func TestOrderedSetFilter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Filter maintains insertion order", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewOrderedSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("apple"),
+			hashing.HashableString("banana"),
+			hashing.HashableString("apricot"),
+			hashing.HashableString("cherry"),
+			hashing.HashableString("avocado"),
+		)
+		require.NoError(t, err)
+
+		// Filter for strings starting with 'a'
+		filtered := s.Filter(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'a'
+		})
+
+		assert.Equal(t, 3, filtered.Size())
+
+		// Order should be preserved from original set
+		entries := filtered.Entries()
+		assert.Equal(t, []hashing.HashableString{
+			hashing.HashableString("apple"),
+			hashing.HashableString("apricot"),
+			hashing.HashableString("avocado"),
+		}, entries)
+	})
+
+	t.Run("Filter with no matches preserves empty order", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewOrderedSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		filtered := s.Filter(func(item hashing.HashableString) bool {
+			return false
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("Filter on empty OrderedSet", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewOrderedSet[hashing.HashableString](hashing.Sha256)
+
+		filtered := s.Filter(func(item hashing.HashableString) bool {
+			return true
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+	})
+}
+
+// TestOrderedSetFilterNot tests the FilterNot method on OrderedSet implementations.
+func TestOrderedSetFilterNot(t *testing.T) {
+	t.Parallel()
+
+	t.Run("FilterNot maintains insertion order", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewOrderedSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("apple"),
+			hashing.HashableString("banana"),
+			hashing.HashableString("apricot"),
+			hashing.HashableString("cherry"),
+			hashing.HashableString("avocado"),
+		)
+		require.NoError(t, err)
+
+		// FilterNot for strings starting with 'a' (exclude those)
+		filtered := s.FilterNot(func(item hashing.HashableString) bool {
+			return len(item) > 0 && item[0] == 'a'
+		})
+
+		assert.Equal(t, 2, filtered.Size())
+
+		// Order should be preserved from original set
+		entries := filtered.Entries()
+		assert.Equal(t, []hashing.HashableString{
+			hashing.HashableString("banana"),
+			hashing.HashableString("cherry"),
+		}, entries)
+	})
+
+	t.Run("FilterNot with all matches returns empty in order", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewOrderedSet[hashing.HashableString](hashing.Sha256)
+
+		err := s.AddAll(
+			hashing.HashableString("foo"),
+			hashing.HashableString("bar"),
+			hashing.HashableString("baz"),
+		)
+		require.NoError(t, err)
+
+		filtered := s.FilterNot(func(item hashing.HashableString) bool {
+			return true
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+		assert.Empty(t, filtered.Entries())
+	})
+
+	t.Run("FilterNot on empty OrderedSet", func(t *testing.T) {
+		t.Parallel()
+
+		s := NewOrderedSet[hashing.HashableString](hashing.Sha256)
+
+		filtered := s.FilterNot(func(item hashing.HashableString) bool {
+			return false
+		})
+
+		assert.Equal(t, 0, filtered.Size())
+	})
+}

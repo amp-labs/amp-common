@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 	t.Run("creates transport with defaults", func(t *testing.T) {
 		t.Parallel()
 
-		trans := New()
+		trans := New(t.Context())
 
 		require.NotNil(t, trans)
 		assert.Equal(t, defaultMaxIdleConns, trans.MaxIdleConns)
@@ -31,7 +31,7 @@ func TestNew(t *testing.T) {
 	t.Run("creates transport with disabled connection pooling", func(t *testing.T) {
 		t.Parallel()
 
-		trans := New(DisableConnectionPooling)
+		trans := New(t.Context(), DisableConnectionPooling)
 
 		require.NotNil(t, trans)
 		assert.True(t, trans.DisableKeepAlives)
@@ -40,7 +40,7 @@ func TestNew(t *testing.T) {
 	t.Run("creates transport with DNS cache", func(t *testing.T) {
 		t.Parallel()
 
-		trans := New(EnableDNSCache)
+		trans := New(t.Context(), EnableDNSCache)
 
 		require.NotNil(t, trans)
 		assert.NotNil(t, trans.DialContext)
@@ -49,7 +49,7 @@ func TestNew(t *testing.T) {
 	t.Run("creates transport with insecure TLS", func(t *testing.T) {
 		t.Parallel()
 
-		trans := New(InsecureTLS)
+		trans := New(t.Context(), InsecureTLS)
 
 		require.NotNil(t, trans)
 		require.NotNil(t, trans.TLSClientConfig)
@@ -59,7 +59,7 @@ func TestNew(t *testing.T) {
 	t.Run("creates transport with multiple options", func(t *testing.T) {
 		t.Parallel()
 
-		trans := New(DisableConnectionPooling, EnableDNSCache, InsecureTLS)
+		trans := New(t.Context(), DisableConnectionPooling, EnableDNSCache, InsecureTLS)
 
 		require.NotNil(t, trans)
 		assert.True(t, trans.DisableKeepAlives)
@@ -73,7 +73,7 @@ func TestNew_EnvironmentVariables(t *testing.T) {
 	t.Run("respects HTTP_TRANSPORT_MAX_IDLE_CONNS", func(t *testing.T) {
 		t.Setenv("HTTP_TRANSPORT_MAX_IDLE_CONNS", "50")
 
-		trans := New()
+		trans := New(t.Context())
 
 		assert.Equal(t, 50, trans.MaxIdleConns)
 	})
@@ -81,7 +81,7 @@ func TestNew_EnvironmentVariables(t *testing.T) {
 	t.Run("respects HTTP_TRANSPORT_IDLE_CONN_TIMEOUT", func(t *testing.T) {
 		t.Setenv("HTTP_TRANSPORT_IDLE_CONN_TIMEOUT", "60s")
 
-		trans := New()
+		trans := New(t.Context())
 
 		assert.Equal(t, 60*time.Second, trans.IdleConnTimeout)
 	})
@@ -89,7 +89,7 @@ func TestNew_EnvironmentVariables(t *testing.T) {
 	t.Run("respects HTTP_TRANSPORT_TLS_HANDSHAKE_TIMEOUT", func(t *testing.T) {
 		t.Setenv("HTTP_TRANSPORT_TLS_HANDSHAKE_TIMEOUT", "5s")
 
-		trans := New()
+		trans := New(t.Context())
 
 		assert.Equal(t, 5*time.Second, trans.TLSHandshakeTimeout)
 	})
@@ -97,7 +97,7 @@ func TestNew_EnvironmentVariables(t *testing.T) {
 	t.Run("respects HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2", func(t *testing.T) {
 		t.Setenv("HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2", "true")
 
-		trans := New()
+		trans := New(t.Context())
 
 		assert.True(t, trans.ForceAttemptHTTP2)
 	})
@@ -109,7 +109,7 @@ func TestGet(t *testing.T) {
 	t.Run("returns default pooled transport", func(t *testing.T) {
 		t.Parallel()
 
-		rt := Get()
+		rt := Get(t.Context())
 
 		require.NotNil(t, rt)
 		assert.IsType(t, &http.Transport{}, rt)
@@ -118,7 +118,7 @@ func TestGet(t *testing.T) {
 	t.Run("returns unpooled transport when connection pooling disabled", func(t *testing.T) {
 		t.Parallel()
 
-		rt := Get(DisableConnectionPooling)
+		rt := Get(t.Context(), DisableConnectionPooling)
 
 		require.NotNil(t, rt)
 		trans, ok := rt.(*http.Transport)
@@ -129,8 +129,8 @@ func TestGet(t *testing.T) {
 	t.Run("returns same instance for same config", func(t *testing.T) {
 		t.Parallel()
 
-		rt1 := Get()
-		rt2 := Get()
+		rt1 := Get(t.Context())
+		rt2 := Get(t.Context())
 
 		assert.Same(t, rt1, rt2, "should return same singleton instance")
 	})
@@ -138,8 +138,8 @@ func TestGet(t *testing.T) {
 	t.Run("returns different instances for different configs", func(t *testing.T) {
 		t.Parallel()
 
-		rt1 := Get()
-		rt2 := Get(DisableConnectionPooling)
+		rt1 := Get(t.Context())
+		rt2 := Get(t.Context(), DisableConnectionPooling)
 
 		assert.NotSame(t, rt1, rt2, "should return different instances for different configs")
 	})
@@ -151,7 +151,7 @@ func TestGet(t *testing.T) {
 			MaxIdleConns: 999,
 		}
 
-		rt := Get(WithTransportOverride(customTransport))
+		rt := Get(t.Context(), WithTransportOverride(customTransport))
 
 		assert.Same(t, customTransport, rt)
 	})
@@ -162,7 +162,7 @@ func TestGet(t *testing.T) {
 		customTransport1 := &http.Transport{MaxIdleConns: 111}
 		customTransport2 := &http.Transport{MaxIdleConns: 222}
 
-		rt := Get(WithTransportOverride(nil, customTransport1, customTransport2))
+		rt := Get(t.Context(), WithTransportOverride(nil, customTransport1, customTransport2))
 
 		assert.Same(t, customTransport1, rt)
 	})
@@ -204,7 +204,7 @@ func TestGet_AllCombinations(t *testing.T) {
 				opts = append(opts, InsecureTLS)
 			}
 
-			rt := Get(opts...)
+			rt := Get(t.Context(), opts...)
 
 			require.NotNil(t, rt)
 			trans, ok := rt.(*http.Transport)
@@ -226,7 +226,7 @@ func TestGetContext(t *testing.T) {
 	t.Run("returns default transport when no context transport", func(t *testing.T) {
 		t.Parallel()
 
-		rt := GetContext(t.Context())
+		rt := Get(t.Context())
 
 		require.NotNil(t, rt)
 		assert.IsType(t, &http.Transport{}, rt)
@@ -243,7 +243,7 @@ func TestGetContext(t *testing.T) {
 		}
 		ctx := WithTransport(t.Context(), customTransport)
 
-		rt := GetContext(ctx)
+		rt := Get(ctx)
 
 		assert.Same(t, customTransport, rt)
 	})
@@ -254,7 +254,7 @@ func TestGetContext(t *testing.T) {
 		customTransport := &http.Transport{MaxIdleConns: 777}
 		ctx := WithTransport(t.Context(), customTransport)
 
-		rt := GetContext(ctx, DisableConnectionPooling)
+		rt := Get(ctx, DisableConnectionPooling)
 
 		assert.Same(t, customTransport, rt)
 	})

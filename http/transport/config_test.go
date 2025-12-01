@@ -118,7 +118,7 @@ func TestReadOptions(t *testing.T) {
 	t.Run("creates default config", func(t *testing.T) {
 		t.Parallel()
 
-		cfg := readOptions()
+		cfg := readOptions(t.Context())
 
 		require.NotNil(t, cfg)
 		assert.False(t, cfg.DisableConnectionPooling)
@@ -130,7 +130,7 @@ func TestReadOptions(t *testing.T) {
 	t.Run("applies single option", func(t *testing.T) {
 		t.Parallel()
 
-		cfg := readOptions(DisableConnectionPooling)
+		cfg := readOptions(t.Context(), DisableConnectionPooling)
 
 		assert.True(t, cfg.DisableConnectionPooling)
 	})
@@ -138,7 +138,7 @@ func TestReadOptions(t *testing.T) {
 	t.Run("applies multiple options", func(t *testing.T) {
 		t.Parallel()
 
-		cfg := readOptions(DisableConnectionPooling, EnableDNSCache, InsecureTLS)
+		cfg := readOptions(t.Context(), DisableConnectionPooling, EnableDNSCache, InsecureTLS)
 
 		assert.True(t, cfg.DisableConnectionPooling)
 		assert.True(t, cfg.EnableDNSCache)
@@ -148,7 +148,7 @@ func TestReadOptions(t *testing.T) {
 	t.Run("handles nil options", func(t *testing.T) {
 		t.Parallel()
 
-		cfg := readOptions(nil, DisableConnectionPooling, nil)
+		cfg := readOptions(t.Context(), nil, DisableConnectionPooling, nil)
 
 		assert.True(t, cfg.DisableConnectionPooling)
 		assert.False(t, cfg.EnableDNSCache)
@@ -161,6 +161,7 @@ func TestReadOptions(t *testing.T) {
 		trans2 := &http.Transport{MaxIdleConns: 2}
 
 		cfg := readOptions(
+			t.Context(),
 			WithTransportOverride(trans1),
 			WithTransportOverride(trans2),
 		)
@@ -178,7 +179,7 @@ func TestReadOptions(t *testing.T) {
 			c.DisableConnectionPooling = false
 		}
 
-		cfg := readOptions(DisableConnectionPooling, enablePooling)
+		cfg := readOptions(t.Context(), DisableConnectionPooling, enablePooling)
 
 		assert.False(t, cfg.DisableConnectionPooling)
 	})

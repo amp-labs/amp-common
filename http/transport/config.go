@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/amp-labs/amp-common/envutil"
@@ -54,18 +55,18 @@ func WithTransportOverride(transport ...http.RoundTripper) Option {
 
 // preferPooledForDefault is a lazily-initialized flag that determines whether connection pooling
 // is enabled by default. It can be configured via the HTTP_TRANSPORT_PREFER_POOLED environment variable.
-var preferPooledForDefault = lazy.New[bool](func() bool {
-	return envutil.Bool("HTTP_TRANSPORT_PREFER_POOLED",
+var preferPooledForDefault = lazy.NewCtx[bool](func(ctx context.Context) bool {
+	return envutil.Bool(ctx, "HTTP_TRANSPORT_PREFER_POOLED",
 		envutil.Default(true)).ValueOrElse(true)
 })
 
 // readOptions processes the provided options and returns a config struct.
 // It applies the HTTP_TRANSPORT_PREFER_POOLED environment variable as a default,
 // then applies each provided option in order.
-func readOptions(opts ...Option) *config {
+func readOptions(ctx context.Context, opts ...Option) *config {
 	cfg := &config{}
 
-	if !preferPooledForDefault.Get() {
+	if !preferPooledForDefault.Get(ctx) {
 		cfg.DisableConnectionPooling = true
 	}
 

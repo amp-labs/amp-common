@@ -57,7 +57,7 @@ func Current(ctx context.Context) Stage {
 		return stage
 	}
 
-	return runningStage.Get()
+	return runningStage.Get(ctx)
 }
 
 // IsLocal returns true if the current stage is Local.
@@ -91,8 +91,8 @@ func IsUnknown(ctx context.Context) bool {
 }
 
 // runningStage lazily determines and caches the current stage.
-var runningStage = lazy.New[Stage](func() Stage {
-	value := getRunningStage()
+var runningStage = lazy.NewCtx[Stage](func(ctx context.Context) Stage {
+	value := getRunningStage(ctx)
 
 	if value != Unknown {
 		logger.Get().Info("Configured stage", "stage", value)
@@ -103,8 +103,8 @@ var runningStage = lazy.New[Stage](func() Stage {
 
 // getRunningStage determines the current stage by reading the RUNNING_ENV environment variable.
 // If the environment variable is not set or invalid, it falls back to Test (when in tests) or Unknown.
-func getRunningStage() Stage {
-	reader := envutil.String("RUNNING_ENV")
+func getRunningStage(ctx context.Context) Stage {
+	reader := envutil.String(ctx, "RUNNING_ENV")
 
 	env := envutil.Map[string, Stage](reader, func(s string) (Stage, error) {
 		switch Stage(s) {

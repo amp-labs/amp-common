@@ -589,7 +589,7 @@ func TestConfigureLogging(t *testing.T) { //nolint:paralleltest
 				t.Setenv(k, v)
 			}
 
-			logger := ConfigureLogging(tt.appName)
+			logger := ConfigureLogging(t.Context(), tt.appName)
 			assert.NotNil(t, logger)
 
 			// Clean up

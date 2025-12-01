@@ -102,19 +102,19 @@ var ErrInvalidLogOutput = errors.New("invalid log output")
 
 // ConfigureLogging configures logging for the application.
 // It returns the default logger.
-func ConfigureLogging(app string, opts ...Option) *slog.Logger {
+func ConfigureLogging(ctx context.Context, app string, opts ...Option) *slog.Logger {
 	// Default log format is text
-	logJSON := envutil.Bool("LOG_JSON", envutil.Default(false)).ValueOrFatal()
+	logJSON := envutil.Bool(ctx, "LOG_JSON", envutil.Default(false)).ValueOrFatal()
 
 	// Default log level is info
-	minLevel := envutil.SlogLevel("LOG_LEVEL", envutil.Default(slog.LevelInfo)).ValueOrFatal()
+	minLevel := envutil.SlogLevel(ctx, "LOG_LEVEL", envutil.Default(slog.LevelInfo)).ValueOrFatal()
 
 	// If any packages use the old log package, we'll need to configure that
 	// as well (redirected in to slog). Since the old log package doesn't
 	// support levels, we have to tell it what level to use.
-	legacyLevel := envutil.SlogLevel("LEGACY_LOG_LEVEL", envutil.Default(slog.LevelInfo)).ValueOrFatal()
+	legacyLevel := envutil.SlogLevel(ctx, "LEGACY_LOG_LEVEL", envutil.Default(slog.LevelInfo)).ValueOrFatal()
 
-	output := envutil.Map(envutil.String("LOG_OUTPUT"), func(outName string) (*os.File, error) {
+	output := envutil.Map(envutil.String(ctx, "LOG_OUTPUT"), func(outName string) (*os.File, error) {
 		switch outName {
 		case "stdout":
 			return os.Stdout, nil

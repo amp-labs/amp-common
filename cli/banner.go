@@ -8,6 +8,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -45,8 +46,8 @@ const (
 	halfDivisor     = 2
 )
 
-var suppressBanner = lazy.New[bool](func() bool {
-	return envutil.Bool("AMP_NO_BANNER",
+var suppressBanner = lazy.NewCtx[bool](func(ctx context.Context) bool {
+	return envutil.Bool(ctx, "AMP_NO_BANNER",
 		envutil.Default(false)).
 		ValueOrElse(false)
 })
@@ -70,8 +71,8 @@ func DividerAutoWidth() string {
 // Parameters:
 //   - s: The text to display (can include newlines for multi-line banners)
 //   - a: Alignment constant (AlignLeft, AlignCenter, or AlignRight)
-func BannerAutoWidth(s string, a int) string {
-	if suppressBanner.Get() {
+func BannerAutoWidth(ctx context.Context, s string, a int) string {
+	if suppressBanner.Get(ctx) {
 		return s + "\n"
 	}
 
@@ -80,7 +81,7 @@ func BannerAutoWidth(s string, a int) string {
 		w = DefaultTerminalWidth
 	}
 
-	return Banner(s, int(w), a) //nolint:gosec // Terminal width is bounded by screen size, no overflow risk
+	return Banner(ctx, s, int(w), a) //nolint:gosec // Terminal width is bounded by screen size, no overflow risk
 }
 
 // Divider creates a horizontal divider line with the specified width.
@@ -97,8 +98,8 @@ func Divider(width int) string {
 //   - s: The text to display (can include newlines for multi-line banners)
 //   - width: The total width of the banner in characters
 //   - alignment: Alignment constant (AlignLeft, AlignCenter, or AlignRight)
-func Banner(s string, width int, alignment int) string {
-	if suppressBanner.Get() {
+func Banner(ctx context.Context, s string, width int, alignment int) string {
+	if suppressBanner.Get(ctx) {
 		return s + "\n"
 	}
 

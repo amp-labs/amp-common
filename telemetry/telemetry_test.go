@@ -65,7 +65,7 @@ func TestLoadConfigFromEnv_GKEDetection(t *testing.T) {
 			}
 
 			// Load config
-			config, err := LoadConfigFromEnv("dev")
+			config, err := LoadConfigFromEnv(t.Context(), "dev")
 			if err != nil {
 				t.Fatalf("Failed to load config: %v", err)
 			}
@@ -98,7 +98,7 @@ func TestLoadConfigFromEnv_DefaultValues(t *testing.T) { //nolint:paralleltest
 	_ = os.Unsetenv("OTEL_SERVICE_VERSION")
 	_ = os.Unsetenv("ENVIRONMENT")
 
-	config, err := LoadConfigFromEnv("test")
+	config, err := LoadConfigFromEnv(t.Context(), "test")
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}

@@ -133,7 +133,7 @@ func TestContextIntegrationWithGetContext(t *testing.T) {
 		customTransport := &http.Transport{MaxIdleConns: 123}
 		ctx := WithTransport(t.Context(), customTransport)
 
-		rt := GetContext(ctx)
+		rt := Get(ctx)
 
 		assert.Same(t, customTransport, rt)
 	})
@@ -143,7 +143,7 @@ func TestContextIntegrationWithGetContext(t *testing.T) {
 
 		ctx := t.Context()
 
-		rt := GetContext(ctx)
+		rt := Get(ctx)
 
 		require.NotNil(t, rt)
 		assert.IsType(t, &http.Transport{}, rt)
@@ -152,7 +152,7 @@ func TestContextIntegrationWithGetContext(t *testing.T) {
 	t.Run("GetContext with nil context uses default", func(t *testing.T) {
 		t.Parallel()
 
-		rt := GetContext(t.Context())
+		rt := Get(t.Context())
 
 		require.NotNil(t, rt)
 		assert.IsType(t, &http.Transport{}, rt)

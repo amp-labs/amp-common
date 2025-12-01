@@ -8,7 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testKeyConst = "testKey"
+const (
+	testKeyConst   = "testKey"
+	testValueConst = "testValue"
+)
 
 type contextKey string
 
@@ -103,7 +106,7 @@ func TestWithValue(t *testing.T) {
 
 		ctx := t.Context()
 		key := testKeyConst
-		value := "testValue"
+		value := testValueConst
 
 		ctx = WithValue(ctx, key, value)
 		assert.Equal(t, value, ctx.Value(key))
@@ -163,7 +166,7 @@ func TestGetValue(t *testing.T) {
 
 		ctx := t.Context()
 		key := contextKey(testKeyConst)
-		expectedValue := "testValue"
+		expectedValue := testValueConst
 
 		ctx = context.WithValue(ctx, key, expectedValue)
 		value, ok := GetValue[contextKey, string](ctx, key)

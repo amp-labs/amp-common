@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
+
+	"github.com/amp-labs/amp-common/contexts"
 )
 
 // OfCtx is a lazy value that is initialized at most once.
@@ -40,7 +42,7 @@ func (t *OfCtx[T]) Get(ctx context.Context) T { //nolint:ireturn
 		// Only initialize if create function is set
 		createFn := t.create.Load()
 		if createFn != nil {
-			result := (*createFn)(ctx)
+			result := (*createFn)(contexts.WithIgnoreLifecycle(ctx))
 			// Mark as initialized and clear the create function
 			t.value.Store(&result)
 			t.initialized.Store(true)

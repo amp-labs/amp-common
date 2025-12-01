@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
+
+	"github.com/amp-labs/amp-common/contexts"
 )
 
 // OfCtxErr is a lazy value that is initialized at most once, but which might error out.
@@ -47,7 +49,7 @@ func (t *OfCtxErr[T]) Get(ctx context.Context) (T, error) { //nolint:ireturn
 				return nil
 			}
 
-			value, err := (*fn)(ctx)
+			value, err := (*fn)(contexts.WithIgnoreLifecycle(ctx))
 			if err != nil {
 				return err
 			}

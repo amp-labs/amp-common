@@ -5,7 +5,7 @@ go 1.24.6
 require (
 	facette.io/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/OneOfOne/xxhash v1.2.8
-	github.com/alitto/pond/v2 v2.5.0
+	github.com/alitto/pond/v2 v2.6.0
 	github.com/google/uuid v1.6.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/prometheus/client_golang v1.23.2

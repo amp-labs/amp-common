@@ -4,10 +4,12 @@
 package stage
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 
+	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/lazy"
 	"github.com/amp-labs/amp-common/logger"
@@ -34,40 +36,58 @@ const (
 	Prod Stage = "prod"
 )
 
+// contextKey is a typed key for storing stage information in context.
+type contextKey string
+
+// stageContextKey is the key used to store stage overrides in context.
+const stageContextKey contextKey = "stage"
+
+// WithStage returns a new context with the specified stage value.
+// This is primarily useful for unit testing to override the detected stage.
+func WithStage(ctx context.Context, stage Stage) context.Context {
+	return contexts.WithValue[contextKey, Stage](ctx, stageContextKey, stage)
+}
+
 // Current returns the current running environment.
 // The stage is determined once on first call and cached.
-func Current() Stage {
+// The value can be overridden using a context, which is useful for unit testing.
+func Current(ctx context.Context) Stage {
+	stage, found := contexts.GetValue[contextKey, Stage](ctx, stageContextKey)
+	if found {
+		return stage
+	}
+
 	return runningStage.Get()
 }
 
 // IsLocal returns true if the current stage is Local.
-func IsLocal() bool {
-	return Current() == Local
+func IsLocal(ctx context.Context) bool {
+	return Current(ctx) == Local
 }
 
 // IsDev returns true if the current stage is Dev.
-func IsDev() bool {
-	return Current() == Dev
+func IsDev(ctx context.Context) bool {
+	return Current(ctx) == Dev
 }
 
 // IsStaging returns true if the current stage is Staging.
-func IsStaging() bool {
-	return Current() == Staging
+func IsStaging(ctx context.Context) bool {
+	return Current(ctx) == Staging
 }
 
 // IsProd returns true if the current stage is Prod.
-func IsProd() bool {
-	return Current() == Prod
+func IsProd(ctx context.Context) bool {
+	return Current(ctx) == Prod
 }
 
 // IsTest returns true if the current stage is Test.
-func IsTest() bool {
-	return Current() == Test
+func IsTest(ctx context.Context) bool {
+	return Current(ctx) == Test
 }
 
 // IsUnknown returns true if the current stage is Unknown.
-func IsUnknown() bool {
-	return Current() == Unknown
+func IsUnknown(ctx context.Context) bool {
+	return Current(ctx) == Unknown
 }
 
 // runningStage lazily determines and caches the current stage.

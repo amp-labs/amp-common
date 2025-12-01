@@ -52,9 +52,9 @@ func TestGetRunningStageWithEnv(t *testing.T) {
 			t.Setenv("RUNNING_ENV", tt.envValue)
 
 			// Reset the lazy value for this test
-			testStage := lazy.New[Stage](getRunningStage)
+			testStage := lazy.NewCtx[Stage](getRunningStage)
 
-			assert.Equal(t, tt.expected, testStage.Get())
+			assert.Equal(t, tt.expected, testStage.Get(t.Context()))
 		})
 	}
 }
@@ -64,10 +64,10 @@ func TestGetRunningStageInvalidValue(t *testing.T) {
 	t.Setenv("RUNNING_ENV", "invalid-stage")
 
 	// Reset the lazy value for this test
-	testStage := lazy.New[Stage](getRunningStage)
+	testStage := lazy.NewCtx[Stage](getRunningStage)
 
 	// Should default to Test when running in test environment
-	assert.Equal(t, Test, testStage.Get())
+	assert.Equal(t, Test, testStage.Get(t.Context()))
 }
 
 func TestGetRunningStageNoEnv(t *testing.T) {
@@ -77,17 +77,17 @@ func TestGetRunningStageNoEnv(t *testing.T) {
 	os.Unsetenv("RUNNING_ENV")
 
 	// Reset the lazy value for this test
-	testStage := lazy.New[Stage](getRunningStage)
+	testStage := lazy.NewCtx[Stage](getRunningStage)
 
 	// Should default to Test when running in test environment (test.v flag exists)
-	assert.Equal(t, Test, testStage.Get())
+	assert.Equal(t, Test, testStage.Get(t.Context()))
 }
 
 func TestIsLocal(t *testing.T) {
 	t.Setenv("RUNNING_ENV", "local")
 
 	// Reset the lazy value
-	runningStage = lazy.New[Stage](getRunningStage)
+	runningStage = lazy.NewCtx[Stage](getRunningStage)
 
 	assert.True(t, IsLocal(t.Context()))
 	assert.False(t, IsDev(t.Context()))
@@ -101,7 +101,7 @@ func TestIsDev(t *testing.T) {
 	t.Setenv("RUNNING_ENV", "dev")
 
 	// Reset the lazy value
-	runningStage = lazy.New[Stage](getRunningStage)
+	runningStage = lazy.NewCtx[Stage](getRunningStage)
 
 	assert.False(t, IsLocal(t.Context()))
 	assert.True(t, IsDev(t.Context()))
@@ -115,7 +115,7 @@ func TestIsStaging(t *testing.T) {
 	t.Setenv("RUNNING_ENV", "staging")
 
 	// Reset the lazy value
-	runningStage = lazy.New[Stage](getRunningStage)
+	runningStage = lazy.NewCtx[Stage](getRunningStage)
 
 	assert.False(t, IsLocal(t.Context()))
 	assert.False(t, IsDev(t.Context()))
@@ -129,7 +129,7 @@ func TestIsProd(t *testing.T) {
 	t.Setenv("RUNNING_ENV", "prod")
 
 	// Reset the lazy value
-	runningStage = lazy.New[Stage](getRunningStage)
+	runningStage = lazy.NewCtx[Stage](getRunningStage)
 
 	assert.False(t, IsLocal(t.Context()))
 	assert.False(t, IsDev(t.Context()))
@@ -143,7 +143,7 @@ func TestIsTest(t *testing.T) {
 	t.Setenv("RUNNING_ENV", "test")
 
 	// Reset the lazy value
-	runningStage = lazy.New[Stage](getRunningStage)
+	runningStage = lazy.NewCtx[Stage](getRunningStage)
 
 	assert.False(t, IsLocal(t.Context()))
 	assert.False(t, IsDev(t.Context()))
@@ -171,7 +171,7 @@ func TestCurrent(t *testing.T) {
 			t.Setenv("RUNNING_ENV", tt.envValue)
 
 			// Reset the lazy value for this test
-			runningStage = lazy.New[Stage](getRunningStage)
+			runningStage = lazy.NewCtx[Stage](getRunningStage)
 
 			assert.Equal(t, tt.expected, Current(t.Context()))
 		})

@@ -14,7 +14,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with all options disabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(false, false, false)
+		trans := transportFactory(t.Context(), false, false, false)
 
 		require.NotNil(t, trans)
 		assert.False(t, trans.DisableKeepAlives)
@@ -24,7 +24,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with connection pooling disabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(true, false, false)
+		trans := transportFactory(t.Context(), true, false, false)
 
 		require.NotNil(t, trans)
 		assert.True(t, trans.DisableKeepAlives)
@@ -33,7 +33,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with DNS cache enabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(false, true, false)
+		trans := transportFactory(t.Context(), false, true, false)
 
 		require.NotNil(t, trans)
 		assert.NotNil(t, trans.DialContext)
@@ -42,7 +42,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with insecure TLS", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(false, false, true)
+		trans := transportFactory(t.Context(), false, false, true)
 
 		require.NotNil(t, trans)
 		require.NotNil(t, trans.TLSClientConfig)
@@ -52,7 +52,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with all options enabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(true, true, true)
+		trans := transportFactory(t.Context(), true, true, true)
 
 		require.NotNil(t, trans)
 		assert.True(t, trans.DisableKeepAlives)
@@ -69,7 +69,7 @@ func TestGetTransportInstance(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{}
-		rt := getTransportInstance(cfg)
+		rt := getTransportInstance(t.Context(), cfg)
 
 		require.NotNil(t, rt)
 		assert.IsType(t, &http.Transport{}, rt)
@@ -79,7 +79,7 @@ func TestGetTransportInstance(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{DisableConnectionPooling: true}
-		rt := getTransportInstance(cfg)
+		rt := getTransportInstance(t.Context(), cfg)
 
 		trans, ok := rt.(*http.Transport)
 		require.True(t, ok)
@@ -90,7 +90,7 @@ func TestGetTransportInstance(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{EnableDNSCache: true}
-		rt := getTransportInstance(cfg)
+		rt := getTransportInstance(t.Context(), cfg)
 
 		trans, ok := rt.(*http.Transport)
 		require.True(t, ok)
@@ -101,7 +101,7 @@ func TestGetTransportInstance(t *testing.T) {
 		t.Parallel()
 
 		cfg := &config{InsecureTLS: true}
-		rt := getTransportInstance(cfg)
+		rt := getTransportInstance(t.Context(), cfg)
 
 		trans, ok := rt.(*http.Transport)
 		require.True(t, ok)
@@ -117,7 +117,7 @@ func TestGetTransportInstance(t *testing.T) {
 			TransportOverrides: []http.RoundTripper{customTransport},
 		}
 
-		rt := getTransportInstance(cfg)
+		rt := getTransportInstance(t.Context(), cfg)
 
 		assert.Same(t, customTransport, rt)
 	})
@@ -131,7 +131,7 @@ func TestGetTransportInstance(t *testing.T) {
 			TransportOverrides: []http.RoundTripper{nil, trans1, trans2},
 		}
 
-		rt := getTransportInstance(cfg)
+		rt := getTransportInstance(t.Context(), cfg)
 
 		assert.Same(t, trans1, rt)
 	})
@@ -143,7 +143,7 @@ func TestGetTransportInstance(t *testing.T) {
 			TransportOverrides: []http.RoundTripper{nil, nil},
 		}
 
-		rt := getTransportInstance(cfg)
+		rt := getTransportInstance(t.Context(), cfg)
 
 		require.NotNil(t, rt)
 		assert.IsType(t, &http.Transport{}, rt)
@@ -156,8 +156,8 @@ func TestSingletonInstances(t *testing.T) {
 	t.Run("pooledTransportNoDNSCache returns same instance", func(t *testing.T) {
 		t.Parallel()
 
-		trans1 := pooledTransportNoDNSCache.Get()
-		trans2 := pooledTransportNoDNSCache.Get()
+		trans1 := pooledTransportNoDNSCache.Get(t.Context())
+		trans2 := pooledTransportNoDNSCache.Get(t.Context())
 
 		assert.Same(t, trans1, trans2)
 	})
@@ -165,8 +165,8 @@ func TestSingletonInstances(t *testing.T) {
 	t.Run("unpooledTransportNoDNSCache returns same instance", func(t *testing.T) {
 		t.Parallel()
 
-		trans1 := unpooledTransportNoDNSCache.Get()
-		trans2 := unpooledTransportNoDNSCache.Get()
+		trans1 := unpooledTransportNoDNSCache.Get(t.Context())
+		trans2 := unpooledTransportNoDNSCache.Get(t.Context())
 
 		assert.Same(t, trans1, trans2)
 	})
@@ -174,8 +174,8 @@ func TestSingletonInstances(t *testing.T) {
 	t.Run("pooledTransportWithDNSCache returns same instance", func(t *testing.T) {
 		t.Parallel()
 
-		trans1 := pooledTransportWithDNSCache.Get()
-		trans2 := pooledTransportWithDNSCache.Get()
+		trans1 := pooledTransportWithDNSCache.Get(t.Context())
+		trans2 := pooledTransportWithDNSCache.Get(t.Context())
 
 		assert.Same(t, trans1, trans2)
 	})
@@ -183,8 +183,8 @@ func TestSingletonInstances(t *testing.T) {
 	t.Run("unpooledTransportWithDNSCache returns same instance", func(t *testing.T) {
 		t.Parallel()
 
-		trans1 := unpooledTransportWithDNSCache.Get()
-		trans2 := unpooledTransportWithDNSCache.Get()
+		trans1 := unpooledTransportWithDNSCache.Get(t.Context())
+		trans2 := unpooledTransportWithDNSCache.Get(t.Context())
 
 		assert.Same(t, trans1, trans2)
 	})
@@ -192,8 +192,8 @@ func TestSingletonInstances(t *testing.T) {
 	t.Run("different configurations return different instances", func(t *testing.T) {
 		t.Parallel()
 
-		pooled := pooledTransportNoDNSCache.Get()
-		unpooled := unpooledTransportNoDNSCache.Get()
+		pooled := pooledTransportNoDNSCache.Get(t.Context())
+		unpooled := unpooledTransportNoDNSCache.Get(t.Context())
 
 		assert.NotSame(t, pooled, unpooled)
 	})
@@ -210,56 +210,56 @@ func TestSingletonInstances(t *testing.T) {
 		}{
 			{
 				name:              "pooledTransportNoDNSCache",
-				instance:          pooledTransportNoDNSCache.Get(),
+				instance:          pooledTransportNoDNSCache.Get(t.Context()),
 				expectKeepAlives:  false,
 				expectDialContext: false,
 				expectInsecureTLS: false,
 			},
 			{
 				name:              "unpooledTransportNoDNSCache",
-				instance:          unpooledTransportNoDNSCache.Get(),
+				instance:          unpooledTransportNoDNSCache.Get(t.Context()),
 				expectKeepAlives:  true,
 				expectDialContext: false,
 				expectInsecureTLS: false,
 			},
 			{
 				name:              "pooledTransportWithDNSCache",
-				instance:          pooledTransportWithDNSCache.Get(),
+				instance:          pooledTransportWithDNSCache.Get(t.Context()),
 				expectKeepAlives:  false,
 				expectDialContext: true,
 				expectInsecureTLS: false,
 			},
 			{
 				name:              "unpooledTransportWithDNSCache",
-				instance:          unpooledTransportWithDNSCache.Get(),
+				instance:          unpooledTransportWithDNSCache.Get(t.Context()),
 				expectKeepAlives:  true,
 				expectDialContext: true,
 				expectInsecureTLS: false,
 			},
 			{
 				name:              "insecurePooledTransportNoDNSCache",
-				instance:          insecurePooledTransportNoDNSCache.Get(),
+				instance:          insecurePooledTransportNoDNSCache.Get(t.Context()),
 				expectKeepAlives:  false,
 				expectDialContext: false,
 				expectInsecureTLS: true,
 			},
 			{
 				name:              "insecureUnpooledTransportNoDNSCache",
-				instance:          insecureUnpooledTransportNoDNSCache.Get(),
+				instance:          insecureUnpooledTransportNoDNSCache.Get(t.Context()),
 				expectKeepAlives:  true,
 				expectDialContext: false,
 				expectInsecureTLS: true,
 			},
 			{
 				name:              "insecurePooledTransportWithDNSCache",
-				instance:          insecurePooledTransportWithDNSCache.Get(),
+				instance:          insecurePooledTransportWithDNSCache.Get(t.Context()),
 				expectKeepAlives:  false,
 				expectDialContext: true,
 				expectInsecureTLS: true,
 			},
 			{
 				name:              "insecureUnpooledTransportWithDNSCache",
-				instance:          insecureUnpooledTransportWithDNSCache.Get(),
+				instance:          insecureUnpooledTransportWithDNSCache.Get(t.Context()),
 				expectKeepAlives:  true,
 				expectDialContext: true,
 				expectInsecureTLS: true,
@@ -316,7 +316,7 @@ func TestGetTransportInstance_AllCombinations(t *testing.T) {
 				InsecureTLS:              testCase.insecureTLS,
 			}
 
-			rt := getTransportInstance(cfg)
+			rt := getTransportInstance(t.Context(), cfg)
 
 			require.NotNil(t, rt)
 			trans, ok := rt.(*http.Transport)
@@ -330,7 +330,7 @@ func TestGetTransportInstance_AllCombinations(t *testing.T) {
 			}
 
 			// Verify same config returns same instance
-			rt2 := getTransportInstance(cfg)
+			rt2 := getTransportInstance(t.Context(), cfg)
 			assert.Same(t, rt, rt2, "should return same singleton instance")
 		})
 	}

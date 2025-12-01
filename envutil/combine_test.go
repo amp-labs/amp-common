@@ -14,7 +14,7 @@ func TestCombine2(t *testing.T) {
 		t.Setenv("TEST_COMBINE2_A", "value1")
 		t.Setenv("TEST_COMBINE2_B", "value2")
 
-		reader := envutil.String2("TEST_COMBINE2_A", "TEST_COMBINE2_B")
+		reader := envutil.String2(t.Context(), "TEST_COMBINE2_A", "TEST_COMBINE2_B")
 		value, err := reader.Value()
 		require.NoError(t, err)
 		assert.Equal(t, "value1", value.First())
@@ -24,7 +24,7 @@ func TestCombine2(t *testing.T) {
 	t.Run("fails when first is missing", func(t *testing.T) {
 		t.Setenv("TEST_COMBINE2_MISSING_B", "value2")
 
-		reader := envutil.String2("TEST_COMBINE2_MISSING_A", "TEST_COMBINE2_MISSING_B")
+		reader := envutil.String2(t.Context(), "TEST_COMBINE2_MISSING_A", "TEST_COMBINE2_MISSING_B")
 		_, err := reader.Value()
 		require.Error(t, err)
 	})
@@ -32,7 +32,7 @@ func TestCombine2(t *testing.T) {
 	t.Run("fails when second is missing", func(t *testing.T) {
 		t.Setenv("TEST_COMBINE2_MISSING_A", "value1")
 
-		reader := envutil.String2("TEST_COMBINE2_MISSING_A", "TEST_COMBINE2_MISSING_B")
+		reader := envutil.String2(t.Context(), "TEST_COMBINE2_MISSING_A", "TEST_COMBINE2_MISSING_B")
 		_, err := reader.Value()
 		require.Error(t, err)
 	})
@@ -40,7 +40,7 @@ func TestCombine2(t *testing.T) {
 	t.Run("fails when both are missing", func(t *testing.T) {
 		t.Parallel()
 
-		reader := envutil.String2("TEST_COMBINE2_MISSING_A", "TEST_COMBINE2_MISSING_B")
+		reader := envutil.String2(t.Context(), "TEST_COMBINE2_MISSING_A", "TEST_COMBINE2_MISSING_B")
 		_, err := reader.Value()
 		require.Error(t, err)
 	})
@@ -50,8 +50,8 @@ func TestCombine2(t *testing.T) {
 		t.Setenv("TEST_COMBINE2_ERROR_B", "42")
 
 		reader := envutil.Combine2(
-			envutil.Int[int]("TEST_COMBINE2_ERROR_A"),
-			envutil.Int[int]("TEST_COMBINE2_ERROR_B"),
+			envutil.Int[int](t.Context(), "TEST_COMBINE2_ERROR_A"),
+			envutil.Int[int](t.Context(), "TEST_COMBINE2_ERROR_B"),
 		)
 		_, err := reader.Value()
 		require.Error(t, err)
@@ -64,7 +64,7 @@ func TestCombine3(t *testing.T) {
 		t.Setenv("TEST_COMBINE3_B", "value2")
 		t.Setenv("TEST_COMBINE3_C", "value3")
 
-		reader := envutil.String3("TEST_COMBINE3_A", "TEST_COMBINE3_B", "TEST_COMBINE3_C")
+		reader := envutil.String3(t.Context(), "TEST_COMBINE3_A", "TEST_COMBINE3_B", "TEST_COMBINE3_C")
 		value, err := reader.Value()
 		require.NoError(t, err)
 		assert.Equal(t, "value1", value.First())
@@ -76,7 +76,8 @@ func TestCombine3(t *testing.T) {
 		t.Setenv("TEST_COMBINE3_MISSING_A", "value1")
 		t.Setenv("TEST_COMBINE3_MISSING_B", "value2")
 
-		reader := envutil.String3("TEST_COMBINE3_MISSING_A", "TEST_COMBINE3_MISSING_B", "TEST_COMBINE3_MISSING_C")
+		reader := envutil.String3(t.Context(),
+			"TEST_COMBINE3_MISSING_A", "TEST_COMBINE3_MISSING_B", "TEST_COMBINE3_MISSING_C")
 		_, err := reader.Value()
 		require.Error(t, err)
 	})
@@ -89,7 +90,7 @@ func TestCombine4(t *testing.T) {
 		t.Setenv("TEST_COMBINE4_C", "value3")
 		t.Setenv("TEST_COMBINE4_D", "value4")
 
-		reader := envutil.String4("TEST_COMBINE4_A", "TEST_COMBINE4_B", "TEST_COMBINE4_C", "TEST_COMBINE4_D")
+		reader := envutil.String4(t.Context(), "TEST_COMBINE4_A", "TEST_COMBINE4_B", "TEST_COMBINE4_C", "TEST_COMBINE4_D")
 		value, err := reader.Value()
 		require.NoError(t, err)
 		assert.Equal(t, "value1", value.First())
@@ -102,6 +103,7 @@ func TestCombine4(t *testing.T) {
 		t.Setenv("TEST_COMBINE4_MISSING_A", "value1")
 
 		reader := envutil.String4(
+			t.Context(),
 			"TEST_COMBINE4_MISSING_A",
 			"TEST_COMBINE4_MISSING_B",
 			"TEST_COMBINE4_MISSING_C",
@@ -121,6 +123,7 @@ func TestCombine5(t *testing.T) {
 		t.Setenv("TEST_COMBINE5_E", "value5")
 
 		reader := envutil.String5(
+			t.Context(),
 			"TEST_COMBINE5_A",
 			"TEST_COMBINE5_B",
 			"TEST_COMBINE5_C",
@@ -147,6 +150,7 @@ func TestCombine6(t *testing.T) {
 		t.Setenv("TEST_COMBINE6_F", "value6")
 
 		reader := envutil.String6(
+			t.Context(),
 			"TEST_COMBINE6_A",
 			"TEST_COMBINE6_B",
 			"TEST_COMBINE6_C",
@@ -171,7 +175,7 @@ func TestSplit2(t *testing.T) {
 		t.Setenv("TEST_SPLIT2_A", "value1")
 		t.Setenv("TEST_SPLIT2_B", "value2")
 
-		combined := envutil.String2("TEST_SPLIT2_A", "TEST_SPLIT2_B")
+		combined := envutil.String2(t.Context(), "TEST_SPLIT2_A", "TEST_SPLIT2_B")
 		first, second := envutil.Split2(combined)
 
 		val1, err := first.Value()
@@ -186,7 +190,7 @@ func TestSplit2(t *testing.T) {
 	t.Run("propagates missing state", func(t *testing.T) {
 		t.Parallel()
 
-		combined := envutil.String2("TEST_SPLIT2_MISSING_A", "TEST_SPLIT2_MISSING_B")
+		combined := envutil.String2(t.Context(), "TEST_SPLIT2_MISSING_A", "TEST_SPLIT2_MISSING_B")
 		first, second := envutil.Split2(combined)
 
 		_, err := first.Value()
@@ -201,8 +205,8 @@ func TestSplit2(t *testing.T) {
 		t.Setenv("TEST_SPLIT2_ERROR_B", "42")
 
 		combined := envutil.Combine2(
-			envutil.Int[int]("TEST_SPLIT2_ERROR_A"),
-			envutil.Int[int]("TEST_SPLIT2_ERROR_B"),
+			envutil.Int[int](t.Context(), "TEST_SPLIT2_ERROR_A"),
+			envutil.Int[int](t.Context(), "TEST_SPLIT2_ERROR_B"),
 		)
 		first, second := envutil.Split2(combined)
 
@@ -220,7 +224,7 @@ func TestSplit3(t *testing.T) {
 		t.Setenv("TEST_SPLIT3_B", "value2")
 		t.Setenv("TEST_SPLIT3_C", "value3")
 
-		combined := envutil.String3("TEST_SPLIT3_A", "TEST_SPLIT3_B", "TEST_SPLIT3_C")
+		combined := envutil.String3(t.Context(), "TEST_SPLIT3_A", "TEST_SPLIT3_B", "TEST_SPLIT3_C")
 		first, second, third := envutil.Split3(combined)
 
 		val1, err := first.Value()
@@ -244,7 +248,7 @@ func TestSplit4(t *testing.T) {
 		t.Setenv("TEST_SPLIT4_C", "value3")
 		t.Setenv("TEST_SPLIT4_D", "value4")
 
-		combined := envutil.String4("TEST_SPLIT4_A", "TEST_SPLIT4_B", "TEST_SPLIT4_C", "TEST_SPLIT4_D")
+		combined := envutil.String4(t.Context(), "TEST_SPLIT4_A", "TEST_SPLIT4_B", "TEST_SPLIT4_C", "TEST_SPLIT4_D")
 		first, second, third, fourth := envutil.Split4(combined)
 
 		val1, err := first.Value()
@@ -274,6 +278,7 @@ func TestSplit5(t *testing.T) {
 		t.Setenv("TEST_SPLIT5_E", "value5")
 
 		combined := envutil.String5(
+			t.Context(),
 			"TEST_SPLIT5_A",
 			"TEST_SPLIT5_B",
 			"TEST_SPLIT5_C",
@@ -314,6 +319,7 @@ func TestSplit6(t *testing.T) {
 		t.Setenv("TEST_SPLIT6_F", "value6")
 
 		combined := envutil.String6(
+			t.Context(),
 			"TEST_SPLIT6_A",
 			"TEST_SPLIT6_B",
 			"TEST_SPLIT6_C",

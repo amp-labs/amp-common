@@ -50,43 +50,43 @@ import (
 // with environment variables. The defaults are based on the default Transport
 // in net/http. Try to use a single instance of the Transport and reuse it
 // for all requests to take advantage of connection pooling.
-func New(options ...Option) *http.Transport {
-	return create(readOptions(options...))
+func New(ctx context.Context, options ...Option) *http.Transport {
+	return create(ctx, readOptions(ctx, options...))
 }
 
 // create builds a new http.Transport from the given config.
 // It reads environment variables for fine-tuning transport parameters and applies
 // the configuration options (connection pooling, DNS caching, TLS settings).
-func create(cfg *config) *http.Transport {
-	maxIdleConns := envutil.Int("HTTP_TRANSPORT_MAX_IDLE_CONNS",
+func create(ctx context.Context, cfg *config) *http.Transport {
+	maxIdleConns := envutil.Int(ctx, "HTTP_TRANSPORT_MAX_IDLE_CONNS",
 		envutil.Default(defaultMaxIdleConns)).
 		ValueOrElse(defaultMaxIdleConns)
 
-	idleConnTimeout := envutil.Duration("HTTP_TRANSPORT_IDLE_CONN_TIMEOUT",
+	idleConnTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_IDLE_CONN_TIMEOUT",
 		envutil.Default(defaultIdleConnTimeout)).
 		ValueOrElse(defaultIdleConnTimeout)
 
-	tlsHandshakeTimeout := envutil.Duration("HTTP_TRANSPORT_TLS_HANDSHAKE_TIMEOUT",
+	tlsHandshakeTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_TLS_HANDSHAKE_TIMEOUT",
 		envutil.Default(defaultTLSHandshakeTimeout)).
 		ValueOrElse(defaultTLSHandshakeTimeout)
 
-	expectContinueTimeout := envutil.Duration("HTTP_TRANSPORT_EXPECT_CONTINUE_TIMEOUT",
+	expectContinueTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_EXPECT_CONTINUE_TIMEOUT",
 		envutil.Default(defaultExpectContinueTimeout)).
 		ValueOrElse(defaultExpectContinueTimeout)
 
-	disableHTTP2 := envutil.Bool("HTTP_TRANSPORT_DISABLE_HTTP2",
+	disableHTTP2 := envutil.Bool(ctx, "HTTP_TRANSPORT_DISABLE_HTTP2",
 		envutil.Default(true)).
 		ValueOrElse(true)
 
-	forceAttemptHTTP2 := envutil.Bool("HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2",
+	forceAttemptHTTP2 := envutil.Bool(ctx, "HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2",
 		envutil.Default(defaultForceAttemptHTTP2)).
 		ValueOrElse(defaultForceAttemptHTTP2)
 
-	dialTimeout := envutil.Duration("HTTP_TRANSPORT_DIAL_TIMEOUT",
+	dialTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_DIAL_TIMEOUT",
 		envutil.Default(defaultTransportDialTimeout)).
 		ValueOrElse(defaultTransportDialTimeout)
 
-	keepAlive := envutil.Duration("HTTP_TRANSPORT_DIAL_KEEPALIVE",
+	keepAlive := envutil.Duration(ctx, "HTTP_TRANSPORT_DIAL_KEEPALIVE",
 		envutil.Default(defaultKeepAlive)).
 		ValueOrElse(defaultKeepAlive)
 
@@ -123,21 +123,15 @@ func create(cfg *config) *http.Transport {
 	return transport
 }
 
-// Get returns a http.RoundTripper based on the provided options.
-// If no options are provided, it returns a default transport instance.
-func Get(opts ...Option) http.RoundTripper {
-	return getTransportInstance(readOptions(opts...))
-}
-
-// GetContext returns a http.RoundTripper based on the provided options or
+// Get returns a http.RoundTripper based on the provided options or
 // from the context if one is set. If no options are provided and no transport
 // is set in the context, it returns a default transport instance.
-func GetContext(ctx context.Context, opts ...Option) http.RoundTripper {
+func Get(ctx context.Context, opts ...Option) http.RoundTripper {
 	if tr := getTransportFromContext(ctx); tr != nil {
 		return tr
 	}
 
-	return Get(opts...)
+	return getTransportInstance(ctx, readOptions(ctx, opts...))
 }
 
 // defaultTransportDialContext returns a DialContext function from the given dialer.

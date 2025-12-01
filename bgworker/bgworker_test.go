@@ -14,7 +14,7 @@ func TestSubmit(t *testing.T) {
 
 	var counter atomic.Int32
 
-	task := Submit(func() {
+	task := Submit(t.Context(), func() {
 		counter.Add(1)
 	})
 
@@ -32,7 +32,7 @@ func TestSubmitMultipleTasks(t *testing.T) {
 	tasks := make([]interface{ Wait() error }, numTasks)
 
 	for i := range numTasks {
-		tasks[i] = Submit(func() {
+		tasks[i] = Submit(t.Context(), func() {
 			counter.Add(1)
 		})
 	}
@@ -52,7 +52,7 @@ func TestGo(t *testing.T) {
 
 	done := make(chan struct{})
 
-	err := Go(func() {
+	err := Go(t.Context(), func() {
 		counter.Add(1)
 		close(done)
 	})
@@ -76,7 +76,7 @@ func TestGoMultipleTasks(t *testing.T) {
 	done := make(chan struct{}, 10)
 
 	for range 10 {
-		err := Go(func() {
+		err := Go(t.Context(), func() {
 			counter.Add(1)
 			done <- struct{}{}
 		})
@@ -99,7 +99,7 @@ func TestGoMultipleTasks(t *testing.T) {
 func TestSubmitWithPanic(t *testing.T) {
 	t.Parallel()
 
-	task := Submit(func() {
+	task := Submit(t.Context(), func() {
 		panic("test panic")
 	})
 
@@ -113,7 +113,7 @@ func TestSubmitWithPanic(t *testing.T) {
 func TestGoWithPanic(t *testing.T) {
 	t.Parallel()
 
-	err := Go(func() {
+	err := Go(t.Context(), func() {
 		panic("test panic")
 	})
 
@@ -134,7 +134,7 @@ func TestConcurrentSubmit(t *testing.T) {
 
 	// Submit 100 tasks concurrently
 	for i := range numTasks {
-		tasks[i] = Submit(func() {
+		tasks[i] = Submit(t.Context(), func() {
 			time.Sleep(10 * time.Millisecond)
 			counter.Add(1)
 		})
@@ -156,7 +156,7 @@ func TestConcurrentGo(t *testing.T) {
 
 	// Submit 100 tasks concurrently
 	for range 100 {
-		err := Go(func() {
+		err := Go(t.Context(), func() {
 			time.Sleep(10 * time.Millisecond)
 			counter.Add(1)
 		})
@@ -175,7 +175,7 @@ func TestWorkerPoolLaziness(t *testing.T) {
 	// by submitting a task and ensuring it completes
 	var executed atomic.Bool
 
-	task := Submit(func() {
+	task := Submit(t.Context(), func() {
 		executed.Store(true)
 	})
 

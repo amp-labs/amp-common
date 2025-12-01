@@ -35,8 +35,8 @@ type Config struct {
 }
 
 // LoadConfigFromEnv loads OpenTelemetry configuration from environment variables.
-func LoadConfigFromEnv(runningEnv string) (*Config, error) {
-	enabled := envutil.Bool("OTEL_ENABLED",
+func LoadConfigFromEnv(ctx context.Context, runningEnv string) (*Config, error) {
+	enabled := envutil.Bool(ctx, "OTEL_ENABLED",
 		envutil.Default(false)).
 		ValueOrElse(false)
 
@@ -47,28 +47,28 @@ func LoadConfigFromEnv(runningEnv string) (*Config, error) {
 		defaultEndpoint = "http://opentelemetry-collector.opentelemetry.svc.cluster.local:4318"
 	}
 
-	serviceName := logger.GetSubsystem(context.Background())
+	serviceName := logger.GetSubsystem(ctx)
 
-	svcName, err := envutil.String("OTEL_SERVICE_NAME", envutil.Default(serviceName)).Value()
+	svcName, err := envutil.String(ctx, "OTEL_SERVICE_NAME", envutil.Default(serviceName)).Value()
 	if err != nil {
 		return nil, err
 	}
 
-	svcVersion, err := envutil.String("OTEL_SERVICE_VERSION",
+	svcVersion, err := envutil.String(ctx, "OTEL_SERVICE_VERSION",
 		envutil.Default(defaultServiceVersion)).
 		Value()
 	if err != nil {
 		return nil, err
 	}
 
-	endpoint, err := envutil.String("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+	endpoint, err := envutil.String(ctx, "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
 		envutil.Default(defaultEndpoint)).
 		Value()
 	if err != nil {
 		return nil, err
 	}
 
-	timeout, err := envutil.Duration("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT",
+	timeout, err := envutil.Duration(ctx, "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT",
 		envutil.Default(defaultTimeout)).
 		Value()
 	if err != nil {

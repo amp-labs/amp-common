@@ -138,11 +138,11 @@ func run(
 		flag.Parse()
 	}
 
-	// Configure the logger
-	_ = logger.ConfigureLogging(scriptName, opts...)
-
 	// Catch Ctrl+C and handle it gracefully by shutting down the context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	// Configure the logger
+	_ = logger.ConfigureLogging(ctx, scriptName, opts...)
 
 	// We want to cancel the context, but in the case of abort it's possible
 	// to call it more than once. This ensures that we only call it once.

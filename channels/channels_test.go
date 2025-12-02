@@ -1,10 +1,12 @@
 package channels
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreate_UnbufferedChannel(t *testing.T) {
@@ -430,4 +432,228 @@ func TestInfiniteChan_ConcurrentSenders(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for values")
 	}
+}
+
+func TestCloseChannelIgnorePanic_NormalClose(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int, 1)
+	ch <- 42
+
+	// Should close without panic
+	CloseChannelIgnorePanic(ch)
+
+	// Verify channel is closed
+	val := <-ch
+	assert.Equal(t, 42, val)
+
+	val, ok := <-ch
+	assert.False(t, ok)
+	assert.Equal(t, 0, val)
+}
+
+func TestCloseChannelIgnorePanic_NilChannel(t *testing.T) {
+	t.Parallel()
+
+	var ch chan int
+
+	// Should not panic with nil channel
+	CloseChannelIgnorePanic(ch)
+}
+
+func TestCloseChannelIgnorePanic_AlreadyClosed(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+	close(ch)
+
+	// Should not panic when closing an already-closed channel
+	CloseChannelIgnorePanic(ch)
+	CloseChannelIgnorePanic(ch) // Close again
+}
+
+func TestSendCatchPanic_SuccessfulSend(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int, 1)
+
+	err := SendCatchPanic(ch, 42)
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, <-ch)
+}
+
+func TestSendCatchPanic_NilChannel(t *testing.T) {
+	t.Parallel()
+
+	var ch chan int
+
+	err := SendCatchPanic(ch, 42)
+
+	assert.NoError(t, err)
+}
+
+func TestSendCatchPanic_ClosedChannel(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+	close(ch)
+
+	err := SendCatchPanic(ch, 42)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "panic")
+}
+
+func TestSendCatchPanic_UnbufferedChannel(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+
+	done := make(chan error)
+	go func() {
+		done <- SendCatchPanic(ch, 42)
+	}()
+
+	// Receive the value
+	val := <-ch
+	assert.Equal(t, 42, val)
+
+	// Verify no error
+	err := <-done
+	assert.NoError(t, err)
+}
+
+func TestSendContextCatchPanic_SuccessfulSend(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	ch := make(chan int, 1)
+
+	err := SendContextCatchPanic(ctx, ch, 42)
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, <-ch)
+}
+
+func TestSendContextCatchPanic_NilContext(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int, 1)
+
+	err := SendContextCatchPanic(nil, ch, 42) //nolint:usetesting,staticcheck // Testing nil context fallback behavior
+
+	require.NoError(t, err)
+	assert.Equal(t, 42, <-ch)
+}
+
+func TestSendContextCatchPanic_NilChannel(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	var ch chan int
+
+	err := SendContextCatchPanic(ctx, ch, 42)
+
+	assert.NoError(t, err)
+}
+
+func TestSendContextCatchPanic_CanceledContext(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel() // Cancel immediately
+
+	ch := make(chan int)
+
+	err := SendContextCatchPanic(ctx, ch, 42)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestSendContextCatchPanic_ContextCanceledDuringSend(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+
+	ch := make(chan int) // Unbuffered, will block
+
+	// Start send in goroutine (will block since no receiver)
+	done := make(chan error)
+	go func() {
+		done <- SendContextCatchPanic(ctx, ch, 42)
+	}()
+
+	// Wait for context to timeout
+	select {
+	case err := <-done:
+		require.Error(t, err)
+		require.ErrorIs(t, err, context.DeadlineExceeded)
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("timeout waiting for context cancellation")
+	}
+}
+
+func TestSendContextCatchPanic_ClosedChannel(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	ch := make(chan int)
+	close(ch)
+
+	err := SendContextCatchPanic(ctx, ch, 42)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "panic")
+}
+
+func TestSendContextCatchPanic_UnbufferedChannelWithReceiver(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	ch := make(chan int)
+
+	done := make(chan error)
+	received := make(chan int)
+
+	// Start sender
+	go func() {
+		done <- SendContextCatchPanic(ctx, ch, 42)
+	}()
+
+	// Start receiver
+	go func() {
+		received <- <-ch
+	}()
+
+	// Verify both operations complete successfully
+	select {
+	case val := <-received:
+		assert.Equal(t, 42, val)
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for receive")
+	}
+
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for send")
+	}
+}
+
+func TestSendContextCatchPanic_NilContextWithClosedChannel(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan int)
+	close(ch)
+
+	// Nil context should fall back to SendCatchPanic behavior
+	err := SendContextCatchPanic(nil, ch, 42) //nolint:usetesting,staticcheck // Testing nil context fallback behavior
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "panic")
 }

@@ -2,6 +2,14 @@
 // including channel creation with flexible sizing and safe channel closing.
 package channels
 
+import (
+	"context"
+	"errors"
+	"runtime/debug"
+
+	"github.com/amp-labs/amp-common/utils"
+)
+
 // Create creates a channel with the specified size and returns a send-only channel,
 // a receive-only channel, and a function to get the current queue length.
 //
@@ -47,6 +55,60 @@ func CloseChannelIgnorePanic[T any](ch chan<- T) {
 	}()
 
 	close(ch)
+}
+
+// SendCatchPanic sends a message to a channel and recovers from any panic that occurs.
+// This is useful when sending to a channel that might be closed, avoiding a panic.
+//
+// Returns nil if the send succeeds or if ch is nil.
+// Returns an error if a panic occurs during the send (e.g., sending on a closed channel).
+func SendCatchPanic[T any](ch chan<- T, msg T) (err error) {
+	if ch == nil {
+		return nil
+	}
+
+	defer func() {
+		if e := recover(); e != nil {
+			err = utils.GetPanicRecoveryError(e, debug.Stack())
+		}
+	}()
+
+	ch <- msg
+
+	return nil
+}
+
+// SendContextCatchPanic sends a message to a channel with context support and recovers from any panic.
+// It respects context cancellation and will return ctx.Err() if the context is canceled before the send.
+//
+// If ctx is nil, it falls back to SendCatchPanic behavior.
+// Returns nil if the send succeeds or if channel is nil.
+// Returns ctx.Err() if the context is canceled.
+// Returns an error if a panic occurs during the send (e.g., sending on a closed channel).
+func SendContextCatchPanic[T any](ctx context.Context, channel chan<- T, msg T) (err error) {
+	if ctx == nil {
+		return SendCatchPanic(channel, msg)
+	}
+
+	if channel == nil {
+		return nil
+	}
+
+	defer func() {
+		if e := recover(); e != nil {
+			err2 := utils.GetPanicRecoveryError(e, debug.Stack())
+
+			err = errors.Join(err2, err)
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case channel <- msg:
+	}
+
+	return nil
 }
 
 // InfiniteChan creates a channel with infinite buffering.

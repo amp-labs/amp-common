@@ -931,7 +931,7 @@ func TestDefaultZeroMap_Get(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Equal(t, false, val)
+		assert.False(t, val)
 		assert.Equal(t, 1, m.Size())
 	})
 

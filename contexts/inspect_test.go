@@ -15,7 +15,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("returns nil for nil context", func(t *testing.T) {
 		t.Parallel()
 
-		result := InspectContext(nil)
+		result := InspectContext(nil) //nolint:staticcheck
 		assert.Nil(t, result)
 	})
 
@@ -48,7 +48,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects context with single value", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.WithValue(context.Background(), "key", "value")
+		ctx := context.WithValue(context.Background(), "key", "value") //nolint:staticcheck
 		result := InspectContext(ctx)
 
 		require.NotNil(t, result)
@@ -87,9 +87,9 @@ func TestInspectContext(t *testing.T) {
 		t.Parallel()
 
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, "key1", "value1")
-		ctx = context.WithValue(ctx, "key2", 42)
-		ctx = context.WithValue(ctx, "key3", true)
+		ctx = context.WithValue(ctx, "key1", "value1") //nolint:staticcheck
+		ctx = context.WithValue(ctx, "key2", 42)       //nolint:staticcheck
+		ctx = context.WithValue(ctx, "key3", true)     //nolint:staticcheck
 
 		result := InspectContext(ctx)
 
@@ -169,12 +169,12 @@ func TestInspectContext(t *testing.T) {
 
 		// Create a complex context chain
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, "user", "alice")
+		ctx = context.WithValue(ctx, "user", "alice") //nolint:staticcheck
 
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Hour)
 		defer cancel()
 
-		ctx = context.WithValue(ctx, "request_id", "12345")
+		ctx = context.WithValue(ctx, "request_id", "12345") //nolint:staticcheck
 
 		result := InspectContext(ctx)
 
@@ -205,7 +205,7 @@ func TestInspectContext(t *testing.T) {
 		type contextKey string
 		key := contextKey("customKey")
 
-		ctx := context.WithValue(context.Background(), key, "customValue")
+		ctx := context.WithValue(context.Background(), key, "customValue") //nolint:staticcheck
 		result := InspectContext(ctx)
 
 		require.NotNil(t, result)
@@ -224,7 +224,7 @@ func TestInspectContext(t *testing.T) {
 		}
 
 		u := user{Name: "Bob", Age: 30}
-		ctx := context.WithValue(context.Background(), "user", u)
+		ctx := context.WithValue(context.Background(), "user", u) //nolint:staticcheck
 
 		result := InspectContext(ctx)
 
@@ -243,7 +243,7 @@ func TestInspectContext(t *testing.T) {
 		}
 
 		d := &data{Value: 42}
-		ctx := context.WithValue(context.Background(), "data", d)
+		ctx := context.WithValue(context.Background(), "data", d) //nolint:staticcheck
 
 		result := InspectContext(ctx)
 

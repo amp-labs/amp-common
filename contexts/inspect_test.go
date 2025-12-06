@@ -22,7 +22,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects background context", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := context.Background() //nolint:usetesting
 		result := InspectContext(ctx)
 
 		require.NotNil(t, result)
@@ -35,7 +35,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects TODO context", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.TODO()
+		ctx := context.TODO() //nolint:usetesting
 		result := InspectContext(ctx)
 
 		require.NotNil(t, result)
@@ -48,7 +48,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects context with single value", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.WithValue(context.Background(), "key", "value") //nolint:staticcheck
+		ctx := context.WithValue(context.Background(), "key", "value") //nolint:staticcheck,usetesting
 		result := InspectContext(ctx)
 
 		require.NotNil(t, result)
@@ -86,7 +86,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects context with multiple values", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
+		ctx := t.Context()
 		ctx = context.WithValue(ctx, "key1", "value1") //nolint:staticcheck
 		ctx = context.WithValue(ctx, "key2", 42)       //nolint:staticcheck
 		ctx = context.WithValue(ctx, "key3", true)     //nolint:staticcheck
@@ -116,7 +116,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects cancelled context", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
 		result := InspectContext(ctx)
@@ -132,7 +132,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects context with deadline", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(1*time.Hour))
+		ctx, cancel := context.WithDeadline(t.Context(), time.Now().Add(1*time.Hour))
 		defer cancel()
 
 		result := InspectContext(ctx)
@@ -150,7 +150,7 @@ func TestInspectContext(t *testing.T) {
 	t.Run("inspects context with timeout", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
+		ctx, cancel := context.WithTimeout(t.Context(), 1*time.Hour)
 		defer cancel()
 
 		result := InspectContext(ctx)
@@ -168,7 +168,7 @@ func TestInspectContext(t *testing.T) {
 		t.Parallel()
 
 		// Create a complex context chain
-		ctx := context.Background()
+		ctx := t.Context()
 		ctx = context.WithValue(ctx, "user", "alice") //nolint:staticcheck
 
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Hour)
@@ -205,7 +205,7 @@ func TestInspectContext(t *testing.T) {
 		type contextKey string
 		key := contextKey("customKey")
 
-		ctx := context.WithValue(context.Background(), key, "customValue") //nolint:staticcheck
+		ctx := context.WithValue(t.Context(), key, "customValue") //nolint:staticcheck
 		result := InspectContext(ctx)
 
 		require.NotNil(t, result)
@@ -224,7 +224,7 @@ func TestInspectContext(t *testing.T) {
 		}
 
 		u := user{Name: "Bob", Age: 30}
-		ctx := context.WithValue(context.Background(), "user", u) //nolint:staticcheck
+		ctx := context.WithValue(t.Context(), "user", u) //nolint:staticcheck
 
 		result := InspectContext(ctx)
 
@@ -243,7 +243,7 @@ func TestInspectContext(t *testing.T) {
 		}
 
 		d := &data{Value: 42}
-		ctx := context.WithValue(context.Background(), "data", d) //nolint:staticcheck
+		ctx := context.WithValue(t.Context(), "data", d) //nolint:staticcheck
 
 		result := InspectContext(ctx)
 

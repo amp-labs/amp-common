@@ -503,8 +503,8 @@ func TestOrderedHashMap_Seq(t *testing.T) {
 		}
 
 		// Remove some keys
-		orderedMap.Remove(testKey{value: "b"}) //nolint:errcheck
-		orderedMap.Remove(testKey{value: "d"}) //nolint:errcheck
+		_ = orderedMap.Remove(testKey{value: "b"}) //nolint:errcheck
+		_ = orderedMap.Remove(testKey{value: "d"}) //nolint:errcheck
 
 		// Verify remaining order
 		expected := []string{"a", "c", "e"}
@@ -526,12 +526,12 @@ func TestOrderedHashMap_Union(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
-		m2.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
 
 		result, err := m1.Union(m2)
 		require.NoError(t, err)
@@ -553,13 +553,13 @@ func TestOrderedHashMap_Union(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
-		m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "updated2") //nolint:errcheck
-		m2.Add(testKey{value: "key4"}, "value4")   //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "updated2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key4"}, "value4")   //nolint:errcheck
 
 		result, err := m1.Union(m2)
 		require.NoError(t, err)
@@ -585,10 +585,10 @@ func TestOrderedHashMap_Union(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		result, err := m1.Union(m2)
 		require.NoError(t, err)
@@ -601,7 +601,7 @@ func TestOrderedHashMap_Union(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
 
@@ -618,15 +618,15 @@ func TestOrderedHashMap_Intersection(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
-		m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
-		m1.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key4"}, "other4") //nolint:errcheck
-		m2.Add(testKey{value: "key2"}, "other2") //nolint:errcheck
-		m2.Add(testKey{value: "key5"}, "other5") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key4"}, "other4") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "other2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key5"}, "other5") //nolint:errcheck
 
 		result, err := m1.Intersection(m2)
 		require.NoError(t, err)
@@ -648,10 +648,10 @@ func TestOrderedHashMap_Intersection(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key"}, "value1") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key"}, "value2") //nolint:errcheck
 
 		result, err := m1.Intersection(m2)
 		require.NoError(t, err)
@@ -666,10 +666,10 @@ func TestOrderedHashMap_Intersection(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		result, err := m1.Intersection(m2)
 		require.NoError(t, err)
@@ -680,11 +680,11 @@ func TestOrderedHashMap_Intersection(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		m2 := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		result, err := m1.Intersection(m2)
 		require.NoError(t, err)
@@ -704,7 +704,7 @@ func TestOrderedHashMap_Clone(t *testing.T) {
 		keys := []string{"key1", "key2", "key3"}
 
 		for _, k := range keys {
-			original.Add(testKey{value: k}, k) //nolint:errcheck
+			_ = original.Add(testKey{value: k}, k) //nolint:errcheck
 		}
 
 		cloned := original.Clone()
@@ -720,7 +720,7 @@ func TestOrderedHashMap_Clone(t *testing.T) {
 		}
 
 		// Modify original
-		original.Add(testKey{value: "key4"}, "key4") //nolint:errcheck
+		_ = original.Add(testKey{value: "key4"}, "key4") //nolint:errcheck
 
 		// Clone should not be affected
 		assert.Equal(t, 4, original.Size())
@@ -734,7 +734,7 @@ func TestOrderedHashMap_Clone(t *testing.T) {
 		expectedOrder := []string{"a", "b", "c", "d"}
 
 		for i, k := range expectedOrder {
-			original.Add(testKey{value: k}, i) //nolint:errcheck
+			_ = original.Add(testKey{value: k}, i) //nolint:errcheck
 		}
 
 		cloned := original.Clone()
@@ -763,14 +763,14 @@ func TestOrderedHashMap_Clone(t *testing.T) {
 		t.Parallel()
 
 		original := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
-		original.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		original.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = original.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = original.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		cloned := original.Clone()
 
 		// Modify clone
-		cloned.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
-		cloned.Remove(testKey{value: "key1"})        //nolint:errcheck
+		_ = cloned.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		_ = cloned.Remove(testKey{value: "key1"})        //nolint:errcheck
 
 		// Original should be unchanged
 		assert.Equal(t, 2, original.Size())
@@ -1104,9 +1104,9 @@ func TestOrderedHashMap_ForAll(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 2) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 4) //nolint:errcheck
-		m.Add(testKey{value: "c"}, 6) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 4) //nolint:errcheck
+		_ = m.Add(testKey{value: "c"}, 6) //nolint:errcheck
 
 		result := m.ForAll(func(key testKey, value int) bool {
 			return value%2 == 0
@@ -1119,9 +1119,9 @@ func TestOrderedHashMap_ForAll(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 2) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 3) //nolint:errcheck
-		m.Add(testKey{value: "c"}, 4) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 3) //nolint:errcheck
+		_ = m.Add(testKey{value: "c"}, 4) //nolint:errcheck
 
 		result := m.ForAll(func(key testKey, value int) bool {
 			return value%2 == 0
@@ -1151,7 +1151,7 @@ func TestOrderedHashMap_Filter(t *testing.T) {
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
 		for i := 1; i <= 5; i++ {
-			m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
+			_ = m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
 		}
 
 		result := m.Filter(func(key testKey, value int) bool {
@@ -1178,8 +1178,8 @@ func TestOrderedHashMap_Filter(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 2) //nolint:errcheck
 
 		result := m.Filter(func(key testKey, value int) bool {
 			return value == 1
@@ -1198,7 +1198,7 @@ func TestOrderedHashMap_FilterNot(t *testing.T) {
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
 		for i := 1; i <= 5; i++ {
-			m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
+			_ = m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
 		}
 
 		result := m.FilterNot(func(key testKey, value int) bool {
@@ -1230,9 +1230,9 @@ func TestOrderedHashMap_Map(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
-		m.Add(testKey{value: "c"}, 3) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "c"}, 3) //nolint:errcheck
 
 		result := m.Map(func(key testKey, value int) (testKey, int) {
 			return testKey{value: key.value + "_new"}, value * 2
@@ -1260,7 +1260,7 @@ func TestOrderedHashMap_Map(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
 
 		result := m.Map(func(key testKey, value int) (testKey, int) {
 			return key, value * 10
@@ -1283,13 +1283,13 @@ func TestOrderedHashMap_FlatMap(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 2) //nolint:errcheck
 
 		result := m.FlatMap(func(key testKey, value int) maps.OrderedMap[testKey, int] {
 			nested := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-			nested.Add(testKey{value: key.value + "_1"}, value)   //nolint:errcheck
-			nested.Add(testKey{value: key.value + "_2"}, value*2) //nolint:errcheck
+			_ = nested.Add(testKey{value: key.value + "_1"}, value)   //nolint:errcheck
+			_ = nested.Add(testKey{value: key.value + "_2"}, value*2) //nolint:errcheck
 
 			return nested
 		})
@@ -1319,7 +1319,7 @@ func TestOrderedHashMap_FlatMap(t *testing.T) {
 
 		result := m.FlatMap(func(key testKey, value int) maps.OrderedMap[testKey, int] {
 			nested := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-			nested.Add(key, value) //nolint:errcheck
+			_ = nested.Add(key, value) //nolint:errcheck
 
 			return nested
 		})
@@ -1335,9 +1335,9 @@ func TestOrderedHashMap_Exists(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
-		m.Add(testKey{value: "c"}, 3) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "c"}, 3) //nolint:errcheck
 
 		result := m.Exists(func(key testKey, value int) bool {
 			return value == 2
@@ -1350,8 +1350,8 @@ func TestOrderedHashMap_Exists(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 2) //nolint:errcheck
 
 		result := m.Exists(func(key testKey, value int) bool {
 			return value > 10
@@ -1380,9 +1380,9 @@ func TestOrderedHashMap_FindFirst(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 5) //nolint:errcheck
-		m.Add(testKey{value: "c"}, 3) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 5) //nolint:errcheck
+		_ = m.Add(testKey{value: "c"}, 3) //nolint:errcheck
 
 		result := m.FindFirst(func(key testKey, value int) bool {
 			return value > 1
@@ -1398,8 +1398,8 @@ func TestOrderedHashMap_FindFirst(t *testing.T) {
 		t.Parallel()
 
 		m := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		m.Add(testKey{value: "a"}, 1) //nolint:errcheck
-		m.Add(testKey{value: "b"}, 2) //nolint:errcheck
+		_ = m.Add(testKey{value: "a"}, 1) //nolint:errcheck
+		_ = m.Add(testKey{value: "b"}, 2) //nolint:errcheck
 
 		result := m.FindFirst(func(key testKey, value int) bool {
 			return value > 10

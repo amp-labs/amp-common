@@ -667,3 +667,261 @@ func TestDefaultOrderedMapHashFunction(t *testing.T) {
 		assert.NotNil(t, hashFunc)
 	})
 }
+
+func TestNewDefaultZeroOrderedMap(t *testing.T) {
+	t.Parallel()
+
+	t.Run("creates map with zero value defaults", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap)
+
+		require.NotNil(t, m)
+		assert.Equal(t, 0, m.Size())
+	})
+
+	t.Run("returns zero int for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap)
+
+		key := testKey{value: "missing"}
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 0, val)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("returns empty string for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, string](baseMap)
+
+		key := testKey{value: "missing"}
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, "", val)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("returns false for missing bool key", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, bool](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, bool](baseMap)
+
+		key := testKey{value: "missing"}
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.False(t, val)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("returns nil pointer for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, *int](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, *int](baseMap)
+
+		key := testKey{value: "missing"}
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Nil(t, val)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("returns zero struct for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		type config struct {
+			Enabled bool
+			Retries int
+			Name    string
+		}
+
+		baseMap := maps.NewOrderedHashMap[testKey, config](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, config](baseMap)
+
+		key := testKey{value: "missing"}
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, config{Enabled: false, Retries: 0, Name: ""}, val)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("returns nil slice for missing key", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, []string](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, []string](baseMap)
+
+		key := testKey{value: "missing"}
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Nil(t, val)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("always succeeds generating defaults", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap)
+
+		// Try getting multiple missing keys - all should succeed
+		for i := range 10 {
+			key := testKey{value: fmt.Sprintf("key%d", i)}
+			val, found, err := m.Get(key)
+			require.NoError(t, err)
+			assert.True(t, found)
+			assert.Equal(t, 0, val)
+		}
+
+		assert.Equal(t, 10, m.Size())
+	})
+
+	t.Run("preserves insertion order with auto-generated zeros", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		//nolint:varnamelen // Short name acceptable in test context
+		m := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap)
+
+		// Add explicit entry
+		err := m.Add(testKey{value: "first"}, 100)
+		require.NoError(t, err)
+
+		// Trigger zero value generation
+		_, _, err = m.Get(testKey{value: "second"})
+		require.NoError(t, err)
+
+		// Add another explicit entry
+		err = m.Add(testKey{value: "third"}, 300)
+		require.NoError(t, err)
+
+		// Trigger another zero value generation
+		_, _, err = m.Get(testKey{value: "fourth"})
+		require.NoError(t, err)
+
+		// Verify order: first, second (zero), third, fourth (zero)
+		expectedKeys := []string{"first", "second", "third", "fourth"}
+		expectedValues := []int{100, 0, 300, 0}
+		idx := 0
+
+		for _, entry := range m.Seq() {
+			assert.Equal(t, expectedKeys[idx], entry.Key.value)
+			assert.Equal(t, expectedValues[idx], entry.Value)
+
+			idx++
+		}
+
+		assert.Equal(t, 4, idx)
+	})
+
+	t.Run("contains returns true for missing keys after adding zero value", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, string](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, string](baseMap)
+
+		key := testKey{value: "missing"}
+		contains, err := m.Contains(key)
+		require.NoError(t, err)
+		assert.True(t, contains)
+		assert.Equal(t, 1, m.Size())
+
+		// Verify the zero value was actually added
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, "", val)
+	})
+
+	t.Run("does not override existing values", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap)
+
+		key := testKey{value: "test"}
+		err := m.Add(key, 42)
+		require.NoError(t, err)
+
+		val, found, err := m.Get(key)
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 42, val)
+		assert.Equal(t, 1, m.Size())
+	})
+
+	t.Run("cloned map preserves zero value behavior", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap)
+
+		err := m.Add(testKey{value: "a"}, 1)
+		require.NoError(t, err)
+
+		clone := m.Clone()
+
+		// Clone should also generate zero values for missing keys
+		val, found, err := clone.Get(testKey{value: "missing"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 0, val)
+	})
+
+	t.Run("union preserves zero value behavior", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap1 := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m1 := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap1)
+
+		baseMap2 := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		err := baseMap2.Add(testKey{value: "b"}, 2)
+		require.NoError(t, err)
+
+		result, err := m1.Union(baseMap2)
+		require.NoError(t, err)
+
+		// Result should generate zero values for missing keys
+		val, found, err := result.Get(testKey{value: "missing"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 0, val)
+	})
+
+	t.Run("intersection preserves zero value behavior", func(t *testing.T) {
+		t.Parallel()
+
+		baseMap1 := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		m1 := maps.NewDefaultZeroOrderedMap[testKey, int](baseMap1)
+		err := m1.Add(testKey{value: "a"}, 1)
+		require.NoError(t, err)
+		err = m1.Add(testKey{value: "b"}, 2)
+		require.NoError(t, err)
+
+		baseMap2 := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
+		err = baseMap2.Add(testKey{value: "b"}, 20)
+		require.NoError(t, err)
+
+		result, err := m1.Intersection(baseMap2)
+		require.NoError(t, err)
+
+		// Result should generate zero values for missing keys
+		val, found, err := result.Get(testKey{value: "missing"})
+		require.NoError(t, err)
+		assert.True(t, found)
+		assert.Equal(t, 0, val)
+	})
+}

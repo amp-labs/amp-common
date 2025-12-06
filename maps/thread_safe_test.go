@@ -636,12 +636,12 @@ func TestThreadSafeMap_Union(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewThreadSafeMap(maps.NewHashMap[testKey, string](hashing.Sha256))
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		m2 := maps.NewHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
-		m2.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key4"}, "value4") //nolint:errcheck
 
 		result, err := m1.Union(m2)
 		require.NoError(t, err)
@@ -652,10 +652,10 @@ func TestThreadSafeMap_Union(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewThreadSafeMap(maps.NewHashMap[testKey, string](hashing.Sha256))
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
 
 		m2 := maps.NewHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		result, err := m1.Union(m2)
 		require.NoError(t, err)
@@ -682,10 +682,10 @@ func TestThreadSafeMap_Union(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewThreadSafeMap(maps.NewHashMap[testKey, string](hashing.Sha256))
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
 
 		m2 := maps.NewHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		result, err := m1.Union(m2)
 		require.NoError(t, err)
@@ -733,14 +733,14 @@ func TestThreadSafeMap_Intersection(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewThreadSafeMap(maps.NewHashMap[testKey, string](hashing.Sha256))
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
-		m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
 
 		m2 := maps.NewHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "other2") //nolint:errcheck
-		m2.Add(testKey{value: "key3"}, "other3") //nolint:errcheck
-		m2.Add(testKey{value: "key4"}, "other4") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "other2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key3"}, "other3") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key4"}, "other4") //nolint:errcheck
 
 		result, err := m1.Intersection(m2)
 		require.NoError(t, err)
@@ -759,10 +759,10 @@ func TestThreadSafeMap_Intersection(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewThreadSafeMap(maps.NewHashMap[testKey, string](hashing.Sha256))
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
 
 		m2 := maps.NewHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key1"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key1"}, "value2") //nolint:errcheck
 
 		result, err := m1.Intersection(m2)
 		require.NoError(t, err)
@@ -787,11 +787,11 @@ func TestThreadSafeMap_Intersection(t *testing.T) {
 		t.Parallel()
 
 		m1 := maps.NewThreadSafeMap(maps.NewHashMap[testKey, string](hashing.Sha256))
-		m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = m1.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		m2 := maps.NewHashMap[testKey, string](hashing.Sha256)
-		m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = m2.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		result, err := m1.Intersection(m2)
 		require.NoError(t, err)
@@ -808,14 +808,14 @@ func TestThreadSafeMap_Clone(t *testing.T) {
 		t.Parallel()
 
 		original := maps.NewThreadSafeMap(maps.NewHashMap[testKey, string](hashing.Sha256))
-		original.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
-		original.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
+		_ = original.Add(testKey{value: "key1"}, "value1") //nolint:errcheck
+		_ = original.Add(testKey{value: "key2"}, "value2") //nolint:errcheck
 
 		cloned := original.Clone()
 		assert.Equal(t, original.Size(), cloned.Size())
 
 		// Modify original
-		original.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
+		_ = original.Add(testKey{value: "key3"}, "value3") //nolint:errcheck
 
 		// Clone should not be affected
 		assert.Equal(t, 3, original.Size())

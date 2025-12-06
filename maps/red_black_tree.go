@@ -151,6 +151,8 @@ func (t *redBlackTreeMap[K, V]) getNode(key K) (*rbtNode[K, V], bool) {
 				node = parent.right
 			case nodir:
 				node = nil
+			default:
+				panic("unhandled default case")
 			}
 
 			if node != nil {
@@ -292,6 +294,8 @@ func (t *redBlackTreeMap[K, V]) Add(key K, value V) error {
 			case right:
 				parent.right.value = value
 			case nodir:
+			default:
+				panic("unhandled default case")
 			}
 		}
 	} else {
@@ -304,6 +308,8 @@ func (t *redBlackTreeMap[K, V]) Add(key K, value V) error {
 			case right:
 				parent.right = newNode
 			case nodir:
+			default:
+				panic("unhandled default case")
 			}
 
 			t.fixupPut(newNode)

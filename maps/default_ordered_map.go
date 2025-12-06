@@ -4,12 +4,68 @@ import (
 	"errors"
 	"iter"
 
-	"github.com/amp-labs/amp-common/collectable"
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/optional"
 	"github.com/amp-labs/amp-common/set"
 	"github.com/amp-labs/amp-common/zero"
 )
+
+// NewDefaultZeroOrderedMap creates an OrderedMap that automatically provides zero values for missing keys.
+// This is a convenience wrapper around NewDefaultOrderedMap that uses the zero value of type V as
+// the default value for any key that doesn't exist in the map.
+//
+// When Get or Contains is called with a key that doesn't exist, the zero value for type V is
+// automatically generated and added to the map (at the end of the insertion order), then returned.
+// This eliminates the need to manually check if a key exists before accessing it.
+//
+// Unlike NewDefaultOrderedMap, there's no way for this map to refuse providing a default value -
+// it will always succeed in generating a zero value for missing keys. This makes it ideal for
+// use cases where you want default initialization without custom logic.
+//
+// The map preserves insertion order of keys. When a zero value is auto-generated for a missing key,
+// that key is appended to the end of the current insertion order.
+//
+// Common zero values by type:
+//   - Numeric types (int, float64, etc.): 0
+//   - Strings: ""
+//   - Booleans: false
+//   - Pointers: nil
+//   - Slices, maps, channels: nil
+//   - Structs: struct with all fields set to their zero values
+//
+// Parameters:
+//   - storageMap: The underlying OrderedMap implementation to use for storage
+//
+// Example usage:
+//
+//	// Create an ordered map that defaults to 0 for missing integer keys
+//	m := maps.NewDefaultZeroOrderedMap[string, int](
+//	    maps.NewOrderedHashMap[string, int](hashing.NewGoHasher[string]()),
+//	)
+//	value, found, _ := m.Get("missing") // Returns (0, true, nil) and adds key with value 0
+//
+//	// Create an ordered map that defaults to empty strings
+//	m2 := maps.NewDefaultZeroOrderedMap[int, string](
+//	    maps.NewOrderedHashMap[int, string](hashing.NewGoHasher[int]()),
+//	)
+//	value, found, _ := m2.Get(42) // Returns ("", true, nil) and adds key 42 with value ""
+//
+//	// Works with structs too - all fields initialized to their zero values
+//	type Config struct {
+//	    Enabled bool
+//	    Retries int
+//	}
+//	m3 := maps.NewDefaultZeroOrderedMap[string, Config](
+//	    maps.NewOrderedHashMap[string, Config](hashing.NewGoHasher[string]()),
+//	)
+//	cfg, found, _ := m3.Get("app") // Returns (Config{Enabled: false, Retries: 0}, true, nil)
+func NewDefaultZeroOrderedMap[K any, V any](
+	storageMap OrderedMap[K, V],
+) OrderedMap[K, V] {
+	return NewDefaultOrderedMap[K, V](storageMap, func(k K) (V, error) {
+		return zero.Value[V](), nil
+	})
+}
 
 // NewDefaultOrderedMap creates an OrderedMap that automatically generates default values for missing keys.
 // When Get or Contains is called with a key that doesn't exist, the getDefaultValue function
@@ -48,7 +104,7 @@ import (
 //	    },
 //	)
 //	value, found, _ := m2.Get(missingKey) // Returns ("", false, nil) without adding
-func NewDefaultOrderedMap[K collectable.Collectable[K], V any](
+func NewDefaultOrderedMap[K any, V any](
 	storageMap OrderedMap[K, V],
 	getDefaultValue func(K) (V, error),
 ) OrderedMap[K, V] {
@@ -68,12 +124,12 @@ func NewDefaultOrderedMap[K collectable.Collectable[K], V any](
 	}
 }
 
-type defaultOrderedMap[K collectable.Collectable[K], V any] struct {
+type defaultOrderedMap[K any, V any] struct {
 	m OrderedMap[K, V]   // Underlying ordered map for storage
 	f func(K) (V, error) // Function to generate default values for missing keys
 }
 
-var _ OrderedMap[collectableWhatever[any], any] = (*defaultOrderedMap[collectableWhatever[any], any])(nil)
+var _ OrderedMap[string, string] = (*defaultOrderedMap[string, string])(nil)
 
 // Get retrieves the value for the given key. If the key exists, returns the value with found=true.
 // If the key doesn't exist, attempts to generate a default value using the default value function:

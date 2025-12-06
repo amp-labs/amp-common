@@ -1,11 +1,20 @@
 package debug
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 
+	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/logger"
 )
+
+// DumpContext inspects and dumps the context hierarchy as formatted JSON to the given writer.
+func DumpContext(ctx context.Context, w io.Writer) {
+	result := contexts.InspectContext(ctx)
+
+	DumpJSON(result, w)
+}
 
 // DumpJSON dumps the given value as JSON to the given writer.
 func DumpJSON(v any, w io.Writer) {

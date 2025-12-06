@@ -68,14 +68,15 @@ func getContextInternals(ctx any) *ContextNode {
 	}
 
 	if contextKeys.Kind() == reflect.Struct {
-		for i := 0; i < contextValues.NumField(); i++ {
+		for i := range contextValues.NumField() {
 			reflectValue := contextValues.Field(i)
 			reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
 
 			reflectField := contextKeys.Field(i)
 
 			// Handle embedded (anonymous) struct fields by extracting their contents
-			if reflectField.Anonymous && reflectField.Type.Kind() == reflect.Struct {
+			switch {
+			case reflectField.Anonymous && reflectField.Type.Kind() == reflect.Struct:
 				// Recursively extract the embedded struct's contents
 				// The reflectValue is already addressable and has unexported fields accessible via unsafe
 				// Pass the address of the embedded struct
@@ -83,11 +84,11 @@ func getContextInternals(ctx any) *ContextNode {
 				// Merge the embedded struct's parents and fields into the current node
 				node.Parents = append(node.Parents, embeddedNode.Parents...)
 				node.Fields = append(node.Fields, embeddedNode.Fields...)
-			} else if reflectField.Type.AssignableTo(reflect.TypeFor[context.Context]()) {
+			case reflectField.Type.AssignableTo(reflect.TypeFor[context.Context]()):
 				parent := getContextInternals(reflectValue.Interface())
 
 				node.Parents = append(node.Parents, parent)
-			} else {
+			default:
 				field := &ContextField{
 					Name:  fmt.Sprintf("%+v", reflectField.Name),
 					Type:  reflectField.Type.String(),

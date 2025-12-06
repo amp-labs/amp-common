@@ -142,9 +142,9 @@ func TestInspectContext(t *testing.T) {
 		assert.Equal(t, "timerCtx", result.Struct)
 
 		// Should have a parent
-		require.NotEmpty(t, result.Parents)
 		// Fields may or may not be present depending on internal implementation
 		// Just verify we got the structure
+		require.NotEmpty(t, result.Parents)
 	})
 
 	t.Run("inspects context with timeout", func(t *testing.T) {
@@ -160,8 +160,8 @@ func TestInspectContext(t *testing.T) {
 		assert.Equal(t, "timerCtx", result.Struct)
 
 		// Should have a parent
-		require.NotEmpty(t, result.Parents)
 		// Fields may or may not be present depending on internal implementation
+		require.NotEmpty(t, result.Parents)
 	})
 
 	t.Run("inspects complex nested context", func(t *testing.T) {
@@ -203,6 +203,7 @@ func TestInspectContext(t *testing.T) {
 		t.Parallel()
 
 		type contextKey string
+
 		key := contextKey("customKey")
 
 		ctx := context.WithValue(t.Context(), key, "customValue") //nolint:staticcheck

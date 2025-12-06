@@ -180,9 +180,12 @@ func TestInspectContext(t *testing.T) {
 
 		require.NotNil(t, result)
 
+		var (
+			nodeCount  int
+			countNodes func(*ContextNode)
+		)
+
 		// Walk the tree and verify it has multiple levels
-		var nodeCount int
-		var countNodes func(*ContextNode)
 		countNodes = func(node *ContextNode) {
 			if node == nil {
 				return

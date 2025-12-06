@@ -4,7 +4,6 @@ import (
 	"errors"
 	"iter"
 
-	"github.com/amp-labs/amp-common/collectable"
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/optional"
 	"github.com/amp-labs/amp-common/set"
@@ -15,6 +14,57 @@ import (
 // provide a default value for a given key. When this error is returned, the defaultMap will
 // not add the key to the map and will behave as if the key simply doesn't exist.
 var ErrNoDefaultValue = errors.New("no default value for this key")
+
+// NewDefaultZeroMap creates a Map that automatically returns zero values for missing keys.
+// This is a convenience wrapper around NewDefaultMap that uses the zero value of type V
+// as the default for all missing keys.
+//
+// When Get or Contains is called with a key that doesn't exist in the map, the zero value
+// for type V is generated, added to the map, and returned. The key is then considered to
+// exist in the map going forward.
+//
+// This is particularly useful for:
+//   - Counter maps: map[string]int where missing keys should start at 0
+//   - Collection maps: map[string][]T where missing keys should start as empty slices
+//   - Boolean flags: map[string]bool where missing keys should default to false
+//   - Optional value maps: map[string]*T where missing keys should be nil
+//
+// Unlike NewDefaultMap which requires a custom function, NewDefaultZeroMap always succeeds
+// in providing a default value - it never returns ErrNoDefaultValue.
+//
+// Parameters:
+//   - storageMap: The underlying Map implementation to use for storage. This can be any
+//     Map implementation (HashMap, SortedMap, etc.) and determines the storage semantics.
+//
+// Returns:
+//   - A Map that automatically generates zero values for missing keys and adds them to the map.
+//
+// Example usage:
+//
+//	// Create a counter map where missing keys default to 0
+//	counters := maps.NewDefaultZeroMap[StringKey, int](
+//	    maps.NewHashMap[StringKey, int](hashFunc),
+//	)
+//	count, _, _ := counters.Get(key) // Returns (0, true, nil) and adds key->0 to map
+//
+//	// Create a map of slices where missing keys default to empty slices
+//	lists := maps.NewDefaultZeroMap[StringKey, []string](
+//	    maps.NewHashMap[StringKey, []string](hashFunc),
+//	)
+//	items, _, _ := lists.Get(key) // Returns ([]string{}, true, nil) and adds key->[] to map
+//
+//	// Create a boolean flag map where missing keys default to false
+//	flags := maps.NewDefaultZeroMap[StringKey, bool](
+//	    maps.NewHashMap[StringKey, bool](hashFunc),
+//	)
+//	enabled, _, _ := flags.Get(key) // Returns (false, true, nil) and adds key->false to map
+func NewDefaultZeroMap[K any, V any](
+	storageMap Map[K, V],
+) Map[K, V] {
+	return NewDefaultMap[K, V](storageMap, func(k K) (V, error) {
+		return zero.Value[V](), nil
+	})
+}
 
 // NewDefaultMap creates a Map that automatically generates default values for missing keys.
 // When Get or Contains is called with a key that doesn't exist, the getDefaultValue function
@@ -49,7 +99,7 @@ var ErrNoDefaultValue = errors.New("no default value for this key")
 //	    },
 //	)
 //	value, found, _ := m2.Get(missingKey) // Returns ("", false, nil) without adding
-func NewDefaultMap[K collectable.Collectable[K], V any](
+func NewDefaultMap[K any, V any](
 	storageMap Map[K, V],
 	getDefaultValue func(K) (V, error),
 ) Map[K, V] {
@@ -69,12 +119,12 @@ func NewDefaultMap[K collectable.Collectable[K], V any](
 	}
 }
 
-type defaultMap[K collectable.Collectable[K], V any] struct {
+type defaultMap[K any, V any] struct {
 	m Map[K, V]          // Underlying map for storage
 	f func(K) (V, error) // Function to generate default values for missing keys
 }
 
-var _ Map[collectableWhatever[any], any] = (*defaultMap[collectableWhatever[any], any])(nil)
+var _ Map[string, string] = (*defaultMap[string, string])(nil)
 
 // Get retrieves the value for the given key. If the key exists, returns the value with found=true.
 // If the key doesn't exist, attempts to generate a default value using the default value function:

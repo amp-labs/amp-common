@@ -4,7 +4,6 @@ import (
 	"iter"
 	"sync"
 
-	"github.com/amp-labs/amp-common/collectable"
 	"github.com/amp-labs/amp-common/hashing"
 	"github.com/amp-labs/amp-common/optional"
 	"github.com/amp-labs/amp-common/set"
@@ -22,7 +21,7 @@ import (
 //	unsafeMap := maps.NewOrderedHashMap[string, int](hashing.Sha256)
 //	safeMap := maps.NewThreadSafeOrderedMap(unsafeMap)
 //	safeMap.Add("key", 42) // thread-safe
-func NewThreadSafeOrderedMap[K collectable.Collectable[K], V any](m OrderedMap[K, V]) OrderedMap[K, V] {
+func NewThreadSafeOrderedMap[K any, V any](m OrderedMap[K, V]) OrderedMap[K, V] {
 	if m == nil {
 		return nil
 	}
@@ -41,7 +40,7 @@ func NewThreadSafeOrderedMap[K collectable.Collectable[K], V any](m OrderedMap[K
 // threadSafeOrderedMap is a decorator that wraps any OrderedMap implementation with thread-safe access.
 // It uses sync.RWMutex to coordinate concurrent access, allowing multiple simultaneous
 // readers or a single exclusive writer.
-type threadSafeOrderedMap[K collectable.Collectable[K], V any] struct {
+type threadSafeOrderedMap[K any, V any] struct {
 	mutex    sync.RWMutex     // Protects access to internal map
 	internal OrderedMap[K, V] // Underlying ordered map implementation
 }

@@ -300,9 +300,9 @@ func TestToGoMap(t *testing.T) {
 		t.Parallel()
 
 		ampMap := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
-		ampMap.Add(maps.Key[string]{Key: "a"}, 1) //nolint:errcheck
-		ampMap.Add(maps.Key[string]{Key: "b"}, 2) //nolint:errcheck
-		ampMap.Add(maps.Key[string]{Key: "c"}, 3) //nolint:errcheck
+		_ = ampMap.Add(maps.Key[string]{Key: "a"}, 1) //nolint:errcheck
+		_ = ampMap.Add(maps.Key[string]{Key: "b"}, 2) //nolint:errcheck
+		_ = ampMap.Add(maps.Key[string]{Key: "c"}, 3) //nolint:errcheck
 
 		goMap := maps.ToGoMap(ampMap)
 		require.NotNil(t, goMap)
@@ -316,9 +316,9 @@ func TestToGoMap(t *testing.T) {
 		t.Parallel()
 
 		ampMap := maps.NewHashMap[maps.Key[int], string](hashing.Sha256)
-		ampMap.Add(maps.Key[int]{Key: 1}, "one")   //nolint:errcheck
-		ampMap.Add(maps.Key[int]{Key: 2}, "two")   //nolint:errcheck
-		ampMap.Add(maps.Key[int]{Key: 3}, "three") //nolint:errcheck
+		_ = ampMap.Add(maps.Key[int]{Key: 1}, "one")   //nolint:errcheck
+		_ = ampMap.Add(maps.Key[int]{Key: 2}, "two")   //nolint:errcheck
+		_ = ampMap.Add(maps.Key[int]{Key: 3}, "three") //nolint:errcheck
 
 		goMap := maps.ToGoMap(ampMap)
 		require.NotNil(t, goMap)
@@ -351,7 +351,7 @@ func TestToGoMap(t *testing.T) {
 		t.Parallel()
 
 		ampMap := maps.NewHashMap[maps.Key[string], string](hashing.Sha256)
-		ampMap.Add(maps.Key[string]{Key: "key"}, "value") //nolint:errcheck
+		_ = ampMap.Add(maps.Key[string]{Key: "key"}, "value") //nolint:errcheck
 
 		goMap := maps.ToGoMap(ampMap)
 		require.NotNil(t, goMap)
@@ -364,7 +364,7 @@ func TestToGoMap(t *testing.T) {
 
 		ampMap := maps.NewHashMap[maps.Key[int], int](hashing.Sha256)
 		for i := range 1000 {
-			ampMap.Add(maps.Key[int]{Key: i}, i*2) //nolint:errcheck
+			_ = ampMap.Add(maps.Key[int]{Key: i}, i*2) //nolint:errcheck
 		}
 
 		goMap := maps.ToGoMap(ampMap)
@@ -381,9 +381,9 @@ func TestToGoMap(t *testing.T) {
 		t.Parallel()
 
 		ampMap := maps.NewHashMap[maps.Key[float64], string](hashing.Sha256)
-		ampMap.Add(maps.Key[float64]{Key: 1.5}, "one-and-half")   //nolint:errcheck
-		ampMap.Add(maps.Key[float64]{Key: 2.5}, "two-and-half")   //nolint:errcheck
-		ampMap.Add(maps.Key[float64]{Key: 3.5}, "three-and-half") //nolint:errcheck
+		_ = ampMap.Add(maps.Key[float64]{Key: 1.5}, "one-and-half")   //nolint:errcheck
+		_ = ampMap.Add(maps.Key[float64]{Key: 2.5}, "two-and-half")   //nolint:errcheck
+		_ = ampMap.Add(maps.Key[float64]{Key: 3.5}, "three-and-half") //nolint:errcheck
 
 		goMap := maps.ToGoMap(ampMap)
 		require.NotNil(t, goMap)
@@ -403,8 +403,8 @@ func TestToGoMap(t *testing.T) {
 		}
 
 		ampMap := maps.NewHashMap[maps.Key[string], valueType](hashing.Sha256)
-		ampMap.Add(maps.Key[string]{Key: "a"}, valueType{data: "test", count: 1, active: true})  //nolint:errcheck
-		ampMap.Add(maps.Key[string]{Key: "b"}, valueType{data: "prod", count: 2, active: false}) //nolint:errcheck
+		_ = ampMap.Add(maps.Key[string]{Key: "a"}, valueType{data: "test", count: 1, active: true})  //nolint:errcheck
+		_ = ampMap.Add(maps.Key[string]{Key: "b"}, valueType{data: "prod", count: 2, active: false}) //nolint:errcheck
 
 		goMap := maps.ToGoMap(ampMap)
 		require.NotNil(t, goMap)
@@ -418,9 +418,9 @@ func TestToGoMap(t *testing.T) {
 		t.Parallel()
 
 		hashMap := maps.NewHashMap[maps.Key[string], int](hashing.Sha256)
-		hashMap.Add(maps.Key[string]{Key: "first"}, 1)  //nolint:errcheck
-		hashMap.Add(maps.Key[string]{Key: "second"}, 2) //nolint:errcheck
-		hashMap.Add(maps.Key[string]{Key: "third"}, 3)  //nolint:errcheck
+		_ = hashMap.Add(maps.Key[string]{Key: "first"}, 1)  //nolint:errcheck
+		_ = hashMap.Add(maps.Key[string]{Key: "second"}, 2) //nolint:errcheck
+		_ = hashMap.Add(maps.Key[string]{Key: "third"}, 3)  //nolint:errcheck
 
 		goMap := maps.ToGoMap(hashMap)
 		require.NotNil(t, goMap)

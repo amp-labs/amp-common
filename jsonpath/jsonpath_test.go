@@ -600,7 +600,7 @@ func TestAddPath(t *testing.T) {
 	}
 }
 
-func TestIsValidPath(t *testing.T) {
+func TestValidatePath(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -651,24 +651,24 @@ func TestIsValidPath(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := IsValidPath(testCase.path)
+			err := ValidatePath(testCase.path)
 
 			if testCase.wantErr {
 				if err == nil {
-					t.Errorf("IsValidPath() expected error containing %q, got nil", testCase.errString)
+					t.Errorf("ValidatePath() expected error containing %q, got nil", testCase.errString)
 
 					return
 				}
 
 				if testCase.errString != "" && !strings.Contains(err.Error(), testCase.errString) {
-					t.Errorf("IsValidPath() error = %v, want error containing %q", err, testCase.errString)
+					t.Errorf("ValidatePath() error = %v, want error containing %q", err, testCase.errString)
 				}
 
 				return
 			}
 
 			if err != nil {
-				t.Errorf("IsValidPath() unexpected error = %v", err)
+				t.Errorf("ValidatePath() unexpected error = %v", err)
 			}
 		})
 	}

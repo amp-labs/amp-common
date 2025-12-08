@@ -267,8 +267,8 @@ func UpdateValue(data map[string]any, path string, value any) error {
 	return fmt.Errorf("%w: key '%s'", ErrPathKeyNotFound, finalSegment.key)
 }
 
-// IsValidPath validates that a string is valid JSONPath bracket notation.
-func IsValidPath(path string) error {
+// ValidatePath validates that a string is valid JSONPath bracket notation.
+func ValidatePath(path string) error {
 	if path == "" {
 		return ErrPathEmpty
 	}

@@ -427,3 +427,26 @@ func RemovePath(data map[string]any, path string) (bool, error) {
 
 	return removed, nil
 }
+
+// ToNestedPath converts path keys into JSONPath bracket notation.
+// Supports any depth of nesting.
+//
+// Examples:
+//   - ToNestedPath("address") -> "$['address']"
+//   - ToNestedPath("address", "city") -> "$['address']['city']"
+//   - ToNestedPath("user", "profile", "email") -> "$['user']['profile']['email']"
+func ToNestedPath(keys ...string) string {
+	if len(keys) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+
+	b.WriteString("$")
+
+	for _, key := range keys {
+		b.WriteString(fmt.Sprintf("['%s']", key))
+	}
+
+	return b.String()
+}

@@ -124,7 +124,7 @@ func TestParsePath(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			segments, err := parsePath(testCase.path)
+			segments, err := ParsePath(testCase.path)
 
 			if testCase.wantErr {
 				if err == nil {
@@ -916,7 +916,7 @@ func BenchmarkParsePath(b *testing.B) {
 	b.ResetTimer()
 
 	for range b.N {
-		_, _ = parsePath(testPathDeeplyNested)
+		_, _ = ParsePath(testPathDeeplyNested)
 	}
 }
 

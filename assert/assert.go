@@ -1,3 +1,4 @@
+// Package assert provides type assertion utilities with error handling.
 package assert
 
 import (

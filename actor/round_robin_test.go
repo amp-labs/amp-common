@@ -192,6 +192,7 @@ func TestRoundRobinConcurrent(t *testing.T) {
 			for i := range msgsPerGoroutine {
 				rrRef.SendCtx(t.Context(), base+i)
 			}
+
 			done <- true
 		}(g * msgsPerGoroutine)
 	}

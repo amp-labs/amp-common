@@ -114,7 +114,9 @@ func (p *Payload) LogValue() slog.Value {
 		contentBytes, err := p.GetContentBytes()
 		if err == nil && len(contentBytes) > 0 {
 			var jsonValue any
-			if err := json.Unmarshal(contentBytes, &jsonValue); err != nil {
+
+			err := json.Unmarshal(contentBytes, &jsonValue)
+			if err != nil {
 				return slog.StringValue(p.String())
 			}
 
@@ -512,11 +514,7 @@ func getBodyAsPrintable(bcr bodyContentReader) (*Payload, error) {
 		}, nil
 	}
 
-	checkLen := len(decodedData)
-
-	if checkLen > printabilityCheckLen {
-		checkLen = printabilityCheckLen
-	}
+	checkLen := min(len(decodedData), printabilityCheckLen)
 
 	sample := decodedData[:checkLen]
 

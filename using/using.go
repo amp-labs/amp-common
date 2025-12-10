@@ -78,9 +78,11 @@ func use[V any](resource *Resource[V], userFunc func(value V) error) (errOut err
 	}
 
 	errs := errors2.Collection{}
+
 	defer func() {
 		if !resource.released && closer != nil {
-			if e := closer(); e != nil {
+			e := closer()
+			if e != nil {
 				errs.Add(e)
 			}
 		}
@@ -92,7 +94,8 @@ func use[V any](resource *Resource[V], userFunc func(value V) error) (errOut err
 		}
 	}()
 
-	if e := userFunc(val); e != nil {
+	e := userFunc(val)
+	if e != nil {
 		errs.Add(e)
 	}
 

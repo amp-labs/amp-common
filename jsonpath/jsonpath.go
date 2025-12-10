@@ -1,3 +1,9 @@
+//nolint:godoclint // Package comment is correctly formatted
+// Package jsonpath provides utilities for working with JSONPath bracket notation.
+// This package supports a subset of JSONPath specifically designed for field mapping:
+// - Bracket notation: $['field']['nestedField']
+// - Configurable case-sensitive or case-insensitive key matching
+// - Path validation
 package jsonpath
 
 import (
@@ -6,12 +12,6 @@ import (
 	"regexp"
 	"strings"
 )
-
-// Package jsonpath provides utilities for working with JSONPath bracket notation.
-// This package supports a subset of JSONPath specifically designed for field mapping:
-// - Bracket notation: $['field']['nestedField']
-// - Configurable case-sensitive or case-insensitive key matching
-// - Path validation
 
 // Sentinel errors for path validation and traversal.
 var (
@@ -83,9 +83,13 @@ func parsePath(path string) ([]pathSegment, error) {
 
 	// Validate path by reconstructing it
 	reconstructed := "$"
+
+	var reconstructedSb86 strings.Builder
 	for _, match := range matches {
-		reconstructed += fmt.Sprintf("['%s']", match[1])
+		reconstructedSb86.WriteString(fmt.Sprintf("['%s']", match[1]))
 	}
+
+	reconstructed += reconstructedSb86.String()
 
 	if reconstructed != path {
 		return nil, fmt.Errorf("%w: %s", ErrPathInvalidSyntax, path)
@@ -357,6 +361,7 @@ func RemovePath(data map[string]any, path string) (bool, error) {
 
 	// Helper function to recursively remove and clean up
 	var removeRecursive func(current map[string]any, segmentIdx int) bool
+
 	removeRecursive = func(current map[string]any, segmentIdx int) bool {
 		if segmentIdx >= len(segments) {
 			return false

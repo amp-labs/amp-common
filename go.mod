@@ -1,6 +1,6 @@
 module github.com/amp-labs/amp-common
 
-go 1.24.6
+go 1.25.0
 
 require (
 	facette.io/natsort v0.0.0-20181210072756-2cd4dd1e2dcb

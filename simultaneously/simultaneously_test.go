@@ -193,6 +193,7 @@ func TestDoCtx_PanicWithNilValue(t *testing.T) {
 	err := DoCtx(t.Context(), 1,
 		func(ctx context.Context) error {
 			var nilPtr *string
+
 			_ = *nilPtr // This will panic with nil pointer dereference
 
 			return nil

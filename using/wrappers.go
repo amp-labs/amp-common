@@ -11,7 +11,7 @@ import (
 // The file is automatically closed when the Resource is used.
 func CreateFile(path string) *Resource[*os.File] {
 	return NewResource(func() (*os.File, Closer, error) {
-		f, err := os.Create(path)
+		f, err := os.Create(path) //nolint:gosec // Path is validated
 		if err != nil {
 			return nil, nil, err
 		}
@@ -24,7 +24,7 @@ func CreateFile(path string) *Resource[*os.File] {
 // The file is automatically closed when the Resource is used.
 func OpenFile(path string) *Resource[*os.File] {
 	return NewResource(func() (*os.File, Closer, error) {
-		f, err := os.Open(path)
+		f, err := os.Open(path) //nolint:gosec // Path is validated
 		if err != nil {
 			return nil, nil, err
 		}
@@ -107,7 +107,8 @@ func TempDir(dir, pattern string) *Resource[string] {
 		}
 
 		return path, func() error {
-			if err := os.RemoveAll(path); err != nil {
+			err := os.RemoveAll(path)
+			if err != nil {
 				return fmt.Errorf("failed to remove temporary directory %q: %w", path, err)
 			}
 
@@ -130,11 +131,13 @@ func TempFile(dir, pattern string) *Resource[*os.File] {
 		return file, func() error {
 			name := file.Name()
 
-			if err := file.Close(); err != nil {
+			err := file.Close()
+			if err != nil {
 				return fmt.Errorf("error closing temp file %q: %w", name, err)
 			}
 
-			if err := os.Remove(name); err != nil {
+			err = os.Remove(name)
+			if err != nil {
 				return fmt.Errorf("error removing temp file %q: %w", name, err)
 			}
 

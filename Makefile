@@ -7,7 +7,9 @@ all:
 # ====================
 .PHONY: lint
 lint:
-	golangci-lint run -c .golangci.yml
+	golangci-lint config verify && \
+	golangci-lint run -c .golangci.yml --max-issues-per-linter 0 --max-same-issues 0 && \
+	typos --config .typos.toml
 
 # Run a few autoformatters and print out unfixable errors
 # PRE-REQUISITES: install linters, see https://ampersand.slab.com/posts/engineering-onboarding-guide-environment-set-up-9v73t3l8#huik9-install-linters
@@ -16,7 +18,7 @@ lint:
 # For the wsl CLI, we manually run it against select repos, since it does not read from .golangci.yml and therefore cannot ignore directories.
 .PHONY: fix
 fix:
-	wsl --allow-cuddle-declarations --allow-trailing-comment --fix ./... && \
+	wsl --fix ./... && \
 		gci write . && \
 		golangci-lint run -c .golangci.yml --fix
 

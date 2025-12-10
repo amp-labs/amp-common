@@ -1,3 +1,4 @@
+//nolint:revive // Package name intentionally matches stdlib errors for extended functionality
 package errors
 
 import (

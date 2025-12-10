@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -75,10 +76,8 @@ func ReplaceAll(oldStr, newStr string) func(string) (string, error) {
 // Returns ErrInvalidChoice if the value doesn't match any of the choices.
 func OneOf[A comparable](choices ...A) func(A) (A, error) { //nolint:ireturn
 	return func(value A) (A, error) {
-		for _, c := range choices {
-			if c == value {
-				return value, nil
-			}
+		if slices.Contains(choices, value) {
+			return value, nil
 		}
 
 		return value, ErrInvalidChoice
@@ -165,8 +164,8 @@ func GzipLevel(value string) (int, error) {
 // The input must be in the format "host:port" where port is a valid port number (0-65535).
 // Returns ErrBadHostAndPort if the format is invalid or the port is out of range.
 func HostAndPort(value string) (envtypes.HostPort, error) {
-	parts := strings.SplitN(value, ":", 2) //nolint:gomnd,mnd
-	if len(parts) != 2 {                   //nolint:gomnd,mnd
+	parts := strings.SplitN(value, ":", 2) //nolint:mnd
+	if len(parts) != 2 {                   //nolint:mnd
 		return envtypes.HostPort{}, fmt.Errorf("%w: %s", ErrBadHostAndPort, value)
 	}
 

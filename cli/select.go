@@ -19,7 +19,7 @@ func MultiSelect(label string, choices ...string) ([]string, error) {
 
 	allNames := set.NewStringSet(hashing.Sha256)
 
-	if err := allNames.AddAll(choices...); err != nil {
+	if err := allNames.AddAll(choices...); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 		return nil, err
 	}
 
@@ -37,6 +37,7 @@ again:
 			if index == 0 {
 				return false
 			}
+
 			if len(input) == 0 {
 				return false
 			}
@@ -53,11 +54,13 @@ again:
 	}
 
 	if idx != 0 {
-		if err := selections.Add(value); err != nil {
+		err := selections.Add(value)
+		if err != nil {
 			return nil, err
 		}
 
-		if err := allNames.Remove(value); err != nil {
+		err = allNames.Remove(value)
+		if err != nil {
 			return nil, err
 		}
 

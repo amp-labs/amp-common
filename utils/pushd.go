@@ -15,26 +15,29 @@ var (
 
 // Pushd will chdir to a different directory, call the callback,
 // and then restore the old working directory when the function exits.
-func Pushd(path string, fn func() error) error {
+func Pushd(path string, callback func() error) error {
 	if path == "." {
-		return fn()
+		return callback()
 	}
 
-	wd, err := os.Getwd()
+	workingDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrGetwd, err)
 	}
 
-	if err := os.Chdir(path); err != nil {
+	if err := os.Chdir(path); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 		return fmt.Errorf("%w: %w", ErrChdir, err)
 	}
 
 	var errs []error
-	if e := fn(); e != nil {
+
+	e := callback()
+	if e != nil {
 		errs = append(errs, e)
 	}
 
-	if e := os.Chdir(wd); e != nil {
+	e = os.Chdir(workingDir)
+	if e != nil {
 		errs = append(errs, fmt.Errorf("%w: %w", ErrChdir, e))
 	}
 

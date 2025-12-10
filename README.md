@@ -8,11 +8,11 @@ This repository contains shared Go libraries and utilities used across Ampersand
 
 ## Overview
 
-`amp-common` is a Go library (not a standalone application) that provides shared utilities and packages. It uses Go 1.24.6 and is published as `github.com/amp-labs/amp-common`.
+`amp-common` is a Go library (not a standalone application) that provides shared utilities and packages. It uses Go 1.25.5 and is published as `github.com/amp-labs/amp-common`.
 
 ## Prerequisites
 
-* **Go 1.24.6+**
+* **Go 1.25.5+**
 * **SSH Key Setup**: This project uses private GitHub repositories. You need to set up SSH authentication:
   1. Ensure you have an SSH key configured for GitHub access to private amp-labs repositories
   2. Configure git to use SSH for GitHub:

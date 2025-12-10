@@ -1,3 +1,4 @@
+// Package pool provides generic object pooling with lifecycle management and Prometheus metrics.
 package pool
 
 import (
@@ -114,10 +115,10 @@ func WithCheckValid[C io.Closer](check func(C) error) Option[C] {
 func getTypeName[C any]() string {
 	var zero C
 
-	tpe := fmt.Sprintf("%T", zero)
-	tpe = strings.TrimPrefix(tpe, "*")
+	typeName := fmt.Sprintf("%T", zero)
+	typeName = strings.TrimPrefix(typeName, "*")
 
-	return tpe
+	return typeName
 }
 
 // New will create a new Pool which will grow dynamically as demand
@@ -224,12 +225,14 @@ func (g *poolImpl[C]) handleGet(get getRequest[C], objectPool *[]poolObject[C]) 
 
 		poolObjectsIdle.WithLabelValues(g.name).Dec()
 
-		if checkErr := g.checkValid(obj.obj); checkErr != nil {
+		checkErr := g.checkValid(obj.obj)
+		if checkErr != nil {
 			slog.Warn("pool object is invalid, closing and discarding it", "error", checkErr)
 
 			poolObjectsTotal.WithLabelValues(g.name).Dec()
 
-			if err := obj.closer.Close(); err != nil { //nolint:typecheck
+			err := obj.closer.Close()
+			if err != nil { //nolint:typecheck
 				slog.Warn("unable to close pool object", "error", err)
 
 				objectsClosedErrors.WithLabelValues(g.name).Inc()
@@ -280,7 +283,9 @@ func (g *poolImpl[C]) handlePut(put putRequest[C], objectPool *[]poolObject[C]) 
 	g.outstanding.Dec()
 	poolObjectsInUse.WithLabelValues(g.name).Dec()
 	poolObjectsIdle.WithLabelValues(g.name).Inc()
+
 	put.doneChan <- struct{}{}
+
 	close(put.doneChan)
 }
 
@@ -314,7 +319,7 @@ func (g *poolImpl[C]) handleCloseIdle(closeIdleReq closeIdleRequest, objectPool 
 
 			poolObjectsTotal.WithLabelValues(g.name).Dec()
 
-			if err := obj.closer.Close(); err != nil { //nolint:typecheck
+			if err := obj.closer.Close(); err != nil { //nolint:typecheck,noinlineerr // Inline error handling is clear here
 				errs = append(errs, err)
 				remainder = append(remainder, obj)
 
@@ -330,7 +335,8 @@ func (g *poolImpl[C]) handleCloseIdle(closeIdleReq closeIdleRequest, objectPool 
 			continue
 		}
 
-		if err := obj.closer.Close(); err != nil { //nolint:typecheck
+		err := obj.closer.Close()
+		if err != nil { //nolint:typecheck
 			errs = append(errs, err)
 			remainder = append(remainder, obj)
 
@@ -436,7 +442,8 @@ func (g *poolImpl[C]) loop() {
 	var errs []error
 
 	for _, d := range objectPool {
-		if err := d.closer.Close(); err != nil { //nolint:typecheck
+		err := d.closer.Close()
+		if err != nil { //nolint:typecheck
 			errs = append(errs, err)
 
 			objectsClosedErrors.WithLabelValues(g.name).Inc()
@@ -450,6 +457,7 @@ func (g *poolImpl[C]) loop() {
 	poolObjectsInUse.WithLabelValues(g.name).Set(0)
 
 	g.closeCh <- joinErrors(errs...)
+
 	close(g.closeCh)
 }
 
@@ -494,6 +502,7 @@ func (g *poolImpl[C]) Get() (obj C, err error) {
 			err = fmt.Errorf("%w: %v", ErrPoolGet, tmp)
 
 			var zero C
+
 			obj = zero
 		}
 	}()

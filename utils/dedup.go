@@ -1,3 +1,4 @@
+// Package utils provides miscellaneous utility functions for channels, context, JSON, sleep, dedup, and more.
 package utils
 
 import (
@@ -12,7 +13,9 @@ import (
 // Returns an error if hashing fails or hash collision is detected.
 func DeduplicateValues[T collectable.Collectable[T]](values []T) ([]T, error) {
 	s := set.NewSet[T](hashing.Sha256) // big hash space, low chance of collision
-	if err := s.AddAll(values...); err != nil {
+
+	err := s.AddAll(values...)
+	if err != nil {
 		return nil, err
 	}
 

@@ -1,5 +1,3 @@
-// Package simultaneously provides parallel set transformation functions.
-// This file contains utilities for concurrently transforming set elements.
 package simultaneously
 
 import (
@@ -88,8 +86,10 @@ func MapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -195,8 +195,10 @@ func FlatMapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -278,7 +280,8 @@ func MapSetCtxWithExecutor[InElem Collectable[InElem], OutElem Collectable[OutEl
 		}(elem)
 	}
 
-	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
+	err := DoCtxWithExecutor(ctx, exec, callbacks...)
+	if err != nil {
 		return nil, err
 	}
 
@@ -364,7 +367,8 @@ func FlatMapSetCtxWithExecutor[InElem Collectable[InElem], OutElem Collectable[O
 				defer mut.Unlock()
 
 				for e := range res.Seq() {
-					if err := out.Add(e); err != nil {
+					err := out.Add(e)
+					if err != nil {
 						return err
 					}
 				}
@@ -374,7 +378,8 @@ func FlatMapSetCtxWithExecutor[InElem Collectable[InElem], OutElem Collectable[O
 		}(elem)
 	}
 
-	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
+	err := DoCtxWithExecutor(ctx, exec, callbacks...)
+	if err != nil {
 		return nil, err
 	}
 

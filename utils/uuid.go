@@ -88,7 +88,7 @@ func (up *UUIDBulkParser) Parse() (map[string]uuid.UUID, error) {
 
 // validateStructPointers validates that both inputs and outputs are pointers to structs.
 // Returns the dereferenced values if valid.
-func validateStructPointers(inputs, outputs interface{}) (reflect.Value, reflect.Value, error) {
+func validateStructPointers(inputs, outputs any) (reflect.Value, reflect.Value, error) {
 	inputVal := reflect.ValueOf(inputs)
 	outputVal := reflect.ValueOf(outputs)
 
@@ -162,7 +162,7 @@ func processPointerField(inputField, outputField reflect.Value, displayName stri
 		return fmt.Errorf("%w: field %s (got *%s)", ErrInvalidInputFieldType, displayName, inputFieldDeref.Kind())
 	}
 
-	if outputField.Type() != reflect.TypeOf((*uuid.UUID)(nil)) {
+	if outputField.Type() != reflect.TypeFor[*uuid.UUID]() {
 		return fmt.Errorf("%w: field %s (got %s)", ErrInvalidOutputFieldType, displayName, outputField.Type())
 	}
 
@@ -173,7 +173,7 @@ func processPointerField(inputField, outputField reflect.Value, displayName stri
 		return fmt.Errorf("%w %q for field %s: %w", ErrInvalidUUID, uuidStr, displayName, err)
 	}
 
-	newUUID := reflect.New(reflect.TypeOf(uuid.UUID{}))
+	newUUID := reflect.New(reflect.TypeFor[uuid.UUID]())
 	newUUID.Elem().Set(reflect.ValueOf(parsedUUID))
 	outputField.Set(newUUID)
 
@@ -186,7 +186,7 @@ func processNonPointerField(inputField, outputField reflect.Value, displayName s
 		return fmt.Errorf("%w: field %s (got %s)", ErrInvalidInputFieldType, displayName, inputField.Kind())
 	}
 
-	if outputField.Type() != reflect.TypeOf(uuid.UUID{}) {
+	if outputField.Type() != reflect.TypeFor[uuid.UUID]() {
 		return fmt.Errorf("%w: field %s (got %s)", ErrInvalidOutputFieldType, displayName, outputField.Type())
 	}
 
@@ -220,7 +220,7 @@ func collectParsingErrors(errs []error) error {
 // Input fields must be string or *string, output fields must be uuid.UUID or *uuid.UUID.
 // If a field is a pointer in the input, it must also be a pointer in the output (and vice versa).
 // The "name" struct tag can be used to customize the field name in error messages (e.g., `name:"customName"`).
-func BulkParseUUIDs(inputs, outputs interface{}) error {
+func BulkParseUUIDs(inputs, outputs any) error {
 	inputVal, outputVal, err := validateStructPointers(inputs, outputs)
 	if err != nil {
 		return err
@@ -242,7 +242,8 @@ func BulkParseUUIDs(inputs, outputs interface{}) error {
 		displayName := getFieldDisplayName(inputFieldType)
 		outputField := outputVal.FieldByName(structFieldName)
 
-		if err := validateFieldCompatibility(inputField, outputField, displayName); err != nil {
+		err := validateFieldCompatibility(inputField, outputField, displayName)
+		if err != nil {
 			return err
 		}
 

@@ -1,4 +1,5 @@
-package errors
+// Package errors provides error utilities with collection support for managing multiple errors.
+package errors //nolint:revive // This is a fine package name, nuts to you
 
 import "errors"
 

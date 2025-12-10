@@ -233,12 +233,13 @@ func TestNewDefaultExecutor_EdgeCases(t *testing.T) {
 			// Verify semaphore is pre-filled with correct number of tokens
 			tokensAvailable := 0
 
+		countLoop:
 			for range testCase.expectedMax {
 				select {
 				case <-exec.sem:
 					tokensAvailable++
 				default:
-					break
+					break countLoop
 				}
 			}
 
@@ -612,6 +613,7 @@ func TestDefaultExecutor_RecoverPanic_WithPanic(t *testing.T) {
 
 	func() {
 		defer exec.recoverPanic(&err)
+
 		panic("test panic")
 	}()
 
@@ -630,6 +632,7 @@ func TestDefaultExecutor_RecoverPanic_PanicWithExistingError(t *testing.T) {
 
 	func() {
 		defer exec.recoverPanic(&err)
+
 		panic("panic error")
 	}()
 

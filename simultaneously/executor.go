@@ -239,7 +239,8 @@ func (d *defaultExecutor) executeCallback(ctx context.Context, fn func(context.C
 func (d *defaultExecutor) recoverPanic(err *error) {
 	if r := recover(); r != nil {
 		// Convert panic to structured error with stack trace
-		if panicErr := utils.GetPanicRecoveryError(r, debug.Stack()); panicErr != nil {
+		panicErr := utils.GetPanicRecoveryError(r, debug.Stack())
+		if panicErr != nil {
 			if *err != nil {
 				// Both panic and error occurred - combine them
 				*err = combineErrors([]error{panicErr, *err})

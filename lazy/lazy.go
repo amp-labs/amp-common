@@ -1,3 +1,4 @@
+// Package lazy provides utilities for lazy initialization of values with thread-safe guarantees.
 package lazy
 
 import (

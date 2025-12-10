@@ -39,7 +39,9 @@ const (
 	AlignLeft = iota
 	AlignCenter
 	AlignRight
+)
 
+const (
 	bannerPadding   = 2
 	dividerPadding  = 2
 	truncateReserve = 1
@@ -165,6 +167,8 @@ func truncateGraphic(s string, n int) (string, int) {
 	out := ""
 	count := 0
 
+	var outSb170 strings.Builder
+
 	for _, r := range s {
 		if unicode.IsGraphic(r) {
 			count++
@@ -174,8 +178,10 @@ func truncateGraphic(s string, n int) (string, int) {
 			break
 		}
 
-		out += string(r)
+		outSb170.WriteRune(r)
 	}
+
+	out += outSb170.String()
 
 	return out, count
 }
@@ -262,7 +268,7 @@ func size() (string, error) {
 	defer should.Close(f, "closing /dev/tty")
 
 	// Outputs: "rows columns"
-	cmd := exec.Command("stty", "size")
+	cmd := exec.CommandContext(context.Background(), "stty", "size")
 	cmd.Stdin = f
 	out, err := cmd.Output()
 
@@ -288,6 +294,8 @@ func parse(input string) (uint, uint, error) {
 }
 
 // TerminalDimensions returns (rows, cols, err).
+//
+//nolint:contextcheck // Terminal size query is instantaneous and doesn't benefit from context
 func TerminalDimensions() (uint, uint, error) {
 	output, err := size()
 	if err != nil {

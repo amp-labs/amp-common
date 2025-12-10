@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestBeforeShutdown(t *testing.T) {
 	// Reset global state
 	hooks = nil
@@ -42,6 +43,7 @@ func TestBeforeShutdown(t *testing.T) {
 	mut.Unlock()
 }
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestSetupHandler(t *testing.T) {
 	// Reset global state
 	hooks = nil
@@ -83,6 +85,7 @@ func TestSetupHandler(t *testing.T) {
 	assert.Nil(t, channel)
 }
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestSetupHandlerSIGINT(t *testing.T) {
 	// Reset global state
 	hooks = nil
@@ -111,6 +114,7 @@ func TestSetupHandlerSIGINT(t *testing.T) {
 	assert.True(t, hookCalled.Load())
 }
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestShutdown(t *testing.T) {
 	// Reset global state
 	hooks = nil
@@ -142,6 +146,7 @@ func TestShutdown(t *testing.T) {
 	assert.Nil(t, channel)
 }
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestShutdownWithoutSetup(t *testing.T) {
 	// Reset global state
 	hooks = nil
@@ -153,6 +158,7 @@ func TestShutdownWithoutSetup(t *testing.T) {
 	})
 }
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestMultipleHooksExecutionOrder(t *testing.T) {
 	// Reset global state
 	hooks = nil
@@ -218,6 +224,7 @@ func TestMultipleHooksExecutionOrder(t *testing.T) {
 	assert.Equal(t, []int{1, 2, 3}, result)
 }
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestContextCanceledAfterHooks(t *testing.T) {
 	// Reset global state
 	hooks = nil
@@ -246,12 +253,14 @@ func TestContextCanceledAfterHooks(t *testing.T) {
 	assert.False(t, contextWasCanceled.Load(), "context should be canceled after hooks, not during")
 }
 
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
 func TestConcurrentBeforeShutdown(t *testing.T) {
 	// Reset global state
 	hooks = nil
 	channel = nil
 
 	const numGoroutines = 100
+
 	done := make(chan bool, numGoroutines)
 
 	for i := range numGoroutines {

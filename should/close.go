@@ -27,7 +27,8 @@ import (
 //	defer should.Close(file, "failed to close file")            // simple message
 //	defer should.Close(file, "failed to close %s", filename)    // formatted message
 func Close(closer io.Closer, args ...any) {
-	if err := closer.Close(); err != nil {
+	err := closer.Close()
+	if err != nil {
 		msg := argsToMessage(args)
 		if msg == "" {
 			logger.Get().Error("error closing io.Closer", "error", err)
@@ -62,7 +63,8 @@ func argsToMessage(args []any) string {
 //
 //	defer should.Remove("/tmp/tempfile", "failed to remove temp file")
 func Remove(path string, msg string) {
-	if err := os.Remove(path); err != nil {
+	err := os.Remove(path)
+	if err != nil {
 		slog.Error(msg, "error", err)
 	}
 }

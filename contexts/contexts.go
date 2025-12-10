@@ -1,3 +1,4 @@
+// Package contexts provides context utilities including lifecycle management and type-safe value storage.
 package contexts
 
 import "context"

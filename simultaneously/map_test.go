@@ -41,6 +41,7 @@ func TestMapGoMap_NilInput(t *testing.T) {
 	t.Parallel()
 
 	var input map[string]int
+
 	output, err := MapGoMap(2, input, func(ctx context.Context, k string, v int) (int, string, error) {
 		return v, k, nil
 	})
@@ -192,6 +193,7 @@ func TestFlatMapGoMap_NilInput(t *testing.T) {
 	t.Parallel()
 
 	var input map[string]int
+
 	output, err := FlatMapGoMap(2, input, func(ctx context.Context, k string, v int) (map[string]int, error) {
 		return map[string]int{k: v}, nil
 	})
@@ -330,6 +332,7 @@ func TestMapMap_NilInput(t *testing.T) {
 	t.Parallel()
 
 	var input maps.Map[maps.Key[string], int]
+
 	output, err := MapMap(2, input, func(ctx context.Context, k maps.Key[string], v int) (maps.Key[string], int, error) {
 		return k, v, nil
 	})

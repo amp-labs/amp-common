@@ -161,7 +161,8 @@ func run(
 		return 1
 	}
 
-	if err := callback(ctx); err != nil {
+	err := callback(ctx)
+	if err != nil {
 		var exitErr *exitError
 
 		if errors.As(err, &exitErr) {

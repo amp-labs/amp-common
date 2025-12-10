@@ -181,7 +181,7 @@ func TestGetValue(t *testing.T) {
 		value, ok := GetValue[string, string](nil, "key") //nolint:staticcheck // Testing nil context behavior
 
 		assert.False(t, ok)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("returns false for missing key", func(t *testing.T) {
@@ -191,7 +191,7 @@ func TestGetValue(t *testing.T) {
 		value, ok := GetValue[string, string](ctx, "nonexistent")
 
 		assert.False(t, ok)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("returns false for type mismatch", func(t *testing.T) {

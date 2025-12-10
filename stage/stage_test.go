@@ -74,7 +74,7 @@ func TestGetRunningStageNoEnv(t *testing.T) {
 	t.Parallel()
 
 	// Ensure RUNNING_ENV is not set
-	os.Unsetenv("RUNNING_ENV")
+	_ = os.Unsetenv("RUNNING_ENV")
 
 	// Reset the lazy value for this test
 	testStage := lazy.NewCtx[Stage](getRunningStage)

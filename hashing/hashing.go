@@ -1,3 +1,4 @@
+// Package hashing provides cryptographic hash utilities and hashable types for use with Map and Set collections.
 package hashing
 
 import (
@@ -84,7 +85,8 @@ func Xxh3(hashable Hashable) (string, error) {
 // HashHex is a helper function that applies a hash function to a Hashable
 // and returns the result as a hex-encoded string.
 func HashHex(hashable Hashable, h hash.Hash) (string, error) {
-	if err := hashable.UpdateHash(h); err != nil {
+	err := hashable.UpdateHash(h)
+	if err != nil {
 		return "", err
 	}
 
@@ -96,7 +98,8 @@ func HashHex(hashable Hashable, h hash.Hash) (string, error) {
 // HashBase64 is a helper function that applies a hash function to a Hashable
 // and returns the result as a base64-encoded string.
 func HashBase64(hashable Hashable, h hash.Hash) (string, error) {
-	if err := hashable.UpdateHash(h); err != nil {
+	err := hashable.UpdateHash(h)
+	if err != nil {
 		return "", err
 	}
 

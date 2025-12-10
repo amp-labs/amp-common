@@ -54,7 +54,9 @@ const (
 	// black and red are the two node colors in a red-black tree.
 	// Black is represented as true for a default zero-value of black when nodes are created.
 	black, red color = true, false
+)
 
+const (
 	// left, right, and nodir represent the position of a node relative to its parent.
 	// nodir is used for the root node which has no parent.
 	left direction = iota
@@ -456,13 +458,15 @@ func (t *redBlackTreeMap[K, V]) Union(other Map[K, V]) (Map[K, V], error) {
 	out := NewRedBlackTreeMap[K, V]()
 
 	for k, v := range t.Seq() {
-		if err := out.Add(k, v); err != nil {
+		err := out.Add(k, v)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	for k, v := range other.Seq() {
-		if err := out.Add(k, v); err != nil {
+		err := out.Add(k, v)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -482,7 +486,8 @@ func (t *redBlackTreeMap[K, V]) Intersection(other Map[K, V]) (Map[K, V], error)
 		}
 
 		if found {
-			if err := out.Add(k, v); err != nil {
+			err := out.Add(k, v)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -758,6 +763,7 @@ loop:
 				t.rotateRight(x.parent)
 				w = x.parent.left
 			}
+
 			if w != nil {
 				switch {
 				case !isRed(w.left) && !isRed(w.right):
@@ -769,10 +775,12 @@ loop:
 					t.rotateLeft(w)
 					w = x.parent.left
 				}
+
 				if isRed(w.left) {
 					w.color = x.parent.color
 					x.parent.color = black
 					w.left.color = black
+
 					t.rotateRight(x.parent)
 					x = t.root
 				}
@@ -785,6 +793,7 @@ loop:
 				t.rotateLeft(x.parent)
 				w = x.parent.right
 			}
+
 			if w != nil {
 				switch {
 				case !isRed(w.left) && !isRed(w.right):
@@ -796,10 +805,12 @@ loop:
 					t.rotateRight(w)
 					w = x.parent.right
 				}
+
 				if isRed(w.right) {
 					w.color = x.parent.color
 					x.parent.color = black
 					w.right.color = black
+
 					t.rotateLeft(x.parent)
 					x = t.root
 				}

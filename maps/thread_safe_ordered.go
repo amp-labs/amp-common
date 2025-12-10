@@ -215,6 +215,7 @@ func (t *threadSafeOrderedMap[K, V]) ForEach(f func(key K, value V)) {
 	for _, entry := range t.internal.Seq() {
 		accum = append(accum, entry)
 	}
+
 	t.mutex.RUnlock()
 
 	// Execute function on snapshot without holding lock
@@ -235,6 +236,7 @@ func (t *threadSafeOrderedMap[K, V]) ForAll(predicate func(key K, value V) bool)
 	for _, entry := range t.internal.Seq() {
 		accum = append(accum, entry)
 	}
+
 	t.mutex.RUnlock()
 
 	// Test predicate on snapshot without holding lock
@@ -299,6 +301,7 @@ func (t *threadSafeOrderedMap[K, V]) Exists(predicate func(key K, value V) bool)
 	for _, entry := range t.internal.Seq() {
 		accum = append(accum, entry)
 	}
+
 	t.mutex.RUnlock()
 
 	// Test predicate on snapshot without holding lock
@@ -323,6 +326,7 @@ func (t *threadSafeOrderedMap[K, V]) FindFirst(predicate func(key K, value V) bo
 	for _, entry := range t.internal.Seq() {
 		accum = append(accum, entry)
 	}
+
 	t.mutex.RUnlock()
 
 	// Search in snapshot without holding lock

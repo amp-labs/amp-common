@@ -124,7 +124,7 @@ func TestCaseInsensitiveMap_Get(t *testing.T) {
 		key, val, ok := m.Get("content-type", true)
 		assert.False(t, ok)
 		assert.Equal(t, "content-type", key)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 	})
 
 	t.Run("case-insensitive lookup returns original key", func(t *testing.T) {
@@ -429,6 +429,7 @@ func TestCaseInsensitiveMap_Clone(t *testing.T) {
 		t.Parallel()
 
 		var m *maps.CaseInsensitiveMap[string]
+
 		clone := m.Clone()
 		assert.Nil(t, clone)
 	})

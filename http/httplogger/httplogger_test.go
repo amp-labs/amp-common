@@ -20,6 +20,7 @@ func TestLogError_NilRequest(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	params := &httplogger.LogErrorParams{
@@ -47,6 +48,7 @@ func TestLogError_BasicError(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com/path", nil)
@@ -72,6 +74,7 @@ func TestLogError_WithQueryParams(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
@@ -95,6 +98,7 @@ func TestLogError_WithRedactedQueryParams(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
@@ -129,6 +133,7 @@ func TestLogError_NilError(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
@@ -152,6 +157,7 @@ func TestLogError_NilURL(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
@@ -175,6 +181,7 @@ func TestLogError_ComplexError(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
@@ -210,6 +217,7 @@ func TestLogError_EmptyCorrelationID(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com", nil)
@@ -234,6 +242,7 @@ func TestLogError_LogLevel(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, &slog.HandlerOptions{
 		Level: slog.LevelError,
 	}))
@@ -260,6 +269,7 @@ func TestLogError_SpecialCharactersInURL(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
@@ -286,6 +296,7 @@ func TestLogError_MultipleQueryParamsWithSameKey(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	u, err := url.Parse("https://api.example.com/items")
@@ -355,6 +366,7 @@ func TestLogRequest_IncludeBodyOverride(t *testing.T) {
 			t.Parallel()
 
 			var logBuffer bytes.Buffer
+
 			logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 			req, err := http.NewRequestWithContext(
@@ -390,6 +402,7 @@ func TestLogRequest_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	smallBody := []byte(`{"small":"data"}`)
@@ -434,6 +447,7 @@ func TestLogRequest_IncludeBodyOverride_ChecksEndpoint(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	body := []byte(`{"data":"sensitive"}`)
@@ -476,6 +490,7 @@ func TestLogResponse_IncludeBodyOverride_ReturnsTrue(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	body := []byte(`{"result":"success"}`)
@@ -511,6 +526,7 @@ func TestLogResponse_IncludeBodyOverride_ReturnsFalse(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	body := []byte(`{"error":"internal"}`)
@@ -545,6 +561,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnStatusCode(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	successBody := []byte(`{"status":"ok"}`)
@@ -599,6 +616,7 @@ func TestLogResponse_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	smallBody := []byte(`{"small":"response"}`)
@@ -643,6 +661,7 @@ func TestLogRequest_IncludeBodyOverride_NilOverride(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	body := []byte(`{"key":"value"}`)
@@ -669,6 +688,7 @@ func TestLogResponse_IncludeBodyOverride_NilOverride(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	body := []byte(`{"result":"success"}`)
@@ -701,6 +721,7 @@ func TestLogRequest_NilRequest(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	params := &httplogger.LogRequestParams{
@@ -728,6 +749,7 @@ func TestLogRequest_BasicRequest(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)
@@ -755,6 +777,7 @@ func TestLogRequest_WithBody(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	body := []byte(`{"username":"alice","email":"alice@example.com"}`)
@@ -780,6 +803,7 @@ func TestLogRequest_WithRedactedHeaders(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com/data", nil)
@@ -815,6 +839,7 @@ func TestLogRequest_WithRedactedQueryParams(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
@@ -849,6 +874,7 @@ func TestLogRequest_MessageOverride(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)
@@ -872,6 +898,7 @@ func TestLogRequest_LevelOverride(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, &slog.HandlerOptions{
 		Level: slog.LevelWarn, // Only log WARN and above
 	}))
@@ -897,6 +924,7 @@ func TestLogResponse_NilResponse(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	params := &httplogger.LogResponseParams{
@@ -934,6 +962,7 @@ func TestLogResponse_BasicResponse(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "https://api.example.com/users", nil)
@@ -966,6 +995,7 @@ func TestLogResponse_WithBody(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	body := []byte(`{"users":[{"id":1,"name":"Alice"}]}`)
@@ -997,6 +1027,7 @@ func TestLogResponse_StatusCodeLevelOverride(t *testing.T) {
 	t.Parallel()
 
 	var logBuffer bytes.Buffer
+
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, "https://api.example.com/users", nil)

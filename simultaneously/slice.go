@@ -41,8 +41,10 @@ func MapSliceCtx[Input, Output any](
 	transform func(ctx context.Context, value Input) (Output, error),
 ) (result []Output, err error) {
 	exec := newDefaultExecutor(maxConcurrent, len(values))
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -113,7 +115,9 @@ func MapSliceCtxWithExecutor[Input, Output any](
 				}
 
 				mut.Lock()
+
 				outputs[idx] = result
+
 				mut.Unlock()
 
 				return nil
@@ -121,7 +125,8 @@ func MapSliceCtxWithExecutor[Input, Output any](
 		}(idx, value)
 	}
 
-	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
+	err := DoCtxWithExecutor(ctx, exec, callbacks...)
+	if err != nil {
 		return nil, err
 	}
 
@@ -166,8 +171,10 @@ func FlatMapSliceCtx[Input, Output any](
 	transform func(ctx context.Context, value Input) ([]Output, error),
 ) (result []Output, err error) {
 	exec := newDefaultExecutor(maxConcurrent, len(values))
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -239,7 +246,9 @@ func FlatMapSliceCtxWithExecutor[Input, Output any](
 				}
 
 				mut.Lock()
+
 				outputs[idx] = result
+
 				mut.Unlock()
 
 				return nil
@@ -247,7 +256,8 @@ func FlatMapSliceCtxWithExecutor[Input, Output any](
 		}(idx, value)
 	}
 
-	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
+	err := DoCtxWithExecutor(ctx, exec, callbacks...)
+	if err != nil {
 		return nil, err
 	}
 

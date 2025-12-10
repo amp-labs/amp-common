@@ -166,6 +166,29 @@ func newMovingRate() *movingRate {
 	}
 }
 
+// Add increments the event count at time t by n. Events with timestamps before
+// the last update are ignored (time cannot move backward in this data structure).
+func (mr *movingRate) Add(t time.Time, n int) {
+	if t.Before(mr.lastUpdate) {
+		return
+	}
+
+	mr.forward(t)
+	mr.counts[len(mr.counts)-1] += n
+}
+
+// Rate computes the current event rate (events per second) at time t.
+// Returns NaN if the timestamp is before the last update.
+func (mr *movingRate) Rate(t time.Time) float64 {
+	if t.Before(mr.lastUpdate) {
+		return math.NaN()
+	}
+
+	mr.forward(t)
+
+	return mr.count() / mr.second()
+}
+
 // count returns the total count of events in the sliding window, accounting for
 // partial buckets. When the history is not fully initialized (fewer buckets than
 // BucketNum), it sums all available buckets. When fully initialized, it applies
@@ -268,27 +291,4 @@ func (mr *movingRate) forward(t time.Time) {
 	}
 
 	mr.shift(n)
-}
-
-// Add increments the event count at time t by n. Events with timestamps before
-// the last update are ignored (time cannot move backward in this data structure).
-func (mr *movingRate) Add(t time.Time, n int) {
-	if t.Before(mr.lastUpdate) {
-		return
-	}
-
-	mr.forward(t)
-	mr.counts[len(mr.counts)-1] += n
-}
-
-// Rate computes the current event rate (events per second) at time t.
-// Returns NaN if the timestamp is before the last update.
-func (mr *movingRate) Rate(t time.Time) float64 {
-	if t.Before(mr.lastUpdate) {
-		return math.NaN()
-	}
-
-	mr.forward(t)
-
-	return mr.count() / mr.second()
 }

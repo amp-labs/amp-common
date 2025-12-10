@@ -72,7 +72,9 @@ const (
 	// black and red represent the two possible node colors in a red-black tree.
 	// Black is represented as true for efficient nil checks (nil nodes are considered black).
 	black, red color = true, false
+)
 
+const (
 	// left, right, and nodir represent the directional relationship between nodes.
 	// nodir is used when there is no directional relationship (e.g., for the root node).
 	left direction = iota
@@ -131,7 +133,8 @@ type redBlackTreeSet[K sortable.Sortable[K]] struct {
 // Returns an error if any element fails to be added (though current implementation never returns errors).
 func (r *redBlackTreeSet[K]) AddAll(elements ...K) error {
 	for _, element := range elements {
-		if err := r.Add(element); err != nil {
+		err := r.Add(element)
+		if err != nil {
 			return err
 		}
 	}
@@ -318,13 +321,15 @@ func (r *redBlackTreeSet[K]) Union(other Set[K]) (Set[K], error) {
 	out := NewRedBlackTreeSet[K]()
 
 	for k := range r.Seq() {
-		if err := out.Add(k); err != nil {
+		err := out.Add(k)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	for k := range other.Seq() {
-		if err := out.Add(k); err != nil {
+		err := out.Add(k)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -344,7 +349,8 @@ func (r *redBlackTreeSet[K]) Intersection(other Set[K]) (Set[K], error) {
 		}
 
 		if contains {
-			if err := out.Add(k); err != nil {
+			err := out.Add(k)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -661,6 +667,7 @@ loop:
 				r.rotateRight(x.parent)
 				w = x.parent.left
 			}
+
 			if w != nil {
 				switch {
 				case !isRed(w.left) && !isRed(w.right):
@@ -672,10 +679,12 @@ loop:
 					r.rotateLeft(w)
 					w = x.parent.left
 				}
+
 				if isRed(w.left) {
 					w.color = x.parent.color
 					x.parent.color = black
 					w.left.color = black
+
 					r.rotateRight(x.parent)
 					x = r.root
 				}
@@ -688,6 +697,7 @@ loop:
 				r.rotateLeft(x.parent)
 				w = x.parent.right
 			}
+
 			if w != nil {
 				switch {
 				case !isRed(w.left) && !isRed(w.right):
@@ -699,10 +709,12 @@ loop:
 					r.rotateRight(w)
 					w = x.parent.right
 				}
+
 				if isRed(w.right) {
 					w.color = x.parent.color
 					x.parent.color = black
 					w.right.color = black
+
 					r.rotateLeft(x.parent)
 					x = r.root
 				}

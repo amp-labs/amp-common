@@ -100,7 +100,7 @@ func TestDefaultOrderedMapGet(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 		assert.Equal(t, 0, m.Size())
 	})
 
@@ -116,7 +116,7 @@ func TestDefaultOrderedMapGet(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.Error(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 		assert.ErrorIs(t, err, errGenerationFailedOrdered)
 	})
 
@@ -705,7 +705,7 @@ func TestNewDefaultZeroOrderedMap(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 		assert.Equal(t, 1, m.Size())
 	})
 
@@ -843,7 +843,7 @@ func TestNewDefaultZeroOrderedMap(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 	})
 
 	t.Run("does not override existing values", func(t *testing.T) {

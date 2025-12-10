@@ -21,8 +21,8 @@ const (
 	defaultForceAttemptHTTP2 = false
 
 	// defaultTransportDialTimeout is the maximum amount of time a dial will wait for a connection to complete.
-	defaultTransportDialTimeout = 30 * time.Second //nolint:gomnd,mnd
+	defaultTransportDialTimeout = 30 * time.Second //nolint:mnd
 
 	// defaultKeepAlive specifies the interval between keep-alive probes for an active network connection.
-	defaultKeepAlive = 30 * time.Second //nolint:gomnd,mnd
+	defaultKeepAlive = 30 * time.Second //nolint:mnd
 )

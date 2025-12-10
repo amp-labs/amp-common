@@ -335,7 +335,7 @@ func TestLifecycleInsensitiveContext_ImplementsInterface(t *testing.T) {
 		ctx := WithIgnoreLifecycle(t.Context())
 
 		// This will compile only if ctx implements context.Context
-		var _ context.Context = ctx
+		_ = ctx
 
 		// Verify all methods are callable
 		_ = ctx.Done()
@@ -378,6 +378,7 @@ func TestLifecycleInsensitiveContext_RealWorldUseCases(t *testing.T) {
 				// Cleanup completed successfully
 				requestID := cleanupCtx.Value(contextKey("requestID"))
 				assert.Equal(t, "req-789", requestID)
+
 				cleanupComplete <- true
 			}
 		}()

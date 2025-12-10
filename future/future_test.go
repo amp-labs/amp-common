@@ -141,7 +141,7 @@ func TestGoContext_ContextCancellation(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
 
 func TestAwaitContext_Timeout(t *testing.T) {
@@ -478,6 +478,7 @@ func TestConcurrentAwait(t *testing.T) {
 
 	// Launch multiple goroutines calling Await concurrently
 	const numGoroutines = 10
+
 	results := make(chan int, numGoroutines)
 	errors := make(chan error, numGoroutines)
 
@@ -485,6 +486,7 @@ func TestConcurrentAwait(t *testing.T) {
 		go func() {
 			val, err := fut.Await()
 			results <- val
+
 			errors <- err
 		}()
 	}
@@ -509,6 +511,7 @@ func TestConcurrentMixedReads(t *testing.T) {
 	})
 
 	const numGoroutines = 10
+
 	done := make(chan bool, numGoroutines)
 
 	ctx := t.Context()
@@ -519,6 +522,7 @@ func TestConcurrentMixedReads(t *testing.T) {
 			val, err := fut.Await()
 			assert.NoError(t, err)
 			assert.Equal(t, "concurrent", val)
+
 			done <- true
 		}()
 
@@ -526,6 +530,7 @@ func TestConcurrentMixedReads(t *testing.T) {
 			val, err := fut.AwaitContext(ctx)
 			assert.NoError(t, err)
 			assert.Equal(t, "concurrent", val)
+
 			done <- true
 		}()
 	}
@@ -559,7 +564,7 @@ func TestMap_NilFuture(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nil future provided to Map")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
 
 func TestMap_NilFunction(t *testing.T) {
@@ -575,7 +580,7 @@ func TestMap_NilFunction(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nil function provided to Map")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
 
 func TestMapContext_Success(t *testing.T) {
@@ -1112,7 +1117,7 @@ func TestGoContextWithExecutor_Error(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, errTest, err)
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 	assert.True(t, exec.goContextCalled)
 }
 
@@ -1208,7 +1213,7 @@ func TestMapWithExecutor_NilFuture(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nil future")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 	assert.False(t, exec.goCalled, "executor should not be called for validation errors")
 }
 
@@ -1227,7 +1232,7 @@ func TestMapWithExecutor_NilFunction(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nil function")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 	assert.False(t, exec.goCalled)
 }
 
@@ -1266,7 +1271,7 @@ func TestMapContextWithExecutor_NilFuture(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nil future")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 	assert.False(t, exec.goContextCalled)
 }
 
@@ -1285,7 +1290,7 @@ func TestMapContextWithExecutor_NilFunction(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nil function")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 	assert.False(t, exec.goContextCalled)
 }
 
@@ -1608,7 +1613,7 @@ func TestDefaultGoExecutor_GoContext_PanicRecovery(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "recovered from panic: test panic in GoContext")
 	assert.Contains(t, err.Error(), "stack trace:")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
 
 // OnSuccess/OnError callback tests
@@ -1931,6 +1936,7 @@ func TestOnSuccess_ConcurrentRegistration(t *testing.T) {
 
 	// Register callbacks concurrently with fulfillment
 	const numCallbacks = 10
+
 	called := make(chan int, numCallbacks)
 
 	// Start goroutines that register callbacks
@@ -1980,6 +1986,7 @@ func TestOnError_ConcurrentRegistration(t *testing.T) {
 
 	// Register callbacks concurrently with fulfillment
 	const numCallbacks = 10
+
 	called := make(chan error, numCallbacks)
 
 	// Start goroutines that register callbacks
@@ -2131,6 +2138,7 @@ func TestOnSuccessContext_CalledAfterFulfillment(t *testing.T) {
 	// Register callback before fulfillment
 	fut.OnSuccessContext(t.Context(), func(ctx context.Context, val int) {
 		assert.NotNil(t, ctx)
+
 		called <- val
 	})
 
@@ -2164,6 +2172,7 @@ func TestOnSuccessContext_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
 	// Register callback after fulfillment
 	fut.OnSuccessContext(t.Context(), func(ctx context.Context, val int) {
 		assert.NotNil(t, ctx)
+
 		called <- val
 	})
 
@@ -2230,6 +2239,7 @@ func TestOnSuccessContext_NilContext(t *testing.T) {
 	fut.OnSuccessContext(nil, func(ctx context.Context, val int) { //nolint:staticcheck
 		// Should receive a valid context (not nil)
 		assert.NotNil(t, ctx)
+
 		called <- val
 	})
 
@@ -2278,6 +2288,7 @@ func TestOnErrorContext_CalledAfterFulfillment(t *testing.T) {
 	// Register callback before fulfillment
 	fut.OnErrorContext(t.Context(), func(ctx context.Context, err error) {
 		assert.NotNil(t, ctx)
+
 		called <- err
 	})
 
@@ -2311,6 +2322,7 @@ func TestOnErrorContext_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
 	// Register callback after fulfillment
 	fut.OnErrorContext(t.Context(), func(ctx context.Context, err error) {
 		assert.NotNil(t, ctx)
+
 		called <- err
 	})
 
@@ -2378,6 +2390,7 @@ func TestOnErrorContext_NilContext(t *testing.T) {
 	fut.OnErrorContext(nil, func(ctx context.Context, err error) { //nolint:staticcheck
 		// Should receive a valid context (not nil)
 		assert.NotNil(t, ctx)
+
 		called <- err
 	})
 
@@ -2428,6 +2441,7 @@ func TestOnResultContext_CalledAfterFulfillment_Success(t *testing.T) {
 	fut.OnResultContext(t.Context(), func(ctx context.Context, result try.Try[int]) {
 		assert.NotNil(t, ctx)
 		require.NoError(t, result.Error)
+
 		called <- result.Value
 	})
 
@@ -2455,6 +2469,7 @@ func TestOnResultContext_CalledAfterFulfillment_Error(t *testing.T) {
 	fut.OnResultContext(t.Context(), func(ctx context.Context, result try.Try[int]) {
 		assert.NotNil(t, ctx)
 		require.Error(t, result.Error)
+
 		called <- result.Error
 	})
 
@@ -2489,6 +2504,7 @@ func TestOnResultContext_CalledImmediatelyWhenAlreadyFulfilled(t *testing.T) {
 	fut.OnResultContext(t.Context(), func(ctx context.Context, result try.Try[int]) {
 		assert.NotNil(t, ctx)
 		require.NoError(t, result.Error)
+
 		called <- result.Value
 	})
 
@@ -2532,6 +2548,7 @@ func TestOnResultContext_NilContext(t *testing.T) {
 		// Should receive a valid context (not nil)
 		assert.NotNil(t, ctx)
 		require.NoError(t, result.Error)
+
 		called <- result.Value
 	})
 
@@ -2751,6 +2768,7 @@ func TestNew_CancelFuncsCalledOnlyOnce(t *testing.T) {
 	// Cancel function should only be called once
 	mut.Lock()
 	defer mut.Unlock()
+
 	assert.Equal(t, 1, callCount)
 
 	// Future should still be usable

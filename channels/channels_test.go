@@ -22,12 +22,14 @@ func TestCreate_UnbufferedChannel(t *testing.T) {
 
 	go func() {
 		input <- 42
+
 		close(input)
 	}()
 
 	go func() {
 		val := <-output
 		assert.Equal(t, 42, val)
+
 		done <- true
 	}()
 
@@ -114,7 +116,9 @@ func TestCreate_CloseChannel(t *testing.T) {
 	input, output, _ := Create[int](2)
 
 	input <- 1
+
 	input <- 2
+
 	close(input)
 
 	// Should receive all values before channel closes
@@ -157,8 +161,10 @@ func TestCreate_DifferentTypes(t *testing.T) {
 		}
 
 		input, output, _ := Create[testStruct](1)
+
 		expected := testStruct{ID: 1, Name: "test"}
 		input <- expected
+
 		assert.Equal(t, expected, <-output)
 	})
 }
@@ -176,6 +182,7 @@ func TestCreate_ZeroSizeVsNegativeSize(t *testing.T) {
 
 		go func() {
 			input <- 1
+
 			done <- true
 		}()
 
@@ -205,7 +212,9 @@ func TestInfiniteChan_BasicSendReceive(t *testing.T) {
 	input, output, _ := InfiniteChan[int]()
 
 	input <- 1
+
 	input <- 2
+
 	input <- 3
 
 	assert.Equal(t, 1, <-output)
@@ -235,7 +244,9 @@ func TestInfiniteChan_CloseInput(t *testing.T) {
 	input, output, _ := InfiniteChan[int]()
 
 	input <- 1
+
 	input <- 2
+
 	close(input)
 
 	assert.Equal(t, 1, <-output)
@@ -254,8 +265,11 @@ func TestInfiniteChan_CloseWithQueuedValues(t *testing.T) {
 
 	// Send values and close immediately
 	input <- "first"
+
 	input <- "second"
+
 	input <- "third"
+
 	close(input)
 
 	// Should still receive all values
@@ -348,7 +362,9 @@ func TestInfiniteChan_DifferentTypes(t *testing.T) {
 
 		input, output, _ := InfiniteChan[string]()
 		input <- "hello"
+
 		input <- "world"
+
 		close(input)
 
 		assert.Equal(t, "hello", <-output)
@@ -367,7 +383,9 @@ func TestInfiniteChan_DifferentTypes(t *testing.T) {
 
 		input, output, _ := InfiniteChan[testStruct]()
 		input <- testStruct{ID: 1, Name: "first"}
+
 		input <- testStruct{ID: 2, Name: "second"}
+
 		close(input)
 
 		assert.Equal(t, testStruct{ID: 1, Name: "first"}, <-output)
@@ -423,6 +441,7 @@ func TestInfiniteChan_ConcurrentSenders(t *testing.T) {
 		}
 
 		assert.Equal(t, 5, count)
+
 		done <- true
 	}()
 
@@ -511,6 +530,7 @@ func TestSendCatchPanic_UnbufferedChannel(t *testing.T) {
 	ch := make(chan int)
 
 	done := make(chan error)
+
 	go func() {
 		done <- SendCatchPanic(ch, 42)
 	}()
@@ -583,6 +603,7 @@ func TestSendContextCatchPanic_ContextCanceledDuringSend(t *testing.T) {
 
 	// Start send in goroutine (will block since no receiver)
 	done := make(chan error)
+
 	go func() {
 		done <- SendContextCatchPanic(ctx, ch, 42)
 	}()

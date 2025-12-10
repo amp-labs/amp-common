@@ -1,4 +1,4 @@
-package utils
+package utils //nolint:revive // utils is an appropriate package name for utility functions
 
 import (
 	"testing"
@@ -27,6 +27,7 @@ func TestGetFunctionName(t *testing.T) {
 		t.Parallel()
 
 		var f func()
+
 		name := GetFunctionName(f)
 		assert.Equal(t, "<nil>", name)
 	})

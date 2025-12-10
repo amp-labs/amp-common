@@ -105,7 +105,8 @@ func (t *OfCtxErr[T]) doSlowOrError(f func() error) error {
 	defer t.m.Unlock()
 
 	if t.done == 0 {
-		if err := f(); err != nil {
+		err := f()
+		if err != nil {
 			return err
 		}
 

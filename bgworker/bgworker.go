@@ -1,3 +1,4 @@
+// Package bgworker provides background worker management with graceful lifecycle control.
 package bgworker
 
 import (

@@ -215,7 +215,7 @@ func TestGetSubsystem(t *testing.T) {
 
 		ctx := WithSubsystem(t.Context(), "")
 		result := GetSubsystem(ctx)
-		assert.Equal(t, "", result)
+		assert.Empty(t, result)
 	})
 }
 
@@ -508,11 +508,12 @@ func TestConfigureLoggingConcurrency(t *testing.T) {
 
 	iterations := 10
 
-	for i := 0; i < iterations; i++ { //nolint:intrange
+	for i := range iterations { //nolint:intrange
 		wg.Add(1)
 
 		go func(idx int) {
 			defer wg.Done()
+
 			ConfigureLoggingWithOptions(Options{
 				Subsystem: "concurrent-test",
 				JSON:      idx%2 == 0,
@@ -594,7 +595,7 @@ func TestConfigureLogging(t *testing.T) { //nolint:paralleltest
 
 			// Clean up
 			for k := range tt.envVars {
-				os.Unsetenv(k)
+				_ = os.Unsetenv(k)
 			}
 		})
 	}

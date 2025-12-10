@@ -54,6 +54,7 @@ func TestMapSet_NilInput(t *testing.T) {
 	t.Parallel()
 
 	var input set.Set[hashing.HashableInt]
+
 	output, err := MapSet(2, input, func(ctx context.Context, v hashing.HashableInt) (hashing.HashableInt, error) {
 		return v, nil
 	})

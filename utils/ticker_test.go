@@ -1,3 +1,4 @@
+//nolint:revive // Package name 'utils' is established convention in this codebase
 package utils
 
 import (
@@ -285,6 +286,7 @@ func TestTickerWithContext(t *testing.T) {
 					t.Fatal("channel did not close, possible goroutine leak")
 				}
 			}
+
 		nextIteration:
 		}
 	})

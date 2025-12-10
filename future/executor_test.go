@@ -51,7 +51,7 @@ func TestDefaultGoExecutor_Go_Error(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, errExecutor, err)
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
 
 // TestDefaultGoExecutor_Go_Panic verifies that DefaultGoExecutor.Go recovers

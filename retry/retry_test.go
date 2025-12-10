@@ -163,7 +163,7 @@ func TestDoValue_ExhaustsRetries(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, testErr, err)
-	assert.Equal(t, "", result, "should return zero value on error")
+	assert.Empty(t, result, "should return zero value on error")
 }
 
 func TestNewRunner_CustomOptions(t *testing.T) {

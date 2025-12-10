@@ -453,6 +453,7 @@ func TestWithMultipleValuesConcurrency(t *testing.T) {
 					_ = multiCtx.Value("key2")
 					_ = multiCtx.Value("key3")
 				}
+
 				done <- true
 			}()
 		}
@@ -474,9 +475,7 @@ func BenchmarkWithMultipleValues(b *testing.B) {
 		"key5": "value5",
 	}
 
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		multiCtx := WithMultipleValues(ctx, vals)
 		_ = multiCtx.Value("key3")
 	}

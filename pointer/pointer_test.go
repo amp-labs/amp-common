@@ -73,6 +73,7 @@ func TestTo(t *testing.T) {
 		t.Parallel()
 
 		var zero int
+
 		ptr := To(zero)
 
 		assert.NotNil(t, ptr)
@@ -91,7 +92,7 @@ func TestValue(t *testing.T) {
 		val, ok := Value(ptr)
 
 		assert.False(t, ok)
-		assert.Equal(t, "", val) // zero value for string
+		assert.Empty(t, val) // zero value for string
 	})
 
 	t.Run("non-nil string pointer", func(t *testing.T) {
@@ -355,7 +356,7 @@ func TestValueOrZero(t *testing.T) {
 
 		val := ValueOrZero(ptr)
 
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 	})
 
 	t.Run("non-nil string pointer returns value", func(t *testing.T) {

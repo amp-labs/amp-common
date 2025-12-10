@@ -65,7 +65,7 @@ func TestClose_RealFile(t *testing.T) {
 	// Create a temporary file
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.txt")
-	file, err := os.Create(tmpFile)
+	file, err := os.Create(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 
 	// Write some data
@@ -86,7 +86,7 @@ func TestClose_AlreadyClosedFile(t *testing.T) {
 	// Create a temporary file
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.txt")
-	file, err := os.Create(tmpFile)
+	file, err := os.Create(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 
 	// Close it once
@@ -129,7 +129,7 @@ func TestRemove_Directory(t *testing.T) {
 	// Create a temporary directory with a file inside
 	tmpDir := t.TempDir()
 	subDir := filepath.Join(tmpDir, "subdir")
-	err := os.Mkdir(subDir, 0o755)
+	err := os.Mkdir(subDir, 0o755) //nolint:gosec // Safe permissions in test
 	require.NoError(t, err)
 
 	// Create a file inside the directory
@@ -152,7 +152,7 @@ func TestRemove_EmptyDirectory(t *testing.T) {
 	// Create an empty temporary directory
 	tmpDir := t.TempDir()
 	emptyDir := filepath.Join(tmpDir, "empty")
-	err := os.Mkdir(emptyDir, 0o755)
+	err := os.Mkdir(emptyDir, 0o755) //nolint:gosec // Safe permissions in test
 	require.NoError(t, err)
 
 	should.Remove(emptyDir, "failed to remove empty directory")
@@ -175,7 +175,7 @@ func TestRemove_InDefer(t *testing.T) {
 		defer should.Remove(tmpFile, "failed to remove in defer")
 
 		// Do some work...
-		data, err := os.ReadFile(tmpFile)
+		data, err := os.ReadFile(tmpFile) //nolint:gosec // Safe in test
 		require.NoError(t, err)
 		assert.Equal(t, "test", string(data))
 	}()
@@ -196,7 +196,7 @@ func TestClose_InDefer(t *testing.T) {
 		var err error
 
 		tmpFile := filepath.Join(tmpDir, "defer-test.txt")
-		file, err = os.Create(tmpFile)
+		file, err = os.Create(tmpFile) //nolint:gosec // Safe in test
 		require.NoError(t, err)
 
 		defer should.Close(file, "failed to close in defer")
@@ -233,9 +233,7 @@ func TestClose_WithMultipleErrors(t *testing.T) {
 func BenchmarkClose_Success(b *testing.B) {
 	closer := &mockCloser{}
 
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		closer.closed = false
 		should.Close(closer, "benchmark message")
 	}
@@ -244,9 +242,7 @@ func BenchmarkClose_Success(b *testing.B) {
 func BenchmarkClose_WithError(b *testing.B) {
 	closer := &mockCloser{closeErr: errBenchmarkError}
 
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		closer.closed = false
 		should.Close(closer, "benchmark message")
 	}
@@ -255,7 +251,7 @@ func BenchmarkClose_WithError(b *testing.B) {
 func BenchmarkRemove_Success(b *testing.B) {
 	tmpDir := b.TempDir()
 
-	for range b.N {
+	for b.Loop() {
 		tmpFile := filepath.Join(tmpDir, "bench.txt")
 		_ = os.WriteFile(tmpFile, []byte("test"), 0o600)
 
@@ -270,7 +266,8 @@ type complexCloser struct {
 
 func (c *complexCloser) Close() error {
 	for _, r := range c.resources {
-		if err := r.Close(); err != nil {
+		err := r.Close()
+		if err != nil {
 			return err
 		}
 	}

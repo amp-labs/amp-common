@@ -1,3 +1,4 @@
+// Package emoji provides emoji constants for terminal output and UI.
 package emoji
 
 const (

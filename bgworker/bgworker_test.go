@@ -29,6 +29,7 @@ func TestSubmitMultipleTasks(t *testing.T) {
 	var counter atomic.Int32
 
 	const numTasks = 10
+
 	tasks := make([]interface{ Wait() error }, numTasks)
 
 	for i := range numTasks {
@@ -78,6 +79,7 @@ func TestGoMultipleTasks(t *testing.T) {
 	for range 10 {
 		err := Go(t.Context(), func() {
 			counter.Add(1)
+
 			done <- struct{}{}
 		})
 		require.NoError(t, err)
@@ -130,6 +132,7 @@ func TestConcurrentSubmit(t *testing.T) {
 	var counter atomic.Int32
 
 	const numTasks = 100
+
 	tasks := make([]interface{ Wait() error }, numTasks)
 
 	// Submit 100 tasks concurrently

@@ -1,4 +1,4 @@
-package utils
+package utils //nolint:revive // utils is an appropriate package name for utility functions
 
 import (
 	"testing"
@@ -57,7 +57,7 @@ func TestToJSONMap(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "Jane", result["name"])
 
-		addr, ok := result["address"].(map[string]interface{})
+		addr, ok := result["address"].(map[string]any)
 		require.True(t, ok)
 		assert.Equal(t, "123 Main St", addr["street"])
 		assert.Equal(t, "NYC", addr["city"])
@@ -121,7 +121,7 @@ func TestToJSONMap(t *testing.T) {
 		result, err := ToJSONMap(input)
 		require.NoError(t, err)
 
-		tags, ok := result["tags"].([]interface{})
+		tags, ok := result["tags"].([]any)
 		require.True(t, ok)
 		assert.Len(t, tags, 3)
 	})

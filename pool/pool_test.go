@@ -50,21 +50,6 @@ func newMockFactory() *mockFactory {
 	}
 }
 
-func (f *mockFactory) create() (*mockCloser, error) {
-	if f.createErr != nil {
-		return nil, f.createErr
-	}
-
-	id := int(f.counter.Add(1))
-	obj := newMockCloser(id)
-
-	f.mu.Lock()
-	f.created = append(f.created, obj)
-	f.mu.Unlock()
-
-	return obj, nil
-}
-
 func (f *mockFactory) CreatedCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -81,6 +66,21 @@ func (f *mockFactory) GetCreated(index int) *mockCloser {
 	}
 
 	return f.created[index]
+}
+
+func (f *mockFactory) create() (*mockCloser, error) {
+	if f.createErr != nil {
+		return nil, f.createErr
+	}
+
+	id := int(f.counter.Add(1))
+	obj := newMockCloser(id)
+
+	f.mu.Lock()
+	f.created = append(f.created, obj)
+	f.mu.Unlock()
+
+	return obj, nil
 }
 
 func TestNew(t *testing.T) {
@@ -268,6 +268,7 @@ func TestFactoryError(t *testing.T) {
 	factory.createErr = errFactory
 
 	pool := New(factory.create, WithName[*mockCloser]("test-pool"))
+
 	defer func() {
 		_ = pool.Close()
 	}()
@@ -471,6 +472,7 @@ func TestCloseWithOutstandingObjects(t *testing.T) {
 
 	// Close the pool - it should wait for outstanding objects
 	errChan := make(chan error, 1)
+
 	go func() {
 		errChan <- pool.Close()
 	}()
@@ -527,7 +529,9 @@ func TestWithCheckValid_RejectsInvalidObjects(t *testing.T) {
 
 	// Mark it as invalid
 	mutex.Lock()
+
 	invalidIDs[obj1.id] = true
+
 	mutex.Unlock()
 
 	// Put it back
@@ -676,7 +680,9 @@ func TestWithCheckValid_CloseIdleValidatesObjects(t *testing.T) {
 
 	// Mark obj1 as invalid
 	mutex.Lock()
+
 	invalidIDs[obj1.id] = true
+
 	mutex.Unlock()
 
 	// Put them back
@@ -752,7 +758,9 @@ func TestWithCheckValid_ConcurrentValidation(t *testing.T) {
 				// Randomly mark some objects as invalid
 				if obj.id%3 == 0 {
 					mutex.Lock()
+
 					invalidIDs[obj.id] = true
+
 					mutex.Unlock()
 				}
 

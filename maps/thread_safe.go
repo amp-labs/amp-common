@@ -216,6 +216,7 @@ func (t *threadSafeMap[K, V]) ForEach(f func(key K, value V)) {
 	for key, val := range t.internal.Seq() {
 		accum = append(accum, KeyValuePair[K, V]{Key: key, Value: val})
 	}
+
 	t.mutex.RUnlock()
 
 	// Execute function on snapshot without holding lock
@@ -236,6 +237,7 @@ func (t *threadSafeMap[K, V]) ForAll(predicate func(key K, value V) bool) bool {
 	for key, val := range t.internal.Seq() {
 		accum = append(accum, KeyValuePair[K, V]{Key: key, Value: val})
 	}
+
 	t.mutex.RUnlock()
 
 	// Test predicate on snapshot without holding lock
@@ -296,6 +298,7 @@ func (t *threadSafeMap[K, V]) Exists(predicate func(key K, value V) bool) bool {
 	for key, val := range t.internal.Seq() {
 		accum = append(accum, KeyValuePair[K, V]{Key: key, Value: val})
 	}
+
 	t.mutex.RUnlock()
 
 	// Test predicate on snapshot without holding lock
@@ -320,6 +323,7 @@ func (t *threadSafeMap[K, V]) FindFirst(predicate func(key K, value V) bool) opt
 	for key, val := range t.internal.Seq() {
 		accum = append(accum, KeyValuePair[K, V]{Key: key, Value: val})
 	}
+
 	t.mutex.RUnlock()
 
 	// Search in snapshot without holding lock

@@ -17,6 +17,7 @@ func TestFromSet(t *testing.T) {
 		t.Parallel()
 
 		var nilSet set.Set[testKey]
+
 		result := maps.FromSet(nilSet, func(k testKey) string { return k.value })
 		assert.Nil(t, result)
 	})
@@ -191,6 +192,7 @@ func TestFromOrderedSet(t *testing.T) {
 		t.Parallel()
 
 		var nilSet set.OrderedSet[testKey]
+
 		result := maps.FromOrderedSet(nilSet, func(k testKey) string { return k.value })
 		assert.Nil(t, result)
 	})

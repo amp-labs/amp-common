@@ -130,7 +130,7 @@ func (d *defaultSet[T]) addDefaultForElement(element T) (bool, error) {
 		return false, err
 	}
 
-	if err := d.s.Add(value); err != nil {
+	if err := d.s.Add(value); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 		return false, err
 	}
 

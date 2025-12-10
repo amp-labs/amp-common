@@ -53,6 +53,7 @@ func (e *collector) launchAll(ctx context.Context, callbacks []func(context.Cont
 			if err != nil {
 				// Cancel context on first error (sync.Once ensures this happens exactly once)
 				e.cancelOnce.Do(e.cancel)
+
 				e.errorChan <- err
 			} else {
 				// Signal successful completion

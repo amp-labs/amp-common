@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// commonCharaterReplacements contains URL safe replacements for some
+// commonCharacterReplacements contains URL safe replacements for some
 // unsuitable -- but common -- characters in filenames.
 var commonCharacterReplacements = map[rune]string{ //nolint:gochecknoglobals
 	'ä': "ae", 'Ä': "Ae", 'ö': "oe", 'Ö': "Oe",
@@ -25,7 +25,7 @@ var commonCharacterReplacements = map[rune]string{ //nolint:gochecknoglobals
 // FileName produces something resembling name but being
 // suitable as a filename.
 func FileName(name string) string {
-	// Eradicate sick charcters and perform common replacements.
+	// Eradicate sick characters and perform common replacements.
 	if len(name) == 0 {
 		return ""
 	}
@@ -35,7 +35,7 @@ func FileName(name string) string {
 	for _, runeVal := range name {
 		switch runeVal {
 		// Some characters just do not belong into a filename.
-		// Several of these charaters are forbidden in Windows, others
+		// Several of these characters are forbidden in Windows, others
 		// require quoting in normal shells and the rest is disliked
 		// by me. Note that '&' will be replaced by "_and_" and not
 		// just dropped.
@@ -86,7 +86,7 @@ func FileName(name string) string {
 
 	name = buf.String()
 
-	// Collaps multiple _ to a single one.
+	// Collapse multiple _ to a single one.
 	for strings.Contains(name, "__") {
 		name = strings.ReplaceAll(name, "__", "_")
 	}

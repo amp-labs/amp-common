@@ -1,6 +1,3 @@
-// Package simultaneously provides parallel ordered map transformation functions.
-// This file contains utilities for concurrently transforming ordered map entries
-// while preserving insertion order.
 package simultaneously
 
 import (
@@ -94,8 +91,10 @@ func MapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[Ou
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -197,8 +196,10 @@ func FlatMapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectabl
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -287,7 +288,8 @@ func MapOrderedMapCtxWithExecutor[InKey Collectable[InKey], InVal any, OutKey Co
 	out := maps.NewOrderedHashMap[OutKey, OutVal](input.HashFunction())
 
 	for _, pair := range transformed {
-		if err := out.Add(pair.key, pair.val); err != nil {
+		err := out.Add(pair.key, pair.val)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -384,7 +386,8 @@ func FlatMapOrderedMapCtxWithExecutor[InKey Collectable[InKey], InVal any, OutKe
 	out := maps.NewOrderedHashMap[OutKey, OutVal](input.HashFunction())
 
 	for _, pair := range flattened {
-		if err := out.Add(pair.key, pair.val); err != nil {
+		err := out.Add(pair.key, pair.val)
+		if err != nil {
 			return nil, err
 		}
 	}

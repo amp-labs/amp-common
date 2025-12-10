@@ -1,7 +1,3 @@
-// Package transport provides HTTP transport utilities including logging middleware.
-//
-// This package contains implementations of http.RoundTripper that add functionality
-// like request/response logging with automatic redaction and error handling.
 package transport
 
 import (

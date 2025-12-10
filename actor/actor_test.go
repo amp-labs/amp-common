@@ -226,6 +226,7 @@ func TestActorConcurrentRequests(t *testing.T) {
 
 	// Send multiple concurrent requests
 	const numRequests = 10
+
 	results := make(chan int, numRequests)
 	errs := make(chan error, numRequests)
 
@@ -237,6 +238,7 @@ func TestActorConcurrentRequests(t *testing.T) {
 
 				return
 			}
+
 			results <- result
 		}()
 	}
@@ -408,6 +410,7 @@ func TestActorCustomProcessor(t *testing.T) {
 
 			if msg.ResponseChan != nil {
 				msg.ResponseChan <- try.Try[int]{Value: result}
+
 				close(msg.ResponseChan)
 			}
 		})

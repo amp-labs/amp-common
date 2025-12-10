@@ -39,6 +39,7 @@ func TestNewThreadSafeSet(t *testing.T) {
 		t.Parallel()
 
 		var s set.Set[hashing.HashableString]
+
 		tss := set.NewThreadSafeSet(s)
 		assert.Nil(t, tss)
 	})
@@ -117,14 +118,10 @@ func TestThreadSafeSet_Add(t *testing.T) {
 		var waitGroup sync.WaitGroup
 
 		for range numGoroutines {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				err := threadSafeSet.Add(element)
 				assert.NoError(t, err)
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -328,13 +325,11 @@ func TestThreadSafeSet_Clear(t *testing.T) {
 		}
 
 		// Clear concurrently
-		waitGroup.Add(1)
 
-		go func() {
-			defer waitGroup.Done()
+		waitGroup.Go(func() {
 			time.Sleep(5 * time.Millisecond)
 			threadSafeSet.Clear()
-		}()
+		})
 
 		waitGroup.Wait()
 		// Should complete without panics
@@ -389,18 +384,14 @@ func TestThreadSafeSet_Contains(t *testing.T) {
 		var waitGroup sync.WaitGroup
 
 		for range numReaders {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				for elemIdx := range numElements {
 					element := hashing.HashableString(fmt.Sprintf("elem-%d", elemIdx))
 					contains, err := threadSafeSet.Contains(element)
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					assert.True(t, contains)
 				}
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -482,13 +473,9 @@ func TestThreadSafeSet_Size(t *testing.T) {
 
 		// Check size concurrently
 		for range 50 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				_ = threadSafeSet.Size()
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -539,14 +526,10 @@ func TestThreadSafeSet_Entries(t *testing.T) {
 
 		// Multiple concurrent Entries calls
 		for range 20 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				entries := threadSafeSet.Entries()
 				assert.Len(t, entries, 100)
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -662,18 +645,14 @@ func TestThreadSafeSet_Seq(t *testing.T) {
 
 		// Multiple concurrent iterators
 		for range 10 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				count := 0
 				for range threadSafeSet.Seq() {
 					count++
 				}
 
 				assert.Positive(t, count)
-			}()
+			})
 		}
 
 		// Modify set while iterating
@@ -710,16 +689,12 @@ func TestThreadSafeSet_Seq(t *testing.T) {
 		// Multiple concurrent iterators
 		numIterators := 10
 		for range numIterators {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				for range threadSafeSet.Seq() {
 					// Simulate slow iteration
 					time.Sleep(10 * time.Microsecond)
 				}
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -741,12 +716,12 @@ func TestThreadSafeSet_Union(t *testing.T) {
 		t.Parallel()
 
 		s1 := set.NewThreadSafeSet(set.NewSet[hashing.HashableString](hashing.Sha256))
-		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck
-		s1.Add(hashing.HashableString("elem2")) //nolint:errcheck
+		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck,gosec
+		s1.Add(hashing.HashableString("elem2")) //nolint:errcheck,gosec
 
 		s2 := set.NewSet[hashing.HashableString](hashing.Sha256)
-		s2.Add(hashing.HashableString("elem3")) //nolint:errcheck
-		s2.Add(hashing.HashableString("elem4")) //nolint:errcheck
+		s2.Add(hashing.HashableString("elem3")) //nolint:errcheck,gosec
+		s2.Add(hashing.HashableString("elem4")) //nolint:errcheck,gosec
 
 		result, err := s1.Union(s2)
 		require.NoError(t, err)
@@ -757,10 +732,10 @@ func TestThreadSafeSet_Union(t *testing.T) {
 		t.Parallel()
 
 		s1 := set.NewThreadSafeSet(set.NewSet[hashing.HashableString](hashing.Sha256))
-		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck
+		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck,gosec
 
 		s2 := set.NewSet[hashing.HashableString](hashing.Sha256)
-		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck
+		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck,gosec
 
 		result, err := s1.Union(s2)
 		require.NoError(t, err)
@@ -787,10 +762,10 @@ func TestThreadSafeSet_Union(t *testing.T) {
 		t.Parallel()
 
 		s1 := set.NewThreadSafeSet(set.NewSet[hashing.HashableString](hashing.Sha256))
-		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck
+		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck,gosec
 
 		s2 := set.NewSet[hashing.HashableString](hashing.Sha256)
-		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck
+		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck,gosec
 
 		result, err := s1.Union(s2)
 		require.NoError(t, err)
@@ -839,14 +814,14 @@ func TestThreadSafeSet_Intersection(t *testing.T) {
 		t.Parallel()
 
 		s1 := set.NewThreadSafeSet(set.NewSet[hashing.HashableString](hashing.Sha256))
-		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck
-		s1.Add(hashing.HashableString("elem2")) //nolint:errcheck
-		s1.Add(hashing.HashableString("elem3")) //nolint:errcheck
+		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck,gosec
+		s1.Add(hashing.HashableString("elem2")) //nolint:errcheck,gosec
+		s1.Add(hashing.HashableString("elem3")) //nolint:errcheck,gosec
 
 		s2 := set.NewSet[hashing.HashableString](hashing.Sha256)
-		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck
-		s2.Add(hashing.HashableString("elem3")) //nolint:errcheck
-		s2.Add(hashing.HashableString("elem4")) //nolint:errcheck
+		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck,gosec
+		s2.Add(hashing.HashableString("elem3")) //nolint:errcheck,gosec
+		s2.Add(hashing.HashableString("elem4")) //nolint:errcheck,gosec
 
 		result, err := s1.Intersection(s2)
 		require.NoError(t, err)
@@ -865,10 +840,10 @@ func TestThreadSafeSet_Intersection(t *testing.T) {
 		t.Parallel()
 
 		s1 := set.NewThreadSafeSet(set.NewSet[hashing.HashableString](hashing.Sha256))
-		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck
+		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck,gosec
 
 		s2 := set.NewSet[hashing.HashableString](hashing.Sha256)
-		s2.Add(hashing.HashableString("elem1")) //nolint:errcheck
+		s2.Add(hashing.HashableString("elem1")) //nolint:errcheck,gosec
 
 		result, err := s1.Intersection(s2)
 		require.NoError(t, err)
@@ -876,14 +851,10 @@ func TestThreadSafeSet_Intersection(t *testing.T) {
 		// Verify result is thread-safe
 		var wg sync.WaitGroup
 		for range 10 {
-			wg.Add(1)
-
-			go func() {
-				defer wg.Done()
-
+			wg.Go(func() {
 				contains, _ := result.Contains(hashing.HashableString("elem1"))
 				assert.True(t, contains)
-			}()
+			})
 		}
 
 		wg.Wait()
@@ -893,11 +864,11 @@ func TestThreadSafeSet_Intersection(t *testing.T) {
 		t.Parallel()
 
 		s1 := set.NewThreadSafeSet(set.NewSet[hashing.HashableString](hashing.Sha256))
-		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck
-		s1.Add(hashing.HashableString("elem2")) //nolint:errcheck
+		s1.Add(hashing.HashableString("elem1")) //nolint:errcheck,gosec
+		s1.Add(hashing.HashableString("elem2")) //nolint:errcheck,gosec
 
 		s2 := set.NewSet[hashing.HashableString](hashing.Sha256)
-		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck
+		s2.Add(hashing.HashableString("elem2")) //nolint:errcheck,gosec
 
 		result, err := s1.Intersection(s2)
 		require.NoError(t, err)

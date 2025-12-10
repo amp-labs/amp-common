@@ -183,6 +183,7 @@ func TestCollector_LaunchAll_CancelsContextOnError(t *testing.T) {
 		func(ctx context.Context) error {
 			// This should see context cancellation
 			time.Sleep(50 * time.Millisecond)
+
 			if ctx.Err() != nil {
 				cancelledCount.Add(1)
 			}
@@ -192,6 +193,7 @@ func TestCollector_LaunchAll_CancelsContextOnError(t *testing.T) {
 		func(ctx context.Context) error {
 			// This should see context cancellation
 			time.Sleep(50 * time.Millisecond)
+
 			if ctx.Err() != nil {
 				cancelledCount.Add(1)
 			}

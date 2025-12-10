@@ -133,6 +133,7 @@ func TestString(t *testing.T) {
 		{"basic string", []byte("hello"), "hello"},
 		{"empty bytes", []byte{}, ""},
 		{"nil bytes", nil, ""},
+		//nolint:gosmopolitan // Intentional test data for unicode handling
 		{"unicode", []byte("hello 世界"), "hello 世界"},
 	}
 
@@ -157,6 +158,7 @@ func TestBytes(t *testing.T) {
 	}{
 		{"basic string", "hello", []byte("hello")},
 		{"empty string", "", []byte{}},
+		//nolint:gosmopolitan // Intentional test data for unicode handling
 		{"unicode", "hello 世界", []byte("hello 世界")},
 	}
 
@@ -744,7 +746,7 @@ func TestUUID(t *testing.T) {
 		},
 		{"invalid format", "invalid", uuid.Nil, true},
 		{"empty", "", uuid.Nil, true},
-		{"too short", "6ba7b810", uuid.Nil, true},
+		{"too short", "6ba7b810", uuid.Nil, true}, // typos:disable-line (partial UUID hex string)
 	}
 
 	for _, tt := range tests {
@@ -1031,6 +1033,7 @@ func TestOpenFile(t *testing.T) {
 
 		file, err := xform.OpenFile(path)
 		require.NoError(t, err)
+
 		defer func() { _ = file.Close() }()
 
 		data, err := os.ReadFile(file.Name())

@@ -613,6 +613,7 @@ func TestDefaultExecutor_RecoverPanic_WithPanic(t *testing.T) {
 
 	func() {
 		defer exec.recoverPanic(&err)
+
 		panic("test panic")
 	}()
 
@@ -631,6 +632,7 @@ func TestDefaultExecutor_RecoverPanic_PanicWithExistingError(t *testing.T) {
 
 	func() {
 		defer exec.recoverPanic(&err)
+
 		panic("panic error")
 	}()
 

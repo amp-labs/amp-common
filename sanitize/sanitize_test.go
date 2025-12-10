@@ -121,7 +121,7 @@ func TestFileName(t *testing.T) {
 		},
 		{
 			name:     "non-ascii characters replaced",
-			input:    "test文件名",
+			input:    "test文件名", //nolint:gosmopolitan // Intentional test data for non-ASCII handling
 			expected: "test_",
 		},
 		{
@@ -174,7 +174,7 @@ func TestFileNameEdgeCases(t *testing.T) {
 		t.Parallel()
 
 		result := FileName("-")
-		assert.Equal(t, "", result)
+		assert.Empty(t, result)
 	})
 
 	t.Run("single character", func(t *testing.T) {

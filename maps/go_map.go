@@ -62,7 +62,8 @@ func FromGoMap[K comparable, V any](m map[K]V, hash hashing.HashFunc) Map[Key[K]
 	out := NewHashMap[Key[K], V](hash)
 
 	for k, v := range m {
-		if err := out.Add(Key[K]{k}, v); err != nil {
+		err := out.Add(Key[K]{k}, v)
+		if err != nil {
 			panic(err)
 		}
 	}

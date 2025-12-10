@@ -1,6 +1,3 @@
-// Package simultaneously provides parallel map transformation functions.
-// This file contains utilities for concurrently transforming map entries,
-// supporting both standard Go maps and amp-common Map implementations.
 package simultaneously
 
 import (
@@ -91,8 +88,10 @@ func MapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any](
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, len(input))
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -255,8 +254,10 @@ func FlatMapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any]
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, len(input))
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -415,8 +416,10 @@ func MapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], 
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -501,7 +504,8 @@ func MapMapCtxWithExecutor[InKey Collectable[InKey], InVal any, OutKey Collectab
 		}(key, value)
 	}
 
-	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
+	err := DoCtxWithExecutor(ctx, exec, callbacks...)
+	if err != nil {
 		return nil, err
 	}
 
@@ -608,8 +612,10 @@ func FlatMapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKe
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -700,7 +706,8 @@ func FlatMapMapCtxWithExecutor[InKey Collectable[InKey], InVal any, OutKey Colle
 				defer mut.Unlock()
 
 				for k, v := range res.Seq() {
-					if err := out.Add(k, v); err != nil {
+					err := out.Add(k, v)
+					if err != nil {
 						return err
 					}
 				}
@@ -710,7 +717,8 @@ func FlatMapMapCtxWithExecutor[InKey Collectable[InKey], InVal any, OutKey Colle
 		}(key, value)
 	}
 
-	if err := DoCtxWithExecutor(ctx, exec, callbacks...); err != nil {
+	err := DoCtxWithExecutor(ctx, exec, callbacks...)
+	if err != nil {
 		return nil, err
 	}
 

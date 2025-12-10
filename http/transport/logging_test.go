@@ -249,6 +249,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Same(t, mockResp, resp)
@@ -367,6 +368,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		require.Len(t, captureLog.logs, 2)
@@ -478,6 +480,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		resp, err := client.Do(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -750,6 +753,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Same(t, mockResp, resp)
@@ -793,6 +797,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		// Should have 2 log entries: request and response
@@ -833,6 +838,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		// Should have 2 log entries: request and response (default behavior is to log)
@@ -916,6 +922,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		// Verify the underlying transport was called by checking the response
@@ -965,6 +972,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp1, err := trans.RoundTrip(req1)
 		require.NoError(t, err)
+
 		_ = resp1.Body.Close()
 
 		// Should have no logs yet
@@ -983,6 +991,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp2, err := trans.RoundTrip(req2)
 		require.NoError(t, err)
+
 		_ = resp2.Body.Close()
 
 		// Should have 2 logs now (from second request only)

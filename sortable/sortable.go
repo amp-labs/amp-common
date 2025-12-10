@@ -1,3 +1,4 @@
+// Package sortable provides sortable wrapper types for primitive types to implement comparison interfaces.
 package sortable
 
 import (

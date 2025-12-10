@@ -291,7 +291,8 @@ func (r *Ref[Request, Response]) submit(ctx context.Context, message Message[Req
 // Publish sends a complete message to the actor without waiting for a response.
 // Errors are logged but not returned. Uses context.Background().
 func (r *Ref[Request, Response]) Publish(message Message[Request, Response]) {
-	if err := r.submit(context.Background(), message); err != nil {
+	err := r.submit(context.Background(), message)
+	if err != nil {
 		slog.Error("Publish: error publishing actor message", "actor", r.name, "error", err)
 	}
 }
@@ -299,7 +300,8 @@ func (r *Ref[Request, Response]) Publish(message Message[Request, Response]) {
 // PublishCtx sends a complete message to the actor without waiting for a response.
 // Errors are logged but not returned. Respects the provided context for cancellation.
 func (r *Ref[Request, Response]) PublishCtx(ctx context.Context, message Message[Request, Response]) {
-	if err := r.submit(ctx, message); err != nil {
+	err := r.submit(ctx, message)
+	if err != nil {
 		slog.Error("PublishCtx: error publishing actor message", "actor", r.name, "error", err)
 	}
 }
@@ -308,9 +310,10 @@ func (r *Ref[Request, Response]) PublishCtx(ctx context.Context, message Message
 // This is a fire-and-forget operation. Errors are logged but not returned.
 // Uses context.Background().
 func (r *Ref[Request, Response]) Send(request Request) {
-	if err := r.submit(context.Background(), Message[Request, Response]{
+	err := r.submit(context.Background(), Message[Request, Response]{
 		Request: request,
-	}); err != nil {
+	})
+	if err != nil {
 		slog.Error("Send: error sending actor message", "actor", r.name, "error", err)
 	}
 }
@@ -319,9 +322,10 @@ func (r *Ref[Request, Response]) Send(request Request) {
 // This is a fire-and-forget operation. Errors are logged but not returned.
 // Respects the provided context for cancellation.
 func (r *Ref[Request, Response]) SendCtx(ctx context.Context, request Request) {
-	if err := r.submit(ctx, Message[Request, Response]{
+	err := r.submit(ctx, Message[Request, Response]{
 		Request: request,
-	}); err != nil {
+	})
+	if err != nil {
 		slog.Error("SendCtx: error sending actor message", "actor", r.name, "error", err)
 	}
 }
@@ -335,13 +339,14 @@ func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //
 		return zero, ErrDeadActor
 	}
 
-	ch := make(chan try.Try[Response])
+	responseChan := make(chan try.Try[Response])
 
-	if err := r.submit(context.Background(), Message[Request, Response]{
+	err := r.submit(context.Background(), Message[Request, Response]{
 		Request:      request,
-		ResponseChan: ch,
-	}); err != nil {
-		channels.CloseChannelIgnorePanic(ch)
+		ResponseChan: responseChan,
+	})
+	if err != nil {
+		channels.CloseChannelIgnorePanic(responseChan)
 
 		var zero Response
 
@@ -350,7 +355,7 @@ func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //
 
 	start := time.Now()
 
-	val := <-ch
+	val := <-responseChan
 
 	end := time.Now()
 
@@ -372,10 +377,11 @@ func (r *Ref[Request, Response]) RequestCtx(ctx context.Context, request Request
 
 	msgChan := make(chan try.Try[Response])
 
-	if err := r.submit(ctx, Message[Request, Response]{
+	err := r.submit(ctx, Message[Request, Response]{
 		Request:      request,
 		ResponseChan: msgChan,
-	}); err != nil {
+	})
+	if err != nil {
 		channels.CloseChannelIgnorePanic(msgChan)
 
 		var zero Response

@@ -35,7 +35,7 @@ func TestPromise_Failure(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, errTest, err)
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
 
 func TestPromise_Complete_Success(t *testing.T) {
@@ -141,6 +141,7 @@ func TestPromise_ConcurrentSuccess(t *testing.T) {
 	for i := range numGoroutines {
 		go func(val int) {
 			defer waitGroup.Done()
+
 			promise.Success(val)
 		}(i)
 	}
@@ -170,6 +171,7 @@ func TestPromise_ConcurrentFailure(t *testing.T) {
 	for range numGoroutines {
 		go func() {
 			defer waitGroup.Done()
+
 			promise.Failure(errTest)
 		}()
 	}
@@ -269,6 +271,7 @@ func TestPromise_Cancel_ConcurrentSafe(t *testing.T) {
 	for range numGoroutines {
 		go func() {
 			defer waitGroup.Done()
+
 			promise.cancel()
 		}()
 	}
@@ -347,6 +350,7 @@ func TestPromise_Cancel_ConcurrentFuncExecution(t *testing.T) {
 	for range numGoroutines {
 		go func() {
 			defer waitGroup.Done()
+
 			promise.cancel()
 		}()
 	}
@@ -463,7 +467,7 @@ func TestPromise_ZeroValueTypes(t *testing.T) {
 		result, err := fut.Await()
 
 		require.Error(t, err)
-		assert.Equal(t, "", result)
+		assert.Empty(t, result)
 	})
 
 	t.Run("pointer", func(t *testing.T) {
@@ -545,6 +549,7 @@ func TestPromise_MultipleWaiters(t *testing.T) {
 	fut, promise := New[int]()
 
 	const numWaiters = 10
+
 	results := make(chan int, numWaiters)
 	errors := make(chan error, numWaiters)
 
@@ -553,6 +558,7 @@ func TestPromise_MultipleWaiters(t *testing.T) {
 		go func() {
 			val, err := fut.Await()
 			results <- val
+
 			errors <- err
 		}()
 	}

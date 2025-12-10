@@ -1,3 +1,4 @@
+// Package logger provides structured logging utilities built on Go's slog package with OpenTelemetry integration.
 package logger
 
 import (

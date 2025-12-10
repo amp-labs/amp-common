@@ -31,6 +31,7 @@ func TestMapSlice_EmptySlice(t *testing.T) {
 	t.Parallel()
 
 	var empty []int
+
 	result, err := MapSlice(2, empty, func(ctx context.Context, n int) (int, error) {
 		return n * 2, nil
 	})
@@ -218,6 +219,7 @@ func TestFlatMapSlice_EmptyInput(t *testing.T) {
 	t.Parallel()
 
 	var empty []string
+
 	result, err := FlatMapSlice(2, empty, func(ctx context.Context, s string) ([]rune, error) {
 		return []rune(s), nil
 	})

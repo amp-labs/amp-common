@@ -23,6 +23,7 @@ func TestValue(t *testing.T) {
 			name: "int returns 0",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[int]()
 				assert.Equal(t, 0, result)
 			},
@@ -31,14 +32,16 @@ func TestValue(t *testing.T) {
 			name: "string returns empty string",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[string]()
-				assert.Equal(t, "", result)
+				assert.Empty(t, result)
 			},
 		},
 		{
 			name: "bool returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[bool]()
 				assert.False(t, result)
 			},
@@ -47,6 +50,7 @@ func TestValue(t *testing.T) {
 			name: "float64 returns 0.0",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[float64]()
 				assert.Zero(t, result)
 			},
@@ -55,6 +59,7 @@ func TestValue(t *testing.T) {
 			name: "pointer returns nil",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[*testStruct]()
 				assert.Nil(t, result)
 			},
@@ -63,9 +68,10 @@ func TestValue(t *testing.T) {
 			name: "struct returns zero-valued struct",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[testStruct]()
 				assert.Equal(t, testStruct{}, result)
-				assert.Equal(t, "", result.Field1)
+				assert.Empty(t, result.Field1)
 				assert.Equal(t, 0, result.Field2)
 			},
 		},
@@ -73,6 +79,7 @@ func TestValue(t *testing.T) {
 			name: "slice returns nil slice",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[[]string]()
 				assert.Nil(t, result)
 			},
@@ -81,6 +88,7 @@ func TestValue(t *testing.T) {
 			name: "map returns nil map",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[map[string]int]()
 				assert.Nil(t, result)
 			},
@@ -89,6 +97,7 @@ func TestValue(t *testing.T) {
 			name: "channel returns nil channel",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[chan int]()
 				assert.Nil(t, result)
 			},
@@ -97,6 +106,7 @@ func TestValue(t *testing.T) {
 			name: "interface returns nil",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[error]()
 				assert.NoError(t, result)
 			},
@@ -105,6 +115,7 @@ func TestValue(t *testing.T) {
 			name: "uint returns 0",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[uint]()
 				assert.Equal(t, uint(0), result)
 			},
@@ -113,6 +124,7 @@ func TestValue(t *testing.T) {
 			name: "int64 returns 0",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.Value[int64]()
 				assert.Equal(t, int64(0), result)
 			},
@@ -138,6 +150,7 @@ func TestIsZero(t *testing.T) {
 			name: "int zero value returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(0)
 				assert.True(t, result)
 			},
@@ -146,6 +159,7 @@ func TestIsZero(t *testing.T) {
 			name: "int non-zero value returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(42)
 				assert.False(t, result)
 			},
@@ -154,6 +168,7 @@ func TestIsZero(t *testing.T) {
 			name: "int negative value returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(-1)
 				assert.False(t, result)
 			},
@@ -162,6 +177,7 @@ func TestIsZero(t *testing.T) {
 			name: "string empty returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero("")
 				assert.True(t, result)
 			},
@@ -170,6 +186,7 @@ func TestIsZero(t *testing.T) {
 			name: "string non-empty returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero("hello")
 				assert.False(t, result)
 			},
@@ -178,6 +195,7 @@ func TestIsZero(t *testing.T) {
 			name: "bool false returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(false)
 				assert.True(t, result)
 			},
@@ -186,6 +204,7 @@ func TestIsZero(t *testing.T) {
 			name: "bool true returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(true)
 				assert.False(t, result)
 			},
@@ -194,6 +213,7 @@ func TestIsZero(t *testing.T) {
 			name: "float64 zero returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(0.0)
 				assert.True(t, result)
 			},
@@ -202,6 +222,7 @@ func TestIsZero(t *testing.T) {
 			name: "float64 non-zero returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(3.14)
 				assert.False(t, result)
 			},
@@ -210,7 +231,9 @@ func TestIsZero(t *testing.T) {
 			name: "pointer nil returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				var ptr *testStruct
+
 				result := zero.IsZero(ptr)
 				assert.True(t, result)
 			},
@@ -219,6 +242,7 @@ func TestIsZero(t *testing.T) {
 			name: "pointer non-nil returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				ptr := &testStruct{Field1: "test"}
 				result := zero.IsZero(ptr)
 				assert.False(t, result)
@@ -228,6 +252,7 @@ func TestIsZero(t *testing.T) {
 			name: "struct zero-valued returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(testStruct{})
 				assert.True(t, result)
 			},
@@ -236,6 +261,7 @@ func TestIsZero(t *testing.T) {
 			name: "struct with values returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(testStruct{Field1: "test", Field2: 42})
 				assert.False(t, result)
 			},
@@ -244,6 +270,7 @@ func TestIsZero(t *testing.T) {
 			name: "struct with partial values returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(testStruct{Field1: "test"})
 				assert.False(t, result)
 			},
@@ -252,7 +279,9 @@ func TestIsZero(t *testing.T) {
 			name: "slice nil returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				var slice []string
+
 				result := zero.IsZero(slice)
 				assert.True(t, result)
 			},
@@ -261,6 +290,7 @@ func TestIsZero(t *testing.T) {
 			name: "slice empty returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				slice := []string{}
 				result := zero.IsZero(slice)
 				assert.False(t, result)
@@ -270,6 +300,7 @@ func TestIsZero(t *testing.T) {
 			name: "slice with values returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				slice := []string{"a", "b"}
 				result := zero.IsZero(slice)
 				assert.False(t, result)
@@ -279,7 +310,9 @@ func TestIsZero(t *testing.T) {
 			name: "map nil returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				var m map[string]int
+
 				result := zero.IsZero(m)
 				assert.True(t, result)
 			},
@@ -288,6 +321,7 @@ func TestIsZero(t *testing.T) {
 			name: "map empty returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				m := map[string]int{}
 				result := zero.IsZero(m)
 				assert.False(t, result)
@@ -297,6 +331,7 @@ func TestIsZero(t *testing.T) {
 			name: "map with values returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				m := map[string]int{"key": 42}
 				result := zero.IsZero(m)
 				assert.False(t, result)
@@ -306,7 +341,9 @@ func TestIsZero(t *testing.T) {
 			name: "channel nil returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				var ch chan int
+
 				result := zero.IsZero(ch)
 				assert.True(t, result)
 			},
@@ -315,8 +352,10 @@ func TestIsZero(t *testing.T) {
 			name: "channel initialized returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				ch := make(chan int)
 				defer close(ch)
+
 				result := zero.IsZero(ch)
 				assert.False(t, result)
 			},
@@ -325,7 +364,9 @@ func TestIsZero(t *testing.T) {
 			name: "interface nil returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				var err error
+
 				result := zero.IsZero(err)
 				assert.True(t, result)
 			},
@@ -334,6 +375,7 @@ func TestIsZero(t *testing.T) {
 			name: "interface with value returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				err := assert.AnError
 				result := zero.IsZero(err)
 				assert.False(t, result)
@@ -343,6 +385,7 @@ func TestIsZero(t *testing.T) {
 			name: "uint zero returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(uint(0))
 				assert.True(t, result)
 			},
@@ -351,6 +394,7 @@ func TestIsZero(t *testing.T) {
 			name: "uint non-zero returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(uint(42))
 				assert.False(t, result)
 			},
@@ -359,6 +403,7 @@ func TestIsZero(t *testing.T) {
 			name: "int64 zero returns true",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(int64(0))
 				assert.True(t, result)
 			},
@@ -367,6 +412,7 @@ func TestIsZero(t *testing.T) {
 			name: "int64 non-zero returns false",
 			testFunc: func(t *testing.T) {
 				t.Helper()
+
 				result := zero.IsZero(int64(42))
 				assert.False(t, result)
 			},

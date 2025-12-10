@@ -163,7 +163,9 @@ func TestCustomCloser_WithCloserCollector(t *testing.T) {
 	makeCustomCloser := func(id int) io.Closer {
 		return CustomCloser(func() error {
 			mutex.Lock()
+
 			closedOrder = append(closedOrder, id)
+
 			mutex.Unlock()
 
 			return nil
@@ -207,7 +209,9 @@ func TestCustomCloser_ConcurrentCloses(t *testing.T) {
 
 	closeFn := func() error {
 		mutex.Lock()
+
 		closeCount++
+
 		mutex.Unlock()
 
 		return nil
@@ -246,7 +250,9 @@ func TestCustomCloser_ConcurrentClosesWithCloseOnce(t *testing.T) {
 
 	closeFn := func() error {
 		mutex.Lock()
+
 		closeCount++
+
 		mutex.Unlock()
 
 		return nil
@@ -286,7 +292,9 @@ func TestCustomCloser_ComplexCleanup(t *testing.T) {
 
 	cleanup1 := CustomCloser(func() error {
 		mutex.Lock()
+
 		resources = append(resources, "database disconnected")
+
 		mutex.Unlock()
 
 		return nil
@@ -294,7 +302,9 @@ func TestCustomCloser_ComplexCleanup(t *testing.T) {
 
 	cleanup2 := CustomCloser(func() error {
 		mutex.Lock()
+
 		resources = append(resources, "cache cleared")
+
 		mutex.Unlock()
 
 		return nil
@@ -302,7 +312,9 @@ func TestCustomCloser_ComplexCleanup(t *testing.T) {
 
 	cleanup3 := CustomCloser(func() error {
 		mutex.Lock()
+
 		resources = append(resources, "files closed")
+
 		mutex.Unlock()
 
 		return nil
@@ -331,6 +343,7 @@ func TestCustomCloser_WithDeferPattern(t *testing.T) {
 
 			return nil
 		})
+
 		defer func() { _ = closer.Close() }()
 
 		// Do some work...
@@ -364,7 +377,9 @@ func TestCustomCloser_AllWrappersComposed(t *testing.T) {
 
 	closeFn := func() error {
 		mutex.Lock()
+
 		closeCount++
+
 		mutex.Unlock()
 
 		// Simulate a panic on second call (if not protected by CloseOnce)
@@ -395,7 +410,9 @@ func TestCustomCloser_AllWrappersComposed(t *testing.T) {
 
 	// Should only be called once due to CloseOnce
 	mutex.Lock()
+
 	count := closeCount
+
 	mutex.Unlock()
 
 	assert.Equal(t, 1, count, "Function should only be called once")
@@ -529,7 +546,9 @@ func TestCloser_CloseOrder(t *testing.T) {
 		return &mockOrderedCloser{
 			onClose: func() {
 				mu.Lock()
+
 				closedOrder = append(closedOrder, id)
+
 				mu.Unlock()
 			},
 		}
@@ -757,9 +776,12 @@ func TestCloseOnce_ConcurrentClosesWithError(t *testing.T) {
 		go func() {
 			defer waitGroup.Done()
 
-			if err := closer.Close(); err != nil {
+			err := closer.Close()
+			if err != nil {
 				mutex.Lock()
+
 				errorCount++
+
 				mutex.Unlock()
 			}
 		}()
@@ -1086,14 +1108,15 @@ func TestChannelCloser_NilChannel(t *testing.T) {
 func TestChannelCloser_BasicClose(t *testing.T) {
 	t.Parallel()
 
-	ch := make(chan int, 1)
-	closer := ChannelCloser(ch)
+	channel := make(chan int, 1)
+	closer := ChannelCloser(channel)
 
 	require.NotNil(t, closer)
 
 	// Channel should be open - send a value to verify
-	ch <- 42
-	val := <-ch
+	channel <- 42
+
+	val := <-channel
 	assert.Equal(t, 42, val, "Channel should be open and working")
 
 	// Close the channel
@@ -1101,7 +1124,7 @@ func TestChannelCloser_BasicClose(t *testing.T) {
 	require.NoError(t, err)
 
 	// Channel should be closed now
-	_, ok := <-ch
+	_, ok := <-channel
 	assert.False(t, ok, "Channel should be closed")
 }
 
@@ -1145,7 +1168,9 @@ func TestChannelCloser_WithBufferedChannel(t *testing.T) {
 
 	// Send some values
 	testCh <- 1
+
 	testCh <- 2
+
 	testCh <- 3
 
 	// Close the channel
@@ -1279,7 +1304,9 @@ func TestChannelCloser_ConcurrentClosesRaw(t *testing.T) {
 			defer func() {
 				if r := recover(); r != nil {
 					mutex.Lock()
+
 					panicCount++
+
 					mutex.Unlock()
 				}
 
@@ -1403,6 +1430,7 @@ func TestChannelCloser_AllWrappersComposed(t *testing.T) {
 
 	// Send some data
 	testCh <- "hello"
+
 	testCh <- "world"
 
 	// Close from multiple goroutines
@@ -1458,6 +1486,7 @@ func TestChannelCloser_ClosedChannelReadBehavior(t *testing.T) {
 
 	testCh := make(chan int, 2)
 	testCh <- 10
+
 	testCh <- 20
 
 	closer := ChannelCloser(testCh)
@@ -1509,7 +1538,9 @@ func TestChannelCloser_SendOnlyInFunction(t *testing.T) {
 	// Simulate a pattern where you pass send-only channel to a worker
 	worker := func(ch chan<- string, closer io.Closer) {
 		defer func() { _ = closer.Close() }()
+
 		ch <- "hello"
+
 		ch <- "world"
 	}
 
@@ -1815,6 +1846,7 @@ func TestCancelableCloser_TransactionPattern(t *testing.T) {
 		}
 
 		closer, cancel := CancelableCloser(CustomCloser(rollbackFn))
+
 		defer func() { _ = closer.Close() }() // Will rollback unless canceled
 
 		// Do work...
@@ -1871,6 +1903,7 @@ func TestCancelableCloser_TemporaryFilePattern(t *testing.T) {
 		}
 
 		closer, cancel := CancelableCloser(CustomCloser(deleteFn))
+
 		defer func() { _ = closer.Close() }() // Will delete unless canceled
 
 		// Success, keep the file
@@ -1938,7 +1971,9 @@ func TestCancelableCloser_WithAllWrappers(t *testing.T) {
 
 	closeFn := func() error {
 		mutex.Lock()
+
 		closeCount++
+
 		mutex.Unlock()
 
 		return nil
@@ -1967,7 +2002,9 @@ func TestCancelableCloser_WithAllWrappers(t *testing.T) {
 
 	// Should only be called once due to CloseOnce
 	mutex.Lock()
+
 	count := closeCount
+
 	mutex.Unlock()
 
 	assert.Equal(t, 1, count, "Function should only be called once")
@@ -1981,7 +2018,9 @@ func TestCancelableCloser_WithAllWrappers(t *testing.T) {
 	require.NoError(t, err)
 
 	mutex.Lock()
+
 	count = closeCount
+
 	mutex.Unlock()
 
 	assert.Equal(t, 0, count, "Function should not be called after cancel")
@@ -2063,6 +2102,7 @@ func TestForWriter_NilCloser(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
+
 	wc := ForWriter(&buf, nil)
 
 	require.NotNil(t, wc)
@@ -2253,6 +2293,7 @@ func TestForWriter_DifferentWriterTypes(t *testing.T) {
 		t.Parallel()
 
 		var buf bytes.Buffer
+
 		wc := ForWriter(&buf, nil)
 
 		_, _ = wc.Write([]byte("buffer"))
@@ -2267,6 +2308,7 @@ func TestForWriter_DifferentWriterTypes(t *testing.T) {
 		t.Parallel()
 
 		var sb strings.Builder
+
 		wc := ForWriter(&sb, nil)
 
 		_, _ = wc.Write([]byte("builder"))
@@ -2323,6 +2365,7 @@ func TestForWriter_TypeAssertion(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
+
 	wc := ForWriter(&buf, nil)
 
 	// Verify that the returned value is of the correct type
@@ -2668,7 +2711,9 @@ func TestForReader_ConcurrentReads(t *testing.T) {
 			n, _ := readCloser.Read(buf)
 
 			countMutex.Lock()
+
 			totalBytesRead += n
+
 			countMutex.Unlock()
 		}()
 	}

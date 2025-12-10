@@ -125,7 +125,8 @@ func (c *Closer) Close() error {
 
 	for _, closer := range c.closers {
 		if closer != nil {
-			if err := closer.Close(); err != nil {
+			err := closer.Close()
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -207,7 +208,8 @@ func (c *closeOnceImpl) Close() error {
 		return nil
 	}
 
-	if err := c.closer.Close(); err != nil {
+	err := c.closer.Close()
+	if err != nil {
 		return err
 	}
 

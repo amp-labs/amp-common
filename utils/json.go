@@ -13,7 +13,7 @@ func ToJSONMap(input any) (map[string]any, error) {
 	}
 
 	var jsonMap map[string]any
-	if err := json.Unmarshal(jsonBytes, &jsonMap); err != nil {
+	if err := json.Unmarshal(jsonBytes, &jsonMap); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 		return nil, fmt.Errorf("error unmarshaling from JSON: %w", err)
 	}
 

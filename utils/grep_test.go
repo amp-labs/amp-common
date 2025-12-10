@@ -1,4 +1,4 @@
-package utils
+package utils //nolint:revive // utils is an appropriate package name for utility functions
 
 import (
 	"testing"
@@ -14,19 +14,23 @@ func TestGrepChannel(t *testing.T) {
 	t.Run("filters messages matching pattern", func(t *testing.T) {
 		t.Parallel()
 
-		w, r, err := GrepChannel("^test")
+		writer, reader, err := GrepChannel("^test")
 		require.NoError(t, err)
 
 		go func() {
-			w <- "test message 1"
-			w <- "other message"
-			w <- "test message 2"
-			w <- "another message"
-			close(w)
+			writer <- "test message 1"
+
+			writer <- "other message"
+
+			writer <- "test message 2"
+
+			writer <- "another message"
+
+			close(writer)
 		}()
 
 		results := []string{}
-		for msg := range r {
+		for msg := range reader {
 			results = append(results, msg)
 		}
 
@@ -45,8 +49,11 @@ func TestGrepChannel(t *testing.T) {
 
 		go func() {
 			w <- "message 1"
+
 			w <- "message 2"
+
 			w <- "message 3"
+
 			close(w)
 		}()
 
@@ -66,7 +73,9 @@ func TestGrepChannel(t *testing.T) {
 
 		go func() {
 			w <- "message 1"
+
 			w <- "message 2"
+
 			close(w)
 		}()
 
@@ -126,7 +135,9 @@ func TestGrepChannel(t *testing.T) {
 
 		go func() {
 			w <- "Test message"
+
 			w <- "test message"
+
 			close(w)
 		}()
 
@@ -147,8 +158,11 @@ func TestGrepChannel(t *testing.T) {
 
 		go func() {
 			w <- "message 123"
+
 			w <- "no numbers here"
+
 			w <- "456 at start"
+
 			close(w)
 		}()
 
@@ -170,8 +184,11 @@ func TestGrepChannel(t *testing.T) {
 
 		go func() {
 			w <- "msg1"
+
 			w <- "msg2"
+
 			w <- "msg3"
+
 			close(w)
 		}()
 

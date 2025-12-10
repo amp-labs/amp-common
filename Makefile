@@ -18,7 +18,7 @@ lint:
 # For the wsl CLI, we manually run it against select repos, since it does not read from .golangci.yml and therefore cannot ignore directories.
 .PHONY: fix
 fix:
-	wsl --allow-cuddle-declarations --allow-trailing-comment --fix ./... && \
+	wsl --fix ./... && \
 		gci write . && \
 		golangci-lint run -c .golangci.yml --fix
 

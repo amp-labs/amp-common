@@ -192,13 +192,16 @@ func (o *Value[T]) UnmarshalJSON(data []byte) error {
 		o.isSet = false
 
 		var zero T
+
 		o.value = zero
 
 		return nil
 	}
 
 	var wrapper map[string]T
-	if err := json.Unmarshal(data, &wrapper); err != nil {
+
+	err := json.Unmarshal(data, &wrapper)
+	if err != nil {
 		return err
 	}
 

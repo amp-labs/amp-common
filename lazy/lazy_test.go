@@ -115,21 +115,21 @@ func TestLazyErr(t *testing.T) {
 
 	// The first callback will error out
 	str, err := val.Get()
-	assert.Equal(t, "", str)
+	assert.Empty(t, str)
 	require.ErrorIs(t, err, assert.AnError)
 	assert.Equal(t, 1, count)
 	assert.Falsef(t, val.Initialized(), "val should not be initialized")
 
 	// The second callback will error out
 	str, err = val.Get()
-	assert.Equal(t, "", str)
+	assert.Empty(t, str)
 	require.ErrorIs(t, err, assert.AnError)
 	assert.Equal(t, 2, count)
 	assert.Falsef(t, val.Initialized(), "val should not be initialized")
 
 	// The third callback will error out
 	str, err = val.Get()
-	assert.Equal(t, "", str)
+	assert.Empty(t, str)
 	require.ErrorIs(t, err, assert.AnError)
 	assert.Equal(t, 3, count)
 	assert.Falsef(t, val.Initialized(), "val should not be initialized")
@@ -296,7 +296,7 @@ func TestLazySetErr(t *testing.T) {
 		// First Get returns error
 		result, err := val.Get()
 		require.ErrorIs(t, err, assert.AnError)
-		assert.Equal(t, "", result)
+		assert.Empty(t, result)
 		assert.Equal(t, 1, callCount)
 		assert.False(t, val.Initialized(), "val should not be initialized after error")
 
@@ -327,6 +327,7 @@ func TestLazyConcurrency(t *testing.T) {
 		})
 
 		const goroutines = 100
+
 		done := make(chan int, goroutines)
 
 		// Launch many goroutines all calling Get at once
@@ -356,12 +357,14 @@ func TestLazyConcurrency(t *testing.T) {
 		})
 
 		const goroutines = 50
+
 		done := make(chan bool, goroutines*2)
 
 		// Launch goroutines calling Get
 		for range goroutines {
 			go func() {
 				val.Get()
+
 				done <- true
 			}()
 		}
@@ -370,6 +373,7 @@ func TestLazyConcurrency(t *testing.T) {
 		for i := range goroutines {
 			go func() {
 				val.Set(i)
+
 				done <- true
 			}()
 		}
@@ -401,6 +405,7 @@ func TestLazyErrConcurrency(t *testing.T) {
 		})
 
 		const goroutines = 100
+
 		done := make(chan bool, goroutines)
 
 		// Launch many goroutines all calling Get at once
@@ -409,6 +414,7 @@ func TestLazyErrConcurrency(t *testing.T) {
 				result, err := val.Get()
 				assert.NoError(t, err)
 				assert.Equal(t, 42, result)
+
 				done <- true
 			}()
 		}
@@ -438,6 +444,7 @@ func TestLazyErrConcurrency(t *testing.T) {
 		})
 
 		const goroutines = 100
+
 		results := make(chan error, goroutines)
 
 		// Launch many goroutines all calling Get at once
@@ -476,12 +483,14 @@ func TestLazyErrConcurrency(t *testing.T) {
 		})
 
 		const goroutines = 50
+
 		done := make(chan bool, goroutines*2)
 
 		// Launch goroutines calling Get
 		for range goroutines {
 			go func() {
 				_, _ = val.Get()
+
 				done <- true
 			}()
 		}
@@ -490,6 +499,7 @@ func TestLazyErrConcurrency(t *testing.T) {
 		for i := range goroutines {
 			go func() {
 				val.Set(i)
+
 				done <- true
 			}()
 		}
@@ -520,7 +530,7 @@ func TestLazyZeroValue(t *testing.T) {
 
 		// Get should return zero value and not panic
 		result := val.Get()
-		assert.Equal(t, "", result)
+		assert.Empty(t, result)
 
 		// When create is nil, the initialized flag is NOT set by Get()
 		// This is because only the if block inside once.Do sets it
@@ -539,7 +549,7 @@ func TestLazyZeroValue(t *testing.T) {
 		// Get should return zero value and no error
 		result, err := val.Get()
 		require.NoError(t, err)
-		assert.Equal(t, "", result)
+		assert.Empty(t, result)
 
 		// Should still be initialized
 		assert.True(t, val.Initialized())

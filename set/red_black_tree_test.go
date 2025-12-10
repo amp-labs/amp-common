@@ -1174,9 +1174,7 @@ func BenchmarkRedBlackTreeSet_Contains(b *testing.B) {
 }
 
 func BenchmarkRedBlackTreeSet_Remove(b *testing.B) {
-	b.StopTimer()
-
-	for range b.N {
+	for b.Loop() {
 		s := NewRedBlackTreeSet[sortable.Int]()
 
 		for i := range 1000 {

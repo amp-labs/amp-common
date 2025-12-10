@@ -219,14 +219,16 @@ func (h *hashMap[K, V]) Union(other Map[K, V]) (Map[K, V], error) {
 
 	// Add all entries from this map
 	for key, value := range h.Seq() {
-		if err := result.Add(key, value); err != nil {
+		err := result.Add(key, value)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Add all entries from the other map (overwrites duplicates)
 	for key, value := range other.Seq() {
-		if err := result.Add(key, value); err != nil {
+		err := result.Add(key, value)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -251,7 +253,8 @@ func (h *hashMap[K, V]) Intersection(other Map[K, V]) (Map[K, V], error) {
 		}
 
 		if contains {
-			if err := result.Add(key, value); err != nil {
+			err := result.Add(key, value)
+			if err != nil {
 				return nil, err
 			}
 		}

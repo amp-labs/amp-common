@@ -182,7 +182,7 @@ func TestCreateFile(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify file was created and closed
-	content, err := os.ReadFile(tmpFile)
+	content, err := os.ReadFile(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 	assert.Equal(t, "hello world", string(content))
 }
@@ -230,7 +230,7 @@ func TestFile(t *testing.T) {
 
 	tmpFile := t.TempDir() + "/test.txt"
 
-	f, err := os.Create(tmpFile)
+	f, err := os.Create(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 
 	// File should be closed by the resource
@@ -252,7 +252,7 @@ func TestWriter_WithWriteCloser(t *testing.T) {
 
 	tmpFile := t.TempDir() + "/test.txt"
 
-	f, err := os.Create(tmpFile)
+	f, err := os.Create(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 
 	err = Writer(f).Use(func(w io.Writer) error {
@@ -268,7 +268,7 @@ func TestWriter_WithWriteCloser(t *testing.T) {
 	require.Error(t, err)
 
 	// Verify content
-	content, err := os.ReadFile(tmpFile)
+	content, err := os.ReadFile(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 	assert.Equal(t, "test", string(content))
 }
@@ -296,7 +296,7 @@ func TestReader_WithReadCloser(t *testing.T) {
 	err := os.WriteFile(tmpFile, []byte("test content"), 0o600)
 	require.NoError(t, err)
 
-	fileHandle, err := os.Open(tmpFile)
+	fileHandle, err := os.Open(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 
 	var content string
@@ -347,7 +347,7 @@ func TestReadWriter_WithReadWriteCloser(t *testing.T) {
 
 	tmpFile := t.TempDir() + "/test.txt"
 
-	f, err := os.Create(tmpFile)
+	f, err := os.Create(tmpFile) //nolint:gosec // Safe in test
 	require.NoError(t, err)
 
 	err = ReadWriter(f).Use(func(rw io.ReadWriter) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // WithMultipleValues attaches multiple key-value pairs to a context efficiently.
@@ -51,7 +52,8 @@ func WithMultipleValues[Key comparable](parent context.Context, vals map[Key]any
 // context.WithValue calls, which improves lookup performance and reduces memory overhead.
 type multiValueCtx[Key comparable] struct {
 	context.Context //nolint:containedctx
-	vals            map[Key]any
+
+	vals map[Key]any
 }
 
 // stringify converts a value to a human-readable string for debugging and logging.
@@ -109,19 +111,27 @@ func (c *multiValueCtx[T]) String() string {
 		return contextName(c.Context) + ".WithMultipleValues()"
 	}
 
-	result := contextName(c.Context) + ".WithMultipleValues("
+	var builder strings.Builder
+
+	builder.WriteString(contextName(c.Context))
+	builder.WriteString(".WithMultipleValues(")
 
 	first := true
 	for k, v := range c.vals {
 		if !first {
-			result += ", "
+			builder.WriteString(", ")
 		}
 
 		first = false
-		result += stringify(k) + "=" + stringify(v)
+
+		builder.WriteString(stringify(k))
+		builder.WriteString("=")
+		builder.WriteString(stringify(v))
 	}
 
-	return result + ")"
+	builder.WriteString(")")
+
+	return builder.String()
 }
 
 // Value retrieves a value from the context by key.

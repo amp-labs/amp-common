@@ -41,6 +41,7 @@ func TestNewCustom(t *testing.T) {
 
 		resp, err := transport.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.True(t, called, "custom function should be called")
@@ -133,6 +134,7 @@ func TestCustomTransport_RoundTrip(t *testing.T) {
 
 		resp, err := transport.RoundTrip(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		require.NotNil(t, capturedReq)
@@ -158,6 +160,7 @@ func TestCustomTransport_RoundTrip(t *testing.T) {
 
 		resp, err := client.Do(req)
 		require.NoError(t, err)
+
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
@@ -189,6 +192,7 @@ func TestCustomTransport_MultipleCalls(t *testing.T) {
 
 			resp, err := transport.RoundTrip(req) //nolint:bodyclose // body closed in checkResponse when needed
 			require.NoError(t, err)
+
 			_ = resp.Body.Close()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -217,6 +221,7 @@ func TestCustomTransport_MultipleCalls(t *testing.T) {
 
 			resp, err := transport.RoundTrip(req) //nolint:bodyclose // body closed in checkResponse when needed
 			require.NoError(t, err)
+
 			_ = resp.Body.Close()
 		}
 
@@ -268,6 +273,7 @@ func TestCustomTransport_ErrorScenarios(t *testing.T) {
 				t.Helper()
 
 				require.NotNil(t, resp)
+
 				defer func() { _ = resp.Body.Close() }()
 
 				assert.Equal(t, http.StatusNotFound, resp.StatusCode)

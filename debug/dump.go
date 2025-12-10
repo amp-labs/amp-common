@@ -1,3 +1,4 @@
+// Package debug provides debugging utilities for local development only (not for production use).
 package debug
 
 import (
@@ -24,7 +25,8 @@ func DumpJSON(v any, w io.Writer) {
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
 
-	if err := encoder.Encode(v); err != nil {
+	err := encoder.Encode(v)
+	if err != nil {
 		logger.Fatal("error marshaling to JSON: %w", "error", err)
 	}
 }

@@ -1,3 +1,4 @@
+// Package collectable provides interfaces for hashable and comparable types used in Map and Set data structures.
 package collectable
 
 import (

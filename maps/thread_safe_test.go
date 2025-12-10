@@ -40,6 +40,7 @@ func TestNewThreadSafeMap(t *testing.T) {
 		t.Parallel()
 
 		var m maps.Map[testKey, string]
+
 		tsm := maps.NewThreadSafeMap(m)
 		assert.Nil(t, tsm)
 	})
@@ -282,13 +283,11 @@ func TestThreadSafeMap_Clear(t *testing.T) {
 		}
 
 		// Clear concurrently
-		waitGroup.Add(1)
 
-		go func() {
-			defer waitGroup.Done()
+		waitGroup.Go(func() {
 			time.Sleep(5 * time.Millisecond)
 			threadSafeMap.Clear()
-		}()
+		})
 
 		waitGroup.Wait()
 		// Should complete without panics
@@ -342,18 +341,14 @@ func TestThreadSafeMap_Contains(t *testing.T) {
 		var waitGroup sync.WaitGroup
 
 		for range numReaders {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				for keyIdx := range numKeys {
 					key := testKey{value: fmt.Sprintf("key-%d", keyIdx)}
 					contains, err := threadSafeMap.Contains(key)
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					assert.True(t, contains)
 				}
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -434,13 +429,9 @@ func TestThreadSafeMap_Size(t *testing.T) {
 
 		// Check size concurrently
 		for range 50 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				_ = threadSafeMap.Size()
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -557,18 +548,14 @@ func TestThreadSafeMap_Seq(t *testing.T) {
 
 		// Multiple concurrent iterators
 		for range 10 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				count := 0
 				for range threadSafeMap.Seq() {
 					count++
 				}
 
 				assert.Positive(t, count)
-			}()
+			})
 		}
 
 		// Modify map while iterating
@@ -605,16 +592,12 @@ func TestThreadSafeMap_Seq(t *testing.T) {
 		// Multiple concurrent iterators
 		numIterators := 10
 		for range numIterators {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				for range threadSafeMap.Seq() {
 					// Simulate slow iteration
 					time.Sleep(10 * time.Microsecond)
 				}
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -770,14 +753,10 @@ func TestThreadSafeMap_Intersection(t *testing.T) {
 		// Verify result is thread-safe
 		var wg sync.WaitGroup
 		for range 10 {
-			wg.Add(1)
-
-			go func() {
-				defer wg.Done()
-
+			wg.Go(func() {
 				contains, _ := result.Contains(testKey{value: "key1"})
 				assert.True(t, contains)
-			}()
+			})
 		}
 
 		wg.Wait()
@@ -965,7 +944,7 @@ func TestThreadSafeMap_Get(t *testing.T) {
 		value, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("returns most recent value for updated key", func(t *testing.T) {
@@ -1026,18 +1005,14 @@ func TestThreadSafeMap_Get(t *testing.T) {
 		// Multiple goroutines reading concurrently
 		var waitGroup sync.WaitGroup
 		for range 10 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				for i := range 100 {
 					value, found, err := threadSafeMap.Get(testKey{value: fmt.Sprintf("key%d", i)})
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					assert.True(t, found)
 					assert.Equal(t, i, value)
 				}
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -1060,30 +1035,22 @@ func TestThreadSafeMap_Get(t *testing.T) {
 
 		// Writer goroutines
 		for range 5 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				for i := range 20 {
 					key := testKey{value: fmt.Sprintf("key%d", i)}
 					_ = threadSafeMap.Add(key, i*100)
 				}
-			}()
+			})
 		}
 
 		// Reader goroutines
 		for range 10 {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				for i := range 50 {
 					key := testKey{value: fmt.Sprintf("key%d", i)}
 					_, _, _ = threadSafeMap.Get(key)
 				}
-			}()
+			})
 		}
 
 		waitGroup.Wait()
@@ -1105,7 +1072,7 @@ func TestThreadSafeMap_Get(t *testing.T) {
 		value, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("returns false after clear", func(t *testing.T) {
@@ -1123,7 +1090,7 @@ func TestThreadSafeMap_Get(t *testing.T) {
 		value, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("handles nil/empty values correctly", func(t *testing.T) {

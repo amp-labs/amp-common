@@ -66,7 +66,7 @@ func TestTry_Get(t *testing.T) {
 		val, err := tr.Get()
 
 		assert.Equal(t, expectedErr, err)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 	})
 
 	t.Run("returns zero value for complex types on failure", func(t *testing.T) {

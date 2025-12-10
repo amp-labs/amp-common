@@ -1,4 +1,4 @@
-package utils
+package utils //nolint:revive // utils is an appropriate package name for utility functions
 
 import (
 	"testing"
@@ -74,6 +74,7 @@ func TestIsNilish(t *testing.T) {
 
 		ch := make(chan int)
 		defer close(ch)
+
 		assert.False(t, IsNilish(ch))
 	})
 
@@ -95,7 +96,7 @@ func TestIsNilish(t *testing.T) {
 	t.Run("returns true for nil interface", func(t *testing.T) {
 		t.Parallel()
 
-		var iface interface{}
+		var iface any
 
 		assert.True(t, IsNilish(iface))
 	})
@@ -105,7 +106,7 @@ func TestIsNilish(t *testing.T) {
 
 		var ptr *int
 
-		var iface interface{} = ptr
+		var iface any = ptr
 
 		assert.True(t, IsNilish(iface))
 	})

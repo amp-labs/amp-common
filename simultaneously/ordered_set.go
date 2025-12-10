@@ -1,6 +1,3 @@
-// Package simultaneously provides parallel ordered set transformation functions.
-// This file contains utilities for concurrently transforming ordered set elements
-// while preserving insertion order.
 package simultaneously
 
 import (
@@ -110,7 +107,8 @@ func MapOrderedSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	out := set.NewOrderedSet[OutElem](input.HashFunction())
 
 	for _, elem := range transformed {
-		if err := out.Add(elem); err != nil {
+		err := out.Add(elem)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -211,8 +209,10 @@ func FlatMapOrderedSetCtx[InElem Collectable[InElem], OutElem Collectable[OutEle
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, input.Size())
+
 	defer func() {
-		if closeErr := exec.Close(); closeErr != nil && err == nil {
+		closeErr := exec.Close()
+		if closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -281,7 +281,8 @@ func MapOrderedSetCtxWithExecutor[InElem Collectable[InElem], OutElem Collectabl
 	out := set.NewOrderedSet[OutElem](input.HashFunction())
 
 	for _, elem := range transformed {
-		if err := out.Add(elem); err != nil {
+		err := out.Add(elem)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -368,7 +369,8 @@ func FlatMapOrderedSetCtxWithExecutor[InElem Collectable[InElem], OutElem Collec
 	out := set.NewOrderedSet[OutElem](input.HashFunction())
 
 	for _, elem := range flattened {
-		if err := out.Add(elem); err != nil {
+		err := out.Add(elem)
+		if err != nil {
 			return nil, err
 		}
 	}

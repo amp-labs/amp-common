@@ -705,6 +705,7 @@ func (f *Future[T]) ToChannel() <-chan try.Try[T] {
 	go func() {
 		val, err := f.Await()
 		ch <- try.Try[T]{Value: val, Error: err}
+
 		close(ch)
 	}()
 
@@ -764,6 +765,7 @@ func (f *Future[T]) ToChannelContext(ctx context.Context) <-chan try.Try[T] {
 	go func() {
 		val, err := f.AwaitContext(ctx)
 		ch <- try.Try[T]{Value: val, Error: err}
+
 		close(ch)
 	}()
 

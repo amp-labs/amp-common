@@ -56,6 +56,7 @@ func TestSetStdout(t *testing.T) {
 	ctx := t.Context()
 
 	var buf bytes.Buffer
+
 	c := New(ctx, "echo", "hello").SetStdout(&buf)
 
 	assert.Equal(t, &buf, c.cmd.Stdout)
@@ -66,6 +67,7 @@ func TestSetStderr(t *testing.T) {
 	ctx := t.Context()
 
 	var buf bytes.Buffer
+
 	c := New(ctx, "ls", "/nonexistent").SetStderr(&buf)
 
 	assert.Equal(t, &buf, c.cmd.Stderr)
@@ -76,6 +78,7 @@ func TestSetStdoutAndStderr(t *testing.T) {
 	ctx := t.Context()
 
 	var buf bytes.Buffer
+
 	c := New(ctx, "echo", "hello").SetStdoutAndStderr(&buf)
 
 	assert.Equal(t, &buf, c.cmd.Stdout)
@@ -162,6 +165,7 @@ func TestRun_Success(t *testing.T) {
 	ctx := t.Context()
 
 	var buf bytes.Buffer
+
 	c := New(ctx, "echo", "hello").SetStdout(&buf)
 
 	exitCode, err := c.Run()
@@ -343,6 +347,7 @@ func TestMultipleObservers(t *testing.T) {
 	c := New(ctx, "echo", "hello")
 	// Manually add multiple observers to test the finished slice
 	var buf bytes.Buffer
+
 	c.cmd.Stdout = &buf
 	c.finished = append(c.finished, func() {
 		observed1 = buf.Bytes()
@@ -365,6 +370,7 @@ func TestRun_PipeOutput(t *testing.T) {
 
 	// Test piping between commands using stdin/stdout
 	var buf bytes.Buffer
+
 	c := New(ctx, "sh", "-c", "echo 'line1\nline2\nline3' | grep line2").
 		SetStdout(&buf)
 

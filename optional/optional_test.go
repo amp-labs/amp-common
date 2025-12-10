@@ -43,7 +43,7 @@ func TestGet(t *testing.T) {
 	none := None[string]()
 	val, ok = none.Get()
 	assert.False(t, ok)
-	assert.Equal(t, "", val)
+	assert.Empty(t, val)
 }
 
 func TestGetOrPanic(t *testing.T) {
@@ -477,6 +477,7 @@ func TestUnmarshalJSON(t *testing.T) {
 		t.Parallel()
 
 		var opt Value[int]
+
 		err := json.Unmarshal([]byte(`{invalid}`), &opt)
 		require.Error(t, err)
 	})

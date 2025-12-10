@@ -378,6 +378,7 @@ func TestLifecycleInsensitiveContext_RealWorldUseCases(t *testing.T) {
 				// Cleanup completed successfully
 				requestID := cleanupCtx.Value(contextKey("requestID"))
 				assert.Equal(t, "req-789", requestID)
+
 				cleanupComplete <- true
 			}
 		}()

@@ -57,6 +57,7 @@ func TestAsync_MultipleCalls(t *testing.T) {
 	t.Parallel()
 
 	const numCalls = 10
+
 	executed := make(chan int, numCalls)
 	start := time.Now()
 
@@ -64,6 +65,7 @@ func TestAsync_MultipleCalls(t *testing.T) {
 	for i := range numCalls {
 		Async(func() {
 			time.Sleep(50 * time.Millisecond)
+
 			executed <- i
 		})
 	}
@@ -159,6 +161,7 @@ func TestAsync_StateModification(t *testing.T) {
 	for range numIncrements {
 		Async(func() {
 			mutex.Lock()
+
 			counter++
 
 			if counter == numIncrements {
@@ -290,6 +293,7 @@ func TestAsyncContext_MultipleCalls(t *testing.T) {
 	t.Parallel()
 
 	const numCalls = 10
+
 	executed := make(chan int, numCalls)
 	start := time.Now()
 
@@ -297,6 +301,7 @@ func TestAsyncContext_MultipleCalls(t *testing.T) {
 	for i := range numCalls {
 		AsyncContext(t.Context(), func(ctx context.Context) {
 			time.Sleep(50 * time.Millisecond)
+
 			executed <- i
 		})
 	}
@@ -440,6 +445,7 @@ func TestAsyncContext_StateModification(t *testing.T) {
 	for range numIncrements {
 		AsyncContext(t.Context(), func(ctx context.Context) {
 			mutex.Lock()
+
 			counter++
 
 			if counter == numIncrements {
@@ -620,6 +626,7 @@ func TestAsyncWithError_MultipleCalls(t *testing.T) {
 	t.Parallel()
 
 	const numCalls = 10
+
 	executed := make(chan int, numCalls)
 	start := time.Now()
 
@@ -627,6 +634,7 @@ func TestAsyncWithError_MultipleCalls(t *testing.T) {
 	for i := range numCalls {
 		AsyncWithError(func() error {
 			time.Sleep(50 * time.Millisecond)
+
 			executed <- i
 
 			return nil
@@ -867,6 +875,7 @@ func TestAsyncContextWithError_MultipleCalls(t *testing.T) {
 	t.Parallel()
 
 	const numCalls = 10
+
 	executed := make(chan int, numCalls)
 	start := time.Now()
 
@@ -874,6 +883,7 @@ func TestAsyncContextWithError_MultipleCalls(t *testing.T) {
 	for i := range numCalls {
 		AsyncContextWithError(t.Context(), func(ctx context.Context) error {
 			time.Sleep(50 * time.Millisecond)
+
 			executed <- i
 
 			return nil

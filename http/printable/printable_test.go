@@ -392,6 +392,7 @@ func TestPayload_Clone(t *testing.T) {
 		t.Parallel()
 
 		var payload *printable.Payload
+
 		cloned := payload.Clone()
 		assert.Nil(t, cloned)
 	})
@@ -801,7 +802,7 @@ func TestRequest_CharsetConversion(t *testing.T) {
 	t.Parallel()
 
 	// UTF-8 text
-	utf8Text := "Hello, 世界"
+	utf8Text := "Hello, 世界" //nolint:gosmopolitan // Intentional test data for UTF-8 handling
 	req, err := http.NewRequestWithContext(
 		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(utf8Text)))
 	require.NoError(t, err)

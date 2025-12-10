@@ -670,7 +670,7 @@ func TestHashMap_Get(t *testing.T) {
 		value, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("returns zero value and false for missing key with int type", func(t *testing.T) {
@@ -741,7 +741,7 @@ func TestHashMap_Get(t *testing.T) {
 		value, found, err := m.Get(key2)
 		require.Error(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("handles nil/empty values correctly", func(t *testing.T) {
@@ -774,7 +774,7 @@ func TestHashMap_Get(t *testing.T) {
 		value, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("returns false after clear", func(t *testing.T) {
@@ -791,7 +791,7 @@ func TestHashMap_Get(t *testing.T) {
 		value, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 
 	t.Run("handles struct values correctly", func(t *testing.T) {
@@ -865,7 +865,7 @@ func TestHashMap_GetOrElse(t *testing.T) {
 		key2 := collidingKey{id: 2, hash: "same"}
 		value, err := m.GetOrElse(key2, "default")
 		require.Error(t, err)
-		assert.Equal(t, "", value)
+		assert.Empty(t, value)
 	})
 }
 

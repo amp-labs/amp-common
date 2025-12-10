@@ -100,7 +100,7 @@ func TestDefaultMapGet(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 		assert.Equal(t, 0, m.Size())
 	})
 
@@ -116,7 +116,7 @@ func TestDefaultMapGet(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.Error(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 		assert.ErrorIs(t, err, errGenerationFailed)
 	})
 
@@ -917,7 +917,7 @@ func TestDefaultZeroMap_Get(t *testing.T) {
 		val, found, err := m.Get(key)
 		require.NoError(t, err)
 		assert.True(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 		assert.Equal(t, 1, m.Size())
 	})
 

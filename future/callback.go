@@ -1,4 +1,3 @@
-// Package future provides callback invocation utilities for Future callbacks.
 package future
 
 import (
@@ -58,7 +57,8 @@ func invokeCallback[T any](kind string, callback func(T), value T) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				if err := utils.GetPanicRecoveryError(r, debug.Stack()); err != nil {
+				err := utils.GetPanicRecoveryError(r, debug.Stack())
+				if err != nil {
 					logger.Get().Error("panic encountered in future."+kind+" callback", "error", err)
 				}
 			}
@@ -110,7 +110,8 @@ func invokeCallbackContext[T any](ctx context.Context, kind string, callback fun
 
 		defer func() {
 			if r := recover(); r != nil {
-				if err := utils.GetPanicRecoveryError(r, debug.Stack()); err != nil {
+				err := utils.GetPanicRecoveryError(r, debug.Stack())
+				if err != nil {
 					logger.Get(cctx).Error("panic encountered in future."+kind+" callback", "error", err)
 				}
 			}

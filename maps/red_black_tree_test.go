@@ -133,7 +133,7 @@ func TestRedBlackTreeMap_Get(t *testing.T) {
 		val, found, err := m.Get(sortable.Int(1))
 		require.NoError(t, err)
 		assert.False(t, found)
-		assert.Equal(t, "", val)
+		assert.Empty(t, val)
 	})
 
 	t.Run("returns most recent value for updated key", func(t *testing.T) {

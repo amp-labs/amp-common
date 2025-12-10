@@ -234,14 +234,16 @@ func (o *orderedHashMap[K, V]) Union(other OrderedMap[K, V]) (OrderedMap[K, V], 
 
 	// Add all entries from this map (maintains order)
 	for _, entry := range o.Seq() {
-		if err := result.Add(entry.Key, entry.Value); err != nil {
+		err := result.Add(entry.Key, entry.Value)
+		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Add all entries from the other map (overwrites duplicates, adds new ones at the end)
 	for _, entry := range other.Seq() {
-		if err := result.Add(entry.Key, entry.Value); err != nil {
+		err := result.Add(entry.Key, entry.Value)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -268,7 +270,8 @@ func (o *orderedHashMap[K, V]) Intersection(other OrderedMap[K, V]) (OrderedMap[
 		}
 
 		if contains {
-			if err := result.Add(entry.Key, entry.Value); err != nil {
+			err := result.Add(entry.Key, entry.Value)
+			if err != nil {
 				return nil, err
 			}
 		}

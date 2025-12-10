@@ -238,7 +238,7 @@ func (d *defaultMap[K, V]) addDefaultForKey(key K) (V, bool, error) {
 		return zeroVal, false, err
 	}
 
-	if err := d.m.Add(key, value); err != nil {
+	if err := d.m.Add(key, value); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 		var zeroVal V
 
 		return zeroVal, false, err

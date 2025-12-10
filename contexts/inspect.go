@@ -70,6 +70,8 @@ func getContextInternals(ctx any) *ContextNode {
 	if contextKeys.Kind() == reflect.Struct {
 		for i := range contextValues.NumField() {
 			reflectValue := contextValues.Field(i)
+			// Access unexported fields using unsafe pointer
+			//nolint:gosec // Required to access unexported context fields
 			reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
 
 			reflectField := contextKeys.Field(i)

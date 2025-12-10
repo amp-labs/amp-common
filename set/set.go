@@ -1,3 +1,4 @@
+// Package set provides generic set implementations with support for ordered and thread-safe variants.
 package set
 
 import (
@@ -111,7 +112,8 @@ func NewSetWithSize[T collectable.Collectable[T]](hash hashing.HashFunc, size in
 
 func (s *setImpl[T]) AddAll(element ...T) error {
 	for _, elem := range element {
-		if err := s.Add(elem); err != nil {
+		err := s.Add(elem)
+		if err != nil {
 			return err
 		}
 	}
@@ -208,11 +210,13 @@ func (s *setImpl[T]) Union(other Set[T]) (Set[T], error) {
 	myItems := s.Entries()
 	otherItems := other.Entries()
 
-	if err := ns.AddAll(myItems...); err != nil {
+	err := ns.AddAll(myItems...)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := ns.AddAll(otherItems...); err != nil {
+	err = ns.AddAll(otherItems...)
+	if err != nil {
 		return nil, err
 	}
 
@@ -223,10 +227,11 @@ func (s *setImpl[T]) Intersection(other Set[T]) (Set[T], error) {
 	ns := NewSet[T](s.hash)
 
 	for _, item := range s.Entries() {
-		if contains, err := other.Contains(item); err != nil {
+		if contains, err := other.Contains(item); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 			return nil, err
 		} else if contains {
-			if err := ns.Add(item); err != nil {
+			err := ns.Add(item)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -303,7 +308,8 @@ func NewStringSet(hash hashing.HashFunc) *StringSet {
 // AddAll adds multiple string elements to the set.
 func (s *StringSet) AddAll(element ...string) error {
 	for _, elem := range element {
-		if err := s.Add(elem); err != nil {
+		err := s.Add(elem)
+		if err != nil {
 			return err
 		}
 	}
@@ -384,11 +390,13 @@ func (s *StringSet) Union(other *StringSet) (*StringSet, error) {
 	myItems := s.Entries()
 	otherItems := other.Entries()
 
-	if err := ns.AddAll(myItems...); err != nil {
+	err := ns.AddAll(myItems...)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := ns.AddAll(otherItems...); err != nil {
+	err = ns.AddAll(otherItems...)
+	if err != nil {
 		return nil, err
 	}
 
@@ -400,10 +408,11 @@ func (s *StringSet) Intersection(other *StringSet) (*StringSet, error) {
 	ns := NewSet[hashing.HashableString](s.hash)
 
 	for _, item := range s.Entries() {
-		if contains, err := other.Contains(item); err != nil {
+		if contains, err := other.Contains(item); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 			return nil, err
 		} else if contains {
-			if err := ns.Add(hashing.HashableString(item)); err != nil {
+			err := ns.Add(hashing.HashableString(item))
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -518,7 +527,8 @@ func NewOrderedSet[T collectable.Collectable[T]](hash hashing.HashFunc) OrderedS
 
 func (s *orderedSetImpl[T]) AddAll(elements ...T) error {
 	for _, elem := range elements {
-		if err := s.Add(elem); err != nil {
+		err := s.Add(elem)
+		if err != nil {
 			return err
 		}
 	}
@@ -539,7 +549,7 @@ func (s *orderedSetImpl[T]) Add(element T) error {
 	}
 
 	// Add to underlying set
-	if err := s.set.Add(element); err != nil {
+	if err := s.set.Add(element); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 		return err
 	}
 
@@ -561,7 +571,7 @@ func (s *orderedSetImpl[T]) Remove(element T) error {
 	}
 
 	// Remove from underlying set
-	if err := s.set.Remove(element); err != nil {
+	if err := s.set.Remove(element); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 		return err
 	}
 
@@ -611,21 +621,25 @@ func (s *orderedSetImpl[T]) Seq() iter.Seq2[int, T] {
 }
 
 func (s *orderedSetImpl[T]) Union(other OrderedSet[T]) (OrderedSet[T], error) {
-	ns := NewOrderedSet[T](s.hash)
+	newSet := NewOrderedSet[T](s.hash)
 
 	// Add all elements from current set (preserves order)
 	myItems := s.Entries()
-	if err := ns.AddAll(myItems...); err != nil {
+
+	err := newSet.AddAll(myItems...)
+	if err != nil {
 		return nil, err
 	}
 
 	// Add all elements from other set (preserves order, skips duplicates)
 	otherItems := other.Entries()
-	if err := ns.AddAll(otherItems...); err != nil {
+
+	err = newSet.AddAll(otherItems...)
+	if err != nil {
 		return nil, err
 	}
 
-	return ns, nil
+	return newSet, nil
 }
 
 func (s *orderedSetImpl[T]) Intersection(other OrderedSet[T]) (OrderedSet[T], error) {
@@ -633,10 +647,11 @@ func (s *orderedSetImpl[T]) Intersection(other OrderedSet[T]) (OrderedSet[T], er
 
 	// Iterate in order, only add elements that exist in both sets
 	for _, item := range s.order {
-		if contains, err := other.Contains(item); err != nil {
+		if contains, err := other.Contains(item); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 			return nil, err
 		} else if contains {
-			if err := ns.Add(item); err != nil {
+			err := ns.Add(item)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -688,7 +703,8 @@ func NewStringOrderedSet(hash hashing.HashFunc) *StringOrderedSet {
 // it is not added again and its position in the order is not changed.
 func (s *StringOrderedSet) AddAll(element ...string) error {
 	for _, elem := range element {
-		if err := s.Add(elem); err != nil {
+		err := s.Add(elem)
+		if err != nil {
 			return err
 		}
 	}
@@ -775,11 +791,13 @@ func (s *StringOrderedSet) Union(other *StringOrderedSet) (*StringOrderedSet, er
 	myItems := s.Entries()
 	otherItems := other.Entries()
 
-	if err := ns.AddAll(myItems...); err != nil {
+	err := ns.AddAll(myItems...)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := ns.AddAll(otherItems...); err != nil {
+	err = ns.AddAll(otherItems...)
+	if err != nil {
 		return nil, err
 	}
 
@@ -792,10 +810,11 @@ func (s *StringOrderedSet) Intersection(other *StringOrderedSet) (*StringOrdered
 	ns := NewOrderedSet[hashing.HashableString](s.hash)
 
 	for _, item := range s.Entries() {
-		if contains, err := other.Contains(item); err != nil {
+		if contains, err := other.Contains(item); err != nil { //nolint:noinlineerr // Inline error handling is clear here
 			return nil, err
 		} else if contains {
-			if err := ns.Add(hashing.HashableString(item)); err != nil {
+			err := ns.Add(hashing.HashableString(item))
+			if err != nil {
 				return nil, err
 			}
 		}

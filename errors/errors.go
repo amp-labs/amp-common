@@ -1,3 +1,4 @@
+// Package errors provides error utilities with collection support for managing multiple errors.
 package errors
 
 import "errors"

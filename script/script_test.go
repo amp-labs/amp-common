@@ -147,6 +147,7 @@ func TestNew(t *testing.T) {
 		t.Parallel()
 
 		var buf bytes.Buffer
+
 		script := New("test-script",
 			LogLevel(slog.LevelDebug),
 			LegacyLogLevel(slog.LevelInfo),
@@ -181,6 +182,7 @@ func TestLogOutput(t *testing.T) {
 	t.Parallel()
 
 	var buf bytes.Buffer
+
 	script := New("test", LogOutput(&buf))
 
 	assert.Len(t, script.loggerOpts, 1)

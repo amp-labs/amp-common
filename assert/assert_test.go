@@ -194,7 +194,7 @@ func TestType_ZeroValue(t *testing.T) {
 
 		result, err := assert.Type[string](123)
 		require.Error(t, err)
-		require.Equal(t, "", result)
+		require.Empty(t, result)
 	})
 
 	t.Run("returns nil pointer on failure", func(t *testing.T) {

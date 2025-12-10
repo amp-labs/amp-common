@@ -7,6 +7,7 @@ all:
 # ====================
 .PHONY: lint
 lint:
+	golangci-lint config verify && \
 	golangci-lint run -c .golangci.yml
 
 # Run a few autoformatters and print out unfixable errors

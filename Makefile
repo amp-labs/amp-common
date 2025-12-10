@@ -8,7 +8,8 @@ all:
 .PHONY: lint
 lint:
 	golangci-lint config verify && \
-	golangci-lint run -c .golangci.yml
+	golangci-lint run -c .golangci.yml --max-issues-per-linter 0 --max-same-issues 0 && \
+	typos --config .typos.toml
 
 # Run a few autoformatters and print out unfixable errors
 # PRE-REQUISITES: install linters, see https://ampersand.slab.com/posts/engineering-onboarding-guide-environment-set-up-9v73t3l8#huik9-install-linters

@@ -1,46 +1,67 @@
 version: "2"
+run:
+  timeout: 10m
 output:
   formats:
     text:
       path: stdout
+      colors: true
 linters:
   default: all
   disable:
-    - cyclop
-    - depguard
-    - embeddedstructfieldcheck
-    - errchkjson
-    - exhaustruct
-    - forbidigo
-    - funcorder
-    - funlen
-    - gochecknoglobals
+    # Disabled because we use inits all over the place
     - gochecknoinits
-    - gocognit
-    - godoclint
+    # Highly annoying. We'd need to whitelist all packages we import, which is a lot of work and adds very little value.
+    - depguard
+    # Annoying and unhelpful. Assumes uninitialized (zero-valued) fields are always a bug, which is plain wrong.
+    - exhaustruct
+    # Marks [TODO, FIXME, BUG] comments as errors. We use these, so this is not helpful - unless we decide this is a good policy.
     - godox
-    - gosmopolitan
-    - iotamixing
-    - ireturn
-    - maintidx
-    - mnd
-    - modernize
-    - nilnil
-    - nlreturn
-    - noctx
-    - noinlineerr
-    - nolintlint
-    - nonamedreturns
-    - paralleltest
-    - perfsprint
-    - promlinter
-    - tagliatelle
-    - testifylint
+    # We're not doing black-box testing, so enabling this would be counterproductive. We might want to discuss this though, it's a good practice.
     - testpackage
+    # Annoying and not useful. Disabling otherwise we have to have comment everywhere
     - wrapcheck
+    # Buggy, it complains about unused nolint rules, when those nolint rules are actually used (and removing them cause other lint errors)
+    - nolintlint
+    # Named returns are helpful if there are multiple return values of the same type, and acts as self-documentation of the function.
+    - nonamedreturns
+    # length of function
+    - funlen
+    # complexity of function
+    - cyclop
+    # same as cyclop, complexiy of function
+    - gocognit
+    # we have legitimate use cases for global variables
+    - gochecknoglobals
+    # Doesn't seem to actually work
+    - promlinter
+    # Gives maintainability index, but no specific explanation/guidance
+    - maintidx
+    # We have legitimate use cases for returning an interface
+    - ireturn
+    # Sometimes it's useful to return nil, nil
+    - nilnil
+    # Disabled as requested
+    - tagliatelle
+    # Deprecated, replaced by wsl_v5
     - wsl
-    - wsl_v5
   settings:
+    # See https://golangci-lint.run/usage/linters#revive
+    revive:
+      rules:
+        # Use var-naming, but add a special rule to accept "Id" rather than forcing "ID"
+        - name: var-naming
+          disabled: false
+          arguments:
+            - ["ID", "API"]
+    # See https://staticcheck.io/docs/configuration/options/#checks
+    # Note: stylecheck has been merged into staticcheck in v2
+    staticcheck:
+      checks: ["all", "-ST1003"]
+    varnamelen:
+      # The longest distance, in source lines, that is being considered a "small scope" where it is ok to use short variable names.
+      # The default is 5, which is quite strict.
+      max-distance: 15
     ireturn:
       allow:
         - error
@@ -48,66 +69,17 @@ linters:
         - stdlib
         - empty
     misspell:
-      mode: restricted
       locale: US
-    revive:
-      rules:
-        - name: var-naming
-          arguments:
-            - - ID
-              - API
-          disabled: false
-    staticcheck:
-      checks:
-        - all
-        - -ST1003
-    varnamelen:
-      max-distance: 15
+      mode: restricted
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
   exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
     rules:
-      - linters:
+      - text: "don't use ALL_CAPS in Go names"
+        linters:
           - revive
-        text: don't use ALL_CAPS in Go names
-      - linters:
-          - revive
-        text: 'var-naming: avoid package names that conflict with Go standard library package names'
-        path: errors/
-      - linters:
-          - revive
-        text: 'var-naming: avoid meaningless package names'
-        path: utils/
-      - linters:
+      - text: "cloud.google.com/go/pubsub.*is deprecated: Please use cloud.google.com/go/pubsub/v2"
+        linters:
           - staticcheck
-        text: 'cloud.google.com/go/pubsub.*is deprecated: Please use cloud.google.com/go/pubsub/v2'
-    paths:
-      - openapi
-      - scripts
-      - tmp
-      - playground
-      - testrun
-      - third_party$
-      - builtin$
-      - examples$
-formatters:
-  enable:
-    - gci
-    - gofmt
-    - gofumpt
-    - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - openapi
-      - scripts
-      - tmp
-      - playground
-      - testrun
-      - third_party$
-      - builtin$
-      - examples$

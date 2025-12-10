@@ -307,3 +307,182 @@ func TestDo_RespectsContextDeadline(t *testing.T) {
 	assert.GreaterOrEqual(t, callCount.Load(), int64(1))
 	assert.Less(t, callCount.Load(), int64(10))
 }
+
+func TestDo_PanicRecovery_SucceedsAfterPanic(t *testing.T) {
+	t.Parallel()
+
+	callCount := 0
+	err := Do(t.Context(), func(ctx context.Context) error {
+		callCount++
+		if callCount < 3 {
+			panic("intentional panic for testing")
+		}
+
+		return nil
+	}, WithAttempts(5), WithBackoff(ExpBackoff{
+		Base:   5 * time.Millisecond,
+		Max:    20 * time.Millisecond,
+		Factor: 2.0,
+	}), WithJitter(WithoutJitter))
+
+	require.NoError(t, err, "should recover from panic and succeed on retry")
+	assert.Equal(t, 3, callCount, "should have panicked twice and succeeded on third attempt")
+}
+
+func TestDo_PanicRecovery_ExhaustsRetries(t *testing.T) {
+	t.Parallel()
+
+	callCount := 0
+	err := Do(t.Context(), func(ctx context.Context) error {
+		callCount++
+
+		panic("persistent panic")
+	}, WithAttempts(3), WithBackoff(ExpBackoff{
+		Base:   5 * time.Millisecond,
+		Max:    20 * time.Millisecond,
+		Factor: 2.0,
+	}), WithJitter(WithoutJitter))
+
+	require.Error(t, err, "should return error after exhausting retries")
+	assert.Equal(t, 3, callCount, "should have attempted all retries")
+	assert.Contains(t, err.Error(), "panic", "error should indicate panic occurred")
+}
+
+func TestDo_PanicRecovery_WithStringPanic(t *testing.T) {
+	t.Parallel()
+
+	callCount := 0
+	err := Do(t.Context(), func(ctx context.Context) error {
+		callCount++
+		if callCount == 1 {
+			panic("string panic message")
+		}
+
+		return nil
+	}, WithAttempts(3), WithBackoff(ExpBackoff{
+		Base:   5 * time.Millisecond,
+		Max:    20 * time.Millisecond,
+		Factor: 2.0,
+	}), WithJitter(WithoutJitter))
+
+	require.NoError(t, err, "should recover from string panic")
+	assert.Equal(t, 2, callCount, "should have panicked once and succeeded on second attempt")
+}
+
+func TestDo_PanicRecovery_WithTimeout(t *testing.T) {
+	t.Parallel()
+
+	callCount := 0
+	err := Do(t.Context(), func(ctx context.Context) error {
+		callCount++
+		if callCount == 1 {
+			panic("panic with timeout")
+		}
+
+		return nil
+	}, WithAttempts(3), WithTimeout(Timeout(100*time.Millisecond)), WithBackoff(ExpBackoff{
+		Base:   5 * time.Millisecond,
+		Max:    20 * time.Millisecond,
+		Factor: 2.0,
+	}), WithJitter(WithoutJitter))
+
+	require.NoError(t, err, "should recover from panic even with timeout set")
+	assert.Equal(t, 2, callCount, "should have panicked once and succeeded on second attempt")
+}
+
+func TestDoValue_PanicRecovery_SucceedsAfterPanic(t *testing.T) {
+	t.Parallel()
+
+	callCount := 0
+	result, err := DoValue(t.Context(), func(ctx context.Context) (string, error) {
+		callCount++
+		if callCount < 2 {
+			panic("intentional panic in DoValue")
+		}
+
+		return "success", nil
+	}, WithAttempts(5), WithBackoff(ExpBackoff{
+		Base:   5 * time.Millisecond,
+		Max:    20 * time.Millisecond,
+		Factor: 2.0,
+	}), WithJitter(WithoutJitter))
+
+	require.NoError(t, err, "should recover from panic and succeed")
+	assert.Equal(t, "success", result)
+	assert.Equal(t, 2, callCount, "should have panicked once and succeeded on second attempt")
+}
+
+func TestDoValue_PanicRecovery_ExhaustsRetries(t *testing.T) {
+	t.Parallel()
+
+	callCount := 0
+	result, err := DoValue(t.Context(), func(ctx context.Context) (int, error) {
+		callCount++
+
+		panic("persistent panic in DoValue")
+	}, WithAttempts(3), WithBackoff(ExpBackoff{
+		Base:   5 * time.Millisecond,
+		Max:    20 * time.Millisecond,
+		Factor: 2.0,
+	}), WithJitter(WithoutJitter))
+
+	require.Error(t, err, "should return error after exhausting retries")
+	assert.Equal(t, 0, result, "should return zero value on panic")
+	assert.Equal(t, 3, callCount, "should have attempted all retries")
+	assert.Contains(t, err.Error(), "panic", "error should indicate panic occurred")
+}
+
+func TestRunner_PanicRecovery(t *testing.T) {
+	t.Parallel()
+
+	runner := NewRunner(
+		WithAttempts(5),
+		WithBackoff(ExpBackoff{
+			Base:   5 * time.Millisecond,
+			Max:    20 * time.Millisecond,
+			Factor: 2.0,
+		}),
+		WithJitter(WithoutJitter),
+	)
+
+	callCount := 0
+	err := runner.Do(t.Context(), func(ctx context.Context) error {
+		callCount++
+		if callCount < 3 {
+			panic("panic in runner")
+		}
+
+		return nil
+	})
+
+	require.NoError(t, err, "runner should recover from panic")
+	assert.Equal(t, 3, callCount, "should have panicked twice and succeeded on third attempt")
+}
+
+func TestValueRunner_PanicRecovery(t *testing.T) {
+	t.Parallel()
+
+	runner := NewValueRunner[int](
+		WithAttempts(5),
+		WithBackoff(ExpBackoff{
+			Base:   5 * time.Millisecond,
+			Max:    20 * time.Millisecond,
+			Factor: 2.0,
+		}),
+		WithJitter(WithoutJitter),
+	)
+
+	callCount := 0
+	result, err := runner.Do(t.Context(), func(ctx context.Context) (int, error) {
+		callCount++
+		if callCount < 2 {
+			panic("panic in value runner")
+		}
+
+		return 42, nil
+	})
+
+	require.NoError(t, err, "value runner should recover from panic")
+	assert.Equal(t, 42, result)
+	assert.Equal(t, 2, callCount, "should have panicked once and succeeded on second attempt")
+}

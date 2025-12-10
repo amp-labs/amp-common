@@ -32,6 +32,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/amp-labs/amp-common/future"
 	"github.com/amp-labs/amp-common/zero"
 	"go.uber.org/atomic"
 )
@@ -46,6 +47,9 @@ const (
 // Runner is an interface for executing operations with retry logic.
 // It handles errors and automatically retries based on the configured strategy.
 type Runner interface {
+	// Do executes the provided function with retry logic according to the runner's configuration.
+	// It returns nil if the operation succeeds, or an error if all retries are exhausted or a
+	// permanent error is encountered.
 	Do(ctx context.Context, f func(ctx context.Context) error) error
 }
 
@@ -53,6 +57,9 @@ type Runner interface {
 // It handles errors and automatically retries based on the configured strategy, returning the
 // successful result or an error.
 type ValueRunner[T any] interface {
+	// Do executes the provided function with retry logic according to the runner's configuration,
+	// returning the successful result or an error. If all retries are exhausted, it returns the
+	// zero value of type T and the last error encountered.
 	Do(ctx context.Context, f func(ctx context.Context) (T, error)) (T, error)
 }
 
@@ -183,54 +190,46 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 	// Loop until we reach the maximum attempts or attempts is 0 (infinite retries)
 	for attemptIndex := uint(0); Attempts(attemptIndex) < opts.attempts || opts.attempts == 0; attemptIndex++ {
 		// Add attempt number to context for tracking
-		ctx := withAttempt(ctx, attemptIndex)
+		loopCtx := withAttempt(ctx, attemptIndex)
 
 		// Check if retry budget allows this attempt (prevents cascading failures)
 		if !opts.budget.sendOK(attemptIndex != 0) {
 			return ErrExhausted
 		}
 
-		// Create a new channel for each attempt to avoid race conditions
-		// with goroutines from previous attempts
-		errChan := make(chan error, 1)
-
-		// Execute the operation in a goroutine to support timeout handling
-		go func(ctx context.Context) {
-			defer close(errChan)
-
+		// Execute the operation in a goroutine to support timeout handling.
+		// NB: This automatically handles panics as well, which will be translated
+		// in to a normal error. So go right ahead and panic.
+		fut := future.GoContext[struct{}](loopCtx, func(ctx context.Context) (struct{}, error) {
 			if opts.timeout != 0 {
-				errChan <- callWithTimeout(ctx, operation, opts.timeout, &mut, running)
+				return struct{}{}, callWithTimeout(ctx, operation, opts.timeout, &mut, running)
 			} else {
 				mut.Lock()
 				defer mut.Unlock()
 
 				if !running.Load() {
-					return
+					return struct{}{}, nil
 				}
 
-				errChan <- operation(ctx)
+				return struct{}{}, operation(ctx)
 			}
-		}(ctx)
+		})
 
 		// Wait for either the operation to complete or context cancellation
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case err = <-errChan:
-			if err == nil {
-				return nil
+		_, err = fut.AwaitContext(loopCtx)
+		if err == nil {
+			return nil
+		}
+
+		// Check if the error is permanent (non-retryable)
+		var retryErr Error
+		if errors.As(err, &retryErr) && !retryErr.Temporary() {
+			var p permanentError
+			if errors.As(err, &p) {
+				return p.error
 			}
 
-			// Check if the error is permanent (non-retryable)
-			var retryErr Error
-			if errors.As(err, &retryErr) && !retryErr.Temporary() {
-				var p permanentError
-				if errors.As(err, &p) {
-					return p.error
-				}
-
-				return err
-			}
+			return err
 		}
 
 		// Calculate backoff delay with jitter
@@ -240,10 +239,10 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 		// Wait for the delay period, respecting context cancellation
 		ticker := time.NewTimer(delay)
 		select {
-		case <-ctx.Done():
+		case <-loopCtx.Done():
 			ticker.Stop()
 
-			return ctx.Err()
+			return loopCtx.Err()
 		case <-ticker.C:
 			ticker.Stop()
 		}
@@ -272,27 +271,20 @@ func callWithTimeout(
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout))
 	defer cancel()
 
-	errChan := make(chan error, 1)
-
-	go func(ctx context.Context) {
-		defer close(errChan)
-
+	fut := future.GoContext[struct{}](ctx, func(ctx context.Context) (struct{}, error) {
 		mut.Lock()
 		defer mut.Unlock()
 
 		if !running.Load() {
-			return
+			return struct{}{}, nil
 		}
 
-		errChan <- callback(ctx)
-	}(ctx)
+		return struct{}{}, callback(ctx)
+	})
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case err := <-errChan:
-		return err
-	}
+	_, err := fut.AwaitContext(ctx)
+
+	return err
 }
 
 // Do is a convenience function that creates a Runner and executes the provided function

@@ -132,7 +132,7 @@ go test -v -run TestName ./package-name
 
 ## Dependency Management
 
-This repository is a Go module (`github.com/amp-labs/amp-common`). It uses Go 1.24.6.
+This repository is a Go module (`github.com/amp-labs/amp-common`). It uses Go 1.25.5.
 
 ### Private Dependencies
 

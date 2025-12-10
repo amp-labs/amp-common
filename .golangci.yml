@@ -1,9 +1,8 @@
+version: 2
 run:
   timeout: 10m
 output:
-  formats:
-    - format: colored-line-number
-      path: stdout
+  format: colored-line-number
 linters:
   enable-all: true
   disable:
@@ -37,8 +36,6 @@ linters:
     - maintidx
     # We have legitimate use cases for returning an interface
     - ireturn
-    # deprecated
-    - tenv
     # Sometimes it's useful to return nil, nil
     - nilnil
     # Disabled as requested

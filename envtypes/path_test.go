@@ -15,8 +15,8 @@ func TestLocalPath_AsTuple(t *testing.T) {
 	tmpFile, err := os.CreateTemp(t.TempDir(), "envtypes_test_*.txt")
 	require.NoError(t, err)
 
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	defer func() { _ = tmpFile.Close() }()
 
 	// Get file info
 	fileInfo, err := os.Stat(tmpFile.Name())
@@ -64,8 +64,8 @@ func TestLocalPath_FieldsAccessible(t *testing.T) {
 	tmpFile, err := os.CreateTemp(t.TempDir(), "envtypes_field_test_*.txt")
 	require.NoError(t, err)
 
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	defer func() { _ = tmpFile.Close() }()
 
 	fileInfo, err := os.Stat(tmpFile.Name())
 	require.NoError(t, err)

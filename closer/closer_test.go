@@ -331,7 +331,7 @@ func TestCustomCloser_WithDeferPattern(t *testing.T) {
 
 			return nil
 		})
-		defer closer.Close()
+		defer func() { _ = closer.Close() }()
 
 		// Do some work...
 		return nil
@@ -1508,7 +1508,7 @@ func TestChannelCloser_SendOnlyInFunction(t *testing.T) {
 
 	// Simulate a pattern where you pass send-only channel to a worker
 	worker := func(ch chan<- string, closer io.Closer) {
-		defer closer.Close()
+		defer func() { _ = closer.Close() }()
 		ch <- "hello"
 		ch <- "world"
 	}
@@ -1815,7 +1815,7 @@ func TestCancelableCloser_TransactionPattern(t *testing.T) {
 		}
 
 		closer, cancel := CancelableCloser(CustomCloser(rollbackFn))
-		defer closer.Close() // Will rollback unless canceled
+		defer func() { _ = closer.Close() }() // Will rollback unless canceled
 
 		// Do work...
 		err := commitFn()
@@ -1871,7 +1871,7 @@ func TestCancelableCloser_TemporaryFilePattern(t *testing.T) {
 		}
 
 		closer, cancel := CancelableCloser(CustomCloser(deleteFn))
-		defer closer.Close() // Will delete unless canceled
+		defer func() { _ = closer.Close() }() // Will delete unless canceled
 
 		// Success, keep the file
 		cancel()
@@ -2305,7 +2305,7 @@ func TestForWriter_ConcurrentWrites(t *testing.T) {
 		go func(id int) {
 			defer waitGroup.Done()
 
-			_, _ = writeCloser.Write([]byte(fmt.Sprintf("%d,", id)))
+			_, _ = fmt.Fprintf(writeCloser, "%d,", id)
 		}(i)
 	}
 

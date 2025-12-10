@@ -1031,7 +1031,7 @@ func TestOpenFile(t *testing.T) {
 
 		file, err := xform.OpenFile(path)
 		require.NoError(t, err)
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		data, err := os.ReadFile(file.Name())
 		require.NoError(t, err)

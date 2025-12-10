@@ -335,7 +335,7 @@ func TestLifecycleInsensitiveContext_ImplementsInterface(t *testing.T) {
 		ctx := WithIgnoreLifecycle(t.Context())
 
 		// This will compile only if ctx implements context.Context
-		var _ context.Context = ctx
+		var _ = ctx
 
 		// Verify all methods are callable
 		_ = ctx.Done()

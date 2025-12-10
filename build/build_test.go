@@ -17,7 +17,7 @@ func TestParse_ValidJSON(t *testing.T) {
 		"build_time": "2025-10-05T12:00:00Z",
 		"build_host": "localhost",
 		"build_user": "builder",
-		"go_version": "go1.24.6",
+		"go_version": "go1.25.5",
 		"dependencies": {
 			"github.com/example/pkg": "v1.2.3"
 		}
@@ -33,7 +33,7 @@ func TestParse_ValidJSON(t *testing.T) {
 	assert.Equal(t, "2025-10-05T12:00:00Z", info.BuildTime)
 	assert.Equal(t, "localhost", info.BuildHost)
 	assert.Equal(t, "builder", info.BuildUser)
-	assert.Equal(t, "go1.24.6", info.GoVersion)
+	assert.Equal(t, "go1.25.5", info.GoVersion)
 	assert.Equal(t, map[string]string{"github.com/example/pkg": "v1.2.3"}, info.Dependencies)
 }
 

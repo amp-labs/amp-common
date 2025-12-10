@@ -249,7 +249,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Same(t, mockResp, resp)
 
@@ -310,7 +310,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		if resp != nil {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 		}
 
 		require.Error(t, err)
@@ -367,7 +367,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		require.Len(t, captureLog.logs, 2)
 
@@ -430,7 +430,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 		require.NoError(t, err)
 
 		if resp != nil {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 		}
 
 		require.Len(t, captureLog.logs, 2)
@@ -478,7 +478,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -529,7 +529,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 		require.NoError(t, err)
 
 		if resp != nil {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 		}
 
 		require.Len(t, captureLog.logs, 2)
@@ -586,7 +586,7 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 		require.NoError(t, err)
 
 		if resp != nil {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 		}
 
 		require.Len(t, captureLog.logs, 2)
@@ -750,7 +750,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Same(t, mockResp, resp)
 
@@ -793,7 +793,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should have 2 log entries: request and response
 		assert.Len(t, captureLog.logs, 2)
@@ -833,7 +833,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should have 2 log entries: request and response (default behavior is to log)
 		assert.Len(t, captureLog.logs, 2)
@@ -871,7 +871,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		if resp != nil {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 		}
 
 		require.Error(t, err)
@@ -916,7 +916,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp, err := trans.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Verify the underlying transport was called by checking the response
 		assert.Same(t, mockResp, resp, "should receive the mock response")
@@ -965,7 +965,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp1, err := trans.RoundTrip(req1)
 		require.NoError(t, err)
-		resp1.Body.Close()
+		_ = resp1.Body.Close()
 
 		// Should have no logs yet
 		assert.Empty(t, captureLog.logs)
@@ -983,7 +983,7 @@ func TestLoggingTransport_RoundTrip_WithSkipLogging(t *testing.T) {
 
 		resp2, err := trans.RoundTrip(req2)
 		require.NoError(t, err)
-		resp2.Body.Close()
+		_ = resp2.Body.Close()
 
 		// Should have 2 logs now (from second request only)
 		assert.Len(t, captureLog.logs, 2)

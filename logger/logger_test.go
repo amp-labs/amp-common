@@ -594,7 +594,7 @@ func TestConfigureLogging(t *testing.T) { //nolint:paralleltest
 
 			// Clean up
 			for k := range tt.envVars {
-				os.Unsetenv(k)
+				_ = os.Unsetenv(k)
 			}
 		})
 	}

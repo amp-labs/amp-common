@@ -233,12 +233,13 @@ func TestNewDefaultExecutor_EdgeCases(t *testing.T) {
 			// Verify semaphore is pre-filled with correct number of tokens
 			tokensAvailable := 0
 
+		countLoop:
 			for range testCase.expectedMax {
 				select {
 				case <-exec.sem:
 					tokensAvailable++
 				default:
-					break
+					break countLoop
 				}
 			}
 

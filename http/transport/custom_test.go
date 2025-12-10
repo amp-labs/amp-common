@@ -41,7 +41,7 @@ func TestNewCustom(t *testing.T) {
 
 		resp, err := transport.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.True(t, called, "custom function should be called")
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -87,7 +87,7 @@ func TestCustomTransport_RoundTrip(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -133,7 +133,7 @@ func TestCustomTransport_RoundTrip(t *testing.T) {
 
 		resp, err := transport.RoundTrip(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		require.NotNil(t, capturedReq)
 		assert.Equal(t, http.MethodDelete, capturedReq.Method)
@@ -158,7 +158,7 @@ func TestCustomTransport_RoundTrip(t *testing.T) {
 
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
 		body, err := io.ReadAll(resp.Body)
@@ -189,7 +189,7 @@ func TestCustomTransport_MultipleCalls(t *testing.T) {
 
 			resp, err := transport.RoundTrip(req) //nolint:bodyclose // body closed in checkResponse when needed
 			require.NoError(t, err)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		}
@@ -217,7 +217,7 @@ func TestCustomTransport_MultipleCalls(t *testing.T) {
 
 			resp, err := transport.RoundTrip(req) //nolint:bodyclose // body closed in checkResponse when needed
 			require.NoError(t, err)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 
 		assert.Equal(t, paths, requestPaths)
@@ -268,7 +268,7 @@ func TestCustomTransport_ErrorScenarios(t *testing.T) {
 				t.Helper()
 
 				require.NotNil(t, resp)
-				defer resp.Body.Close()
+				defer func() { _ = resp.Body.Close() }()
 
 				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 			},

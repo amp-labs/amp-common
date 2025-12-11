@@ -82,6 +82,22 @@ func WithTestingEnabled(ctx context.Context, enabled bool) context.Context {
 	return contexts.WithValue[testKey, bool](ctx, "testing-enabled", enabled)
 }
 
+// SetTestingEnabled configures the testing mode flag using a callback setter function.
+// This is used with lazy value overrides to enable testing mode without directly
+// manipulating a context. The setter function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - enabled: Whether to enable testing mode (preserves create functions after initialization)
+//   - f: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetTestingEnabled(enabled bool, f func(key any, value any)) {
+	if f == nil {
+		return
+	}
+
+	f(testKey("testing-enabled"), enabled)
+}
+
 // WithLifecyclePreserved controls whether the context lifecycle is preserved when passed
 // to lazy initialization functions. When enabled, the context is preserved as-is; when
 // disabled (default), the context is wrapped to ignore lifecycle, preventing cancellation
@@ -91,12 +107,45 @@ func WithLifecyclePreserved(ctx context.Context, preserveLifecycle bool) context
 	return contexts.WithValue[preserveLifetimeKey, bool](ctx, "lifecycle-preserved", preserveLifecycle)
 }
 
+// SetLifecyclePreserved configures the lifecycle preservation flag using a callback setter function.
+// This is used with lazy value overrides to control context lifecycle behavior without directly
+// manipulating a context. The setter function is typically provided by lazy override mechanisms
+// to store the value for later retrieval.
+//
+// Parameters:
+//   - enabled: Whether to preserve context lifecycle (allows cancellation to affect initialization)
+//   - f: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetLifecyclePreserved(enabled bool, f func(key any, value any)) {
+	if f == nil {
+		return
+	}
+
+	f(testKey("lifecycle-preserved"), enabled)
+}
+
 // WithValueOverride stores a value in the context that will override a named lazy value.
 // When a lazy value with the matching name calls Get(), it will return this override value
 // instead of performing lazy initialization. This is useful for testing and dependency injection.
 // The key should match the name assigned to the lazy value via WithName().
 func WithValueOverride[T any](ctx context.Context, key string, value T) context.Context {
 	return contexts.WithValue[contextKey, T](ctx, contextKey(key), value)
+}
+
+// SetValueOverride configures a value override using a callback setter function.
+// This is used with lazy value overrides to set override values without directly
+// manipulating a context. The setter function is typically provided by lazy override
+// mechanisms to store the key-value pair for later retrieval.
+//
+// Parameters:
+//   - key: The name of the lazy value to override (must match the name set via WithName)
+//   - value: The override value to use instead of lazy initialization
+//   - f: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetValueOverride[T any](key string, value T, f func(any, any)) {
+	if f == nil {
+		return
+	}
+
+	f(contextKey(key), value)
 }
 
 // WithValueOverrideProvider stores a provider function in the context that will override
@@ -110,6 +159,23 @@ func WithValueOverrideProvider[T any](
 	return contexts.WithValue[contextKey, func(ctx context.Context) T](ctx, contextKey(key), provider)
 }
 
+// SetValueOverrideProvider configures a provider function override using a callback setter function.
+// This is used with lazy value overrides to set override providers without directly
+// manipulating a context. The setter function is typically provided by lazy override
+// mechanisms to store the key-value pair for later retrieval.
+//
+// Parameters:
+//   - key: The name of the lazy value to override (must match the name set via WithName)
+//   - provider: Function that will be invoked to provide the override value
+//   - f: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetValueOverrideProvider[T any](key string, provider func(ctx context.Context) T, f func(any, any)) {
+	if f == nil {
+		return
+	}
+
+	f(contextKey(key), provider)
+}
+
 // WithValueOverrideErrorProvider stores a provider function (that can return errors) in the
 // context that will override a named lazy value. When a lazy value with the matching name calls
 // Get(), it will invoke this provider function instead of performing lazy initialization.
@@ -119,6 +185,23 @@ func WithValueOverrideErrorProvider[T any](
 	ctx context.Context, key string, provider func(ctx context.Context) (T, error),
 ) context.Context {
 	return contexts.WithValue[contextKey, func(ctx context.Context) (T, error)](ctx, contextKey(key), provider)
+}
+
+// SetValueOverrideErrorProvider configures an error-returning provider function override using a callback
+// setter function. This is used with lazy value overrides to set override providers (that can return errors)
+// without directly manipulating a context. The setter function is typically provided by lazy override
+// mechanisms to store the key-value pair for later retrieval.
+//
+// Parameters:
+//   - key: The name of the lazy value to override (must match the name set via WithName)
+//   - provider: Function that will be invoked to provide the override value (may return an error)
+//   - f: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetValueOverrideErrorProvider[T any](key string, provider func(ctx context.Context) (T, error), f func(any, any)) {
+	if f == nil {
+		return
+	}
+
+	f(contextKey(key), provider)
 }
 
 // WithMultipleValues stores multiple override values in the context at once.
@@ -135,6 +218,25 @@ func WithMultipleValues(ctx context.Context, values map[string]any) context.Cont
 	}
 
 	return contexts.WithMultipleValues(ctx, vals)
+}
+
+// SetMultipleValues configures multiple value overrides using a callback setter function.
+// This is a convenience function for setting multiple overrides at once without directly
+// manipulating a context. The setter function is typically provided by lazy override
+// mechanisms to store each key-value pair for later retrieval.
+//
+// Parameters:
+//   - ctx: Context (currently unused, but kept for consistency with WithMultipleValues)
+//   - values: Map of override names to values (can be static values, providers, or error-returning providers)
+//   - f: Callback function that stores each key-value pair. If nil, the function returns early.
+func SetMultipleValues(ctx context.Context, values map[string]any, f func(any, any)) {
+	if f == nil {
+		return
+	}
+
+	for k, v := range values {
+		f(contextKey(k), v)
+	}
 }
 
 // isTestingEnabled checks if testing mode is enabled in the context.

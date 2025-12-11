@@ -33,6 +33,26 @@ func WithEnvOverride(ctx context.Context, key string, value string) context.Cont
 	return contexts.WithValue[envContextKey, string](contexts.EnsureContext(ctx), envContextKey(key), value)
 }
 
+// SetEnvOverride configures a single environment variable override using a callback setter function.
+// This is used with lazy value overrides to set environment variable overrides without directly
+// manipulating a context. The set function is typically provided by lazy override mechanisms
+// (e.g., lazy.SetValueOverride) to store the value for later retrieval.
+//
+// Parameters:
+//   - key: The environment variable name to override
+//   - value: The override value to use instead of the actual environment variable
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+//
+// This function is typically used in conjunction with lazy value override systems
+// where context values need to be configured before a context is created.
+func SetEnvOverride(key string, value string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(envContextKey(key), value)
+}
+
 // WithEnvOverrides returns a new context with multiple environment variable overrides.
 // This is a more efficient version of calling WithEnvOverride multiple times, as it
 // stores all overrides in a single context operation.
@@ -64,6 +84,26 @@ func WithEnvOverrides(ctx context.Context, values map[string]string) context.Con
 	}
 
 	return contexts.WithMultipleValues[envContextKey](contexts.EnsureContext(ctx), vals)
+}
+
+// SetEnvOverrides configures multiple environment variable overrides using a callback setter function.
+// This is a more efficient version of calling SetEnvOverride multiple times. The set function is
+// typically provided by lazy override mechanisms to store each key-value pair for later retrieval.
+//
+// Parameters:
+//   - values: Map of environment variable names to override values
+//   - set: Callback function that stores each key-value pair. If nil, the function returns early.
+//
+// This function is typically used in conjunction with lazy value override systems
+// where context values need to be configured before a context is created.
+func SetEnvOverrides(values map[string]string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	for k, v := range values {
+		set(envContextKey(k), v)
+	}
 }
 
 // getEnvOverride retrieves an environment variable override from the context.

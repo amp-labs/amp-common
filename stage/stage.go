@@ -48,6 +48,22 @@ func WithStage(ctx context.Context, stage Stage) context.Context {
 	return contexts.WithValue[contextKey, Stage](ctx, stageContextKey, stage)
 }
 
+// SetStage configures the deployment stage using a callback setter function.
+// This is used with lazy value overrides to set the stage without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - stage: The deployment stage (Local, Test, Dev, Staging, Prod)
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetStage(stage Stage, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(stageContextKey, stage)
+}
+
 // Current returns the current running environment.
 // The stage is determined once on first call and cached.
 // The value can be overridden using a context, which is useful for unit testing.

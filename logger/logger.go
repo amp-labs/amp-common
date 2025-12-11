@@ -155,6 +155,22 @@ func WithMuted(ctx context.Context, muted bool) context.Context {
 	return context.WithValue(ctx, contextKey("mute"), muted)
 }
 
+// SetMuted configures the muted flag using a callback setter function.
+// This is used with lazy value overrides to suppress logging without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - muted: Whether to suppress all log output
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetMuted(muted bool, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("mute"), muted)
+}
+
 // isMuted checks if the context has the muted flag set to true.
 // Returns false if the context is nil or if the mute flag is not set.
 // This is used internally by getBaseLogger to determine whether to return
@@ -185,6 +201,21 @@ func WithSensitive(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextKey("sensitive"), true)
 }
 
+// SetSensitive configures the sensitive flag using a callback setter function.
+// This is used with lazy value overrides to mark logs as sensitive without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetSensitive(set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("sensitive"), true)
+}
+
 // WithCustomerId adds a customer ID to the context.
 func WithCustomerId(ctx context.Context, customerId string) context.Context {
 	if ctx == nil {
@@ -192,6 +223,22 @@ func WithCustomerId(ctx context.Context, customerId string) context.Context {
 	}
 
 	return context.WithValue(ctx, contextKey("customer_id"), customerId)
+}
+
+// SetCustomerId configures the customer ID using a callback setter function.
+// This is used with lazy value overrides to set the customer ID without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - customerId: The customer identifier to include in logs
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetCustomerId(customerId string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("customer_id"), customerId)
 }
 
 // GetCustomerId returns the customer ID from the context. If the customer ID is not provided,
@@ -223,6 +270,22 @@ func WithSubsystem(ctx context.Context, subsystem string) context.Context {
 	return context.WithValue(ctx, contextKey("subsystem"), subsystem)
 }
 
+// SetSubsystem configures the subsystem name using a callback setter function.
+// This is used with lazy value overrides to set the subsystem without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - subsystem: The subsystem name to include in logs
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetSubsystem(subsystem string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("subsystem"), subsystem)
+}
+
 // WithSlackNotification adds a flag to the context to indicate that a Slack
 // notification should be sent.
 func WithSlackNotification(ctx context.Context) context.Context {
@@ -231,6 +294,21 @@ func WithSlackNotification(ctx context.Context) context.Context {
 	}
 
 	return context.WithValue(ctx, contextKey("slack"), true)
+}
+
+// SetSlackNotification configures the Slack notification flag using a callback setter function.
+// This is used with lazy value overrides to enable Slack notifications without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetSlackNotification(set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("slack"), true)
 }
 
 // WithSlackChannel adds a Slack channel to the context. The webhook
@@ -244,6 +322,22 @@ func WithSlackChannel(ctx context.Context, channel string) context.Context {
 	return context.WithValue(
 		context.WithValue(ctx, contextKey("slack"), true),
 		contextKey("slack_channel"), channel)
+}
+
+// SetSlackChannel configures the Slack channel using a callback setter function.
+// This is used with lazy value overrides to set the Slack channel without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - channel: The Slack channel for notifications
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetSlackChannel(channel string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("slack_channel"), channel)
 }
 
 // GetSlackNotification returns true if a Slack notification should be sent.
@@ -306,6 +400,22 @@ func WithRoutingToBuilder(ctx context.Context, projectId string) context.Context
 	return context.WithValue(ctx, logProjectContextKey(), projectId)
 }
 
+// SetRoutingToBuilder configures the project ID for log routing using a callback setter function.
+// This is used with lazy value overrides to set the project ID without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - projectId: The project ID for log routing to the builder
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetRoutingToBuilder(projectId string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(logProjectContextKey(), projectId)
+}
+
 // GetRoutingToBuilder returns the project ID from the context. If the
 // project ID is not provided, an empty string will be returned, along with
 // a false value. Otherwise, the project ID will be returned along with
@@ -359,6 +469,22 @@ func WithRequestId(ctx context.Context, requestId string) context.Context {
 	}
 
 	return context.WithValue(ctx, contextKey("request_id"), requestId)
+}
+
+// SetRequestId configures the request ID using a callback setter function.
+// This is used with lazy value overrides to set the Kong request ID without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - requestId: The Kong request ID to include in logs
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetRequestId(requestId string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("request_id"), requestId)
 }
 
 // GetRequestId returns the request ID from the context. If the request ID is not provided,

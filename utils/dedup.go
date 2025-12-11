@@ -1,5 +1,5 @@
 // Package utils provides miscellaneous utility functions for channels, context, JSON, sleep, dedup, and more.
-package utils
+package utils //nolint:revive // utils is an appropriate package name for utility functions
 
 import (
 	"github.com/amp-labs/amp-common/collectable"

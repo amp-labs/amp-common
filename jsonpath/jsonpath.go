@@ -31,6 +31,8 @@ var (
 )
 
 type PathSegment struct {
+	// Key is the key name of the segment.
+	// Example: for $['address']['city'], the segments are "address" and "city".
 	Key string
 }
 

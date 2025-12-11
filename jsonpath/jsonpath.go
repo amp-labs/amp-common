@@ -1,9 +1,10 @@
-//nolint:godoclint // Package comment is correctly formatted
 // Package jsonpath provides utilities for working with JSONPath bracket notation.
 // This package supports a subset of JSONPath specifically designed for field mapping:
 // - Bracket notation: $['field']['nestedField']
 // - Configurable case-sensitive or case-insensitive key matching
 // - Path validation
+//
+//nolint:godoclint // Package comment is correctly formatted
 package jsonpath
 
 import (
@@ -29,14 +30,14 @@ var (
 	ErrPathCannotCreateNested  = errors.New("cannot create nested path")
 )
 
-type pathSegment struct {
-	key string
+type PathSegment struct {
+	Key string
 }
 
 // ParsePath parses a JSONPath bracket notation string into segments.
 // Example: ParsePath("$['mailingaddress']['street']") returns
-// []pathSegment{{key: "mailingaddress"}, {key: "street"}}, nil.
-func ParsePath(path string) ([]pathSegment, error) {
+// []PathSegment{{Key: "mailingaddress"}, {Key: "street"}}, nil.
+func ParsePath(path string) ([]PathSegment, error) {
 	if path == "" {
 		return nil, ErrPathEmpty
 	}
@@ -95,9 +96,9 @@ func ParsePath(path string) ([]pathSegment, error) {
 		return nil, fmt.Errorf("%w: %s", ErrPathInvalidSyntax, path)
 	}
 
-	segments := make([]pathSegment, len(matches))
+	segments := make([]PathSegment, len(matches))
 	for idx, match := range matches {
-		segments[idx] = pathSegment{key: match[1]}
+		segments[idx] = PathSegment{Key: match[1]}
 	}
 
 	return segments, nil
@@ -121,27 +122,27 @@ func GetValue(input map[string]any, path string, caseInsensitive bool) (any, err
 			if current == nil {
 				return nil, fmt.Errorf(
 					"%w: segment %d ('%s'), parent is null",
-					ErrPathSegmentNotFound, segmentIndex, segment.key,
+					ErrPathSegmentNotFound, segmentIndex, segment.Key,
 				)
 			}
 
 			return nil, fmt.Errorf(
 				"%w: segment %d ('%s'), parent is type %T",
-				ErrPathCannotTraverse, segmentIndex, segment.key, current,
+				ErrPathCannotTraverse, segmentIndex, segment.Key, current,
 			)
 		}
 
 		// Lookup with configurable case sensitivity
-		value, exists := lookupKey(currentMap, segment.key, caseInsensitive)
+		value, exists := lookupKey(currentMap, segment.Key, caseInsensitive)
 		if !exists {
-			return nil, fmt.Errorf("%w: key '%s' at segment %d", ErrPathKeyNotFound, segment.key, segmentIndex)
+			return nil, fmt.Errorf("%w: key '%s' at segment %d", ErrPathKeyNotFound, segment.Key, segmentIndex)
 		}
 
 		// Handle null in middle of path
 		if value == nil && segmentIndex < len(segments)-1 {
 			return nil, fmt.Errorf(
 				"%w: segment %d ('%s'), parent is null",
-				ErrPathSegmentNotFound, segmentIndex+1, segments[segmentIndex+1].key,
+				ErrPathSegmentNotFound, segmentIndex+1, segments[segmentIndex+1].Key,
 			)
 		}
 
@@ -190,22 +191,22 @@ func AddPath(input map[string]any, path string, value any) error {
 	for idx := range len(segments) - 1 {
 		segment := segments[idx]
 
-		if existing, exists := current[segment.key]; exists {
+		if existing, exists := current[segment.Key]; exists {
 			if existingMap, ok := existing.(map[string]any); ok {
 				current = existingMap
 			} else {
-				return fmt.Errorf("%w: segment '%s' exists but is type %T", ErrPathCannotCreateNested, segment.key, existing)
+				return fmt.Errorf("%w: segment '%s' exists but is type %T", ErrPathCannotCreateNested, segment.Key, existing)
 			}
 		} else {
 			newMap := make(map[string]any)
-			current[segment.key] = newMap
+			current[segment.Key] = newMap
 			current = newMap
 		}
 	}
 
 	// Set final value
 	finalSegment := segments[len(segments)-1]
-	current[finalSegment.key] = value
+	current[finalSegment.Key] = value
 
 	return nil
 }
@@ -235,14 +236,14 @@ func UpdateValue(data map[string]any, path string, value any) error {
 		segment := segments[idx]
 
 		// Use case-insensitive lookup
-		nextValue, exists := lookupKey(current, segment.key, true)
+		nextValue, exists := lookupKey(current, segment.Key, true)
 		if !exists {
-			return fmt.Errorf("%w: segment '%s' does not exist", ErrPathSegmentNotFound, segment.key)
+			return fmt.Errorf("%w: segment '%s' does not exist", ErrPathSegmentNotFound, segment.Key)
 		}
 
 		nextMap, ok := nextValue.(map[string]any)
 		if !ok {
-			return fmt.Errorf("%w: segment '%s' is not a map", ErrPathCannotTraverse, segment.key)
+			return fmt.Errorf("%w: segment '%s' is not a map", ErrPathCannotTraverse, segment.Key)
 		}
 
 		current = nextMap
@@ -252,14 +253,14 @@ func UpdateValue(data map[string]any, path string, value any) error {
 	finalSegment := segments[len(segments)-1]
 
 	// Try exact match first
-	if _, exists := current[finalSegment.key]; exists {
-		current[finalSegment.key] = value
+	if _, exists := current[finalSegment.Key]; exists {
+		current[finalSegment.Key] = value
 
 		return nil
 	}
 
 	// Try case-insensitive match
-	lowerKey := strings.ToLower(finalSegment.key)
+	lowerKey := strings.ToLower(finalSegment.Key)
 	for k := range current {
 		if strings.ToLower(k) == lowerKey {
 			current[k] = value // Update using original key casing
@@ -268,7 +269,7 @@ func UpdateValue(data map[string]any, path string, value any) error {
 		}
 	}
 
-	return fmt.Errorf("%w: key '%s'", ErrPathKeyNotFound, finalSegment.key)
+	return fmt.Errorf("%w: key '%s'", ErrPathKeyNotFound, finalSegment.Key)
 }
 
 // ValidatePath validates that a string is valid JSONPath bracket notation.
@@ -324,7 +325,7 @@ func ExtractRootField(fieldName string) string {
 	}
 
 	// Return the first segment (root field)
-	return segments[0].key
+	return segments[0].Key
 }
 
 // RemovePath removes a value at a nested path from a map, cleaning up empty parent objects.
@@ -368,7 +369,7 @@ func RemovePath(data map[string]any, path string) (bool, error) {
 		}
 
 		segment := segments[segmentIdx]
-		key := segment.key
+		key := segment.Key
 
 		// If this is the final segment, remove the key (case-insensitive)
 		if segmentIdx == len(segments)-1 {

@@ -1,4 +1,16 @@
 // Package lazy provides utilities for lazy initialization of values with thread-safe guarantees.
+//
+// The package provides four main types:
+//   - Of[T]: Simple lazy initialization without context or error handling
+//   - OfErr[T]: Lazy initialization that can return errors (errors are NOT memoized)
+//   - OfCtx[T]: Context-aware lazy initialization with support for named values and overrides
+//   - OfCtxErr[T]: Context-aware lazy initialization with error handling (errors are NOT memoized)
+//
+// Context-aware types (OfCtx and OfCtxErr) support dependency injection and testing via:
+//   - Named values using WithName()
+//   - Context-based overrides using WithValueOverride(), WithValueOverrideProvider(), etc.
+//   - Testing mode using WithTestingEnabled() to preserve create functions for test isolation
+//   - Lifecycle control using WithLifecyclePreserved() to control context cancellation behavior
 package lazy
 
 import (
@@ -59,8 +71,9 @@ func (t *Of[T]) Get() T { //nolint:ireturn
 	return zero
 }
 
-// Set lets you mutate the value. This is useful in some cases,
-// but you should prefer the Get + callback pattern.
+// Set lets you mutate the value directly, bypassing lazy initialization.
+// This is useful in some cases (e.g., setting up test fixtures), but you should
+// prefer the Get + callback pattern for normal usage.
 func (t *Of[T]) Set(value T) {
 	t.create.Store(nil)
 	t.value.Store(&value)

@@ -1,9 +1,10 @@
-//nolint:godoclint // Package comment is correctly formatted
 // Package jsonpath provides utilities for working with JSONPath bracket notation.
 // This package supports a subset of JSONPath specifically designed for field mapping:
 // - Bracket notation: $['field']['nestedField']
 // - Configurable case-sensitive or case-insensitive key matching
 // - Path validation
+//
+//nolint:godoclint // Package comment is correctly formatted
 package jsonpath
 
 import (

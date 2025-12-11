@@ -73,8 +73,9 @@ func (t *OfErr[T]) Get() (T, error) { //nolint:ireturn
 	return zero, nil
 }
 
-// Set lets you mutate the value. This is useful in some cases,
-// but you should prefer the Get + callback pattern.
+// Set lets you mutate the value directly, bypassing lazy initialization.
+// This is useful in some cases (e.g., setting up test fixtures), but you should
+// prefer the Get + callback pattern for normal usage.
 func (t *OfErr[T]) Set(value T) {
 	atomic.StoreUint32(&t.done, 1)
 	t.create.Store(nil)
@@ -114,6 +115,10 @@ func (t *OfErr[T]) doSlowOrError(f func() error) error {
 	return nil
 }
 
+// NewErr creates a new lazy value that can return an error during initialization.
+// The callback will be called later, when the value is first accessed. If the
+// callback returns an error, the value is NOT memoized, and the callback will be
+// invoked again on the next Get call.
 func NewErr[T any](f func() (T, error)) *OfErr[T] {
 	lazy := &OfErr[T]{}
 	lazy.create.Store(&f)

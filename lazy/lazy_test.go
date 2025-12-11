@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const successValue = "success"
+
 func TestLazy(t *testing.T) {
 	t.Parallel()
 
@@ -660,7 +662,7 @@ func TestLazyMultiplePanics(t *testing.T) {
 			panic("intentional panic")
 		}
 
-		return "success"
+		return successValue
 	})
 
 	// First call should panic
@@ -681,13 +683,13 @@ func TestLazyMultiplePanics(t *testing.T) {
 	shouldPanic.Store(false)
 
 	result := val.Get()
-	assert.Equal(t, "success", result)
+	assert.Equal(t, successValue, result)
 	assert.Equal(t, 3, callCount)
 	assert.True(t, val.Initialized())
 
 	// Fourth call should not invoke callback
 	result = val.Get()
-	assert.Equal(t, "success", result)
+	assert.Equal(t, successValue, result)
 	assert.Equal(t, 3, callCount)
 }
 
@@ -705,7 +707,7 @@ func TestLazyErrMultiplePanics(t *testing.T) {
 			panic("intentional panic")
 		}
 
-		return "success", nil
+		return successValue, nil
 	})
 
 	// First call should panic
@@ -727,13 +729,13 @@ func TestLazyErrMultiplePanics(t *testing.T) {
 
 	result, err := val.Get()
 	require.NoError(t, err)
-	assert.Equal(t, "success", result)
+	assert.Equal(t, successValue, result)
 	assert.Equal(t, 3, callCount)
 	assert.True(t, val.Initialized())
 
 	// Fourth call should not invoke callback
 	result, err = val.Get()
 	require.NoError(t, err)
-	assert.Equal(t, "success", result)
+	assert.Equal(t, successValue, result)
 	assert.Equal(t, 3, callCount)
 }

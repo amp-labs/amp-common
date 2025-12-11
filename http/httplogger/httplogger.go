@@ -86,6 +86,25 @@ func WithArchive(ctx context.Context, archive bool) context.Context {
 	return contexts.WithValue[contextKey, bool](ctx, contextKeyArchive, archive)
 }
 
+// SetArchive configures the archive flag using a callback setter function.
+// This is used with lazy value overrides to set the archive flag without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms (e.g., lazy.SetValueOverride) to store the value for later retrieval.
+//
+// Parameters:
+//   - archive: Whether to mark logs for archival storage
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+//
+// This function is typically used in conjunction with lazy value override systems
+// where context values need to be configured before a context is created.
+func SetArchive(archive bool, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKeyArchive, archive)
+}
+
 // shouldArchive checks if the context has been marked for log archival.
 // Returns true if the archive flag is set and true, false otherwise.
 func shouldArchive(ctx context.Context) bool {

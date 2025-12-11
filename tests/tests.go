@@ -74,6 +74,38 @@ func GetUniqueContext(t *testing.T) context.Context {
 	})
 }
 
+// SetTestId configures the test identifier using a callback setter function.
+// This is used with lazy value overrides to set the test ID without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - id: The unique test identifier (typically a UUID with "test-" prefix)
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetTestId(id string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(testIdKey, id)
+}
+
+// SetTestName configures the test name using a callback setter function.
+// This is used with lazy value overrides to set the test name without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - name: The test name including subtest path (e.g., "TestMyFeature/subtest")
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetTestName(name string, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(testNameKey, name)
+}
+
 // GetTestName retrieves the test name from the context.
 // The test name is the full test path including any subtests (e.g., "TestMyFeature/subtest").
 //

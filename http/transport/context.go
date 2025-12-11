@@ -20,6 +20,25 @@ func WithTransport(ctx context.Context, transport http.RoundTripper) context.Con
 	return context.WithValue(ctx, contextKeyTransport, transport)
 }
 
+// SetTransport configures a custom HTTP transport using a callback setter function.
+// This is used with lazy value overrides to set the transport without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms (e.g., lazy.SetValueOverride) to store the value for later retrieval.
+//
+// Parameters:
+//   - transport: The http.RoundTripper to use for HTTP requests
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+//
+// This function is typically used in conjunction with lazy value override systems
+// where context values need to be configured before a context is created.
+func SetTransport(transport http.RoundTripper, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKeyTransport, transport)
+}
+
 // getTransportFromContext extracts a custom http.Transport from the context.
 func getTransportFromContext(ctx context.Context) http.RoundTripper {
 	if ctx == nil {

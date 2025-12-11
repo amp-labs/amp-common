@@ -144,6 +144,25 @@ func WithSkipLogging(ctx context.Context, skip bool) context.Context {
 	return contexts.WithValue[contextKey, bool](ctx, skipLoggingKey, skip)
 }
 
+// SetSkipLogging configures the skip logging flag using a callback setter function.
+// This is used with lazy value overrides to set the skip logging flag without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms (e.g., lazy.SetValueOverride) to store the value for later retrieval.
+//
+// Parameters:
+//   - skip: Whether to skip logging for HTTP requests
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+//
+// This function is typically used in conjunction with lazy value override systems
+// where context values need to be configured before a context is created.
+func SetSkipLogging(skip bool, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(skipLoggingKey, skip)
+}
+
 // IsSkipLogging checks whether the skip logging flag is set in the context.
 // Returns true if logging should be skipped, false otherwise.
 // If the context key is not found, defaults to false (logging enabled).

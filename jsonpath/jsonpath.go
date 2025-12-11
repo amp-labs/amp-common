@@ -33,10 +33,10 @@ type pathSegment struct {
 	key string
 }
 
-// parsePath parses a JSONPath bracket notation string into segments.
-// Example: parsePath("$['mailingaddress']['street']") returns
+// ParsePath parses a JSONPath bracket notation string into segments.
+// Example: ParsePath("$['mailingaddress']['street']") returns
 // []pathSegment{{key: "mailingaddress"}, {key: "street"}}, nil.
-func parsePath(path string) ([]pathSegment, error) {
+func ParsePath(path string) ([]pathSegment, error) {
 	if path == "" {
 		return nil, ErrPathEmpty
 	}
@@ -108,7 +108,7 @@ func parsePath(path string) ([]pathSegment, error) {
 // Returns error if a key in the path is not found or type mismatch occurs.
 // If caseInsensitive is true, key matching is case-insensitive with exact matches preferred.
 func GetValue(input map[string]any, path string, caseInsensitive bool) (any, error) {
-	segments, err := parsePath(path)
+	segments, err := ParsePath(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse path: %w", err)
 	}
@@ -175,7 +175,7 @@ func lookupKey(m map[string]any, key string, caseInsensitive bool) (any, bool) {
 // AddPath sets a value at a nested path, creating intermediate objects as needed.
 // Modifies the input map in place.
 func AddPath(input map[string]any, path string, value any) error {
-	segments, err := parsePath(path)
+	segments, err := ParsePath(path)
 	if err != nil {
 		return fmt.Errorf("failed to parse path: %w", err)
 	}
@@ -219,7 +219,7 @@ func UpdateValue(data map[string]any, path string, value any) error {
 		return ErrMapNil
 	}
 
-	segments, err := parsePath(path)
+	segments, err := ParsePath(path)
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func ValidatePath(path string) error {
 		return ErrPathMustStartWithDollar
 	}
 
-	segments, err := parsePath(path)
+	segments, err := ParsePath(path)
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func ExtractRootField(fieldName string) string {
 	}
 
 	// Parse the path to extract segments
-	segments, err := parsePath(fieldName)
+	segments, err := ParsePath(fieldName)
 	if err != nil || len(segments) == 0 {
 		// Fallback to original if parsing fails
 		return fieldName
@@ -350,7 +350,7 @@ func RemovePath(data map[string]any, path string) (bool, error) {
 		return false, ErrMapNil
 	}
 
-	segments, err := parsePath(path)
+	segments, err := ParsePath(path)
 	if err != nil {
 		return false, err
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/amp-labs/amp-common/lazy"
 	"github.com/amp-labs/amp-common/shutdown"
 	"github.com/amp-labs/amp-common/tests"
+	"github.com/neilotoole/slogt"
 )
 
 // Used for logging customer-specific messages (so the caller can know which part of the system is generating the log).
@@ -605,6 +606,22 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 	// Get the default logger
 	logger := slog.Default()
 
+	// Special test logic
+	testInfo, found := tests.GetTestInfo(ctx)
+	if found {
+		if testInfo.Test != nil {
+			logger = slogt.New(testInfo.Test)
+		}
+
+		if len(testInfo.Name) > 0 {
+			logger = logger.With("test-name", testInfo.Name)
+		}
+
+		if len(testInfo.Id) > 0 {
+			logger = logger.With("test-id", testInfo.Id)
+		}
+	}
+
 	// Add the subsystem name, and the pod name.
 	logger = logger.With(
 		"subsystem", GetSubsystem(ctx),
@@ -613,17 +630,6 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 	requestId, found := GetRequestId(ctx)
 	if found {
 		logger = logger.With("request-id", requestId)
-	}
-
-	testInfo, found := tests.GetTestInfo(ctx)
-	if found {
-		if len(testInfo.Name) > 0 {
-			logger = logger.With("test-name", testInfo.Name)
-		}
-
-		if len(testInfo.Id) > 0 {
-			logger = logger.With("test-id", testInfo.Id)
-		}
 	}
 
 	// Check for key-values to add to the logger.

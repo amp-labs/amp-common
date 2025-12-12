@@ -153,8 +153,8 @@ func TestParsePath(t *testing.T) {
 			}
 
 			for idx, wantKey := range testCase.wantKeys {
-				if segments[idx].key != wantKey {
-					t.Errorf("parsePath() segment[%d].key = %q, want %q", idx, segments[idx].key, wantKey)
+				if segments[idx].Key != wantKey {
+					t.Errorf("parsePath() segment[%d].Key = %q, want %q", idx, segments[idx].Key, wantKey)
 				}
 			}
 		})

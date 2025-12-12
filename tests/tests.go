@@ -43,6 +43,11 @@ const (
 	// The test name is obtained from testing.T.Name() and includes the full test path
 	// (e.g., "TestMyFeature/subtest_name").
 	testNameKey contextKey = "testName"
+
+	// testTestKey is the context key for storing the testing.T instance.
+	// This allows test utilities and helpers to access the original testing.T object
+	// for operations like t.Helper(), t.Log(), t.Error(), etc.
+	testTestKey contextKey = "testTest"
 )
 
 // GetUniqueContext creates a new context derived from t.Context() that includes:
@@ -69,6 +74,7 @@ func GetUniqueContext(t *testing.T) context.Context {
 	t.Helper()
 
 	return contexts.WithMultipleValues[contextKey](t.Context(), map[contextKey]any{
+		testTestKey: t,
 		testIdKey:   "test-" + uuid.New().String(),
 		testNameKey: t.Name(),
 	})
@@ -106,6 +112,24 @@ func SetTestName(name string, set func(any, any)) {
 	set(testNameKey, name)
 }
 
+// SetTestTest configures the testing.T instance using a callback setter function.
+// This is used with lazy value overrides to set the test object without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - t: The testing.T instance from the current test
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetTestTest(t *testing.T, set func(any, any)) {
+	t.Helper()
+
+	if set == nil {
+		return
+	}
+
+	set(testTestKey, t)
+}
+
 // GetTestName retrieves the test name from the context.
 // The test name is the full test path including any subtests (e.g., "TestMyFeature/subtest").
 //
@@ -140,12 +164,31 @@ func GetTestId(ctx context.Context) (string, bool) {
 	return contexts.GetValue[contextKey, string](ctx, testIdKey)
 }
 
+// GetTest retrieves the testing.T instance from the context.
+// The testing.T instance provides access to test utilities like Helper(), Error(), and Log().
+//
+// Returns:
+//   - *testing.T: The testing.T instance if present in the context
+//   - bool: true if the testing.T was found, false otherwise
+//
+// Example:
+//
+//	t, ok := tests.GetTest(ctx)
+//	if ok {
+//	    t.Helper()
+//	    t.Logf("Performing operation in test: %s", t.Name())
+//	}
+func GetTest(ctx context.Context) (*testing.T, bool) {
+	return contexts.GetValue[contextKey, *testing.T](ctx, testTestKey)
+}
+
 // Info represents test metadata containing both the unique identifier and test name.
 // This struct is JSON-serializable, making it useful for logging or sending test
 // information to external systems.
 type Info struct {
-	Id   string `json:"id"`   // Unique test identifier (UUID with "test-" prefix)
-	Name string `json:"name"` // Full test name including subtest path
+	Test *testing.T `json:"-"`
+	Id   string     `json:"id"`   // Unique test identifier (UUID with "test-" prefix)
+	Name string     `json:"name"` // Full test name including subtest path
 }
 
 // GetTestInfo retrieves both the test ID and test name from the context as a single Info struct.
@@ -167,12 +210,14 @@ type Info struct {
 func GetTestInfo(ctx context.Context) (Info, bool) {
 	name, nameOk := GetTestName(ctx)
 	id, idOk := GetTestId(ctx)
+	t, tOk := GetTest(ctx)
 
-	if !nameOk && !idOk {
+	if !nameOk && !idOk && !tOk {
 		return Info{}, false
 	}
 
 	return Info{
+		Test: t,
 		Id:   id,
 		Name: name,
 	}, true

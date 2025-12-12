@@ -20,17 +20,43 @@ import (
 	"github.com/neilotoole/slogt"
 )
 
-// Used for logging customer-specific messages (so the caller can know which part of the system is generating the log).
-// Using atomic.Value to ensure thread-safe reads and writes.
+// subsystem stores the default subsystem name for the application.
+// This identifies which service or component is generating logs (e.g., "api", "temporal", "messenger").
+//
+// The subsystem value can be overridden on a per-context basis using WithSubsystem().
+// When no context override is present, GetSubsystem() returns this default value.
+//
+// Thread-safety: Uses atomic.Value for lock-free concurrent reads and writes.
+// This allows the subsystem to be safely read from multiple goroutines while
+// ConfigureLoggingWithOptions may be updating it.
 var subsystem atomic.Value //nolint:gochecknoglobals
 
 // configMutex protects concurrent calls to ConfigureLoggingWithOptions.
-// This is necessary because the function modifies global state (slog.SetDefault and log.Default).
+//
+// ConfigureLoggingWithOptions modifies global state including:
+//   - The default slog logger (via slog.SetDefault)
+//   - The legacy log package's default logger (via log.Default)
+//   - The default subsystem value (via atomic.Value.Store)
+//
+// Without this mutex, concurrent configuration calls could cause race conditions
+// where loggers are partially configured or configuration changes interleave incorrectly.
+// The mutex ensures that each configuration operation completes atomically from
+// the perspective of other goroutines.
+//
+// Note: This mutex only protects configuration changes. Normal logging operations
+// do not require this mutex and can proceed concurrently.
 var configMutex sync.Mutex //nolint:gochecknoglobals
 
-// It's considered good practice to use unexported custom types for context keys.
-// This avoids collisions with other packages that might be using the same string
-// values for their own keys.
+// contextKey is an unexported type used for storing values in context.Context.
+//
+// Using a custom unexported type instead of strings prevents key collisions with
+// other packages. Even if another package uses the same string value (like "customer_id"),
+// they will have different underlying types and won't conflict in the context map.
+//
+// This follows the best practice outlined in the context package documentation.
+// All context keys in this package (mute, sensitive, customer_id, subsystem, etc.)
+// use this type to ensure they are unique and cannot be accidentally accessed by
+// external code.
 type contextKey string
 
 // Fatal logs an error message and exits the application.
@@ -44,24 +70,62 @@ func Fatal(msg string, args ...any) {
 	os.Exit(1)
 }
 
-// Options is used to configure logging.
+// Options is used to configure logging behavior and output format.
+// These options control both the modern slog logger and the legacy log package
+// that may be used by third-party dependencies.
 type Options struct {
-	Subsystem   string
-	JSON        bool
-	MinLevel    slog.Level
+	// Subsystem identifies the component or service generating the logs.
+	// This is included in all log messages to help with filtering and routing.
+	// For example: "api", "temporal", "messenger".
+	Subsystem string
+
+	// JSON determines the output format. When true, logs are formatted as JSON
+	// (using slog.JSONHandler), suitable for structured log aggregation systems.
+	// When false, logs use human-readable text format (slog.TextHandler).
+	JSON bool
+
+	// MinLevel is the minimum log level for the slog logger.
+	// Log messages below this level will be discarded.
+	// Common values: slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError.
+	MinLevel slog.Level
+
+	// LegacyLevel is the minimum log level for the legacy log package.
+	// This is used when third-party packages call the standard library's log package.
+	// Those log entries are redirected to slog at this level.
 	LegacyLevel slog.Level
-	Output      io.Writer
+
+	// Output is the destination for log output. If nil, defaults to os.Stdout.
+	// Can be set to os.Stderr, a file, or any io.Writer implementation.
+	Output io.Writer
 }
 
-// ConfigureLoggingWithOptions configures logging for the application.
-// It returns the default logger.
-// This function is thread-safe but modifies global state, so concurrent calls
-// will be serialized.
-func ConfigureLoggingWithOptions(opts Options) *slog.Logger {
-	// Protect against concurrent configuration changes
-	configMutex.Lock()
-	defer configMutex.Unlock()
-
+// CreateLoggerHandler creates and configures a slog.Handler based on the provided options.
+// This is the core function that determines the log output format (JSON vs text) and
+// filtering level.
+//
+// The handler can be used to create multiple logger instances or to configure the legacy
+// log package. It supports both JSON and text output formats:
+//   - JSON format is ideal for production environments with log aggregation systems
+//   - Text format is more readable for local development and debugging
+//
+// The returned handler respects the MinLevel setting - log messages below this level
+// will be filtered out and never reach the output destination.
+//
+// Parameters:
+//   - opts: Configuration options including output format, destination, and minimum level
+//
+// Returns:
+//   - A configured slog.Handler (either JSONHandler or TextHandler)
+//
+// Example:
+//
+//	handler := CreateLoggerHandler(Options{
+//	    JSON: true,
+//	    MinLevel: slog.LevelInfo,
+//	    Output: os.Stdout,
+//	})
+//	logger := slog.New(handler)
+func CreateLoggerHandler(opts Options) slog.Handler {
 	var handler slog.Handler
 
 	if opts.Output == nil {
@@ -79,6 +143,21 @@ func ConfigureLoggingWithOptions(opts Options) *slog.Logger {
 			Level: opts.MinLevel,
 		})
 	}
+
+	// Create a logger
+	return handler
+}
+
+// ConfigureLoggingWithOptions configures logging for the application.
+// It returns the default logger.
+// This function is thread-safe but modifies global state, so concurrent calls
+// will be serialized.
+func ConfigureLoggingWithOptions(opts Options) *slog.Logger {
+	// Protect against concurrent configuration changes
+	configMutex.Lock()
+	defer configMutex.Unlock()
+
+	handler := CreateLoggerHandler(opts)
 
 	// Create a logger
 	logger := slog.New(handler)
@@ -509,8 +588,20 @@ func GetRequestId(ctx context.Context) (string, bool) { //nolint:contextcheck
 	return val, true
 }
 
-// hostname will hold, in a k8s deployment context, the pod name.
-// For local development it will be the local machine name.
+// hostname holds the system's hostname, which serves different purposes depending on
+// the deployment environment:
+//   - In Kubernetes: Contains the pod name (e.g., "api-deployment-7d9f8b5c4-xh2k9")
+//   - In local development: Contains the machine's hostname
+//
+// This value is included in all log messages via the "pod" attribute, which helps with:
+//   - Correlating logs from specific pods in distributed systems
+//   - Debugging issues that only occur on specific instances
+//   - Understanding log volume distribution across replicas
+//
+// The value is computed lazily on first access and cached for the lifetime of the process.
+// If os.Hostname() fails, it returns "unknown" to ensure logging can continue.
+//
+// Thread-safety: Uses lazy.New for safe concurrent initialization.
 // nolint:gochecknoglobals
 var hostname = lazy.New[string](func() string {
 	h, err := os.Hostname()
@@ -528,6 +619,17 @@ func GetPodName() string {
 
 // getRealContext extracts the first non-nil context from a variadic list.
 // If no context is provided or all are nil, it returns context.Background().
+//
+// This is a helper function used by Get() to handle the optional context parameter.
+// It enables Get() to be called either as Get() or Get(ctx), making the API more
+// ergonomic while still supporting context-aware logging.
+//
+// The function performs a simple first-non-nil search:
+//   - If any non-nil context is found, it's returned immediately
+//   - If all contexts are nil or the list is empty, context.Background() is returned
+//
+// In practice, this function expects 0 or 1 context arguments. If multiple contexts
+// are provided, only the first non-nil one is used.
 func getRealContext(ctx ...context.Context) context.Context {
 	var realCtx context.Context
 
@@ -573,29 +675,69 @@ func IsSensitiveMessage(ctx context.Context) bool {
 // - WithAttrs and WithGroup return the same handler (no-op transformations).
 type nullHandler struct{}
 
+// Enabled always returns false to indicate that no log levels are enabled.
+// This causes the slog infrastructure to skip creating log records entirely,
+// providing efficient muting with zero overhead.
 func (n *nullHandler) Enabled(_ context.Context, _ slog.Level) bool {
 	return false
 }
 
+// Handle is a no-op that discards any log records passed to it.
+// In practice, this is rarely called because Enabled returns false,
+// but it must be implemented to satisfy the slog.Handler interface.
 func (n *nullHandler) Handle(_ context.Context, _ slog.Record) error {
 	return nil
 }
 
+// WithAttrs returns the same handler without modification.
+// Since all output is discarded, there's no need to track attributes.
 func (n *nullHandler) WithAttrs(_ []slog.Attr) slog.Handler {
 	return n
 }
 
+// WithGroup returns the same handler without modification.
+// Since all output is discarded, there's no need to track attribute groups.
 func (n *nullHandler) WithGroup(_ string) slog.Handler {
 	return n
 }
 
-// nullLogger is a logger that discards all output. It is returned by getBaseLogger
-// when the context has the muted flag set to true. This allows code to call logging
-// methods without producing any output, useful for suppressing logs from health checks
-// and other high-frequency operations.
+// nullLogger is a pre-configured logger that discards all output.
+//
+// This logger is returned by getBaseLogger when the context has the muted flag set
+// (via WithMuted(ctx, true)). It allows code to call logging methods normally without
+// producing any output, which is useful for:
+//   - Health check endpoints that would otherwise flood logs
+//   - High-frequency background operations
+//   - Test scenarios where log output should be suppressed
+//
+// The nullLogger uses nullHandler, which returns false from Enabled() for all log
+// levels. This causes the slog package to skip the work of constructing log records
+// entirely, making muted logging very efficient with near-zero overhead.
 var nullLogger = slog.New(&nullHandler{})
 
-// getBaseLogger returns a logger with the subsystem and pod name already set.
+// getBaseLogger returns a logger with standard contextual attributes pre-configured.
+//
+// This is an internal helper function that constructs the base logger used by Get().
+// It handles several important responsibilities:
+//
+// 1. Muted logging: If the context has isMuted(ctx) == true, returns nullLogger
+//    which discards all output. This is used to suppress logs from health checks
+//    and other high-frequency operations.
+//
+// 2. Test integration: When running in test mode (tests.GetTestInfo returns data),
+//    creates a test-aware logger using slogt that properly integrates with Go's
+//    testing package. Test loggers include test name and ID for easier debugging.
+//
+// 3. Standard attributes: Adds common attributes to all log messages:
+//    - subsystem: The service/component name (from GetSubsystem)
+//    - pod: The hostname/pod name (useful in Kubernetes deployments)
+//    - request-id: The Kong request ID if present (for request tracing)
+//
+// 4. Custom values: Includes any additional key-value pairs added via With()
+//
+// The returned logger is the foundation for all logging in the application, ensuring
+// consistent metadata across all log messages. Callers (particularly Get()) will
+// further augment this logger with customer-specific or route-specific attributes.
 func getBaseLogger(ctx context.Context) *slog.Logger {
 	// If the logger is muted, we still return a logger,
 	// but the logger is incapable of outputting anything.
@@ -610,7 +752,14 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 	testInfo, found := tests.GetTestInfo(ctx)
 	if found {
 		if testInfo.Test != nil {
-			logger = slogt.New(testInfo.Test)
+			logger = slogt.New(testInfo.Test, slogt.JSON(), slogt.Factory(func(w io.Writer) slog.Handler {
+				return CreateLoggerHandler(Options{
+					JSON:        true,
+					MinLevel:    slog.LevelDebug,
+					LegacyLevel: slog.LevelDebug,
+					Output:      w,
+				})
+			}))
 		}
 
 		if len(testInfo.Name) > 0 {
@@ -688,8 +837,31 @@ func Get(ctx ...context.Context) *slog.Logger {
 	return logger
 }
 
-// With returns a new context with the given values added.
-// The values are added to the logger automatically.
+// With returns a new context with additional key-value pairs that will be included
+// in all log messages created from that context.
+//
+// This function enables structured logging by allowing you to attach metadata to a
+// context that will automatically appear in all subsequent log messages. The values
+// are stored in the context and retrieved by getBaseLogger(), which adds them to
+// the logger via With().
+//
+// Parameters:
+//   - ctx: The context to augment. If nil, a background context is used.
+//   - values: Key-value pairs in the same format expected by slog (alternating keys and values).
+//     Keys should be strings, values can be any type.
+//
+// Usage pattern:
+//
+//	ctx = logger.With(ctx, "operation", "user_sync", "batch_size", 100)
+//	logger.Get(ctx).Info("Starting operation")  // Will include operation=user_sync, batch_size=100
+//
+// The values are cumulative - if the input context already has values from a previous
+// With() call, the new values are appended to the existing ones. This allows building
+// up context as execution flows through different layers of the application.
+//
+// Note: This is separate from the context.With* functions in this package (WithCustomerId,
+// WithSubsystem, etc.) which handle specific well-known attributes. Use With() for
+// arbitrary structured data that varies by use case.
 func With(ctx context.Context, values ...any) context.Context {
 	if len(values) == 0 && ctx != nil {
 		// Corner case, don't bother creating a new context.
@@ -701,8 +873,21 @@ func With(ctx context.Context, values ...any) context.Context {
 	return context.WithValue(ctx, contextKey("loggerValues"), vals)
 }
 
-// getValues retrieves logger values from the context that were added via With.
-// Returns nil if no values are present in the context.
+// getValues retrieves structured logging key-value pairs from the context.
+//
+// This is an internal helper that extracts values previously stored via the With() function.
+// The returned slice contains alternating keys and values in the format expected by slog.
+//
+// The function is called by getBaseLogger() to augment the logger with context-specific
+// attributes. This enables structured logging where metadata flows naturally with the
+// context through the application.
+//
+// Returns:
+//   - A slice of key-value pairs if values were stored via With()
+//   - nil if no values are present in the context
+//
+// Thread-safety: This function is safe to call concurrently as it only reads from
+// the context, which is immutable.
 func getValues(ctx context.Context) []any { //nolint:contextcheck
 	if ctx == nil {
 		ctx = context.Background()

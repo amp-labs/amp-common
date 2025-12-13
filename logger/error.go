@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strconv"
 	"time"
 )
 
@@ -105,25 +106,7 @@ func (s *slogErrorLogger) Handle(ctx context.Context, record slog.Record) error 
 	)
 
 	record.Attrs(func(attr slog.Attr) bool {
-		val := attr.Value.Any()
-
-		switch v := val.(type) {
-		case error:
-			var se *slogError
-
-			if errors.As(v, &se) {
-				errAttr := slog.Attr{
-					Key:   attr.Key,
-					Value: slog.AnyValue(se.err),
-				}
-
-				baseAttrs = append(baseAttrs, errAttr)
-
-				errAttrs = append(errAttrs, se.attrs...)
-			}
-		default:
-			baseAttrs = append(baseAttrs, attr)
-		}
+		getAttrs(attr, &baseAttrs, &errAttrs)
 
 		return true
 	})
@@ -137,6 +120,61 @@ func (s *slogErrorLogger) Handle(ctx context.Context, record slog.Record) error 
 	}
 
 	return s.inner.Handle(ctx, record)
+}
+
+// errorWithMultiUnwrap represents errors that can unwrap into multiple errors,
+// such as errors created by errors.Join. This allows us to extract attributes
+// from all errors in a joined error chain.
+type errorWithMultiUnwrap interface {
+	Unwrap() []error
+}
+
+// getAttrs recursively extracts attributes from a slog.Attr, handling error values specially.
+//
+// For error values, it:
+// - Extracts embedded attributes from slogError instances and adds them to errs
+// - Recursively processes multi-error values (from errors.Join) by unwrapping each error
+// - Adds the unwrapped error itself to base
+//
+// For non-error values, it adds the attribute directly to base.
+//
+// This allows the handler to properly extract and log all attributes embedded in error chains,
+// even when errors are joined or wrapped multiple times.
+func getAttrs(attr slog.Attr, base, errs *[]slog.Attr) {
+	switch val := attr.Value.Any().(type) {
+	case error:
+		var (
+			slogErr *slogError
+			multi   errorWithMultiUnwrap
+		)
+
+		switch {
+		case errors.As(val, &multi):
+			// Check for multi-unwrap first, before slogError, because errors.Join
+			// with slogError instances would otherwise match the slogError case first
+			for idx, err := range multi.Unwrap() {
+				at := slog.Attr{
+					Key:   attr.Key + "[" + strconv.Itoa(idx) + "]",
+					Value: slog.AnyValue(err),
+				}
+
+				getAttrs(at, base, errs)
+			}
+		case errors.As(val, &slogErr):
+			errAttr := slog.Attr{
+				Key:   attr.Key,
+				Value: slog.AnyValue(slogErr.err),
+			}
+
+			*base = append(*base, errAttr)
+
+			*errs = append(*errs, slogErr.attrs...)
+		default:
+			*base = append(*base, attr)
+		}
+	default:
+		*base = append(*base, attr)
+	}
 }
 
 // WithAttrs returns a new handler with the given attributes added.

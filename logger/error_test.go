@@ -429,6 +429,188 @@ func TestSlogErrorLogger_ChainedAnnotations(t *testing.T) {
 	assert.Contains(t, output, "original error")
 }
 
+// TestSlogErrorLogger_Handle_JoinedErrors tests extraction of attributes from errors.Join.
+func TestSlogErrorLogger_Handle_JoinedErrors(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	innerHandler := slog.NewJSONHandler(&buf, nil)
+	logger := &slogErrorLogger{inner: innerHandler}
+
+	// Create multiple annotated errors
+	err1 := AnnotateError(errors.New("first error"), "error1_attr", "value1")
+	err2 := AnnotateError(errors.New("second error"), "error2_attr", "value2")
+
+	// Join them
+	joinedErr := errors.Join(err1, err2)
+
+	record := slog.NewRecord(time.Now(), slog.LevelError, "multiple errors occurred", 0)
+	record.AddAttrs(slog.Any("error", joinedErr))
+
+	err := logger.Handle(context.Background(), record)
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "multiple errors occurred")
+	// Verify both error messages are present
+	assert.Contains(t, output, "first error")
+	assert.Contains(t, output, "second error")
+	// Verify attributes from both errors are extracted
+	assert.Contains(t, output, "error1_attr")
+	assert.Contains(t, output, "value1")
+	assert.Contains(t, output, "error2_attr")
+	assert.Contains(t, output, "value2")
+}
+
+// TestSlogErrorLogger_Handle_JoinedErrors_WithIndexing tests indexed error attributes.
+func TestSlogErrorLogger_Handle_JoinedErrors_WithIndexing(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	innerHandler := slog.NewJSONHandler(&buf, nil)
+	logger := &slogErrorLogger{inner: innerHandler}
+
+	err1 := AnnotateError(errors.New("error one"), "source", "service1")
+	err2 := AnnotateError(errors.New("error two"), "source", "service2")
+	err3 := AnnotateError(errors.New("error three"), "source", "service3")
+
+	joinedErr := errors.Join(err1, err2, err3)
+
+	record := slog.NewRecord(time.Now(), slog.LevelError, "batch operation failed", 0)
+	record.AddAttrs(slog.Any("error", joinedErr))
+
+	err := logger.Handle(context.Background(), record)
+	require.NoError(t, err)
+
+	var logData map[string]any
+
+	err = json.Unmarshal(buf.Bytes(), &logData)
+	require.NoError(t, err)
+
+	// Verify indexed error attributes exist
+	assert.Contains(t, logData, "error[0]")
+	assert.Contains(t, logData, "error[1]")
+	assert.Contains(t, logData, "error[2]")
+
+	// Verify the error messages are present
+	output := buf.String()
+	assert.Contains(t, output, "error one")
+	assert.Contains(t, output, "error two")
+	assert.Contains(t, output, "error three")
+}
+
+// TestSlogErrorLogger_Handle_JoinedErrors_MixedAnnotated tests joined errors with mixed annotation.
+func TestSlogErrorLogger_Handle_JoinedErrors_MixedAnnotated(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	innerHandler := slog.NewJSONHandler(&buf, nil)
+	logger := &slogErrorLogger{inner: innerHandler}
+
+	// Mix of annotated and plain errors
+	annotatedErr := AnnotateError(errors.New("annotated error"), "user_id", "123")
+	plainErr := errors.New("plain error")
+
+	joinedErr := errors.Join(annotatedErr, plainErr)
+
+	record := slog.NewRecord(time.Now(), slog.LevelError, "mixed errors", 0)
+	record.AddAttrs(slog.Any("error", joinedErr))
+
+	err := logger.Handle(context.Background(), record)
+	require.NoError(t, err)
+
+	output := buf.String()
+	// Both error messages should be present
+	assert.Contains(t, output, "annotated error")
+	assert.Contains(t, output, "plain error")
+	// Attribute from annotated error should be extracted
+	assert.Contains(t, output, "user_id")
+	assert.Contains(t, output, "123")
+}
+
+// TestSlogErrorLogger_Handle_NestedJoinedErrors tests deeply nested joined errors.
+func TestSlogErrorLogger_Handle_NestedJoinedErrors(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	innerHandler := slog.NewJSONHandler(&buf, nil)
+	logger := &slogErrorLogger{inner: innerHandler}
+
+	// Create nested joined errors
+	err1 := AnnotateError(errors.New("error 1"), "level", "1")
+	err2 := AnnotateError(errors.New("error 2"), "level", "2")
+	joined1 := errors.Join(err1, err2)
+
+	err3 := AnnotateError(errors.New("error 3"), "level", "3")
+	joined2 := errors.Join(joined1, err3)
+
+	record := slog.NewRecord(time.Now(), slog.LevelError, "nested join", 0)
+	record.AddAttrs(slog.Any("error", joined2))
+
+	err := logger.Handle(context.Background(), record)
+	require.NoError(t, err)
+
+	output := buf.String()
+	// All error messages should be present
+	assert.Contains(t, output, "error 1")
+	assert.Contains(t, output, "error 2")
+	assert.Contains(t, output, "error 3")
+}
+
+// TestSlogErrorLogger_Integration_JoinedErrors tests the complete flow with joined errors.
+func TestSlogErrorLogger_Integration_JoinedErrors(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+
+	ConfigureLoggingWithOptions(Options{
+		Subsystem: "join-test",
+		JSON:      true,
+		Output:    &buf,
+	})
+
+	// Create multiple errors from different operations
+	dbErr := AnnotateError(
+		errors.New("connection failed"),
+		"host", "db.example.com",
+		"port", 5432,
+	)
+	cacheErr := AnnotateError(
+		errors.New("cache miss"),
+		"key", "user:123",
+		"ttl", 300,
+	)
+	apiErr := AnnotateError(
+		errors.New("timeout"),
+		"endpoint", "/api/users",
+		"timeout_ms", 5000,
+	)
+
+	combinedErr := errors.Join(dbErr, cacheErr, apiErr)
+
+	ctx := context.Background()
+	Get(ctx).Error("multiple subsystems failed", "error", combinedErr)
+
+	output := buf.String()
+
+	// Verify all error messages are present
+	assert.Contains(t, output, "connection failed")
+	assert.Contains(t, output, "cache miss")
+	assert.Contains(t, output, "timeout")
+
+	// Verify attributes from all errors are extracted
+	assert.Contains(t, output, "host")
+	assert.Contains(t, output, "db.example.com")
+	assert.Contains(t, output, "key")
+	assert.Contains(t, output, "user:123")
+	assert.Contains(t, output, "endpoint")
+	assert.Contains(t, output, "/api/users")
+}
+
 // customError is a helper type for testing errors.As compatibility.
 type customError struct {
 	msg string

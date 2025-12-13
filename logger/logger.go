@@ -145,7 +145,9 @@ func CreateLoggerHandler(opts Options) slog.Handler {
 	}
 
 	// Create a logger
-	return handler
+	return &slogErrorLogger{
+		inner: handler,
+	}
 }
 
 // ConfigureLoggingWithOptions configures logging for the application.
@@ -720,18 +722,18 @@ var nullLogger = slog.New(&nullHandler{})
 // This is an internal helper function that constructs the base logger used by Get().
 // It handles several important responsibilities:
 //
-// 1. Muted logging: If the context has isMuted(ctx) == true, returns nullLogger
-//    which discards all output. This is used to suppress logs from health checks
-//    and other high-frequency operations.
+//  1. Muted logging: If the context has isMuted(ctx) == true, returns nullLogger
+//     which discards all output. This is used to suppress logs from health checks
+//     and other high-frequency operations.
 //
-// 2. Test integration: When running in test mode (tests.GetTestInfo returns data),
-//    creates a test-aware logger using slogt that properly integrates with Go's
-//    testing package. Test loggers include test name and ID for easier debugging.
+//  2. Test integration: When running in test mode (tests.GetTestInfo returns data),
+//     creates a test-aware logger using slogt that properly integrates with Go's
+//     testing package. Test loggers include test name and ID for easier debugging.
 //
 // 3. Standard attributes: Adds common attributes to all log messages:
-//    - subsystem: The service/component name (from GetSubsystem)
-//    - pod: The hostname/pod name (useful in Kubernetes deployments)
-//    - request-id: The Kong request ID if present (for request tracing)
+//   - subsystem: The service/component name (from GetSubsystem)
+//   - pod: The hostname/pod name (useful in Kubernetes deployments)
+//   - request-id: The Kong request ID if present (for request tracing)
 //
 // 4. Custom values: Includes any additional key-value pairs added via With()
 //

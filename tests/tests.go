@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	"github.com/amp-labs/amp-common/contexts"
+	"github.com/amp-labs/amp-common/envutil"
 	"github.com/google/uuid"
 )
 
@@ -78,6 +79,56 @@ func GetUniqueContext(t *testing.T) context.Context {
 		testIdKey:   "test-" + uuid.New().String(),
 		testNameKey: t.Name(),
 	})
+}
+
+// CheckSkipped conditionally skips a test based on an environment variable.
+// This function reads a boolean environment variable and skips the test if the value is true.
+// It's useful for selectively disabling tests in different environments (CI, local, staging, etc.)
+// without modifying test code.
+//
+// Parameters:
+//   - ctx: Context for reading environment variables
+//   - t: The testing.T instance, which will be used to skip the test if needed
+//   - envKey: The environment variable name to check (e.g., "SKIP_INTEGRATION_TESTS")
+//   - defaultValue: An optional default value (if len == 0, false is assumed)
+//
+// The function marks itself as a test helper using t.Helper(), so skip messages
+// will be reported at the caller's location.
+//
+// Example:
+//
+//	func TestSlowIntegration(t *testing.T) {
+//	    ctx := context.Background()
+//	    // Skip this test if SKIP_SLOW_TESTS=true (default: skip in CI)
+//	    tests.CheckSkipped(ctx, t, "SKIP_SLOW_TESTS", true)
+//	    // ... rest of test only runs if not skipped
+//	}
+func CheckSkipped(ctx context.Context, t *testing.T, envKey string, defaultValue ...bool) {
+	t.Helper()
+
+	defl := false
+	invert := false
+
+	if len(defaultValue) > 0 {
+		defl = defaultValue[0]
+	}
+
+	if len(defaultValue) > 1 {
+		invert = defaultValue[1]
+	}
+
+	shouldSkip := envutil.Bool(ctx, envKey, envutil.Default(defl)).ValueOrElse(defl)
+
+	original := shouldSkip
+
+	if invert {
+		shouldSkip = !shouldSkip
+	}
+
+	if shouldSkip {
+		t.Skipf("Skipping test because of environment variable: %s=%v",
+			envKey, original)
+	}
 }
 
 // SetTestId configures the test identifier using a callback setter function.

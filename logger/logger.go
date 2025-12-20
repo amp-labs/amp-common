@@ -70,6 +70,30 @@ func Fatal(msg string, args ...any) {
 	os.Exit(1)
 }
 
+// Debug logs a debug-level message using the logger retrieved from the context.
+// Debug messages are typically used for detailed diagnostic information during development.
+func Debug(ctx context.Context, msg string, args ...any) {
+	Get(ctx).DebugContext(ctx, msg, args...)
+}
+
+// Info logs an info-level message using the logger retrieved from the context.
+// Info messages are used for general informational messages about normal application flow.
+func Info(ctx context.Context, msg string, args ...any) {
+	Get(ctx).InfoContext(ctx, msg, args...)
+}
+
+// Warn logs a warning-level message using the logger retrieved from the context.
+// Warning messages indicate potential issues that don't prevent the application from functioning.
+func Warn(ctx context.Context, msg string, args ...any) {
+	Get(ctx).WarnContext(ctx, msg, args...)
+}
+
+// Error logs an error-level message using the logger retrieved from the context.
+// Error messages indicate failures or problems that need attention but don't cause application exit.
+func Error(ctx context.Context, msg string, args ...any) {
+	Get(ctx).ErrorContext(ctx, msg, args...)
+}
+
 // Options is used to configure logging behavior and output format.
 // These options control both the modern slog logger and the legacy log package
 // that may be used by third-party dependencies.

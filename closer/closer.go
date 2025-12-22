@@ -476,18 +476,27 @@ func CancelableCloser(c io.Closer) (closer io.Closer, cancel func()) {
 // writer is an internal implementation that combines an io.Writer with an io.Closer
 // to create an io.WriteCloser. This allows attaching custom cleanup logic to any writer.
 type writer struct {
-	w io.Writer // The underlying writer for Write operations
-	c io.Closer // The closer to invoke when Close() is called
+	closed *atomic.Bool
+	w      io.Writer // The underlying writer for Write operations
+	c      io.Closer // The closer to invoke when Close() is called
 }
 
 // Write delegates to the underlying writer.
 func (w *writer) Write(p []byte) (n int, err error) {
+	if w.closed.Load() {
+		return 0, io.EOF
+	}
+
 	return w.w.Write(p)
 }
 
 // Close invokes the attached closer's Close() method.
 func (w *writer) Close() error {
-	return w.c.Close()
+	if w.closed.CompareAndSwap(false, true) {
+		return w.c.Close()
+	}
+
+	return nil
 }
 
 // ForWriter creates an io.WriteCloser by combining an io.Writer with an io.Closer.
@@ -539,24 +548,37 @@ func ForWriter(w io.Writer, c io.Closer) io.WriteCloser {
 		c = CustomCloser(func() error { return nil })
 	}
 
-	return &writer{w: w, c: c}
+	return &writer{
+		closed: atomic.NewBool(false),
+		w:      w,
+		c:      c,
+	}
 }
 
 // reader is an internal implementation that combines an io.Reader with an io.Closer
 // to create an io.ReadCloser. This allows attaching custom cleanup logic to any reader.
 type reader struct {
-	r io.Reader // The underlying reader for Read operations
-	c io.Closer // The closer to invoke when Close() is called
+	closed *atomic.Bool
+	r      io.Reader // The underlying reader for Read operations
+	c      io.Closer // The closer to invoke when Close() is called
 }
 
 // Read delegates to the underlying reader.
 func (r *reader) Read(p []byte) (n int, err error) {
+	if r.closed.Load() {
+		return 0, io.EOF
+	}
+
 	return r.r.Read(p)
 }
 
 // Close invokes the attached closer's Close() method.
 func (r *reader) Close() error {
-	return r.c.Close()
+	if r.closed.CompareAndSwap(false, true) {
+		return r.c.Close()
+	}
+
+	return nil
 }
 
 // ForReader creates an io.ReadCloser by combining an io.Reader with an io.Closer.
@@ -614,5 +636,9 @@ func ForReader(r io.Reader, c io.Closer) io.ReadCloser {
 		c = CustomCloser(func() error { return nil })
 	}
 
-	return &reader{r: r, c: c}
+	return &reader{
+		closed: atomic.NewBool(false),
+		r:      r,
+		c:      c,
+	}
 }

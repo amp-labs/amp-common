@@ -25,12 +25,37 @@ type config struct {
 
 	// InsecureTLS disables TLS certificate verification. Use only for testing.
 	InsecureTLS bool
+
+	// DisableCompression will disable normal compression handling.
+	DisableCompression bool
+
+	// EnableEnhancedDecompression is only considered if DisableCompression is true.
+	// If the value is false, the transport will have zero awareness of
+	// compression and the values just pass through. If this value is
+	// true, we use NewDecompressor to create a decompressing transport which
+	// knows how to handle more modern compression formats, like brotli, zstd,
+	// and snappy).
+	EnableEnhancedDecompression bool
 }
 
 // DisableConnectionPooling returns an Option that disables connection pooling.
 // When enabled, each HTTP request will use a new connection instead of reusing existing ones.
 func DisableConnectionPooling(c *config) {
 	c.DisableConnectionPooling = true
+}
+
+// DisableCompression returns an Option that disables normal compression handling.
+// When enabled, responses won't be transparently decoded, bodies will be returned as received.
+func DisableCompression(c *config) {
+	c.DisableCompression = true
+}
+
+// EnableEnhancedDecompression returns an Option that enables the EnableEnhancedDecompression flag.
+// Note that this implies DisableCompression automatically. See the EnableEnhancedDecompression
+// definition for further details.
+func EnableEnhancedDecompression(c *config) {
+	c.DisableCompression = true          // disable legacy compression handling
+	c.EnableEnhancedDecompression = true // use new compression handling
 }
 
 // EnableDNSCache returns an Option that enables DNS caching.

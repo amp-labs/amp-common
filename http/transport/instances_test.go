@@ -14,7 +14,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with all options disabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(t.Context(), false, false, false)
+		trans := transportFactory(t.Context(), false, false, false, false)
 
 		require.NotNil(t, trans)
 		assert.False(t, trans.DisableKeepAlives)
@@ -24,7 +24,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with connection pooling disabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(t.Context(), true, false, false)
+		trans := transportFactory(t.Context(), true, false, false, false)
 
 		require.NotNil(t, trans)
 		assert.True(t, trans.DisableKeepAlives)
@@ -33,7 +33,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with DNS cache enabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(t.Context(), false, true, false)
+		trans := transportFactory(t.Context(), false, true, false, false)
 
 		require.NotNil(t, trans)
 		assert.NotNil(t, trans.DialContext)
@@ -42,7 +42,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with insecure TLS", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(t.Context(), false, false, true)
+		trans := transportFactory(t.Context(), false, false, true, false)
 
 		require.NotNil(t, trans)
 		require.NotNil(t, trans.TLSClientConfig)
@@ -52,7 +52,7 @@ func TestTransportFactory(t *testing.T) {
 	t.Run("creates transport with all options enabled", func(t *testing.T) {
 		t.Parallel()
 
-		trans := transportFactory(t.Context(), true, true, true)
+		trans := transportFactory(t.Context(), true, true, true, false)
 
 		require.NotNil(t, trans)
 		assert.True(t, trans.DisableKeepAlives)

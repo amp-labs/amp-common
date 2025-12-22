@@ -100,6 +100,7 @@ func create(ctx context.Context, cfg *config) *http.Transport {
 		IdleConnTimeout:       idleConnTimeout,
 		TLSHandshakeTimeout:   tlsHandshakeTimeout,
 		ExpectContinueTimeout: expectContinueTimeout,
+		DisableCompression:    cfg.DisableCompression,
 	}
 
 	if disableHTTP2 {
@@ -131,7 +132,15 @@ func Get(ctx context.Context, opts ...Option) http.RoundTripper {
 		return tr
 	}
 
-	return getTransportInstance(ctx, readOptions(ctx, opts...))
+	options := readOptions(ctx, opts...)
+
+	if options.DisableCompression && options.EnableEnhancedDecompression {
+		inst := getTransportInstance(ctx, options)
+
+		return NewDecompressor(inst)
+	}
+
+	return getTransportInstance(ctx, options)
 }
 
 // defaultTransportDialContext returns a DialContext function from the given dialer.

@@ -10,6 +10,7 @@ package closer
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"runtime/debug"
 	"sync"
@@ -484,7 +485,7 @@ type writer struct {
 // Write delegates to the underlying writer.
 func (w *writer) Write(p []byte) (n int, err error) {
 	if w.closed.Load() {
-		return 0, io.EOF
+		return 0, fmt.Errorf("writer is closed: %w", io.EOF)
 	}
 
 	return w.w.Write(p)
@@ -492,11 +493,9 @@ func (w *writer) Write(p []byte) (n int, err error) {
 
 // Close invokes the attached closer's Close() method.
 func (w *writer) Close() error {
-	if w.closed.CompareAndSwap(false, true) {
-		return w.c.Close()
-	}
+	w.closed.Store(true)
 
-	return nil
+	return w.c.Close()
 }
 
 // ForWriter creates an io.WriteCloser by combining an io.Writer with an io.Closer.
@@ -566,7 +565,7 @@ type reader struct {
 // Read delegates to the underlying reader.
 func (r *reader) Read(p []byte) (n int, err error) {
 	if r.closed.Load() {
-		return 0, io.EOF
+		return 0, fmt.Errorf("reader is closed: %w", io.EOF)
 	}
 
 	return r.r.Read(p)
@@ -574,11 +573,9 @@ func (r *reader) Read(p []byte) (n int, err error) {
 
 // Close invokes the attached closer's Close() method.
 func (r *reader) Close() error {
-	if r.closed.CompareAndSwap(false, true) {
-		return r.c.Close()
-	}
+	r.closed.Store(true)
 
-	return nil
+	return r.c.Close()
 }
 
 // ForReader creates an io.ReadCloser by combining an io.Reader with an io.Closer.

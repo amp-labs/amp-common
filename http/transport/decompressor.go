@@ -97,6 +97,14 @@ func (d *decompressor) RoundTrip(request *http.Request) (*http.Response, error) 
 	// Replace the response body with a reader that closes both resources
 	rsp.Body = closer.ForReader(bodyReader, multiCloser)
 
+	// Inform the caller that the results are uncompressed
+	rsp.Uncompressed = true
+
+	// These lines are to satisfy the contract for the Uncompressed field above
+	rsp.ContentLength = -1
+	rsp.Header.Del("Content-Length")
+	rsp.Header.Del("Content-Encoding")
+
 	return rsp, nil
 }
 

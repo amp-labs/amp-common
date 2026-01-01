@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/logger"
 )
 
@@ -97,11 +98,83 @@ func EnableFlagParse(enabled bool) Option {
 	}
 }
 
+// simpleLoader wraps a static string value in a provider function.
+func simpleLoader(value string) func() string {
+	return func() string {
+		return value
+	}
+}
+
+// WithEnvFile configures the script to load environment variables from the specified file.
+// The file is loaded before the script callback executes and variables are set in both
+// the OS environment and the context.
+func WithEnvFile(envFile string) Option {
+	return func(script *Script) {
+		script.envFiles = append(script.envFiles, simpleLoader(envFile))
+	}
+}
+
+// WithEnvFileProvider configures the script to load environment variables from a file
+// whose path is determined by calling the provider function at runtime.
+// This allows for dynamic file paths based on runtime conditions.
+func WithEnvFileProvider(provider func() string) Option {
+	return func(script *Script) {
+		script.envFiles = append(script.envFiles, provider)
+	}
+}
+
+// WithEnvFiles configures the script to load environment variables from multiple files.
+// Files are loaded in the order provided, with later files overriding earlier ones.
+func WithEnvFiles(envFiles ...string) Option {
+	return func(script *Script) {
+		loaders := make([]func() string, 0, len(envFiles))
+		for _, envFile := range envFiles {
+			loaders = append(loaders, simpleLoader(envFile))
+		}
+
+		script.envFiles = append(script.envFiles, loaders...)
+	}
+}
+
+// WithEnvFilesProvider configures the script to load environment variables from multiple files
+// whose paths are determined by calling the provider functions at runtime.
+// This allows for dynamic file paths based on runtime conditions.
+func WithEnvFilesProvider(envFiles ...func() string) Option {
+	return func(script *Script) {
+		script.envFiles = append(script.envFiles, envFiles...)
+	}
+}
+
+// WithSetEnv configures the script to set a specific environment variable programmatically.
+// This can be used instead of or in addition to loading from files.
+// Variables set this way will override those loaded from env files.
+// Can be called multiple times to set multiple variables.
+func WithSetEnv(key, value string) Option {
+	return func(script *Script) {
+		script.setEnv = append(script.setEnv, func() (string, string) {
+			return key, value
+		})
+	}
+}
+
+// WithSetEnvProvider configures the script to set an environment variable
+// whose key and value are determined by calling the provider function at runtime.
+// This allows for dynamic environment variable values based on runtime conditions.
+// Variables set this way will override those loaded from env files.
+// Can be called multiple times to set multiple variables.
+func WithSetEnvProvider(provider func() (string, string)) Option {
+	return func(script *Script) {
+		script.setEnv = append(script.setEnv, provider)
+	}
+}
+
 // Script represents a runnable script with configured logging and signal handling.
 type Script struct {
 	name            string
 	flagParseEnable bool
 	loggerOpts      []logger.Option
+	envFiles        []func() string
+	setEnv          []func() (string, string)
 }
 
 // New creates a new Script with the given name and options.
@@ -123,7 +196,7 @@ func New(scriptName string, opts ...Option) *Script {
 // and exit codes. The context passed to f will be canceled on SIGINT.
 // This function calls os.Exit and does not return.
 func (r *Script) Run(f func(ctx context.Context) error) {
-	os.Exit(run(r.name, f, r.flagParseEnable, r.loggerOpts...))
+	os.Exit(run(r.name, f, r.flagParseEnable, r.envFiles, r.setEnv, r.loggerOpts...))
 }
 
 // run is the internal implementation that executes the script callback and returns
@@ -132,6 +205,8 @@ func run(
 	scriptName string,
 	callback func(ctx context.Context) error,
 	flagParseEnable bool,
+	envFiles []func() string,
+	setEnv []func() (string, string),
 	opts ...logger.Option,
 ) int {
 	if flagParseEnable {
@@ -140,6 +215,46 @@ func run(
 
 	// Catch Ctrl+C and handle it gracefully by shutting down the context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+
+	if len(envFiles) > 0 || len(setEnv) > 0 { //nolint:nestif
+		loader := envutil.NewLoader()
+		loader.LoadEnv()
+
+		for _, envFile := range envFiles {
+			filePath := envFile()
+
+			_, err := loader.LoadFile(filePath)
+			if err != nil {
+				logger.Get(ctx).Error("unable to load env file",
+					"file", filePath,
+					"error", err)
+			}
+		}
+
+		if len(setEnv) > 0 {
+			for _, fetch := range setEnv {
+				key, val := fetch()
+
+				loader.Set(key, val)
+			}
+		}
+
+		m := loader.AsMap()
+
+		if len(m) > 0 {
+			ctx = envutil.WithEnvOverrides(ctx, m)
+
+			for k, v := range m {
+				err := os.Setenv(k, v)
+				if err != nil {
+					logger.Get(ctx).Warn("unable to set env var",
+						"key", k,
+						"value", v,
+						"error", err)
+				}
+			}
+		}
+	}
 
 	// Configure the logger
 	_ = logger.ConfigureLogging(ctx, scriptName, opts...)

@@ -440,10 +440,10 @@ func TestLoggingTransport_RoundTrip(t *testing.T) {
 		requestDetails, ok := captureLog.logs[0].attrs["details"].(map[string]any)
 		require.True(t, ok)
 
-		headers, ok := requestDetails["headers"].(map[string]any)
+		headers, ok := requestDetails["headers"].(http.Header)
 		require.True(t, ok)
-		assert.Equal(t, "[redacted]", headers["Authorization"])
-		assert.Equal(t, "application/json", headers["Content-Type"])
+		assert.Equal(t, "[redacted]", headers.Get("Authorization"))
+		assert.Equal(t, "application/json", headers.Get("Content-Type"))
 	})
 
 	t.Run("works with real HTTP server", func(t *testing.T) {

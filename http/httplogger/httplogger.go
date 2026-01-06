@@ -624,7 +624,7 @@ func LogRequest(
 		"method":        request.Method,
 		"url":           u.String(),
 		"correlationId": correlationID,
-		"headers":       getNiceHeaders(params.getHeaders(ctx, request)),
+		"headers":       params.getHeaders(ctx, request),
 	}
 
 	body, _ := params.getBody(ctx, request, optionalBody)
@@ -680,7 +680,7 @@ func LogResponse(
 		"method":        requestMethod,
 		"url":           u.String(),
 		"correlationId": correlationID,
-		"headers":       getNiceHeaders(params.getHeaders(ctx, response)),
+		"headers":       params.getHeaders(ctx, response),
 		"status":        response.Status,
 		"statusCode":    response.StatusCode,
 	}
@@ -753,21 +753,6 @@ func LogError(
 	}
 
 	params.log(ctx, err, details)
-}
-
-// getNiceHeaders converts http.Header (map[string][]string) to a more log-friendly map[string]any.
-func getNiceHeaders(headers http.Header) map[string]any {
-	niceHeaders := make(map[string]any, len(headers))
-
-	for key, values := range headers {
-		if len(values) == 1 {
-			niceHeaders[key] = values[0]
-		} else if len(values) > 1 {
-			niceHeaders[key] = values
-		}
-	}
-
-	return niceHeaders
 }
 
 // processPayload applies transformation, redaction, and truncation to a payload.

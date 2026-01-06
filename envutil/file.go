@@ -18,10 +18,8 @@ const (
 	maxSplitParts = 2
 )
 
-var (
-	// ErrUnknownFileType is returned when the file extension is not recognized.
-	ErrUnknownFileType = errors.New("env file doesn't have a known file suffix")
-)
+// ErrUnknownFileType is returned when the file extension is not recognized.
+var ErrUnknownFileType = errors.New("env file doesn't have a known file suffix")
 
 // LoadEnvFile loads environment variables from a file and returns them as a map.
 // The file format is automatically detected based on the file extension:

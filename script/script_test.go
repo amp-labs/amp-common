@@ -351,21 +351,25 @@ func TestWithEnvFile(t *testing.T) {
 
 	script := New("test", WithEnvFile("/path/to/.env"))
 
+	val, _ := script.envFiles[0]()
+
 	assert.Len(t, script.envFiles, 1)
-	assert.Equal(t, "/path/to/.env", script.envFiles[0]())
+	assert.Equal(t, "/path/to/.env", val)
 }
 
 func TestWithEnvFileProvider(t *testing.T) {
 	t.Parallel()
 
-	provider := func() string {
-		return "/dynamic/path/.env"
+	provider := func() (string, bool) {
+		return "/dynamic/path/.env", true
 	}
 
 	script := New("test", WithEnvFileProvider(provider))
 
+	val1, _ := script.envFiles[0]()
+
 	assert.Len(t, script.envFiles, 1)
-	assert.Equal(t, "/dynamic/path/.env", script.envFiles[0]())
+	assert.Equal(t, "/dynamic/path/.env", val1)
 }
 
 func TestWithEnvFiles(t *testing.T) {
@@ -377,23 +381,30 @@ func TestWithEnvFiles(t *testing.T) {
 		"/path/to/.env",
 	))
 
+	val1, _ := script.envFiles[0]()
+	val2, _ := script.envFiles[1]()
+	val3, _ := script.envFiles[2]()
+
 	assert.Len(t, script.envFiles, 3)
-	assert.Equal(t, "/path/to/.env.local", script.envFiles[0]())
-	assert.Equal(t, "/path/to/.env.dev", script.envFiles[1]())
-	assert.Equal(t, "/path/to/.env", script.envFiles[2]())
+	assert.Equal(t, "/path/to/.env.local", val1)
+	assert.Equal(t, "/path/to/.env.dev", val2)
+	assert.Equal(t, "/path/to/.env", val3)
 }
 
 func TestWithEnvFilesProvider(t *testing.T) {
 	t.Parallel()
 
-	provider1 := func() string { return "/path/1/.env" }
-	provider2 := func() string { return "/path/2/.env" }
+	provider1 := func() (string, bool) { return "/path/1/.env", true }
+	provider2 := func() (string, bool) { return "/path/2/.env", true }
 
 	script := New("test", WithEnvFilesProvider(provider1, provider2))
 
+	val1, _ := script.envFiles[0]()
+	val2, _ := script.envFiles[1]()
+
 	assert.Len(t, script.envFiles, 2)
-	assert.Equal(t, "/path/1/.env", script.envFiles[0]())
-	assert.Equal(t, "/path/2/.env", script.envFiles[1]())
+	assert.Equal(t, "/path/1/.env", val1)
+	assert.Equal(t, "/path/2/.env", val2)
 }
 
 func TestWithEnvFile_Multiple(t *testing.T) {
@@ -404,9 +415,12 @@ func TestWithEnvFile_Multiple(t *testing.T) {
 		WithEnvFile("/path/2/.env"),
 	)
 
+	val1, _ := script.envFiles[0]()
+	val2, _ := script.envFiles[1]()
+
 	assert.Len(t, script.envFiles, 2)
-	assert.Equal(t, "/path/1/.env", script.envFiles[0]())
-	assert.Equal(t, "/path/2/.env", script.envFiles[1]())
+	assert.Equal(t, "/path/1/.env", val1)
+	assert.Equal(t, "/path/2/.env", val2)
 }
 
 func TestRun_WithEnvFile(t *testing.T) {
@@ -422,7 +436,7 @@ func TestRun_WithEnvFile(t *testing.T) {
 		require.NoError(t, err)
 
 		// Clear any existing env vars
-		os.Unsetenv("TEST_SCRIPT_VAR")     //nolint:errcheck
+		os.Unsetenv("TEST_SCRIPT_VAR")       //nolint:errcheck
 		defer os.Unsetenv("TEST_SCRIPT_VAR") //nolint:errcheck
 
 		var buf bytes.Buffer
@@ -433,7 +447,7 @@ func TestRun_WithEnvFile(t *testing.T) {
 			envVarValue = os.Getenv("TEST_SCRIPT_VAR")
 
 			return nil
-		}, false, []func() string{func() string { return envFile }}, nil, func(opts *logger.Options) {
+		}, false, []func() (string, bool){func() (string, bool) { return envFile, true }}, nil, func(opts *logger.Options) {
 			opts.Output = &buf
 		})
 
@@ -441,19 +455,23 @@ func TestRun_WithEnvFile(t *testing.T) {
 		assert.Equal(t, "test_value", envVarValue)
 	})
 
-	t.Run("handles non-existent file gracefully", func(t *testing.T) {
+	t.Run("handles non-existent file correctly", func(t *testing.T) {
 		t.Parallel()
 
 		var buf bytes.Buffer
 
+		envFileLoaders := []func() (string, bool){
+			func() (string, bool) { return "/nonexistent/.env", true },
+		}
+		loggerOpts := func(opts *logger.Options) {
+			opts.Output = &buf
+		}
+
 		code := run("test-script", func(ctx context.Context) error {
 			return nil
-		}, false, []func() string{func() string { return "/nonexistent/.env" }}, nil, func(opts *logger.Options) {
-			opts.Output = &buf
-		})
+		}, false, envFileLoaders, nil, loggerOpts)
 
-		assert.Equal(t, 0, code)
-		// Script should continue execution even if env file doesn't exist
+		assert.Equal(t, 1, code)
 	})
 
 	t.Run("loads multiple env files in order", func(t *testing.T) { //nolint:paralleltest
@@ -480,12 +498,12 @@ func TestRun_WithEnvFile(t *testing.T) {
 		require.NoError(t, err)
 
 		// Clear any existing env vars
-		os.Unsetenv("TEST_MULTI_VAR1")       //nolint:errcheck
-		os.Unsetenv("TEST_MULTI_VAR2")       //nolint:errcheck
-		os.Unsetenv("TEST_MULTI_SHARED")     //nolint:errcheck
+		os.Unsetenv("TEST_MULTI_VAR1")   //nolint:errcheck
+		os.Unsetenv("TEST_MULTI_VAR2")   //nolint:errcheck
+		os.Unsetenv("TEST_MULTI_SHARED") //nolint:errcheck
 
-		defer os.Unsetenv("TEST_MULTI_VAR1") //nolint:errcheck
-		defer os.Unsetenv("TEST_MULTI_VAR2") //nolint:errcheck
+		defer os.Unsetenv("TEST_MULTI_VAR1")   //nolint:errcheck
+		defer os.Unsetenv("TEST_MULTI_VAR2")   //nolint:errcheck
 		defer os.Unsetenv("TEST_MULTI_SHARED") //nolint:errcheck
 
 		var buf bytes.Buffer
@@ -498,9 +516,9 @@ func TestRun_WithEnvFile(t *testing.T) {
 			shared = os.Getenv("TEST_MULTI_SHARED")
 
 			return nil
-		}, false, []func() string{
-			func() string { return envFile1 },
-			func() string { return envFile2 },
+		}, false, []func() (string, bool){
+			func() (string, bool) { return envFile1, true },
+			func() (string, bool) { return envFile2, true },
 		}, nil, func(opts *logger.Options) {
 			opts.Output = &buf
 		})
@@ -522,21 +540,26 @@ func TestRun_WithEnvFile(t *testing.T) {
 		require.NoError(t, err)
 
 		// Clear any existing env var
-		os.Unsetenv("TEST_CONTEXT_VAR")     //nolint:errcheck
+		os.Unsetenv("TEST_CONTEXT_VAR")       //nolint:errcheck
 		defer os.Unsetenv("TEST_CONTEXT_VAR") //nolint:errcheck
 
 		var buf bytes.Buffer
 
 		osEnvValue := ""
 
+		envFileLoaders := []func() (string, bool){
+			func() (string, bool) { return envFile, envFile != "" },
+		}
+		loggerOpts := func(opts *logger.Options) {
+			opts.Output = &buf
+		}
+
 		code := run("test-script", func(ctx context.Context) error {
 			// Check that OS env var was set
 			osEnvValue = os.Getenv("TEST_CONTEXT_VAR")
 
 			return nil
-		}, false, []func() string{func() string { return envFile }}, nil, func(opts *logger.Options) {
-			opts.Output = &buf
-		})
+		}, false, envFileLoaders, nil, loggerOpts)
 
 		assert.Equal(t, 0, code)
 		assert.Equal(t, "context_value", osEnvValue)
@@ -549,7 +572,7 @@ func TestRun_WithEnvFile(t *testing.T) {
 
 		code := run("test-script", func(ctx context.Context) error {
 			return nil
-		}, false, []func() string{}, nil, func(opts *logger.Options) {
+		}, false, []func() (string, bool){}, nil, func(opts *logger.Options) {
 			opts.Output = &buf
 		})
 
@@ -576,8 +599,11 @@ func TestSimpleLoader(t *testing.T) {
 
 	loader := simpleLoader("/test/path")
 
+	value, ok := loader()
+
 	assert.NotNil(t, loader)
-	assert.Equal(t, "/test/path", loader())
+	assert.True(t, ok)
+	assert.Equal(t, "/test/path", value)
 }
 
 func TestWithSetEnv(t *testing.T) {
@@ -623,7 +649,7 @@ func TestRun_WithSetEnv(t *testing.T) {
 	t.Run("sets env var programmatically", func(t *testing.T) {
 		t.Parallel()
 
-		os.Unsetenv("TEST_SET_VAR")     //nolint:errcheck
+		os.Unsetenv("TEST_SET_VAR")       //nolint:errcheck
 		defer os.Unsetenv("TEST_SET_VAR") //nolint:errcheck
 
 		var buf bytes.Buffer
@@ -653,7 +679,7 @@ func TestRun_WithSetEnv(t *testing.T) {
 		err := os.WriteFile(envFile, []byte("TEST_OVERRIDE_VAR=from_file\n"), 0o600)
 		require.NoError(t, err)
 
-		os.Unsetenv("TEST_OVERRIDE_VAR")     //nolint:errcheck
+		os.Unsetenv("TEST_OVERRIDE_VAR")       //nolint:errcheck
 		defer os.Unsetenv("TEST_OVERRIDE_VAR") //nolint:errcheck
 
 		var buf bytes.Buffer
@@ -664,7 +690,7 @@ func TestRun_WithSetEnv(t *testing.T) {
 			envVarValue = os.Getenv("TEST_OVERRIDE_VAR")
 
 			return nil
-		}, false, []func() string{func() string { return envFile }}, []func() (string, string){
+		}, false, []func() (string, bool){func() (string, bool) { return envFile, true }}, []func() (string, string){
 			func() (string, string) { return "TEST_OVERRIDE_VAR", "from_setenv" },
 		}, func(opts *logger.Options) {
 			opts.Output = &buf

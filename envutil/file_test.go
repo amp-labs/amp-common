@@ -411,7 +411,7 @@ func createTempFile(t *testing.T, filename, content string) string {
 	tmpdir := t.TempDir()
 	tmpfile := filepath.Join(tmpdir, filename)
 
-	err := os.WriteFile(tmpfile, []byte(content), 0600)
+	err := os.WriteFile(tmpfile, []byte(content), 0o600)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {

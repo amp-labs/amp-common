@@ -416,7 +416,7 @@ func TestDecompressor_InterfaceCompliance(t *testing.T) {
 	t.Parallel()
 
 	// Verify that NewDecompressor returns an http.RoundTripper
-	var _ = Get(t.Context(), DisableCompression, EnableEnhancedDecompression, DisableConnectionPooling)
+	_ = Get(t.Context(), DisableCompression, EnableEnhancedDecompression, DisableConnectionPooling)
 }
 
 // Compression helper functions

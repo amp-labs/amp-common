@@ -99,9 +99,9 @@ func EnableFlagParse(enabled bool) Option {
 }
 
 // simpleLoader wraps a static string value in a provider function.
-func simpleLoader(value string) func() string {
-	return func() string {
-		return value
+func simpleLoader(value string) func() (string, bool) {
+	return func() (string, bool) {
+		return value, len(value) > 0
 	}
 }
 
@@ -117,7 +117,7 @@ func WithEnvFile(envFile string) Option {
 // WithEnvFileProvider configures the script to load environment variables from a file
 // whose path is determined by calling the provider function at runtime.
 // This allows for dynamic file paths based on runtime conditions.
-func WithEnvFileProvider(provider func() string) Option {
+func WithEnvFileProvider(provider func() (string, bool)) Option {
 	return func(script *Script) {
 		script.envFiles = append(script.envFiles, provider)
 	}
@@ -127,7 +127,7 @@ func WithEnvFileProvider(provider func() string) Option {
 // Files are loaded in the order provided, with later files overriding earlier ones.
 func WithEnvFiles(envFiles ...string) Option {
 	return func(script *Script) {
-		loaders := make([]func() string, 0, len(envFiles))
+		loaders := make([]func() (string, bool), 0, len(envFiles))
 		for _, envFile := range envFiles {
 			loaders = append(loaders, simpleLoader(envFile))
 		}
@@ -139,7 +139,7 @@ func WithEnvFiles(envFiles ...string) Option {
 // WithEnvFilesProvider configures the script to load environment variables from multiple files
 // whose paths are determined by calling the provider functions at runtime.
 // This allows for dynamic file paths based on runtime conditions.
-func WithEnvFilesProvider(envFiles ...func() string) Option {
+func WithEnvFilesProvider(envFiles ...func() (string, bool)) Option {
 	return func(script *Script) {
 		script.envFiles = append(script.envFiles, envFiles...)
 	}
@@ -173,7 +173,7 @@ type Script struct {
 	name            string
 	flagParseEnable bool
 	loggerOpts      []logger.Option
-	envFiles        []func() string
+	envFiles        []func() (string, bool)
 	setEnv          []func() (string, string)
 }
 
@@ -205,7 +205,7 @@ func run(
 	scriptName string,
 	callback func(ctx context.Context) error,
 	flagParseEnable bool,
-	envFiles []func() string,
+	envFiles []func() (string, bool),
 	setEnv []func() (string, string),
 	opts ...logger.Option,
 ) int {
@@ -221,13 +221,19 @@ func run(
 		loader.LoadEnv()
 
 		for _, envFile := range envFiles {
-			filePath := envFile()
+			filePath, valid := envFile()
+
+			if filePath == "" || !valid {
+				continue
+			}
 
 			_, err := loader.LoadFile(filePath)
 			if err != nil {
 				logger.Get(ctx).Error("unable to load env file",
 					"file", filePath,
 					"error", err)
+
+				return 1
 			}
 		}
 
@@ -251,6 +257,8 @@ func run(
 						"key", k,
 						"value", v,
 						"error", err)
+
+					return 1
 				}
 			}
 		}

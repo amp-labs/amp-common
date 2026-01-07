@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/amp-labs/amp-common/envutil"
-	"github.com/amp-labs/amp-common/logger"
 	"github.com/amp-labs/amp-common/xform"
 )
 
@@ -36,7 +35,7 @@ type options struct {
 // Example:
 //
 //	// Allow files to override existing environment variables
-//	err := ConfigureEnvironment(ctx, WithAllowOverride(true))
+//	err := ConfigureEnvironment(WithAllowOverride(true))
 func WithAllowOverride(allowOverride bool) Option {
 	return func(o *options) {
 		o.allowOverride = allowOverride
@@ -56,34 +55,33 @@ func WithAllowOverride(allowOverride bool) Option {
 //  1. Parses the ENV_FILE environment variable (semicolon-separated file paths)
 //  2. Loads all specified files using envutil.Loader
 //  3. Sets environment variables from the loaded files (respecting override policy)
-//  4. Logs the number of variables loaded and set
 //
 // If ENV_FILE is not set or empty, the function returns nil without error.
 //
 // Example usage:
 //
 //	// Load environment files, preserving existing variables
-//	if err := ConfigureEnvironment(ctx); err != nil {
+//	if err := ConfigureEnvironment(); err != nil {
 //	    return fmt.Errorf("failed to configure environment: %w", err)
 //	}
 //
 //	// Load environment files, allowing files to override existing variables
-//	if err := ConfigureEnvironment(ctx, WithAllowOverride(true)); err != nil {
+//	if err := ConfigureEnvironment(WithAllowOverride(true)); err != nil {
 //	    return fmt.Errorf("failed to configure environment: %w", err)
 //	}
-func ConfigureEnvironment(ctx context.Context, opts ...Option) error {
+func ConfigureEnvironment(opts ...Option) error {
 	// Parse the ENV_FILE environment variable into a list of file paths.
 	// The transformation pipeline: read ENV_FILE -> trim whitespace -> split on semicolon -> sanitize list
 	envFiles := envutil.Map(
 		envutil.Map(
 			envutil.Map(
-				envutil.String(ctx, "ENV_FILE"),
+				envutil.String(context.Background(), "ENV_FILE"),
 				xform.TrimString),
 			xform.SplitString(";")),
 		sanitizeEnvFileList).
 		ValueOrElse(nil)
 
-	return ConfigureEnvironmentFromFiles(ctx, envFiles, opts...)
+	return ConfigureEnvironmentFromFiles(envFiles, opts...)
 }
 
 // ConfigureEnvironmentFromFiles loads environment variables from the specified list of files
@@ -99,7 +97,6 @@ func ConfigureEnvironment(ctx context.Context, opts ...Option) error {
 // The function performs the following steps:
 //  1. Loads all specified files using envutil.Loader
 //  2. Sets environment variables from the loaded files (respecting override policy)
-//  3. Logs the number of variables loaded and set
 //
 // If the envFiles list is empty, the function returns nil without error.
 //
@@ -107,15 +104,15 @@ func ConfigureEnvironment(ctx context.Context, opts ...Option) error {
 //
 //	// Load specific environment file paths
 //	filePaths := []string{"/path/to/.env", "/path/to/.env.local"}
-//	if err := ConfigureEnvironmentFromFiles(ctx, filePaths); err != nil {
+//	if err := ConfigureEnvironmentFromFiles(filePaths); err != nil {
 //	    return fmt.Errorf("failed to configure environment: %w", err)
 //	}
 //
 //	// Load with override enabled
-//	if err := ConfigureEnvironmentFromFiles(ctx, filePaths, WithAllowOverride(true)); err != nil {
+//	if err := ConfigureEnvironmentFromFiles(filePaths, WithAllowOverride(true)); err != nil {
 //	    return fmt.Errorf("failed to configure environment: %w", err)
 //	}
-func ConfigureEnvironmentFromFiles(ctx context.Context, envFiles []string, opts ...Option) error {
+func ConfigureEnvironmentFromFiles(envFiles []string, opts ...Option) error {
 	if len(envFiles) == 0 {
 		// Nothing to do - no files specified
 		return nil
@@ -128,15 +125,11 @@ func ConfigureEnvironmentFromFiles(ctx context.Context, envFiles []string, opts 
 
 	// Load all specified files into the loader
 	for _, file := range envFiles {
-		num, err := loader.LoadFile(file)
+		_, err := loader.LoadFile(file)
 		if err != nil {
 			return fmt.Errorf("loading environment variables from file %q: %w", file, err)
 		}
-
-		logger.Get(ctx).Info("Loaded environment variables from file", "count", num, "path", file)
 	}
-
-	numSetCalls := 0
 
 	// Set environment variables from the loaded files, respecting the override policy
 	for k, v := range loader.AsMap() {
@@ -152,12 +145,6 @@ func ConfigureEnvironmentFromFiles(ctx context.Context, envFiles []string, opts 
 		if err != nil {
 			return fmt.Errorf("setting environment variable %q=%q: %w", k, v, err)
 		}
-
-		numSetCalls++
-	}
-
-	if numSetCalls > 0 {
-		logger.Get(ctx).Info("Finished setting environment variables", "count", numSetCalls)
 	}
 
 	return nil

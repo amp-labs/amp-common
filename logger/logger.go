@@ -797,10 +797,17 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 		}
 	}
 
-	// Add the subsystem name, and the pod name.
-	logger = logger.With(
-		"subsystem", GetSubsystem(ctx),
-		"pod", hostname.Get())
+	// Add the subsystem name.
+	sub := GetSubsystem(ctx)
+	if len(sub) > 0 {
+		logger = logger.With("subsystem", sub)
+	}
+
+	// Add the pod name.
+	pod := hostname.Get()
+	if len(pod) > 0 {
+		logger = logger.With("pod", pod)
+	}
 
 	requestId, found := GetRequestId(ctx)
 	if found {

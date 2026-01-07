@@ -809,6 +809,7 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 		logger = logger.With("pod", pod)
 	}
 
+	// Add the Kong request id.
 	requestId, found := GetRequestId(ctx)
 	if found {
 		logger = logger.With("request-id", requestId)

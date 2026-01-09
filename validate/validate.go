@@ -119,10 +119,10 @@ func validateInternal(ctx context.Context, value any) (errOut error) {
 
 	typeName := fmt.Sprintf("%T", value)
 
-	switch v := value.(type) {
+	switch val := value.(type) {
 	case HasValidate:
 		start := time.Now()
-		err := v.Validate()
+		err := val.Validate()
 		end := time.Now()
 
 		if err != nil {
@@ -140,7 +140,7 @@ func validateInternal(ctx context.Context, value any) (errOut error) {
 			Observe(float64(end.Sub(start).Milliseconds()))
 	case HasValidateWithContext:
 		start := time.Now()
-		err := v.Validate(ctx)
+		err := val.Validate(ctx)
 		end := time.Now()
 
 		if err != nil {

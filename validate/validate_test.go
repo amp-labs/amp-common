@@ -11,14 +11,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test types implementing HasValidate interface
+// Static errors for test types.
+var (
+	errValueRequired     = errors.New("value is required")
+	errPortMustBePositive = errors.New("port must be positive")
+	errUserIDRequired    = errors.New("userID is required")
+)
+
+// Test types implementing HasValidate interface.
 type validType struct {
 	Value string
 }
 
 func (v validType) Validate() error {
 	if v.Value == "" {
-		return errors.New("value is required")
+		return errValueRequired
 	}
 
 	return nil
@@ -30,7 +37,7 @@ func (a alwaysValidType) Validate() error {
 	return nil
 }
 
-// Test types implementing HasValidateWithContext interface
+// Test types implementing HasValidateWithContext interface.
 type contextValidType struct {
 	Value string
 }
@@ -41,7 +48,7 @@ func (c contextValidType) Validate(ctx context.Context) error {
 	}
 
 	if c.Value == "" {
-		return errors.New("value is required")
+		return errValueRequired
 	}
 
 	return nil
@@ -53,7 +60,7 @@ func (c contextAlwaysValidType) Validate(ctx context.Context) error {
 	return nil
 }
 
-// Test type that panics during validation
+// Test type that panics during validation.
 type panicType struct{}
 
 func (p panicType) Validate() error {
@@ -66,7 +73,7 @@ func (c contextPanicType) Validate(ctx context.Context) error {
 	panic("context validation panic")
 }
 
-// Test type that doesn't implement any validation interface
+// Test type that doesn't implement any validation interface.
 type nonValidatableType struct {
 	Value string
 }
@@ -89,7 +96,7 @@ func TestValidate_HasValidate_Error(t *testing.T) {
 
 	err := Validate(ctx, value)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, commonErrors.ErrValidation))
+	require.ErrorIs(t, err, commonErrors.ErrValidation)
 	assert.Contains(t, err.Error(), "value is required")
 }
 
@@ -111,7 +118,7 @@ func TestValidate_HasValidateWithContext_Error(t *testing.T) {
 
 	err := Validate(ctx, value)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, commonErrors.ErrValidation))
+	require.ErrorIs(t, err, commonErrors.ErrValidation)
 	assert.Contains(t, err.Error(), "value is required")
 }
 
@@ -125,7 +132,7 @@ func TestValidate_HasValidateWithContext_ContextCanceled(t *testing.T) {
 
 	err := Validate(ctx, value)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, context.Canceled))
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 func TestValidate_NoInterface_Success(t *testing.T) {
@@ -181,7 +188,7 @@ func TestValidate_ErrorWrapping_Enabled(t *testing.T) {
 
 	err := Validate(ctx, value)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, commonErrors.ErrValidation))
+	assert.ErrorIs(t, err, commonErrors.ErrValidation)
 }
 
 func TestValidate_ErrorWrapping_Disabled(t *testing.T) {
@@ -195,7 +202,7 @@ func TestValidate_ErrorWrapping_Disabled(t *testing.T) {
 	err := Validate(ctx, value)
 	require.Error(t, err)
 	// When wrapping is disabled, ErrValidation should not be in the error chain
-	assert.False(t, errors.Is(err, commonErrors.ErrValidation))
+	require.NotErrorIs(t, err, commonErrors.ErrValidation)
 	assert.Contains(t, err.Error(), "value is required")
 }
 
@@ -358,6 +365,7 @@ func TestValidateInternal_TypeChecking(t *testing.T) {
 
 			if tt.wantError {
 				require.Error(t, err)
+
 				if tt.errorMessage != "" {
 					assert.Contains(t, err.Error(), tt.errorMessage)
 				}
@@ -368,14 +376,14 @@ func TestValidateInternal_TypeChecking(t *testing.T) {
 	}
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkValidate_HasValidate(b *testing.B) {
 	ctx := context.Background()
 	value := validType{Value: "test"}
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Validate(ctx, value)
 	}
 }
@@ -386,7 +394,7 @@ func BenchmarkValidate_HasValidateWithContext(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Validate(ctx, value)
 	}
 }
@@ -397,19 +405,19 @@ func BenchmarkValidate_NoInterface(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Validate(ctx, value)
 	}
 }
 
-// Example type for documentation
+// Example type for documentation.
 type exampleConfig struct {
 	Port int
 }
 
 func (c exampleConfig) Validate() error {
 	if c.Port <= 0 {
-		return fmt.Errorf("port must be positive")
+		return errPortMustBePositive
 	}
 
 	return nil
@@ -425,7 +433,7 @@ func (r exampleRequest) Validate(ctx context.Context) error {
 	}
 
 	if r.UserID == "" {
-		return fmt.Errorf("userID is required")
+		return errUserIDRequired
 	}
 
 	return nil

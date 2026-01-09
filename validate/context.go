@@ -56,7 +56,7 @@ const (
 //	    // ... handle request
 //	}
 func WithWantProblemErrors(ctx context.Context, wantProblemErrors bool) context.Context {
-	return contexts.WithValue[contextKey, bool](ctx, wantProblemErrorsKey, wantProblemErrors)
+	return contexts.WithValue(ctx, wantProblemErrorsKey, wantProblemErrors)
 }
 
 // WantProblemErrors retrieves the problem errors preference from the context.
@@ -128,7 +128,7 @@ func WantProblemErrors(ctx context.Context) bool {
 //	    return nil
 //	}
 func WithWrappedError(ctx context.Context, wantWrapped bool) context.Context {
-	return contexts.WithValue[contextKey, bool](ctx, wantWrappedErrorsKey, wantWrapped)
+	return contexts.WithValue(ctx, wantWrappedErrorsKey, wantWrapped)
 }
 
 // wantWrappedErrors retrieves the wrapped errors preference from the context.

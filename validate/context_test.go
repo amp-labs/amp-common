@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testContextKey contextKey = "testKey"
+
+var errExampleValueRequired = errors.New("value is required")
+
 func TestWithWantProblemErrors_SetTrue(t *testing.T) {
 	t.Parallel()
 
@@ -132,7 +136,7 @@ func TestContextFlags_Propagation(t *testing.T) {
 	parentCtx = WithWrappedError(parentCtx, false)
 
 	// Child context should inherit values
-	childCtx := context.WithValue(parentCtx, "key", "value")
+	childCtx := context.WithValue(parentCtx, testContextKey, "value")
 
 	assert.True(t, WantProblemErrors(childCtx))
 	assert.False(t, wantWrappedErrors(childCtx))
@@ -164,13 +168,13 @@ func TestContextFlags_EmptyContext(t *testing.T) {
 	assert.True(t, wantWrappedErrors(ctx), "default wantWrappedErrors should be true")
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkWithWantProblemErrors(b *testing.B) {
 	ctx := context.Background()
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = WithWantProblemErrors(ctx, true)
 	}
 }
@@ -181,7 +185,7 @@ func BenchmarkWantProblemErrors(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = WantProblemErrors(ctx)
 	}
 }
@@ -191,7 +195,7 @@ func BenchmarkWithWrappedError(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = WithWrappedError(ctx, false)
 	}
 }
@@ -202,25 +206,25 @@ func BenchmarkWantWrappedErrors(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = wantWrappedErrors(ctx)
 	}
 }
 
-// Example type for context examples
+// Example type for context examples.
 type exampleValidType struct {
 	Value string
 }
 
 func (e exampleValidType) Validate() error {
 	if e.Value == "" {
-		return fmt.Errorf("value is required")
+		return errExampleValueRequired
 	}
 
 	return nil
 }
 
-// Example tests
+// Example tests.
 func ExampleWithWantProblemErrors() {
 	ctx := context.Background()
 
@@ -257,11 +261,10 @@ func ExampleWithWrappedError() {
 
 	// Disable error wrapping for performance-critical code
 	ctx = WithWrappedError(ctx, false)
-
 	// Perform validation - errors won't be wrapped with ErrValidation
 	invalidType := exampleValidType{Value: ""}
-	err := Validate(ctx, invalidType)
 
+	err := Validate(ctx, invalidType)
 	if err != nil {
 		fmt.Println("validation failed:", err)
 	}
@@ -275,11 +278,10 @@ func ExampleWithWrappedError_enabled() {
 
 	// Enable error wrapping (this is the default)
 	ctx = WithWrappedError(ctx, true)
-
 	// Perform validation - errors will be wrapped with ErrValidation
 	invalidType := exampleValidType{Value: ""}
-	err := Validate(ctx, invalidType)
 
+	err := Validate(ctx, invalidType)
 	if err != nil {
 		// Error is wrapped, so it contains ErrValidation
 		fmt.Println("validation failed")

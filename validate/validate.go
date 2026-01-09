@@ -1,97 +1,17 @@
-// Package validate provides a unified validation framework for types that implement validation interfaces.
-// It supports both context-aware and context-free validation patterns, allowing callers to validate
-// arbitrary values in a type-safe manner without knowing their specific validation requirements.
 package validate
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"runtime/debug"
+	"time"
 
 	"github.com/amp-labs/amp-common/contexts"
-	"github.com/amp-labs/amp-common/errors"
+	commonErrors "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/logger"
 	"github.com/amp-labs/amp-common/utils"
 )
-
-// contextKey is a custom type for context keys used within this package.
-// Using a custom type instead of a plain string prevents collisions with context keys
-// from other packages, following the best practice described in the context package documentation.
-// This ensures that our context values don't accidentally conflict with keys used elsewhere.
-type contextKey string
-
-// wantProblemErrorsKey is the context key for storing the problem errors preference.
-// When this flag is set to true via WithWantProblemErrors, validation errors should be
-// formatted as RFC-7807/RFC-9457 Problem Details (using the problem package) instead of plain errors.
-// This allows HTTP handlers to return structured error responses with proper status codes,
-// remediation guidance, and machine-readable error details.
-const wantProblemErrorsKey contextKey = "wantProblemErrors"
-
-// WithWantProblemErrors returns a new context with the problem errors preference set.
-// This configuration flag controls whether validation errors should be formatted as
-// RFC-7807/RFC-9457 Problem Details for HTTP responses.
-//
-// When wantProblemErrors is true:
-//   - Validation errors should be wrapped with the problem package
-//   - HTTP handlers can return structured JSON responses with status codes, details, and remediation
-//   - Error responses follow the RFC-7807/RFC-9457 standard format
-//
-// When wantProblemErrors is false (default):
-//   - Validation errors are returned as plain Go errors
-//   - Suitable for non-HTTP contexts or when simple error messages are preferred
-//
-// This flag is typically set at the HTTP handler level and flows down through the call stack
-// via context propagation, allowing validation logic to remain agnostic of the transport layer
-// while still producing appropriate error formats for the caller.
-//
-// Example:
-//
-//	func HandleCreateUser(c *fiber.Ctx) error {
-//	    ctx := validate.WithWantProblemErrors(c.Context(), true)
-//	    if err := validate.Validate(ctx, req); err != nil {
-//	        // err can be formatted as a problem.Problem for HTTP response
-//	        return problem.FromError(err)
-//	    }
-//	    // ... handle request
-//	}
-func WithWantProblemErrors(ctx context.Context, wantProblemErrors bool) context.Context {
-	return contexts.WithValue[contextKey, bool](ctx, wantProblemErrorsKey, wantProblemErrors)
-}
-
-// WantProblemErrors retrieves the problem errors preference from the context.
-// Returns true if the caller wants validation errors formatted as RFC-7807/RFC-9457 Problem Details,
-// false otherwise.
-//
-// If the preference has not been explicitly set via WithWantProblemErrors, this function
-// returns false (the default), indicating that plain Go errors should be used.
-//
-// This function is typically called from within a type's Validate() implementation to determine
-// the appropriate error format for the current execution context.
-//
-// Example:
-//
-//	type CreateUserRequest struct {
-//	    Email string
-//	}
-//
-//	func (r CreateUserRequest) Validate(ctx context.Context) error {
-//	    if r.Email == "" {
-//	        if validate.WantProblemErrors(ctx) {
-//	            // Format as RFC-7807/RFC-9457 problem detail
-//	            return problem.BadRequest(ctx, problem.Detail("email is required"))
-//	        }
-//	        // Return plain error
-//	        return fmt.Errorf("email is required")
-//	    }
-//	    return nil
-//	}
-func WantProblemErrors(ctx context.Context) bool {
-	value, found := contexts.GetValue[contextKey, bool](ctx, wantProblemErrorsKey)
-	if found {
-		return value
-	}
-
-	return false
-}
 
 // HasValidate defines the interface for types that can validate themselves without requiring a context.
 // Types implementing this interface should return an error if validation fails, or nil if the value is valid.
@@ -152,7 +72,11 @@ func Validate(ctx context.Context, value any) error {
 	//nolint:contextcheck // EnsureContext preserves context inheritance
 	err := validateInternal(contexts.EnsureContext(ctx), value)
 	if err != nil {
-		return fmt.Errorf("%w: %w", errors.ErrValidation, err)
+		if !wantWrappedErrors(ctx) {
+			return err
+		}
+
+		return fmt.Errorf("%w: %w", commonErrors.ErrValidation, err)
 	}
 
 	return nil
@@ -163,27 +87,81 @@ func Validate(ctx context.Context, value any) error {
 // errors multiple times if validation is called recursively.
 //
 // The function handles three cases:
-//  1. Nil or nil-like values (nil pointers, nil interfaces, etc.) - returns nil (validation passes)
-//  2. Values implementing HasValidateWithContext - calls context-aware validation
-//  3. Values implementing HasValidate - calls context-free validation
-//  4. Values implementing neither interface - returns nil (validation passes)
+//  1. Values implementing HasValidateWithContext - calls context-aware validation
+//  2. Values implementing HasValidate - calls context-free validation
+//  3. Values implementing neither interface - logs a warning and returns nil
 //
-// Note: If a value implements both interfaces, HasValidate takes precedence over HasValidateWithContext
-// due to Go's type switch evaluation order.
-func validateInternal(ctx context.Context, value any) error {
-	if utils.IsNilish(value) {
-		return nil
-	}
+// Panic recovery: This function includes panic recovery logic to ensure that panics
+// within validation methods don't crash the application. If a Validate() method panics:
+//   - The panic is caught and converted to an error using utils.GetPanicRecoveryError
+//   - The error includes the panic value and stack trace for debugging
+//   - If validation already returned an error, the panic error is joined with it
+//   - This makes validation failures safe even when validation logic has bugs
+//
+// Metrics: The function records Prometheus metrics for each validation attempt:
+//   - validationsTotal: Counter tracking validation calls by type capability and success
+//   - validationTime: Histogram tracking validation duration by type and success
+//
+// Note: Only validations for types implementing validation interfaces are timed.
+// Types that don't implement validation interfaces are counted but not timed.
+func validateInternal(ctx context.Context, value any) (errOut error) {
+	defer func() {
+		if err := recover(); err != nil {
+			panicErr := utils.GetPanicRecoveryError(err, debug.Stack())
 
-	switch v := value.(type) {
+			if errOut == nil {
+				errOut = panicErr
+			} else {
+				errOut = errors.Join(errOut, panicErr)
+			}
+		}
+	}()
+
+	typeName := fmt.Sprintf("%T", value)
+
+	switch val := value.(type) {
 	case HasValidate:
-		return v.Validate()
-	case HasValidateWithContext:
-		return v.Validate(ctx)
-	default:
-		logger.Get(ctx).Warn("Validate called on unsupported type",
-			"type", fmt.Sprintf("%T", v))
+		start := time.Now()
+		err := val.Validate()
+		end := time.Now()
 
-		return nil
+		if err != nil {
+			validationsTotal.WithLabelValues("true", "true").Inc()
+
+			validationTime.WithLabelValues(typeName, "true").
+				Observe(float64(end.Sub(start).Milliseconds()))
+
+			return err
+		}
+
+		validationsTotal.WithLabelValues("true", "false").Inc()
+
+		validationTime.WithLabelValues(typeName, "false").
+			Observe(float64(end.Sub(start).Milliseconds()))
+	case HasValidateWithContext:
+		start := time.Now()
+		err := val.Validate(ctx)
+		end := time.Now()
+
+		if err != nil {
+			validationsTotal.WithLabelValues("true", "true").Inc()
+
+			validationTime.WithLabelValues(typeName, "true").
+				Observe(float64(end.Sub(start).Milliseconds()))
+
+			return err
+		}
+
+		validationsTotal.WithLabelValues("true", "false").Inc()
+
+		validationTime.WithLabelValues(typeName, "false").
+			Observe(float64(end.Sub(start).Milliseconds()))
+	default:
+		validationsTotal.WithLabelValues("false", "false").Inc()
+
+		logger.Get(ctx).Warn("Validate called on unsupported type",
+			"type", typeName)
 	}
+
+	return nil
 }

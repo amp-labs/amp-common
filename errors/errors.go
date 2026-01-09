@@ -12,6 +12,14 @@ var (
 	// or that the key distribution is causing unexpected collisions. When this error occurs,
 	// consider using a different hash function or implementing a collision resolution strategy.
 	ErrHashCollision = errors.New("hashing collision")
+
+	// ErrValidation is returned when a value fails validation checks.
+	// This error is used as a sentinel error that wraps the underlying validation failure,
+	// allowing callers to distinguish validation errors from other error types using errors.Is().
+	// The validate package automatically wraps validation failures with this error.
+	// When this error occurs, the underlying wrapped error will contain specific details
+	// about what validation failed.
+	ErrValidation = errors.New("validation error")
 )
 
 // Collection is a thread-unsafe utility for accumulating multiple errors.

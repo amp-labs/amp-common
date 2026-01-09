@@ -76,7 +76,7 @@ func Validate(ctx context.Context, value any) error {
 			return err
 		}
 
-		return fmt.Errorf("%w: %w", commonErrors.ErrValidation, err)
+		return fmt.Errorf("%w for %T: %w", commonErrors.ErrValidation, value, err)
 	}
 
 	return nil

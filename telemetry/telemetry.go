@@ -33,6 +33,10 @@ type Config struct {
 	Endpoint       string
 	Enabled        bool
 	Timeout        time.Duration
+
+	// SpanProcessors are additional span processors to add to the trace provider.
+	// Use this to send traces to multiple backends (e.g., Sentry).
+	SpanProcessors []sdktrace.SpanProcessor
 }
 
 // LoadConfigFromEnv loads OpenTelemetry configuration from environment variables.
@@ -121,12 +125,20 @@ func Initialize(ctx context.Context, config *Config) error {
 		return fmt.Errorf("failed to create OTLP trace exporter: %w", err)
 	}
 
-	// Create trace provider
-	tracerProvider = sdktrace.NewTracerProvider(
+	// Build trace provider options
+	opts := []sdktrace.TracerProviderOption{
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(res),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-	)
+	}
+
+	// Add any additional span processors (e.g., Sentry)
+	for _, sp := range config.SpanProcessors {
+		opts = append(opts, sdktrace.WithSpanProcessor(sp))
+	}
+
+	// Create trace provider
+	tracerProvider = sdktrace.NewTracerProvider(opts...)
 
 	// Set the global trace provider
 	otel.SetTracerProvider(tracerProvider)

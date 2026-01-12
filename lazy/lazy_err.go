@@ -102,7 +102,7 @@ func (t *OfErr[T]) doSlowOrError(f func() error) error {
 	t.m.Lock()
 	defer t.m.Unlock()
 
-	if t.done == 0 {
+	if atomic.LoadUint32(&t.done) == 0 {
 		err := f()
 		if err != nil {
 			return err

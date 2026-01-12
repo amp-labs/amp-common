@@ -732,3 +732,298 @@ func TestContextChaining(t *testing.T) { //nolint:paralleltest
 	assert.Contains(t, output, "proj1")
 	assert.Contains(t, output, "key1")
 }
+
+// TestOtelIntegration tests OpenTelemetry integration.
+func TestOtelIntegration(t *testing.T) { //nolint:paralleltest
+	t.Run("otel disabled by default", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		handler := CreateLoggerHandler(Options{
+			Subsystem: "otel-test",
+			JSON:      true,
+			Output:    &buf,
+			MinLevel:  slog.LevelInfo,
+		})
+
+		// Handler should be slogErrorLogger wrapping the base handler
+		assert.NotNil(t, handler)
+		_, ok := handler.(*slogErrorLogger)
+		assert.True(t, ok, "handler should be slogErrorLogger when OTel is disabled")
+	})
+
+	t.Run("otel enabled", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		handler := CreateLoggerHandler(Options{
+			Subsystem:  "otel-test",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			EnableOtel: true,
+		})
+
+		// Handler should still be slogErrorLogger
+		assert.NotNil(t, handler)
+		errorLogger, ok := handler.(*slogErrorLogger)
+		assert.True(t, ok, "handler should be slogErrorLogger")
+
+		// The inner handler should be multiHandler
+		_, ok = errorLogger.inner.(*multiHandler)
+		assert.True(t, ok, "inner handler should be multiHandler when OTel is enabled")
+	})
+
+	t.Run("logs work with otel enabled", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "otel-test",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			EnableOtel: true,
+		})
+
+		ctx := t.Context()
+		ctx = WithCustomerId(ctx, "test-customer")
+
+		Get(ctx).Info("test message with otel")
+
+		output := buf.String()
+		// Verify the console output still works
+		assert.Contains(t, output, "test message with otel")
+		assert.Contains(t, output, "test-customer")
+		assert.Contains(t, output, "otel-test")
+	})
+}
+
+// TestMultiHandler tests the multiHandler implementation.
+func TestMultiHandler(t *testing.T) {
+	t.Parallel()
+
+	t.Run("enabled returns true if any handler is enabled", func(t *testing.T) {
+		t.Parallel()
+
+		var buf1, buf2 bytes.Buffer
+
+		h1 := slog.NewJSONHandler(&buf1, &slog.HandlerOptions{Level: slog.LevelInfo})
+		h2 := slog.NewJSONHandler(&buf2, &slog.HandlerOptions{Level: slog.LevelWarn})
+
+		multi := &multiHandler{handlers: []slog.Handler{h1, h2}}
+
+		ctx := t.Context()
+		assert.True(t, multi.Enabled(ctx, slog.LevelInfo), "should be enabled for Info")
+		assert.True(t, multi.Enabled(ctx, slog.LevelWarn), "should be enabled for Warn")
+		assert.False(t, multi.Enabled(ctx, slog.LevelDebug), "should not be enabled for Debug")
+	})
+
+	t.Run("handle forwards to all handlers", func(t *testing.T) {
+		t.Parallel()
+
+		var buf1, buf2 bytes.Buffer
+
+		h1 := slog.NewJSONHandler(&buf1, &slog.HandlerOptions{Level: slog.LevelInfo})
+		h2 := slog.NewJSONHandler(&buf2, &slog.HandlerOptions{Level: slog.LevelInfo})
+
+		multi := &multiHandler{handlers: []slog.Handler{h1, h2}}
+		logger := slog.New(multi)
+
+		logger.Info("test message")
+
+		// Both buffers should contain the message
+		assert.Contains(t, buf1.String(), "test message")
+		assert.Contains(t, buf2.String(), "test message")
+	})
+
+	t.Run("with attrs creates new multiHandler", func(t *testing.T) {
+		t.Parallel()
+
+		var buf1, buf2 bytes.Buffer
+
+		h1 := slog.NewJSONHandler(&buf1, &slog.HandlerOptions{Level: slog.LevelInfo})
+		h2 := slog.NewJSONHandler(&buf2, &slog.HandlerOptions{Level: slog.LevelInfo})
+
+		multi := &multiHandler{handlers: []slog.Handler{h1, h2}}
+		newMulti := multi.WithAttrs([]slog.Attr{slog.String("key", "value")})
+
+		logger := slog.New(newMulti)
+		logger.Info("test")
+
+		// Both handlers should have the attribute
+		assert.Contains(t, buf1.String(), "key")
+		assert.Contains(t, buf1.String(), "value")
+		assert.Contains(t, buf2.String(), "key")
+		assert.Contains(t, buf2.String(), "value")
+	})
+
+	t.Run("with group creates new multiHandler", func(t *testing.T) {
+		t.Parallel()
+
+		var buf1, buf2 bytes.Buffer
+
+		h1 := slog.NewJSONHandler(&buf1, &slog.HandlerOptions{Level: slog.LevelInfo})
+		h2 := slog.NewJSONHandler(&buf2, &slog.HandlerOptions{Level: slog.LevelInfo})
+
+		multi := &multiHandler{handlers: []slog.Handler{h1, h2}}
+		newMulti := multi.WithGroup("testgroup")
+
+		logger := slog.New(newMulti)
+		logger.Info("test", "key", "value")
+
+		// Both handlers should have the group
+		assert.Contains(t, buf1.String(), "testgroup")
+		assert.Contains(t, buf2.String(), "testgroup")
+	})
+}
+
+// TestOtelSuppressibleHandler tests the otelSuppressibleHandler implementation.
+func TestOtelSuppressibleHandler(t *testing.T) {
+	t.Parallel()
+
+	t.Run("enabled returns false when otel is suppressed", func(t *testing.T) {
+		t.Parallel()
+
+		var buf bytes.Buffer
+
+		innerHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+		handler := &otelSuppressibleHandler{inner: innerHandler}
+
+		ctx := WithSuppressOtel(t.Context(), true)
+		assert.False(t, handler.Enabled(ctx, slog.LevelInfo), "should be disabled when suppressed")
+
+		normalCtx := t.Context()
+		assert.True(t, handler.Enabled(normalCtx, slog.LevelInfo), "should be enabled when not suppressed")
+	})
+
+	t.Run("handle discards logs when otel is suppressed", func(t *testing.T) {
+		t.Parallel()
+
+		var buf bytes.Buffer
+
+		innerHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+		handler := &otelSuppressibleHandler{inner: innerHandler}
+		logger := slog.New(handler)
+
+		// Log with suppression enabled
+		ctx := WithSuppressOtel(t.Context(), true)
+		logger.InfoContext(ctx, "suppressed message")
+
+		// Buffer should be empty
+		assert.Empty(t, buf.String(), "suppressed logs should not reach handler")
+	})
+
+	t.Run("handle forwards logs when otel is not suppressed", func(t *testing.T) {
+		t.Parallel()
+
+		var buf bytes.Buffer
+
+		innerHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+		handler := &otelSuppressibleHandler{inner: innerHandler}
+		logger := slog.New(handler)
+
+		// Log without suppression
+		logger.InfoContext(t.Context(), "normal message")
+
+		// Buffer should contain the message
+		assert.Contains(t, buf.String(), "normal message")
+	})
+
+	t.Run("with attrs preserves suppressibility", func(t *testing.T) {
+		t.Parallel()
+
+		var buf bytes.Buffer
+
+		innerHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+		handler := &otelSuppressibleHandler{inner: innerHandler}
+		newHandler := handler.WithAttrs([]slog.Attr{slog.String("key", "value")})
+
+		logger := slog.New(newHandler)
+		ctx := WithSuppressOtel(t.Context(), true)
+		logger.InfoContext(ctx, "test")
+
+		// Should still be suppressed
+		assert.Empty(t, buf.String(), "suppression should work after WithAttrs")
+	})
+
+	t.Run("with group preserves suppressibility", func(t *testing.T) {
+		t.Parallel()
+
+		var buf bytes.Buffer
+
+		innerHandler := slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})
+		handler := &otelSuppressibleHandler{inner: innerHandler}
+		newHandler := handler.WithGroup("testgroup")
+
+		logger := slog.New(newHandler)
+		ctx := WithSuppressOtel(t.Context(), true)
+		logger.InfoContext(ctx, "test")
+
+		// Should still be suppressed
+		assert.Empty(t, buf.String(), "suppression should work after WithGroup")
+	})
+}
+
+// TestOtelSuppressionIntegration tests the full OTel suppression integration.
+func TestOtelSuppressionIntegration(t *testing.T) { //nolint:paralleltest
+	t.Run("otel enabled but suppressed via context", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "otel-suppress-test",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			EnableOtel: true,
+		})
+
+		// Log with OTel suppression
+		ctx := WithSuppressOtel(t.Context(), true)
+		Get(ctx).InfoContext(ctx, "test message with otel suppressed")
+
+		output := buf.String()
+		// Console output should still work
+		assert.Contains(t, output, "test message with otel suppressed")
+		assert.Contains(t, output, "otel-suppress-test")
+	})
+
+	t.Run("otel enabled and not suppressed", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "otel-normal-test",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			EnableOtel: true,
+		})
+
+		// Log without OTel suppression
+		ctx := t.Context()
+		Get(ctx).InfoContext(ctx, "test message with otel enabled")
+
+		output := buf.String()
+		// Console output should work
+		assert.Contains(t, output, "test message with otel enabled")
+		assert.Contains(t, output, "otel-normal-test")
+	})
+
+	t.Run("otel not configured - suppress flag has no effect", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "no-otel-test",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			EnableOtel: false,
+		})
+
+		// Log with suppress flag (should have no effect since OTel is not enabled)
+		ctx := WithSuppressOtel(t.Context(), true)
+		Get(ctx).InfoContext(ctx, "test message with otel disabled")
+
+		output := buf.String()
+		// Console output should still work
+		assert.Contains(t, output, "test message with otel disabled")
+		assert.Contains(t, output, "no-otel-test")
+	})
+}

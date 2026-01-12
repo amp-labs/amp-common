@@ -71,6 +71,13 @@ go test -v -run TestName ./package-name
 - Options pattern: `Default()`, `Required()`, `Validate()`, etc.
 - Example: `envutil.Int("PORT", envutil.Default(8080)).Value()`
 
+**`startup`** - Application initialization and environment configuration
+
+- Load environment variables from files specified in ENV_FILE
+- Semicolon-separated file paths support (e.g., `/path/to/.env;/path/to/.env.local`)
+- Configurable override behavior for existing environment variables
+- Functions: `ConfigureEnvironment()`, `ConfigureEnvironmentFromFiles()`, `WithAllowOverride()`
+
 **`telemetry`** - OpenTelemetry tracing integration
 
 - `Initialize(ctx, config)` - Set up OTLP tracing
@@ -82,6 +89,14 @@ go test -v -run TestName ./package-name
 
 - Built on Go's `slog` package
 - Integrates with OpenTelemetry context
+- Optional OpenTelemetry integration via `go.opentelemetry.io/contrib/bridges/otelslog`
+  - Enable with `Options{EnableOtel: true}` when configuring logging
+  - When enabled, logs are sent to both console and OpenTelemetry
+  - Disabled by default (opt-in feature)
+  - Allows logs to be correlated with traces and exported via OTLP
+  - Runtime suppression: Use `WithSuppressOtel(ctx, true)` to selectively suppress OTel logging while keeping console output
+    - Useful for high-frequency operations or non-sampled contexts
+    - If no suppression flag is present and OTel is configured, OTel logging runs by default
 
 **`cli`** - CLI utilities for terminal interaction
 
@@ -105,20 +120,24 @@ go test -v -run TestName ./package-name
 - **`bgworker`** - Background worker management
 - **`utils`** - Misc utilities (channels, context, JSON, sleep, dedup)
 - **`xform`** - Type transformations and conversions
-- **`maps`** - Generic map utilities
-- **`set`** - Generic set implementation
+- **`maps`** - Generic map utilities with red-black tree implementation
+- **`set`** - Generic set implementation with red-black tree backing
 - **`tuple`** - Generic tuple types
 - **`compare`** - Comparison utilities
+- **`sortable`** - Sortable interface with `LessThan` comparison for ordering
+- **`collectable`** - Interface combining `Hashable` and `Comparable` for use in Map/Set data structures
 - **`errors`** - Error utilities with collection support
+- **`retry`** - Flexible retry mechanism with exponential backoff, jitter, and retry budgets
+- **`validate`** - Validation interfaces (`HasValidate`, `HasValidateWithContext`) with panic recovery and Prometheus metrics
 - **`assert`** - Assertion utilities for testing
 - **`hashing`** - Hashing utilities
 - **`sanitize`** - String sanitization
+- **`jsonpath`** - JSONPath bracket notation utilities for field mapping (parsing, validation, nested path operations)
 - **`script`** - Script execution utilities
 - **`build`** - Build information utilities
 - **`http/transport`** - HTTP transport configuration with DNS caching
 - **`channels`** - Channel utilities (`CloseChannelIgnorePanic`)
 - **`closer`** - Resource management utilities for `io.Closer` (`Closer` collector, `CloseOnce`, `HandlePanic`, `CustomCloser`)
-- **`collectable`** - Interface combining `Hashable` and `Comparable` for use in Map/Set data structures
 - **`optional`** - Type-safe Optional/Maybe type (`Some[T]`, `None[T]`, `Map`, `FlatMap`)
 - **`pointer`** - Pointer utilities (`To[T]`, `Value[T]`)
 - **`stage`** - Environment detection (local, test, dev, staging, prod)

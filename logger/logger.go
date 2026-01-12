@@ -14,10 +14,12 @@ import (
 	"time"
 
 	"github.com/amp-labs/amp-common/envutil"
+	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/lazy"
 	"github.com/amp-labs/amp-common/shutdown"
 	"github.com/amp-labs/amp-common/tests"
 	"github.com/neilotoole/slogt"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 )
 
 // subsystem stores the default subsystem name for the application.
@@ -60,8 +62,8 @@ var configMutex sync.Mutex //nolint:gochecknoglobals
 type contextKey string
 
 // Fatal logs an error message and exits the application.
-func Fatal(msg string, args ...any) {
-	slog.Error(msg, args...)
+func Fatal(ctx context.Context, msg string, args ...any) {
+	Get(ctx).ErrorContext(ctx, msg, args...)
 
 	shutdown.Shutdown()
 
@@ -94,6 +96,102 @@ func Error(ctx context.Context, msg string, args ...any) {
 	Get(ctx).ErrorContext(ctx, msg, args...)
 }
 
+// otelSuppressibleHandler wraps an OpenTelemetry handler and makes it suppressible
+// via context. When the context has the suppress_otel flag set to true, this handler
+// becomes a no-op, preventing logs from being sent to OpenTelemetry while still
+// allowing them to reach other handlers (like console output).
+//
+// This is useful for high-frequency operations or contexts that are not part of
+// sampled traces, where you want console logs but don't want to generate OTel logs.
+type otelSuppressibleHandler struct {
+	inner slog.Handler
+}
+
+// Enabled checks if the handler is enabled for the given level.
+// Returns false if the context has suppress_otel=true, otherwise defers to the inner handler.
+func (o *otelSuppressibleHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	if isSuppressOtel(ctx) {
+		return false
+	}
+
+	return o.inner.Enabled(ctx, level)
+}
+
+// Handle forwards the log record to the inner handler unless OTel is suppressed in the context.
+func (o *otelSuppressibleHandler) Handle(ctx context.Context, record slog.Record) error {
+	if isSuppressOtel(ctx) {
+		return nil
+	}
+
+	return o.inner.Handle(ctx, record)
+}
+
+// WithAttrs returns a new handler with the given attributes added to the inner handler.
+func (o *otelSuppressibleHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &otelSuppressibleHandler{inner: o.inner.WithAttrs(attrs)}
+}
+
+// WithGroup returns a new handler with the given group added to the inner handler.
+func (o *otelSuppressibleHandler) WithGroup(name string) slog.Handler {
+	return &otelSuppressibleHandler{inner: o.inner.WithGroup(name)}
+}
+
+// multiHandler is a slog.Handler that forwards log records to multiple handlers.
+// This enables sending logs to multiple destinations simultaneously, such as both
+// console output and OpenTelemetry.
+//
+// All methods forward to all handlers in the list. If any handler returns an error
+// from Handle(), the first error encountered is returned.
+type multiHandler struct {
+	handlers []slog.Handler
+}
+
+// Enabled returns true if any of the handlers would handle records at the given level.
+func (m *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, h := range m.handlers {
+		if h.Enabled(ctx, level) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Handle forwards the log record to all handlers.
+// Returns the first error encountered, if any.
+func (m *multiHandler) Handle(ctx context.Context, record slog.Record) error {
+	errs := errors2.Collection{}
+
+	for _, h := range m.handlers {
+		err := h.Handle(ctx, record)
+		if err != nil {
+			errs.Add(err)
+		}
+	}
+
+	return errs.GetError()
+}
+
+// WithAttrs returns a new multiHandler with attributes added to all handlers.
+func (m *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newHandlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		newHandlers[i] = h.WithAttrs(attrs)
+	}
+
+	return &multiHandler{handlers: newHandlers}
+}
+
+// WithGroup returns a new multiHandler with a group added to all handlers.
+func (m *multiHandler) WithGroup(name string) slog.Handler {
+	newHandlers := make([]slog.Handler, len(m.handlers))
+	for i, h := range m.handlers {
+		newHandlers[i] = h.WithGroup(name)
+	}
+
+	return &multiHandler{handlers: newHandlers}
+}
+
 // Options is used to configure logging behavior and output format.
 // These options control both the modern slog logger and the legacy log package
 // that may be used by third-party dependencies.
@@ -121,6 +219,12 @@ type Options struct {
 	// Output is the destination for log output. If nil, defaults to os.Stdout.
 	// Can be set to os.Stderr, a file, or any io.Writer implementation.
 	Output io.Writer
+
+	// EnableOtel enables OpenTelemetry integration for logging.
+	// When true, logs are bridged to OpenTelemetry using the otelslog bridge,
+	// allowing logs to be correlated with traces and exported via OTLP.
+	// This feature is opt-in and disabled by default.
+	EnableOtel bool
 }
 
 // CreateLoggerHandler creates and configures a slog.Handler based on the provided options.
@@ -135,6 +239,10 @@ type Options struct {
 // The returned handler respects the MinLevel setting - log messages below this level
 // will be filtered out and never reach the output destination.
 //
+// When EnableOtel is true, the handler sends logs to both the console and OpenTelemetry,
+// allowing logs to be exported via OTLP and correlated with traces while maintaining
+// console output.
+//
 // Parameters:
 //   - opts: Configuration options including output format, destination, and minimum level
 //
@@ -147,6 +255,7 @@ type Options struct {
 //	    JSON: true,
 //	    MinLevel: slog.LevelInfo,
 //	    Output: os.Stdout,
+//	    EnableOtel: true,
 //	})
 //	logger := slog.New(handler)
 func CreateLoggerHandler(opts Options) slog.Handler {
@@ -168,7 +277,17 @@ func CreateLoggerHandler(opts Options) slog.Handler {
 		})
 	}
 
-	// Create a logger
+	// When OpenTelemetry is enabled, send logs to both console and OTel
+	if opts.EnableOtel {
+		otelHandler := otelslog.NewHandler(opts.Subsystem)
+		// Wrap the otel handler to make it suppressible via context
+		suppressibleOtelHandler := &otelSuppressibleHandler{inner: otelHandler}
+		handler = &multiHandler{
+			handlers: []slog.Handler{handler, suppressibleOtelHandler},
+		}
+	}
+
+	// Wrap with error logger to extract attributes from annotated errors
 	return &slogErrorLogger{
 		inner: handler,
 	}
@@ -233,12 +352,26 @@ func ConfigureLogging(ctx context.Context, app string, opts ...Option) *slog.Log
 		}
 	}).WithDefault(os.Stdout).ValueOrFatal()
 
+	// Optionally enable OpenTelemetry logging. If this is set to true, a normal "Info" call (for example)
+	// will write to two different implementations (one after the other):
+	// - slog (the normal stdout/stderr/file logging we all know and love)
+	// - otel (also write logs to otel exporter, but only IF the context is being sampled
+	//   AND IF we're not suppressing otel logging). Why might you want to suppress otel
+	//   logging you ask? For high-throughput areas of code, where the logs are of limited
+	//   value and bloat the otel traces and slow everything down. In that situation, suppress.
+	//   Quite specific and nuanced but that's why it exists.
+	//
+	// NB: You MUST use DebugContext, InfoContext, etc. to benefit from the otel stuff. Otherwise,
+	// it will never know whether sampling is enabled.
+	useOtel := envutil.Bool(ctx, "LOG_ENABLE_OTEL", envutil.Default(false)).ValueOrFatal()
+
 	options := Options{
 		Subsystem:   app,
 		JSON:        logJSON,
 		MinLevel:    minLevel,
 		LegacyLevel: legacyLevel,
 		Output:      output,
+		EnableOtel:  useOtel,
 	}
 
 	for _, o := range opts {
@@ -261,6 +394,22 @@ func WithMuted(ctx context.Context, muted bool) context.Context {
 	return context.WithValue(ctx, contextKey("mute"), muted)
 }
 
+// WithSuppressOtel adds a flag to the context to suppress OpenTelemetry logging.
+// When suppress is true, logs from this context will not be sent to OpenTelemetry,
+// but will still be sent to the console (stdout/stderr). This is useful when you
+// want console logs but don't want to generate OTel trace logs, such as for
+// high-frequency operations or when the context is not part of a sampled trace.
+//
+// If EnableOtel is false (OTel not configured), this flag has no effect.
+// If EnableOtel is true and this flag is not set, OTel logging will run (default behavior).
+func WithSuppressOtel(ctx context.Context, suppress bool) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	return context.WithValue(ctx, contextKey("suppress_otel"), suppress)
+}
+
 // SetMuted configures the muted flag using a callback setter function.
 // This is used with lazy value overrides to suppress logging without directly
 // manipulating a context. The set function is typically provided by lazy override
@@ -275,6 +424,22 @@ func SetMuted(muted bool, set func(any, any)) {
 	}
 
 	set(contextKey("mute"), muted)
+}
+
+// SetSuppressOtel configures the suppress OTel flag using a callback setter function.
+// This is used with lazy value overrides to suppress OpenTelemetry logging without directly
+// manipulating a context. The set function is typically provided by lazy override
+// mechanisms to store the value for later retrieval.
+//
+// Parameters:
+//   - suppress: Whether to suppress OpenTelemetry log output
+//   - set: Callback function that stores the key-value pair. If nil, the function returns early.
+func SetSuppressOtel(suppress bool, set func(any, any)) {
+	if set == nil {
+		return
+	}
+
+	set(contextKey("suppress_otel"), suppress)
 }
 
 // isMuted checks if the context has the muted flag set to true.
@@ -294,6 +459,25 @@ func isMuted(ctx context.Context) bool {
 	muted, ok := val.(bool)
 
 	return ok && muted
+}
+
+// isSuppressOtel checks if the context has the suppress_otel flag set to true.
+// Returns false if the context is nil or if the suppress_otel flag is not set.
+// This is used internally by otelSuppressibleHandler to determine whether to
+// forward logs to OpenTelemetry.
+func isSuppressOtel(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+
+	val := ctx.Value(contextKey("suppress_otel"))
+	if val == nil {
+		return false
+	}
+
+	suppress, ok := val.(bool)
+
+	return ok && suppress
 }
 
 // WithSensitive adds a sensitive flag to the context. If the sensitive flag is set to true,

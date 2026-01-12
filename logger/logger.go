@@ -248,6 +248,10 @@ func (o *Options) GetVersion() string {
 		return ""
 	}
 
+	if o.BuildInfo == nil {
+		return ""
+	}
+
 	vers := ""
 	if len(o.BuildInfo.GitBranch) > 0 {
 		vers = o.BuildInfo.GitBranch

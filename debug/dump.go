@@ -14,11 +14,11 @@ import (
 func DumpContext(ctx context.Context, w io.Writer) {
 	result := contexts.InspectContext(ctx)
 
-	DumpJSON(result, w)
+	DumpJSON(ctx, result, w)
 }
 
 // DumpJSON dumps the given value as JSON to the given writer.
-func DumpJSON(v any, w io.Writer) {
+func DumpJSON(ctx context.Context, v any, w io.Writer) {
 	encoder := json.NewEncoder(w)
 
 	// JSON may have URLs with special symbols which shouldn't be escaped. Ex: `&`.
@@ -27,6 +27,6 @@ func DumpJSON(v any, w io.Writer) {
 
 	err := encoder.Encode(v)
 	if err != nil {
-		logger.Fatal("error marshaling to JSON: %w", "error", err)
+		logger.Fatal(ctx, "error marshaling to JSON: %w", "error", err)
 	}
 }

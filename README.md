@@ -88,6 +88,13 @@ The linting stack includes:
 * Options pattern: `Default()`, `Required()`, `Validate()`, etc.
 * Example: `envutil.Int("PORT", envutil.Default(8080)).Value()`
 
+**`startup`** - Application initialization and environment configuration
+
+* Load environment variables from files specified in ENV_FILE
+* Semicolon-separated file paths support (e.g., `/path/to/.env;/path/to/.env.local`)
+* Configurable override behavior for existing environment variables
+* Functions: `ConfigureEnvironment()`, `ConfigureEnvironmentFromFiles()`, `WithAllowOverride()`
+
 ### Observability
 
 **`telemetry`** - OpenTelemetry tracing integration
@@ -101,6 +108,11 @@ The linting stack includes:
 
 * Built on Go's `slog` package
 * Integrates with OpenTelemetry context
+* Optional OpenTelemetry integration via `go.opentelemetry.io/contrib/bridges/otelslog`
+  * Enable with `Options{EnableOtel: true}` when configuring logging
+  * When enabled, logs are sent to both console and OpenTelemetry
+  * Disabled by default (opt-in feature)
+  * Allows logs to be correlated with traces and exported via OTLP
 
 ### CLI & Commands
 
@@ -137,6 +149,7 @@ The linting stack includes:
 * **`retry`** - Flexible retry mechanism with exponential backoff, jitter, and retry budgets
 * **`errors`** - Error utilities with collection support
 * **`try`** - Result type for error handling (`Try[T]` with `Value` and `Error`)
+* **`validate`** - Validation interfaces (`HasValidate`, `HasValidateWithContext`) with panic recovery and Prometheus metrics
 
 ### Data Processing & Transformation
 

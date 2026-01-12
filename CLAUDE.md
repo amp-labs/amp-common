@@ -97,6 +97,11 @@ go test -v -run TestName ./package-name
   - Runtime suppression: Use `WithSuppressOtel(ctx, true)` to selectively suppress OTel logging while keeping console output
     - Useful for high-frequency operations or non-sampled contexts
     - If no suppression flag is present and OTel is configured, OTel logging runs by default
+- Source code location tracking via `AddSource` option
+  - Enable with `Options{AddSource: true}` or environment variable `LOG_ADD_SOURCE=true`
+  - When enabled, logs include file name and line number where the log was generated
+  - Applied to both slog handlers (JSON/Text) and OpenTelemetry handler
+  - Useful for debugging but adds overhead - typically disabled in production
 
 **`cli`** - CLI utilities for terminal interaction
 

@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/amp-labs/amp-common/build"
 	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/logger"
 )
@@ -98,10 +99,10 @@ func EnableFlagParse(enabled bool) Option {
 	}
 }
 
-// simpleLoader wraps a static string value in a provider function.
-func simpleLoader(value string) func() (string, bool) {
-	return func() (string, bool) {
-		return value, len(value) > 0
+// IncludeBuildInfo will, if called, ensure that the version info is included for logging.
+func IncludeBuildInfo(info *build.Info) Option {
+	return func(script *Script) {
+		script.loggerOpts = append(script.loggerOpts, logger.WithBuildInfo(info))
 	}
 }
 
@@ -165,6 +166,13 @@ func WithSetEnv(key, value string) Option {
 func WithSetEnvProvider(provider func() (string, string)) Option {
 	return func(script *Script) {
 		script.setEnv = append(script.setEnv, provider)
+	}
+}
+
+// simpleLoader wraps a static string value in a provider function.
+func simpleLoader(value string) func() (string, bool) {
+	return func() (string, bool) {
+		return value, len(value) > 0
 	}
 }
 

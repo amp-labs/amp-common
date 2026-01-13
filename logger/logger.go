@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/amp-labs/amp-common/build"
 	"github.com/amp-labs/amp-common/envutil"
 	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/lazy"
@@ -225,6 +226,54 @@ type Options struct {
 	// allowing logs to be correlated with traces and exported via OTLP.
 	// This feature is opt-in and disabled by default.
 	EnableOtel bool
+
+	// BuildInfo is the version of the code. It's optional but if you pass it in,
+	// OpenTelemetry can use the version number and name.
+	BuildInfo *build.Info
+
+	// AddSource adds source code position (file and line number) to log records.
+	// When true, each log entry will include the file name and line number where
+	// the log was generated. This is useful for debugging but adds overhead.
+	// Can be controlled via the LOG_ADD_SOURCE environment variable.
+	AddSource bool
+}
+
+// GetVersion constructs a version string from the build information.
+// It concatenates the git branch, commit hash, and date (if available)
+// into a slash-separated string (e.g., "main/abc123/2024-01-15").
+// This version string is used by OpenTelemetry when EnableOtel is true.
+// Returns an empty string if no build information is available.
+func (o *Options) GetVersion() string {
+	if o == nil {
+		return ""
+	}
+
+	if o.BuildInfo == nil {
+		return ""
+	}
+
+	vers := ""
+	if len(o.BuildInfo.GitBranch) > 0 {
+		vers = o.BuildInfo.GitBranch
+	}
+
+	if len(o.BuildInfo.GitCommit) > 0 {
+		if len(vers) > 0 {
+			vers += "/"
+		}
+
+		vers += o.BuildInfo.GitCommit
+	}
+
+	if len(o.BuildInfo.GitDate) > 0 {
+		if len(vers) > 0 {
+			vers += "/"
+		}
+
+		vers += o.BuildInfo.GitDate
+	}
+
+	return vers
 }
 
 // CreateLoggerHandler creates and configures a slog.Handler based on the provided options.
@@ -268,18 +317,29 @@ func CreateLoggerHandler(opts Options) slog.Handler {
 	if opts.JSON {
 		// Configure logging for JSON output
 		handler = slog.NewJSONHandler(opts.Output, &slog.HandlerOptions{
-			Level: opts.MinLevel,
+			Level:     opts.MinLevel,
+			AddSource: opts.AddSource,
 		})
 	} else {
 		// Configure logging for text output
 		handler = slog.NewTextHandler(opts.Output, &slog.HandlerOptions{
-			Level: opts.MinLevel,
+			Level:     opts.MinLevel,
+			AddSource: opts.AddSource,
 		})
 	}
 
 	// When OpenTelemetry is enabled, send logs to both console and OTel
 	if opts.EnableOtel {
-		otelHandler := otelslog.NewHandler(opts.Subsystem)
+		var otelOpts []otelslog.Option
+
+		version := opts.GetVersion()
+		if len(version) > 0 {
+			otelOpts = append(otelOpts, otelslog.WithVersion(version))
+		}
+
+		otelOpts = append(otelOpts, otelslog.WithSource(opts.AddSource))
+
+		otelHandler := otelslog.NewHandler(opts.Subsystem, otelOpts...)
 		// Wrap the otel handler to make it suppressible via context
 		suppressibleOtelHandler := &otelSuppressibleHandler{inner: otelHandler}
 		handler = &multiHandler{
@@ -324,6 +384,25 @@ func ConfigureLoggingWithOptions(opts Options) *slog.Logger {
 // Option is a functional option for configuring logging via ConfigureLogging.
 type Option func(*Options)
 
+// WithBuildInfo returns an Option that sets the build information for the logger.
+// The build info includes version metadata (git branch, commit, date) that will be
+// included in OpenTelemetry exports when EnableOtel is true.
+func WithBuildInfo(buildInfo *build.Info) Option {
+	return func(o *Options) {
+		o.BuildInfo = buildInfo
+	}
+}
+
+// WithAddSource returns an Option that controls whether source code location
+// (file and line number) is added to log records. When enabled, each log entry
+// will include the file name and line number where the log was generated.
+// This is useful for debugging but adds overhead.
+func WithAddSource(addSource bool) Option {
+	return func(o *Options) {
+		o.AddSource = addSource
+	}
+}
+
 // ErrInvalidLogOutput is returned when an invalid log output destination is specified.
 var ErrInvalidLogOutput = errors.New("invalid log output")
 
@@ -365,6 +444,9 @@ func ConfigureLogging(ctx context.Context, app string, opts ...Option) *slog.Log
 	// it will never know whether sampling is enabled.
 	useOtel := envutil.Bool(ctx, "LOG_ENABLE_OTEL", envutil.Default(false)).ValueOrFatal()
 
+	// AddSource adds file and line number to log records for debugging
+	addSource := envutil.Bool(ctx, "LOG_ADD_SOURCE", envutil.Default(false)).ValueOrFatal()
+
 	options := Options{
 		Subsystem:   app,
 		JSON:        logJSON,
@@ -372,6 +454,7 @@ func ConfigureLogging(ctx context.Context, app string, opts ...Option) *slog.Log
 		LegacyLevel: legacyLevel,
 		Output:      output,
 		EnableOtel:  useOtel,
+		AddSource:   addSource,
 	}
 
 	for _, o := range opts {

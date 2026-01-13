@@ -1027,3 +1027,89 @@ func TestOtelSuppressionIntegration(t *testing.T) { //nolint:paralleltest
 		assert.Contains(t, output, "no-otel-test")
 	})
 }
+
+// TestAddSourceOption tests that the AddSource option correctly adds source code position to logs.
+func TestAddSourceOption(t *testing.T) { //nolint:paralleltest
+	t.Run("add source with JSON handler", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "test-add-source-json",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			AddSource:  true,
+			EnableOtel: false,
+		})
+
+		ctx := t.Context()
+		Get(ctx).InfoContext(ctx, "test message with source")
+
+		output := buf.String()
+		// Should contain source information (file and line)
+		assert.Contains(t, output, "logger_test.go")
+		assert.Contains(t, output, "source")
+	})
+
+	t.Run("add source with text handler", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "test-add-source-text",
+			JSON:       false,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			AddSource:  true,
+			EnableOtel: false,
+		})
+
+		ctx := t.Context()
+		Get(ctx).InfoContext(ctx, "test message with source")
+
+		output := buf.String()
+		// Should contain source information (file and line)
+		assert.Contains(t, output, "logger_test.go")
+		assert.Contains(t, output, "source")
+	})
+
+	t.Run("add source disabled", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "test-no-source",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			AddSource:  false,
+			EnableOtel: false,
+		})
+
+		ctx := t.Context()
+		Get(ctx).InfoContext(ctx, "test message without source")
+
+		output := buf.String()
+		// Should not contain source field when AddSource is false
+		assert.NotContains(t, output, "\"source\"")
+	})
+
+	t.Run("add source with otel enabled", func(t *testing.T) { //nolint:paralleltest
+		var buf bytes.Buffer
+
+		ConfigureLoggingWithOptions(Options{
+			Subsystem:  "test-add-source-otel",
+			JSON:       true,
+			Output:     &buf,
+			MinLevel:   slog.LevelInfo,
+			AddSource:  true,
+			EnableOtel: true,
+		})
+
+		ctx := t.Context()
+		Get(ctx).InfoContext(ctx, "test message with source and otel")
+
+		output := buf.String()
+		// Should contain source information even with OTel enabled
+		assert.Contains(t, output, "logger_test.go")
+		assert.Contains(t, output, "source")
+	})
+}

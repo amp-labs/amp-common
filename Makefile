@@ -1,6 +1,21 @@
-.PHONY: all
-all:
-	echo "No default target."
+.PHONY: help
+.DEFAULT_GOAL := help
+
+# Show available targets
+help:
+	@echo "amp-common - Available targets:"
+	@echo ""
+	@echo "  test            Run all tests"
+	@echo "  test-pretty     Run tests with pretty output (gotestsum)"
+	@echo "  race            Run tests with race detection"
+	@echo ""
+	@echo "  lint            Run linters without auto-fix"
+	@echo "  fix             Run formatters and linters with auto-fix"
+	@echo "  fix/sort        Run fix with sorted output"
+	@echo "  fix-markdown    Fix markdown files"
+	@echo "  format          Alias for 'fix'"
+	@echo ""
+	@echo "  help            Show this help message"
 
 # ====================
 # Formatting & linting
@@ -34,10 +49,13 @@ fix/sort:
 .PHONY: format
 format: fix
 
-
 .PHONY: test
 test:
-	go test -v ./...
+	RUNNING_ENV=test go test -v -gcflags="all=-N -l" ./...
+
+.PHONY: test-pretty
+test-pretty:
+	RUNNING_ENV=test go run gotest.tools/gotestsum@latest -- -v -gcflags="all=-N -l" ./...
 
 .PHONY: race
 race:

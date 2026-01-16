@@ -19,14 +19,14 @@ type NoopAction struct {
 	BaseAction
 }
 
-// Execute does nothing and always succeeds.
-func (a *NoopAction) Execute(ctx context.Context, smCtx *Context) error {
-	return nil
-}
-
 // NewNoopAction creates a new noop action.
 func NewNoopAction(name string) *NoopAction {
 	return &NoopAction{
 		BaseAction: BaseAction{name: name},
 	}
+}
+
+// Execute does nothing and always succeeds.
+func (a *NoopAction) Execute(ctx context.Context, smCtx *Context) error {
+	return nil
 }

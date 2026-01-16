@@ -1,5 +1,3 @@
-// Package testing provides testing utilities for state machine workflows.
-//
 //nolint:gosec,mnd // Test fixtures with safe file permissions; file mode constants
 package testing
 

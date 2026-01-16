@@ -1,4 +1,3 @@
-// Package helpers provides utility functions for state machine operations.
 package helpers
 
 import (

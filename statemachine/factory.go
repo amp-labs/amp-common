@@ -56,14 +56,14 @@ func sequenceActionBuilder(factory *ActionFactory, name string, params map[strin
 	// Extract nested actions
 	actionsParam, ok := params["actions"].([]any)
 	if !ok {
-		return nil, fmt.Errorf("sequence action requires 'actions' parameter")
+		return nil, ErrSequenceActionsRequired
 	}
 
-	var actions []Action
-	for i, actionParam := range actionsParam {
+	actions := make([]Action, 0, len(actionsParam))
+	for actionIdx, actionParam := range actionsParam {
 		actionMap, ok := actionParam.(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("action %d: invalid action format", i)
+			return nil, fmt.Errorf("action %d: %w", actionIdx, ErrInvalidActionFormat)
 		}
 
 		// Convert to ActionConfig
@@ -79,7 +79,7 @@ func sequenceActionBuilder(factory *ActionFactory, name string, params map[strin
 
 		action, err := factory.Create(config)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create action %d: %w", i, err)
+			return nil, fmt.Errorf("failed to create action %d: %w", actionIdx, err)
 		}
 
 		actions = append(actions, action)

@@ -100,12 +100,13 @@ func LoadConfig(pathOrName string) (*Config, error) {
 
 	// Bare name mode: use registered config loader
 	if defaultConfigLoader == nil {
-		return nil, fmt.Errorf("no config loader registered; use SetConfigLoader() or provide a file path")
+		return nil, ErrNoConfigLoader
 	}
 
 	data, err = defaultConfigLoader.LoadByName(pathOrName)
 	if err != nil {
 		available := defaultConfigLoader.ListAvailable()
+
 		return nil, fmt.Errorf("failed to load config %q (available: %v): %w", pathOrName, available, err)
 	}
 

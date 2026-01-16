@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"os"
-	"strings"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -104,22 +103,4 @@ func logSpanDebug(ctx context.Context, phase string, spanName string, span trace
 		"trace_id", spanCtx.TraceID().String(),
 		"span_id", spanCtx.SpanID().String(),
 	)
-}
-
-// extractTraceContext extracts trace ID and span ID from context for logging.
-func extractTraceContext(ctx context.Context) (traceID, spanID string) {
-	span := trace.SpanFromContext(ctx)
-	if span.SpanContext().IsValid() {
-		spanCtx := span.SpanContext()
-
-		return spanCtx.TraceID().String(), spanCtx.SpanID().String()
-	}
-
-	return "", ""
-}
-
-// isDebugMode checks if MCP_DEBUG mode is enabled.
-func isDebugMode() bool {
-	return strings.EqualFold(os.Getenv("MCP_DEBUG"), "1") ||
-		strings.EqualFold(os.Getenv("MCP_DEBUG"), "true")
 }

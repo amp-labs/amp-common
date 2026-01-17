@@ -30,3 +30,33 @@ func NewNoopAction(name string) *NoopAction {
 func (a *NoopAction) Execute(ctx context.Context, smCtx *Context) error {
 	return nil
 }
+
+// ValidationAction performs validation with optional sampling for feedback.
+type ValidationAction struct {
+	BaseAction
+
+	validator func(ctx context.Context, smCtx *Context) (bool, string, error)
+}
+
+// NewValidationAction creates a new validation action.
+func NewValidationAction(
+	name string,
+	validator func(ctx context.Context, smCtx *Context) (bool, string, error),
+) *ValidationAction {
+	return &ValidationAction{
+		BaseAction: BaseAction{name: name},
+		validator:  validator,
+	}
+}
+
+func (a *ValidationAction) Execute(ctx context.Context, smCtx *Context) error {
+	valid, feedback, err := a.validator(ctx, smCtx)
+	if err != nil {
+		return err
+	}
+
+	smCtx.Set(a.name+"_valid", valid)
+	smCtx.Set(a.name+"_feedback", feedback)
+
+	return nil
+}

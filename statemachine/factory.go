@@ -3,6 +3,7 @@ package statemachine
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 // ActionFactory creates actions from configuration.
@@ -27,6 +28,9 @@ func NewActionFactory() *ActionFactory {
 	// Register built-in action builders
 	factory.Register("noop", noopActionBuilder)
 	factory.Register("sequence", sequenceActionBuilder)
+	factory.Register("validation", validationActionBuilder)
+	factory.Register("conditional", conditionalActionBuilder)
+	factory.Register("retry", retryActionBuilder)
 
 	return factory
 }
@@ -86,4 +90,57 @@ func sequenceActionBuilder(factory *ActionFactory, name string, params map[strin
 	}
 
 	return NewSequenceAction(name, actions...), nil
+}
+
+// validationActionBuilder creates a ValidationAction from parameters.
+// Validation actions require custom validator functions that cannot be specified in YAML.
+func validationActionBuilder(_ *ActionFactory, name string, params map[string]any) (Action, error) {
+	// Validation actions must be created programmatically
+	return nil, ErrValidationMustBeProgrammatic
+}
+
+// conditionalActionBuilder creates a ConditionalAction from parameters.
+// Conditional actions require condition functions that cannot be specified in YAML.
+func conditionalActionBuilder(_ *ActionFactory, name string, params map[string]any) (Action, error) {
+	// Conditional actions must be created programmatically
+	return nil, ErrConditionalMustBeProgrammatic
+}
+
+// retryActionBuilder creates a RetryAction from parameters.
+func retryActionBuilder(factory *ActionFactory, name string, params map[string]any) (Action, error) {
+	// Extract action to retry
+	actionParam, ok := params["action"].(map[string]any)
+	if !ok {
+		return nil, ErrRetryActionRequired
+	}
+
+	// Extract retry parameters
+	maxRetries, ok := params["maxRetries"].(int)
+	if !ok {
+		maxRetries = 3 // default
+	}
+
+	backoffMs, ok := params["backoffMs"].(int)
+	if !ok {
+		backoffMs = 1000 // default 1 second
+	}
+
+	// Convert to ActionConfig
+	config := ActionConfig{
+		Type:       fmt.Sprintf("%v", actionParam["type"]),
+		Name:       fmt.Sprintf("%v", actionParam["name"]),
+		Parameters: make(map[string]any),
+	}
+
+	if params, ok := actionParam["parameters"].(map[string]any); ok {
+		config.Parameters = params
+	}
+
+	// Reuse the factory to preserve custom action builders
+	action, err := factory.Create(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create action to retry: %w", err)
+	}
+
+	return NewRetryAction(name, action, maxRetries, time.Duration(backoffMs)*time.Millisecond), nil
 }

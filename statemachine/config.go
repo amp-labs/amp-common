@@ -21,11 +21,9 @@ type ConfigLoader interface {
 	ListAvailable() []string
 }
 
-var (
-	// defaultConfigLoader is the global config loader used by LoadConfig.
-	// Applications can set this to provide embedded configs.
-	defaultConfigLoader ConfigLoader
-)
+// defaultConfigLoader is the global config loader used by LoadConfig.
+// Applications can set this to provide embedded configs.
+var defaultConfigLoader ConfigLoader
 
 // SetConfigLoader sets the default config loader for name-based loading.
 // This allows applications to provide embedded configs or custom loading logic.

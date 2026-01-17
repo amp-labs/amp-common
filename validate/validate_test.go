@@ -13,9 +13,9 @@ import (
 
 // Static errors for test types.
 var (
-	errValueRequired     = errors.New("value is required")
+	errValueRequired      = errors.New("value is required")
 	errPortMustBePositive = errors.New("port must be positive")
-	errUserIDRequired    = errors.New("userID is required")
+	errUserIDRequired     = errors.New("userID is required")
 )
 
 // Test types implementing HasValidate interface.

@@ -1,11 +1,10 @@
 package utils //nolint:revive // utils is an appropriate package name for utility functions
 
 import (
-	"errors"
 	"fmt"
-)
 
-var ErrPanicRecovery = errors.New("recovered from panic")
+	"github.com/amp-labs/amp-common/errors"
+)
 
 // GetPanicRecoveryError converts a recovered panic value and optional stack trace
 // into a standard error. If the panic value is nil, it returns nil.
@@ -20,15 +19,15 @@ func GetPanicRecoveryError(err any, stack []byte) error {
 	errErr, ok := err.(error)
 	if ok {
 		if stack != nil {
-			return fmt.Errorf("%w: %w\nstack trace:\n%s", ErrPanicRecovery, errErr, string(stack))
+			return fmt.Errorf("%w: %w\nstack trace:\n%s", errors.ErrPanicRecovery, errErr, string(stack))
 		}
 
-		return fmt.Errorf("%w: %w", ErrPanicRecovery, errErr)
+		return fmt.Errorf("%w: %w", errors.ErrPanicRecovery, errErr)
 	} else {
 		if stack != nil {
-			return fmt.Errorf("%w: %v\nstack trace:\n%s", ErrPanicRecovery, err, string(stack))
+			return fmt.Errorf("%w: %v\nstack trace:\n%s", errors.ErrPanicRecovery, err, string(stack))
 		}
 
-		return fmt.Errorf("%w: %v", ErrPanicRecovery, err)
+		return fmt.Errorf("%w: %v", errors.ErrPanicRecovery, err)
 	}
 }

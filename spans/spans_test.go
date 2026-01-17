@@ -15,12 +15,18 @@ import (
 	otelTrace "go.opentelemetry.io/otel/trace"
 )
 
+var (
+	errTest       = errors.New("test error")
+	errUnderlying = errors.New("underlying error")
+)
+
 // setupTestTracer creates a test tracer and exporter for testing spans.
 func setupTestTracer() (*trace.TracerProvider, *tracetest.InMemoryExporter) {
 	exporter := tracetest.NewInMemoryExporter()
 	tp := trace.NewTracerProvider(
 		trace.WithSyncer(exporter),
 	)
+
 	return tp, exporter
 }
 
@@ -77,8 +83,10 @@ func TestSetTracer(t *testing.T) {
 	tp, _ := setupTestTracer()
 	tracer := tp.Tracer("test-tracer")
 
-	var capturedKey any
-	var capturedValue any
+	var (
+		capturedKey   any
+		capturedValue any
+	)
 
 	setter := func(key any, value any) {
 		capturedKey = key
@@ -108,6 +116,7 @@ func TestStart(t *testing.T) {
 
 		spans.Start(ctx, "test-span").Enter(func(ctx context.Context, span otelTrace.Span) {
 			executed = true
+
 			assert.NotNil(t, span, "span should not be nil")
 		})
 
@@ -155,7 +164,7 @@ func TestStartErr(t *testing.T) {
 		tracer := tp.Tracer("test-tracer")
 		ctx := spans.WithTracer(context.Background(), tracer)
 
-		expectedErr := errors.New("test error")
+		expectedErr := errTest
 
 		err := spans.StartErr(ctx, "test-span-err").Enter(func(ctx context.Context, span otelTrace.Span) error {
 			return expectedErr
@@ -184,7 +193,7 @@ func TestStartErr(t *testing.T) {
 			return nil
 		})
 
-		assert.NoError(t, err, "should not return an error")
+		require.NoError(t, err, "should not return an error")
 
 		// Verify span was created with OK status
 		spanData := exporter.GetSpans()
@@ -232,7 +241,7 @@ func TestStartVal(t *testing.T) {
 
 		ctx := context.Background()
 		result := spans.StartVal[string](ctx, "test-span").Enter(nil)
-		assert.Equal(t, "", result, "should return zero value for nil function")
+		assert.Empty(t, result, "should return zero value for nil function")
 	})
 }
 
@@ -255,7 +264,7 @@ func TestStartValErr(t *testing.T) {
 			},
 		)
 
-		assert.NoError(t, err, "should not return an error")
+		require.NoError(t, err, "should not return an error")
 		assert.Equal(t, 42, result, "should return the value")
 
 		// Verify span was created
@@ -273,7 +282,7 @@ func TestStartValErr(t *testing.T) {
 		tracer := tp.Tracer("test-tracer")
 		ctx := spans.WithTracer(context.Background(), tracer)
 
-		expectedErr := errors.New("test error")
+		expectedErr := errTest
 
 		result, err := spans.StartValErr[int](ctx, "test-span-val-err").Enter(
 			func(ctx context.Context, span otelTrace.Span) (int, error) {
@@ -295,8 +304,8 @@ func TestStartValErr(t *testing.T) {
 
 		ctx := context.Background()
 		result, err := spans.StartValErr[string](ctx, "test-span").Enter(nil)
-		assert.NoError(t, err, "should not return an error for nil function")
-		assert.Equal(t, "", result, "should return zero value for nil function")
+		require.NoError(t, err, "should not return an error for nil function")
+		assert.Empty(t, result, "should return zero value for nil function")
 	})
 }
 
@@ -339,11 +348,14 @@ func TestWithAttribute(t *testing.T) {
 
 	// Find the attributes
 	attrs := spanData[0].Attributes
+
 	var foundString, foundInt bool
+
 	for _, attr := range attrs {
 		if string(attr.Key) == "test.key" && attr.Value.AsString() == "test-value" {
 			foundString = true
 		}
+
 		if string(attr.Key) == "test.number" && attr.Value.AsInt64() == 42 {
 			foundInt = true
 		}
@@ -402,7 +414,7 @@ func TestWithErrorMessage(t *testing.T) {
 	tracer := tp.Tracer("test-tracer")
 	ctx := spans.WithTracer(context.Background(), tracer)
 
-	expectedErr := errors.New("underlying error")
+	expectedErr := errUnderlying
 
 	_ = spans.StartErr(ctx, "test-span", spans.WithErrorMessage("Operation failed")).Enter(
 		func(ctx context.Context, span otelTrace.Span) error {
@@ -440,9 +452,11 @@ func TestWithSpanStartOptions(t *testing.T) {
 
 	// Find the attribute
 	var found bool
+
 	for _, attr := range spanData[0].Attributes {
 		if string(attr.Key) == "custom.attr" && attr.Value.AsString() == "value" {
 			found = true
+
 			break
 		}
 	}
@@ -465,6 +479,7 @@ func TestWithSpanDecorator(t *testing.T) {
 	spans.Start(ctx, "test-span",
 		spans.WithSpanDecorator(func(span otelTrace.Span) {
 			decoratorCalled = true
+
 			span.SetAttributes(attribute.String("decorated", "true"))
 		}),
 	).Enter(func(ctx context.Context, span otelTrace.Span) {})
@@ -476,9 +491,11 @@ func TestWithSpanDecorator(t *testing.T) {
 
 	// Find the decorated attribute
 	var found bool
+
 	for _, attr := range spanData[0].Attributes {
 		if string(attr.Key) == "decorated" && attr.Value.AsString() == "true" {
 			found = true
+
 			break
 		}
 	}
@@ -551,9 +568,11 @@ func TestPanicRecovery(t *testing.T) {
 
 	// Check for panic attribute
 	var foundPanic bool
+
 	for _, attr := range spanData[0].Attributes {
 		if string(attr.Key) == "panic" && attr.Value.AsInt64() == 1 {
 			foundPanic = true
+
 			break
 		}
 	}

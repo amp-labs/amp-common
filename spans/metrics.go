@@ -14,7 +14,8 @@ import (
 //   - span_name: The name of the span that was attempted
 //
 // Example PromQL query:
-//   sum by (span_name) (rate(amp_spans_without_tracer_total[5m]))
+//
+//	sum by (span_name) (rate(amp_spans_without_tracer_total[5m]))
 var spanWithoutTracerCounter = promauto.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: "amp",

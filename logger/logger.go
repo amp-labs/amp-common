@@ -21,6 +21,7 @@ import (
 	"github.com/amp-labs/amp-common/tests"
 	"github.com/neilotoole/slogt"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // subsystem stores the default subsystem name for the application.
@@ -1062,6 +1063,16 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 		if len(testInfo.Id) > 0 {
 			logger = logger.With("test-id", testInfo.Id)
 		}
+	}
+
+	// Extract trace context if available
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().IsValid() {
+		spanCtx := span.SpanContext()
+		logger = logger.With(
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		)
 	}
 
 	// Add the subsystem name.

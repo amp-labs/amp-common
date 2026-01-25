@@ -129,7 +129,9 @@ func Initialize(ctx context.Context, config *Config) error {
 	opts := []sdktrace.TracerProviderOption{
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(res),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSampler(sdktrace.ParentBased(
+			sdktrace.TraceIDRatioBased(getSampleRate(ctx)),
+		)),
 	}
 
 	// Add any additional span processors (e.g., Sentry)
@@ -157,6 +159,32 @@ func Initialize(ctx context.Context, config *Config) error {
 	)
 
 	return nil
+}
+
+// getSampleRate returns sampling rate from environment (default 0.1 = 10%).
+// Valid values are between 0.0 (no traces) and 1.0 (all traces).
+// Invalid values fall back to the default of 0.1.
+func getSampleRate(ctx context.Context) float64 {
+	rate, err := envutil.Float64(ctx, "OTEL_TRACE_SAMPLE_RATE",
+		envutil.Default(0.1),
+		envutil.Validate(func(v float64) error {
+			if v < 0 || v > 1 {
+				return fmt.Errorf("sample rate must be between 0 and 1, got %f", v)
+			}
+			return nil
+		}),
+	).Value()
+
+	if err != nil {
+		// Log validation error and fall back to default
+		slog.Warn("Invalid OTEL_TRACE_SAMPLE_RATE, using default",
+			"error", err,
+			"default", 0.1,
+		)
+		return 0.1
+	}
+
+	return rate
 }
 
 // Shutdown gracefully shuts down the OpenTelemetry tracer provider.

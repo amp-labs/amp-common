@@ -20,12 +20,15 @@ jobs:
       # Run go generate
       - name: Generate
         run: go generate ./...
+      # Install go-acc for better multi-package coverage
+      - name: Install go-acc
+        run: go install github.com/ory/go-acc@latest
       # Run tests
       - name: Unit Tests
         env:
           SKIP_FLAKY_TESTS: "true"
           RUNNING_ENV: "test"
-        run: go test -p=1 -json $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./... | tee results.json
+        run: go-acc -o cover.out --covermode atomic --ignore scripts -- -json ./... | tee results.json
       - name: Generate coverage results
         run: go tool cover -func=cover.out -o=coverage.func.out
       - name: Render Test Summary

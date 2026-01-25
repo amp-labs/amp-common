@@ -12,7 +12,7 @@ require (
 	github.com/klauspost/compress v1.18.3
 	github.com/manifoldco/promptui v0.9.0
 	github.com/neilotoole/slogt v1.1.0
-	github.com/pierrec/lz4/v4 v4.1.23
+	github.com/pierrec/lz4/v4 v4.1.25
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d

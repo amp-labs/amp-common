@@ -25,7 +25,7 @@ jobs:
         env:
           SKIP_FLAKY_TESTS: "true"
           RUNNING_ENV: "test"
-        run: go test -json $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./... | tee results.json
+        run: go test -p=1 -json $(go list ./... | grep -v scripts/) -coverprofile=./cover.out -covermode=atomic -coverpkg=./... | tee results.json
       - name: Generate coverage results
         run: go tool cover -func=cover.out -o=coverage.func.out
       - name: Render Test Summary

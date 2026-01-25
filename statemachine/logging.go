@@ -2,9 +2,9 @@ package statemachine
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
+	"github.com/amp-labs/amp-common/logger"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
@@ -48,16 +48,14 @@ func GetObservabilityLabels(ctx context.Context) ObservabilityLabels {
 	}
 }
 
-// DefaultLogger implements Logger using slog.
+// DefaultLogger implements Logger using amp-common/logger for trace correlation.
 type DefaultLogger struct {
-	logger *slog.Logger
+	// No longer stores a logger - uses logger.Get(ctx) for automatic trace correlation
 }
 
 // NewDefaultLogger creates a new default logger.
 func NewDefaultLogger() *DefaultLogger {
-	return &DefaultLogger{
-		logger: slog.Default(),
-	}
+	return &DefaultLogger{}
 }
 
 func (l *DefaultLogger) StateEntered(ctx context.Context, state string, data map[string]any) {
@@ -88,7 +86,8 @@ func (l *DefaultLogger) StateEntered(ctx context.Context, state string, data map
 		fields = append(fields, "data_key_names", dataKeys)
 	}
 
-	l.logger.InfoContext(ctx, "State entered", fields...)
+	// Use logger.Get(ctx) for automatic trace correlation
+	logger.Get(ctx).InfoContext(ctx, "State entered", fields...)
 }
 
 func (l *DefaultLogger) StateExited(ctx context.Context, state string, duration time.Duration, err error) {
@@ -117,10 +116,11 @@ func (l *DefaultLogger) StateExited(ctx context.Context, state string, duration 
 		)
 	}
 
+	// Use logger.Get(ctx) for automatic trace correlation
 	if err != nil {
-		l.logger.ErrorContext(ctx, "State exited with error", append(fields, "error", err)...)
+		logger.Get(ctx).ErrorContext(ctx, "State exited with error", append(fields, "error", err)...)
 	} else {
-		l.logger.InfoContext(ctx, "State exited", fields...)
+		logger.Get(ctx).InfoContext(ctx, "State exited", fields...)
 	}
 }
 
@@ -143,24 +143,27 @@ func (l *DefaultLogger) TransitionExecuted(ctx context.Context, from, to string)
 		)
 	}
 
-	l.logger.InfoContext(ctx, "Transition executed", fields...)
+	// Use logger.Get(ctx) for automatic trace correlation
+	logger.Get(ctx).InfoContext(ctx, "Transition executed", fields...)
 }
 
 func (l *DefaultLogger) ActionStarted(ctx context.Context, action string) {
-	l.logger.InfoContext(ctx, "Action started",
+	// Use logger.Get(ctx) for automatic trace correlation
+	logger.Get(ctx).InfoContext(ctx, "Action started",
 		"action", action,
 	)
 }
 
 func (l *DefaultLogger) ActionCompleted(ctx context.Context, action string, duration time.Duration, err error) {
+	// Use logger.Get(ctx) for automatic trace correlation
 	if err != nil {
-		l.logger.ErrorContext(ctx, "Action completed with error",
+		logger.Get(ctx).ErrorContext(ctx, "Action completed with error",
 			"action", action,
 			"duration_ms", duration.Milliseconds(),
 			"error", err,
 		)
 	} else {
-		l.logger.InfoContext(ctx, "Action completed",
+		logger.Get(ctx).InfoContext(ctx, "Action completed",
 			"action", action,
 			"duration_ms", duration.Milliseconds(),
 		)

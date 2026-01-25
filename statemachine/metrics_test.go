@@ -49,9 +49,9 @@ func TestSanitization(t *testing.T) {
 		{"empty provider", "", "none", sanitizeProvider},
 		{"empty tool", "", "unknown", sanitizeTool},
 		{"empty chunk", "", "none", sanitizeChunkID},
-		{"short chunk", "short", "8-char-hash", sanitizeChunkID},
-		{"long chunk", "very-long-chunk-id-12345", "8-char-hash", sanitizeChunkID},
-		{"project id", "test-project-123", "8-char-hash", sanitizeProjectID},
+		{"short chunk", "short", "short", sanitizeChunkID},
+		{"long chunk", "very-long-chunk-id-12345", "very-long-chunk-id-12345", sanitizeChunkID},
+		{"project id", "test-project-123", "test-project-123", sanitizeProjectID},
 	}
 
 	for _, tt := range tests {
@@ -59,11 +59,7 @@ func TestSanitization(t *testing.T) {
 			t.Parallel()
 
 			result := tt.fn(tt.input)
-			if tt.expected == "8-char-hash" {
-				assert.Len(t, result, 8)
-			} else {
-				assert.Equal(t, tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

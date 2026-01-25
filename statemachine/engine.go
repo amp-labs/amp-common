@@ -111,6 +111,19 @@ func (e *Engine) Execute(ctx context.Context, smCtx *Context) (err error) {
 			sanitizeProjectID(smCtx.ProjectID),
 			sanitizeChunkID(smCtx.ContextChunkID),
 		).Observe(time.Since(executionStart).Seconds())
+
+		// Record path length
+		pathLength.WithLabelValues(
+			sanitizeTool(smCtx.ToolName),
+			outcome,
+			sanitizeProjectID(smCtx.ProjectID),
+			sanitizeChunkID(smCtx.ContextChunkID),
+		).Observe(float64(len(smCtx.PathHistory)))
+
+		// Log state machine execution summary with complete path
+		if e.logger != nil {
+			e.logExecutionSummary(ctx, time.Since(executionStart), err)
+		}
 	}()
 
 	// Inject state machine context into Go context for logger access
@@ -126,6 +139,14 @@ func (e *Engine) Execute(ctx context.Context, smCtx *Context) (err error) {
 		if e.enableCancellation {
 			select {
 			case <-ctx.Done():
+				// Record cancellation metric
+				executionsCancelledTotal.WithLabelValues(
+					sanitizeTool(smCtx.ToolName),
+					smCtx.CurrentState,
+					sanitizeProjectID(smCtx.ProjectID),
+					sanitizeChunkID(smCtx.ContextChunkID),
+				).Inc()
+
 				return WrapStateError(smCtx.CurrentState, ctx.Err())
 			default:
 				// Continue execution
@@ -152,10 +173,10 @@ func (e *Engine) Execute(ctx context.Context, smCtx *Context) (err error) {
 		// Execute state with timeout and hooks
 		stateStartTime := time.Now()
 		result, err := e.executeStateWithHooks(stateCtx, state, smCtx)
-		stateDuration := time.Since(stateStartTime)
+		stateElapsed := time.Since(stateStartTime)
 
 		// Update span on state exit
-		stateSpan.SetAttributes(attribute.Int64("duration_ms", stateDuration.Milliseconds()))
+		stateSpan.SetAttributes(attribute.Int64("duration_ms", stateElapsed.Milliseconds()))
 
 		if err != nil {
 			stateSpan.RecordError(err)
@@ -170,7 +191,7 @@ func (e *Engine) Execute(ctx context.Context, smCtx *Context) (err error) {
 
 		// Log state exit (regardless of error)
 		if e.logger != nil {
-			e.logger.StateExited(stateCtx, smCtx.CurrentState, stateDuration, err)
+			e.logger.StateExited(stateCtx, smCtx.CurrentState, stateElapsed, err)
 		}
 
 		// Record state exit outcome
@@ -187,6 +208,16 @@ func (e *Engine) Execute(ctx context.Context, smCtx *Context) (err error) {
 			sanitizeProjectID(smCtx.ProjectID),
 			sanitizeChunkID(smCtx.ContextChunkID),
 		).Inc()
+
+		// Record state duration
+		stateDuration.WithLabelValues(
+			sanitizeTool(smCtx.ToolName),
+			smCtx.CurrentState,
+			sanitizeProvider(smCtx.Provider),
+			outcome,
+			sanitizeProjectID(smCtx.ProjectID),
+			sanitizeChunkID(smCtx.ContextChunkID),
+		).Observe(stateElapsed.Seconds())
 
 		if err != nil {
 			return WrapStateError(smCtx.CurrentState, err)
@@ -257,6 +288,15 @@ func (e *Engine) SetCancellationEnabled(enabled bool) {
 // SetLogger sets the logger for state machine execution.
 func (e *Engine) SetLogger(logger Logger) {
 	e.logger = logger
+}
+
+// logExecutionSummary logs a summary of the state machine execution including the complete path.
+func (e *Engine) logExecutionSummary(ctx context.Context, duration time.Duration, err error) {
+	if err != nil {
+		e.logger.StateExited(ctx, "state_machine_execution", duration, err)
+	} else {
+		e.logger.StateExited(ctx, "state_machine_execution", duration, nil)
+	}
 }
 
 // executeStateWithHooks executes a state with timeout and hooks.

@@ -3,6 +3,7 @@ package telemetry
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -21,9 +22,15 @@ import (
 const (
 	defaultServiceVersion = "1.0.0"
 	defaultTimeout        = 5 * time.Second
+	defaultSampleRate     = 0.1 // 10% of traces sampled by default
 )
 
-var tracerProvider *sdktrace.TracerProvider
+var (
+	tracerProvider *sdktrace.TracerProvider
+
+	// ErrInvalidSampleRate is returned when the sample rate is not between 0 and 1.
+	ErrInvalidSampleRate = errors.New("sample rate must be between 0 and 1")
+)
 
 // Config holds the OpenTelemetry configuration.
 type Config struct {
@@ -166,22 +173,23 @@ func Initialize(ctx context.Context, config *Config) error {
 // Invalid values fall back to the default of 0.1.
 func getSampleRate(ctx context.Context) float64 {
 	rate, err := envutil.Float64(ctx, "OTEL_TRACE_SAMPLE_RATE",
-		envutil.Default(0.1),
+		envutil.Default(defaultSampleRate),
 		envutil.Validate(func(v float64) error {
 			if v < 0 || v > 1 {
-				return fmt.Errorf("sample rate must be between 0 and 1, got %f", v)
+				return fmt.Errorf("%w, got %f", ErrInvalidSampleRate, v)
 			}
+
 			return nil
 		}),
 	).Value()
-
 	if err != nil {
 		// Log validation error and fall back to default
 		slog.Warn("Invalid OTEL_TRACE_SAMPLE_RATE, using default",
 			"error", err,
-			"default", 0.1,
+			"default", defaultSampleRate,
 		)
-		return 0.1
+
+		return defaultSampleRate
 	}
 
 	return rate

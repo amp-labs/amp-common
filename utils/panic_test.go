@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	ampErrors "github.com/amp-labs/amp-common/errors"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

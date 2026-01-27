@@ -1,21 +1,14 @@
 package envutil
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
-)
-
-const (
-	// maxSplitParts is the maximum number of parts to split on when parsing KEY=VALUE.
-	// We use 2 to split on the first equals sign only, allowing values to contain '='.
-	maxSplitParts = 2
 )
 
 // ErrUnknownFileType is returned when the file extension is not recognized.
@@ -65,11 +58,15 @@ func LoadEnvFile(path string) (map[string]string, error) {
 }
 
 // loadEnvFile parses a .env file and returns environment variables as a map.
-// The .env file format supports:
+// Uses the godotenv library which supports:
 //   - Key-value pairs in the format KEY=VALUE (one per line)
-//   - Comments starting with # (entire line is ignored)
+//   - Comments starting with # (entire line or inline)
 //   - Empty lines (ignored)
-//   - Whitespace around keys and values is trimmed
+//   - Single and double quoted values
+//   - Variable expansion
+//   - Multi-line values
+//   - Escaped characters
+//   - Export statements
 //
 // Example .env file:
 //
@@ -77,49 +74,11 @@ func LoadEnvFile(path string) (map[string]string, error) {
 //	DB_HOST=localhost
 //	DB_PORT=5432
 //	DB_NAME=myapp
+//	export SECRET_KEY="my-secret"
 //
-// Lines that don't contain an equals sign are silently ignored.
+// Returns an error if the file contains malformed lines (e.g., lines without equals signs).
 func loadEnvFile(path string) (map[string]string, error) {
-	bts, err := os.ReadFile(path) // #nosec G304 -- path is the intended file to load
-	if err != nil {
-		return nil, err
-	}
-
-	// Use scanner for efficient line-by-line processing
-	scanner := bufio.NewScanner(bytes.NewReader(bts))
-
-	out := make(map[string]string)
-
-	// Process each line in the file
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-
-		// Skip comment lines starting with #
-		if strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		// Split on the first equals sign to allow values to contain '='
-		// For example: "SECRET_KEY=abc=def" becomes ["SECRET_KEY", "abc=def"]
-		parts := strings.SplitN(line, "=", maxSplitParts)
-		if len(parts) != maxSplitParts {
-			// Skip lines without an equals sign (empty lines, malformed lines)
-			continue
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		out[key] = value
-	}
-
-	// Check if scanner encountered any errors during reading
-	err = scanner.Err()
-	if err != nil {
-		return nil, err
-	}
-
-	return out, nil
+	return godotenv.Read(path)
 }
 
 // jsonEnvFile represents the expected structure of a JSON environment file.

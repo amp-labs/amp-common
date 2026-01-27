@@ -9,6 +9,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0
 	github.com/fereidani/httpdecompressor v0.0.0-20250320190614-ccdf59c9caa2
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.18.3
 	github.com/manifoldco/promptui v0.9.0
 	github.com/neilotoole/slogt v1.1.0

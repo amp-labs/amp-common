@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amp-labs/amp-common/envtypes"
 	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/future"
 	"github.com/amp-labs/amp-common/logger"
@@ -241,31 +240,36 @@ func ConfigureEnvironment(opts ...Option) error {
 		sanitizeEnvFileList).
 		ValueOrElse(nil)
 
-	envDebug :=
-		envutil.Map(
-			envutil.FilePath(context.Background(), "ENV_DEBUG"),
-			func(path envtypes.LocalPath) (envtypes.LocalPath, error) {
-				if path.Info != nil && path.Info.IsDir() {
-					return path, fmt.Errorf("%w: %s", ErrEnvDebugIsDirectory, path.Path)
-				}
-
-				return path, nil
-			})
-
+	envDebug := envutil.String(context.Background(), "ENV_DEBUG")
 	envTraces := envutil.Bool(context.Background(),
 		"ENV_TRACES", envutil.Default(false))
 
-	envDebug.DoWithValue(func(path envtypes.LocalPath) {
-		if cfg.auditLogFile == "" {
-			opts = append(opts, WithAuditLogFile(path.Path))
+	// Collect additional options based on ENV_DEBUG and ENV_TRACES
+	var additionalOpts []Option
+
+	envDebug.DoWithValue(func(path string) {
+		// Validate it's not a directory if it exists
+		info, err := os.Stat(path)
+		if err == nil && info.IsDir() {
+			// Don't set up audit logging if path is a directory
+			return
 		}
 
-		opts = append(opts,
+		if cfg.auditLogFile == "" {
+			additionalOpts = append(additionalOpts, WithAuditLogFile(path))
+		}
+
+		additionalOpts = append(additionalOpts,
 			WithEnableRecording(true),
 			WithEnableStackTraces(envTraces.ValueOrElse(false)))
 	})
 
-	return ConfigureEnvironmentFromFiles(envFiles, opts...)
+	// Merge original opts with additional opts
+	allOpts := make([]Option, 0, len(opts)+len(additionalOpts))
+	allOpts = append(allOpts, opts...)
+	allOpts = append(allOpts, additionalOpts...)
+
+	return ConfigureEnvironmentFromFiles(envFiles, allOpts...)
 }
 
 // ConfigureEnvironmentFromFiles loads environment variables from the specified list of files
@@ -350,10 +354,13 @@ func setupAuditFile(opts *options) error {
 		return fmt.Errorf("opening audit log file %q: %w", opts.auditLogFile, err)
 	}
 
-	defer should.Close(output)
-
 	ctx, cancel := context.WithCancel(context.Background())
-	shutdown.BeforeShutdown(cancel)
+
+	shutdown.BeforeShutdown(func() {
+		cancel()
+
+		should.Close(output)
+	})
 
 	future.AsyncContext(ctx, func(ctx context.Context) {
 		ticker := time.NewTicker(auditLogFlushInterval)

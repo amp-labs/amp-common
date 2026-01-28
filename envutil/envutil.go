@@ -91,7 +91,7 @@ func observerEnv(key string, val string, ok bool) {
 			event.Source = None
 		}
 
-		if recording.Load() {
+		if recording.Load() && shouldRecordKey(key) {
 			// Append event to the recorded events slice
 			eventMutex.Lock()
 
@@ -125,7 +125,7 @@ func observeEnvOverride(key string, val string) {
 			event.Stack = debug.Stack()
 		}
 
-		if recording.Load() {
+		if recording.Load() && shouldRecordKey(key) {
 			// Append event to the recorded events slice
 			eventMutex.Lock()
 

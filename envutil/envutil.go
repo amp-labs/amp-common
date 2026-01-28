@@ -1,6 +1,19 @@
 // Package envutil provides type-safe environment variable parsing with a fluent API.
 // It offers built-in support for strings, integers, booleans, durations, URLs, UUIDs,
 // file paths, and more, with optional defaults, validation, and error handling.
+//
+// Environment variables can be read from two sources:
+//  1. Operating system environment (via os.LookupEnv)
+//  2. Context-based overrides (via WithEnvOverride) - useful for testing and multi-tenancy
+//
+// Recording and Observation:
+// The package supports optional recording and observation of environment variable reads
+// for debugging, auditing, and testing purposes:
+//   - EnableRecording() enables collection of ValueReadEvent records
+//   - RegisterObserver() allows real-time notification when variables are read
+//   - Each event includes the key, value, source (Environment/Context/None), and optional stack trace
+//
+// Note: This package documentation consolidates information from multiple files (envutil.go and record.go).
 package envutil
 
 import (
@@ -10,6 +23,7 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/amp-labs/amp-common/envtypes"
@@ -19,9 +33,18 @@ import (
 )
 
 // get returns a Reader for the given environment variable key.
+// It first checks for context-based overrides (via WithEnvOverride), then falls back
+// to the operating system environment. Recording and observer notifications happen
+// automatically if enabled.
+//
+// The lookup order is:
+//  1. Context override (if present in ctx) -> Source=Context
+//  2. OS environment variable -> Source=Environment or None
 func get(ctx context.Context, key string) Reader[string] {
-	val, ok := getEnvOverride(ctx, key)
-	if ok {
+	val, found := getEnvOverride(ctx, key)
+	if found {
+		observeEnvOverride(key, val)
+
 		return Reader[string]{
 			key:     key,
 			present: true,
@@ -29,12 +52,90 @@ func get(ctx context.Context, key string) Reader[string] {
 		}
 	}
 
-	val, ok = os.LookupEnv(key)
+	val, found = os.LookupEnv(key)
+
+	observerEnv(key, val, found)
 
 	return Reader[string]{
 		key:     key,
-		present: ok,
+		present: found,
 		value:   val,
+	}
+}
+
+// observerEnv records and notifies observers about an OS environment variable read.
+// This function is called after reading from the operating system environment.
+// It determines the Source based on whether the variable was found:
+//   - Source=Environment if the variable is set (ok=true)
+//   - Source=None if the variable is not set (ok=false)
+//
+// If recording or observers are disabled, this function returns immediately with
+// minimal overhead (single atomic load check).
+func observerEnv(key string, val string, ok bool) {
+	if recording.Load() || hasObservers.Load() {
+		event := ValueReadEvent{
+			Time:  time.Now(),
+			Key:   key,
+			Value: val,
+		}
+
+		if wantStacks.Load() {
+			event.Stack = debug.Stack()
+		}
+
+		if ok {
+			event.IsSet = true
+			event.Source = Environment
+		} else {
+			event.IsSet = false
+			event.Source = None
+		}
+
+		if recording.Load() {
+			// Append event to the recorded events slice
+			eventMutex.Lock()
+
+			events = append(events, event)
+
+			eventMutex.Unlock()
+		}
+
+		// Notify observers outside the mutex to avoid blocking other reads
+		notifyObservers(event)
+	}
+}
+
+// observeEnvOverride records and notifies observers about a context-based environment override read.
+// This function is called after reading from context overrides (via WithEnvOverride).
+// Context overrides always have Source=Context and IsSet=true.
+//
+// If recording or observers are disabled, this function returns immediately with
+// minimal overhead (single atomic load check).
+func observeEnvOverride(key string, val string) {
+	if recording.Load() || hasObservers.Load() {
+		event := ValueReadEvent{
+			Time:   time.Now(),
+			Key:    key,
+			Value:  val,
+			IsSet:  true,
+			Source: Context,
+		}
+
+		if wantStacks.Load() {
+			event.Stack = debug.Stack()
+		}
+
+		if recording.Load() {
+			// Append event to the recorded events slice
+			eventMutex.Lock()
+
+			events = append(events, event)
+
+			eventMutex.Unlock()
+		}
+
+		// Notify observers outside the mutex to avoid blocking other reads
+		notifyObservers(event)
 	}
 }
 
@@ -224,6 +325,15 @@ func FilePath(ctx context.Context, key string, opts ...Option[envtypes.LocalPath
 // FileContents returns a Reader that reads file contents from a path.
 // The environment variable value is treated as a file path, which is read into memory.
 // Note: Default() provides default file contents, not a default file path.
+//
+// Example:
+//
+//	// CONFIG_PATH=/etc/app/config.json
+//	contents, _ := FileContents(ctx, "CONFIG_PATH").Value()
+//	// contents = []byte containing the file data from /etc/app/config.json
+//	//
+//	// If CONFIG_PATH is not set or points to non-existent file, Value() returns an error
+//	// unless you provide a Default with fallback contents
 func FileContents(ctx context.Context, key string, opts ...Option[[]byte]) Reader[[]byte] {
 	rdr := Map(Map(Map(get(ctx, key), xform.Path), xform.PathExists), xform.ReadFile)
 	for _, opt := range opts {
@@ -236,13 +346,18 @@ func FileContents(ctx context.Context, key string, opts ...Option[[]byte]) Reade
 // GzipLevel returns a Reader for a gzip compression level environment variable.
 // Valid values: gzip.DefaultCompression, gzip.BestSpeed, gzip.BestCompression,
 // gzip.NoCompression, gzip.HuffmanOnly.
+//
+// Example:
+//
+//	level, _ := GzipLevel(ctx, "COMPRESSION_LEVEL", Default(gzip.DefaultCompression)).Value()
 func GzipLevel(ctx context.Context, key string, opts ...Option[int]) Reader[int] {
 	rdr := Map(get(ctx, key), xform.GzipLevel)
 	for _, opt := range opts {
 		rdr = opt(rdr)
 	}
 
-	// Add a sanity check since the caller might pass in an invalid default
+	// Validate the final value (including defaults) to catch invalid user-provided defaults.
+	// This ensures even Default() values are validated, not just parsed env var values.
 	return rdr.Map(func(i int) (int, error) {
 		switch i {
 		case gzip.DefaultCompression, gzip.BestSpeed,
@@ -255,7 +370,16 @@ func GzipLevel(ctx context.Context, key string, opts ...Option[int]) Reader[int]
 }
 
 // Many returns a map of Readers for multiple environment variable keys.
-// Useful when you need to process several related variables.
+// Useful when you need to process several related variables with individual error handling.
+//
+// Example:
+//
+//	readers := Many(ctx, "DATABASE_URL", "API_KEY", "PORT")
+//	dbURL, _ := readers["DATABASE_URL"].Value()
+//	apiKey, _ := readers["API_KEY"].Value()
+//	port, _ := readers["PORT"].Map(xform.Int).Value()
+//
+// For a simpler map of values (without individual Readers), see VarMap.
 func Many(ctx context.Context, keys ...string) map[string]Reader[string] {
 	if len(keys) == 0 {
 		return nil
@@ -273,6 +397,13 @@ func Many(ctx context.Context, keys ...string) map[string]Reader[string] {
 // VarMap returns a Reader containing a map of environment variable values.
 // Only variables that are present in the environment are included in the map.
 // All variables are treated as optional; missing variables are simply omitted.
+//
+// Example:
+//
+//	// Request DATABASE_URL and API_KEY, but only DATABASE_URL is set
+//	vars, _ := VarMap(ctx, "DATABASE_URL", "API_KEY").Value()
+//	// Result: map[string]string{"DATABASE_URL": "postgres://..."}
+//	// API_KEY is not in the map because it wasn't set
 func VarMap(ctx context.Context, keys ...string) Reader[map[string]string] {
 	if len(keys) == 0 {
 		return NewReader[map[string]string]("", true, nil, make(map[string]string))
@@ -280,6 +411,7 @@ func VarMap(ctx context.Context, keys ...string) Reader[map[string]string] {
 
 	out := make(map[string]string, len(keys))
 
+	// Only include variables that are actually present in the environment
 	for _, rdr := range Many(ctx, keys...) {
 		if rdr.HasValue() {
 			out[rdr.Key()] = rdr.value

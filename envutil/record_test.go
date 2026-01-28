@@ -1,7 +1,6 @@
 package envutil
 
 import (
-	"context"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -48,7 +47,7 @@ func TestObserver(t *testing.T) {
 	t.Setenv(testKey, testValue)
 
 	// Read the environment variable
-	value, err := String(context.Background(), testKey).Value()
+	value, err := String(t.Context(), testKey).Value()
 	require.NoError(t, err)
 	assert.Equal(t, testValue, value)
 
@@ -91,7 +90,7 @@ func TestObserverUnregister(t *testing.T) {
 	t.Setenv(testKey, "value1")
 
 	// First read - observer should be called
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -101,7 +100,7 @@ func TestObserverUnregister(t *testing.T) {
 	unregister()
 
 	// Second read - observer should NOT be called
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -143,7 +142,7 @@ func TestMultipleObservers(t *testing.T) {
 	testKey := "TEST_MULTI_OBSERVER_VAR"
 	t.Setenv(testKey, "test")
 
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -178,7 +177,7 @@ func TestObserverWithRecordingDisabled(t *testing.T) {
 	testKey := "TEST_DISABLED_VAR"
 	t.Setenv(testKey, "test")
 
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -222,7 +221,7 @@ func TestObserverStackTraces(t *testing.T) {
 	testKey := "TEST_STACK_VAR"
 	t.Setenv(testKey, "test")
 
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -232,9 +231,8 @@ func TestObserverStackTraces(t *testing.T) {
 	eventMu.Unlock()
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestObserverConcurrency(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -270,7 +268,7 @@ func TestObserverConcurrency(t *testing.T) {
 			defer wg.Done()
 
 			key := "TEST_CONCURRENT_VAR_" + string(rune('0'+idx))
-			_, _ = String(context.Background(), key).Value()
+			_, _ = String(t.Context(), key).Value()
 		}(i)
 	}
 
@@ -281,9 +279,8 @@ func TestObserverConcurrency(t *testing.T) {
 	assert.Equal(t, int32(10), callCount.Load())
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestHasObserversFlag(t *testing.T) {
-	t.Parallel()
-
 	// Initially, no observers should be registered
 	assert.False(t, hasObservers.Load(), "hasObservers should be false initially")
 
@@ -332,7 +329,7 @@ func TestRecordingWithRealEnvVars(t *testing.T) {
 	t.Setenv(testKey, testValue)
 
 	// Read the environment variable
-	value, err := String(context.Background(), testKey).Value()
+	value, err := String(t.Context(), testKey).Value()
 	require.NoError(t, err)
 	assert.Equal(t, testValue, value)
 
@@ -348,10 +345,9 @@ func TestRecordingWithRealEnvVars(t *testing.T) {
 	assert.NotZero(t, event.Time)
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording with context overrides.
 func TestRecordingWithContextOverride(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -366,7 +362,7 @@ func TestRecordingWithContextOverride(t *testing.T) {
 	// Create context with override
 	testKey := "TEST_CONTEXT_OVERRIDE_VAR"
 	testValue := "context_value"
-	ctx := WithEnvOverride(context.Background(), testKey, testValue)
+	ctx := WithEnvOverride(t.Context(), testKey, testValue)
 
 	// Read the environment variable from context
 	value, err := String(ctx, testKey).Value()
@@ -385,10 +381,9 @@ func TestRecordingWithContextOverride(t *testing.T) {
 	assert.NotZero(t, event.Time)
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording when environment variable is not set.
 func TestRecordingWithUnsetVar(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -404,7 +399,7 @@ func TestRecordingWithUnsetVar(t *testing.T) {
 	testKey := "TEST_NONEXISTENT_VAR_12345"
 	_ = os.Unsetenv(testKey) // Ensure it's not set
 
-	_, err := String(context.Background(), testKey).Value()
+	_, err := String(t.Context(), testKey).Value()
 	require.Error(t, err, "should error when var is not set")
 
 	// Check recorded events
@@ -451,7 +446,7 @@ func TestObserverWithRealEnvVars(t *testing.T) {
 	t.Setenv(testKey, testValue)
 
 	// Read the environment variable
-	value, err := String(context.Background(), testKey).Value()
+	value, err := String(t.Context(), testKey).Value()
 	require.NoError(t, err)
 	assert.Equal(t, testValue, value)
 
@@ -466,10 +461,9 @@ func TestObserverWithRealEnvVars(t *testing.T) {
 	eventMu.Unlock()
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test observer with context overrides.
 func TestObserverWithContextOverride(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -497,7 +491,7 @@ func TestObserverWithContextOverride(t *testing.T) {
 	// Create context with override
 	testKey := "TEST_OBSERVER_CONTEXT_VAR"
 	testValue := "observer_context_value"
-	ctx := WithEnvOverride(context.Background(), testKey, testValue)
+	ctx := WithEnvOverride(t.Context(), testKey, testValue)
 
 	// Read the environment variable from context
 	value, err := String(ctx, testKey).Value()
@@ -536,7 +530,7 @@ func TestContextOverridePrecedence(t *testing.T) {
 	t.Setenv(testKey, realValue)
 
 	// Create context with override
-	ctx := WithEnvOverride(context.Background(), testKey, contextValue)
+	ctx := WithEnvOverride(t.Context(), testKey, contextValue)
 
 	// Read from context - should get context value
 	value, err := String(ctx, testKey).Value()
@@ -553,7 +547,7 @@ func TestContextOverridePrecedence(t *testing.T) {
 	_ = CollectRecordingEvents(true)
 
 	// Read without context - should get real value
-	value, err = String(context.Background(), testKey).Value()
+	value, err = String(t.Context(), testKey).Value()
 	require.NoError(t, err)
 	assert.Equal(t, realValue, value, "should get real env var without context")
 
@@ -564,10 +558,9 @@ func TestContextOverridePrecedence(t *testing.T) {
 	assert.Equal(t, realValue, events[0].Value)
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording with multiple context overrides.
 func TestRecordingWithMultipleContextOverrides(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -585,7 +578,7 @@ func TestRecordingWithMultipleContextOverrides(t *testing.T) {
 		"VAR2": "value2",
 		"VAR3": "value3",
 	}
-	ctx := WithEnvOverrides(context.Background(), overrides)
+	ctx := WithEnvOverrides(t.Context(), overrides)
 
 	// Read all variables
 	for key, expectedValue := range overrides {
@@ -631,7 +624,7 @@ func TestObserverIndependentOfRecordingFlag(t *testing.T) {
 	t.Setenv(testKey, "value")
 
 	// Read variable - observer SHOULD be called even with recording disabled
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -645,7 +638,7 @@ func TestObserverIndependentOfRecordingFlag(t *testing.T) {
 	EnableRecording(true)
 
 	// Read variable again - observer should be called again AND event should be recorded
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -685,17 +678,17 @@ func TestRecordingAndObserverTogether(t *testing.T) {
 	// Test 1: Real environment variable
 	testKey1 := "TEST_BOTH_REAL"
 	t.Setenv(testKey1, "real")
-	_, _ = String(context.Background(), testKey1).Value()
+	_, _ = String(t.Context(), testKey1).Value()
 
 	// Test 2: Context override
 	testKey2 := "TEST_BOTH_CONTEXT"
-	ctx := WithEnvOverride(context.Background(), testKey2, "context")
+	ctx := WithEnvOverride(t.Context(), testKey2, "context")
 	_, _ = String(ctx, testKey2).Value()
 
 	// Test 3: Unset variable
 	testKey3 := "TEST_BOTH_UNSET"
 	_ = os.Unsetenv(testKey3)
-	_, _ = String(context.Background(), testKey3).Value()
+	_, _ = String(t.Context(), testKey3).Value()
 
 	time.Sleep(20 * time.Millisecond)
 
@@ -741,7 +734,7 @@ func TestRecordingWithStackTraces(t *testing.T) {
 	testKey := "TEST_STACK_TRACE"
 	t.Setenv(testKey, "value")
 
-	_, _ = String(context.Background(), testKey).Value()
+	_, _ = String(t.Context(), testKey).Value()
 
 	// Check recorded events have stack traces
 	events := CollectRecordingEvents(false)
@@ -773,7 +766,7 @@ func TestCountRecordedEvents(t *testing.T) {
 	t.Setenv(testKey, "value")
 
 	for range 5 {
-		_, _ = String(context.Background(), testKey).Value()
+		_, _ = String(t.Context(), testKey).Value()
 	}
 
 	assert.Equal(t, 5, CountRecordedEvents(), "should have 5 recorded events")
@@ -802,7 +795,7 @@ func TestCollectRecordingEventsClear(t *testing.T) {
 
 	// Record 3 events
 	for range 3 {
-		_, _ = String(context.Background(), testKey).Value()
+		_, _ = String(t.Context(), testKey).Value()
 	}
 
 	// Collect without clearing
@@ -843,7 +836,7 @@ func TestRecordingWithEmptyStringValue(t *testing.T) {
 	t.Setenv(testKey, "")
 
 	// Read the environment variable
-	value, err := String(context.Background(), testKey).Value()
+	value, err := String(t.Context(), testKey).Value()
 	require.NoError(t, err)
 	assert.Empty(t, value)
 
@@ -858,10 +851,9 @@ func TestRecordingWithEmptyStringValue(t *testing.T) {
 	assert.Equal(t, Environment, event.Source)
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test observer when environment variable is not set.
 func TestObserverWithUnsetVar(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -890,7 +882,7 @@ func TestObserverWithUnsetVar(t *testing.T) {
 	testKey := "TEST_OBSERVER_UNSET_VAR_99999"
 	_ = os.Unsetenv(testKey)
 
-	_, err := String(context.Background(), testKey).Value()
+	_, err := String(t.Context(), testKey).Value()
 	require.Error(t, err)
 
 	time.Sleep(10 * time.Millisecond)
@@ -904,10 +896,9 @@ func TestObserverWithUnsetVar(t *testing.T) {
 	eventMu.Unlock()
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test observer with empty string context override.
 func TestObserverWithEmptyStringContextOverride(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -934,7 +925,7 @@ func TestObserverWithEmptyStringContextOverride(t *testing.T) {
 
 	// Create context with empty string override
 	testKey := "TEST_OBSERVER_EMPTY_CONTEXT"
-	ctx := WithEnvOverride(context.Background(), testKey, "")
+	ctx := WithEnvOverride(t.Context(), testKey, "")
 
 	// Read the environment variable from context
 	value, err := String(ctx, testKey).Value()
@@ -952,10 +943,9 @@ func TestObserverWithEmptyStringContextOverride(t *testing.T) {
 	eventMu.Unlock()
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording multiple unset variables.
 func TestRecordingMultipleUnsetVariables(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -976,7 +966,7 @@ func TestRecordingMultipleUnsetVariables(t *testing.T) {
 
 	for _, key := range unsetKeys {
 		_ = os.Unsetenv(key)
-		_, _ = String(context.Background(), key).Value()
+		_, _ = String(t.Context(), key).Value()
 	}
 
 	// Check recorded events
@@ -992,10 +982,9 @@ func TestRecordingMultipleUnsetVariables(t *testing.T) {
 	}
 }
 
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test mixed set and unset variables.
 func TestRecordingMixedSetAndUnset(t *testing.T) {
-	t.Parallel()
-
 	// Clean up after test
 	defer func() {
 		EnableRecording(false)
@@ -1013,12 +1002,12 @@ func TestRecordingMixedSetAndUnset(t *testing.T) {
 
 	_ = os.Unsetenv("UNSET_VAR_1")
 
-	ctx := WithEnvOverride(context.Background(), "CONTEXT_VAR", "contextValue")
+	ctx := WithEnvOverride(t.Context(), "CONTEXT_VAR", "contextValue")
 
 	// Read all variables
-	_, _ = String(context.Background(), "SET_VAR_1").Value()
-	_, _ = String(context.Background(), "SET_VAR_2").Value()
-	_, _ = String(context.Background(), "UNSET_VAR_1").Value()
+	_, _ = String(t.Context(), "SET_VAR_1").Value()
+	_, _ = String(t.Context(), "SET_VAR_2").Value()
+	_, _ = String(t.Context(), "UNSET_VAR_1").Value()
 	_, _ = String(ctx, "CONTEXT_VAR").Value()
 
 	// Check recorded events

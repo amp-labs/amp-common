@@ -23,6 +23,9 @@ const (
 
 	// Context indicates the value came from a context.Context value.
 	Context Source = "context"
+
+	// File indicates that the value came from an external file.
+	File Source = "file"
 )
 
 var (
@@ -38,6 +41,17 @@ var (
 	// Used to optimize observer notification by avoiding overhead when no observers exist.
 	// Automatically set to true when observers are registered and false when all are removed.
 	hasObservers *atomic.Bool
+
+	// dedupKeys tracks whether to deduplicate keys in recording.
+	// When enabled, only the first read of each key is recorded.
+	dedupKeys *atomic.Bool
+
+	// seenKeys tracks which environment variable keys have been recorded.
+	// Only used when dedupKeys is enabled. Protected by seenKeysMutex.
+	seenKeys map[string]struct{}
+
+	// seenKeysMutex protects concurrent access to the seenKeys map.
+	seenKeysMutex sync.RWMutex
 
 	// eventMutex protects concurrent access to the events slice.
 	eventMutex sync.Mutex
@@ -64,6 +78,8 @@ func init() {
 	recording = atomic.NewBool(false)
 	wantStacks = atomic.NewBool(false)
 	hasObservers = atomic.NewBool(false)
+	dedupKeys = atomic.NewBool(false)
+	seenKeys = make(map[string]struct{})
 }
 
 // Observer is a callback function that gets invoked immediately when an
@@ -117,6 +133,27 @@ type ValueReadEvent struct {
 // Can be toggled independently at runtime without affecting the recording state.
 func EnableStackTraces(enable bool) {
 	wantStacks.Store(enable)
+}
+
+// EnableDedupKeys controls whether duplicate keys are filtered from recording.
+// When enabled, only the first read of each environment variable key is recorded.
+// Subsequent reads of the same key are silently ignored.
+//
+// This is useful for reducing noise in audit logs when the same environment
+// variables are read multiple times during application startup.
+//
+// This setting only affects recording - observers are still notified for all reads.
+func EnableDedupKeys(enable bool) {
+	dedupKeys.Store(enable)
+
+	if enable {
+		// Clear the seen keys map when enabling dedup to start fresh
+		seenKeysMutex.Lock()
+
+		seenKeys = make(map[string]struct{})
+
+		seenKeysMutex.Unlock()
+	}
 }
 
 // EnableRecording controls whether environment variable reads are recorded.
@@ -238,6 +275,36 @@ func RegisterObserver(obs Observer) func() {
 			hasObservers.Store(false)
 		}
 	}
+}
+
+// shouldRecordKey checks if a key should be recorded based on deduplication settings.
+// Returns true if the key should be recorded, false if it should be skipped.
+// When deduplication is enabled, this function tracks seen keys and only returns
+// true for the first occurrence of each key.
+func shouldRecordKey(key string) bool {
+	if !dedupKeys.Load() {
+		return true
+	}
+
+	seenKeysMutex.RLock()
+
+	_, seen := seenKeys[key]
+
+	seenKeysMutex.RUnlock()
+
+	if seen {
+		// Key already recorded, skip this event
+		return false
+	}
+
+	// Mark key as seen
+	seenKeysMutex.Lock()
+
+	seenKeys[key] = struct{}{}
+
+	seenKeysMutex.Unlock()
+
+	return true
 }
 
 // notifyObservers calls all registered observers with the given event.

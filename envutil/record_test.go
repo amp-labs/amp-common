@@ -345,8 +345,9 @@ func TestRecordingWithRealEnvVars(t *testing.T) {
 	assert.NotZero(t, event.Time)
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording with context overrides.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestRecordingWithContextOverride(t *testing.T) {
 	// Clean up after test
 	defer func() {
@@ -381,8 +382,9 @@ func TestRecordingWithContextOverride(t *testing.T) {
 	assert.NotZero(t, event.Time)
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording when environment variable is not set.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestRecordingWithUnsetVar(t *testing.T) {
 	// Clean up after test
 	defer func() {
@@ -461,8 +463,9 @@ func TestObserverWithRealEnvVars(t *testing.T) {
 	eventMu.Unlock()
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test observer with context overrides.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestObserverWithContextOverride(t *testing.T) {
 	// Clean up after test
 	defer func() {
@@ -558,8 +561,9 @@ func TestContextOverridePrecedence(t *testing.T) {
 	assert.Equal(t, realValue, events[0].Value)
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording with multiple context overrides.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestRecordingWithMultipleContextOverrides(t *testing.T) {
 	// Clean up after test
 	defer func() {
@@ -851,8 +855,9 @@ func TestRecordingWithEmptyStringValue(t *testing.T) {
 	assert.Equal(t, Environment, event.Source)
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test observer when environment variable is not set.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestObserverWithUnsetVar(t *testing.T) {
 	// Clean up after test
 	defer func() {
@@ -896,8 +901,9 @@ func TestObserverWithUnsetVar(t *testing.T) {
 	eventMu.Unlock()
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test observer with empty string context override.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestObserverWithEmptyStringContextOverride(t *testing.T) {
 	// Clean up after test
 	defer func() {
@@ -943,8 +949,9 @@ func TestObserverWithEmptyStringContextOverride(t *testing.T) {
 	eventMu.Unlock()
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test recording multiple unset variables.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestRecordingMultipleUnsetVariables(t *testing.T) {
 	// Clean up after test
 	defer func() {
@@ -982,8 +989,9 @@ func TestRecordingMultipleUnsetVariables(t *testing.T) {
 	}
 }
 
-//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 // Test mixed set and unset variables.
+//
+//nolint:tparallel,paralleltest // Cannot use t.Parallel() due to global recording/observer state
 func TestRecordingMixedSetAndUnset(t *testing.T) {
 	// Clean up after test
 	defer func() {

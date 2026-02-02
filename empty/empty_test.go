@@ -35,7 +35,7 @@ func TestSlice(t *testing.T) {
 
 	assert.NotNil(t, result)
 	assert.Empty(t, result)
-	assert.Equal(t, 0, len(result))
+	assert.Empty(t, result)
 	assert.Equal(t, 0, cap(result))
 }
 
@@ -47,7 +47,7 @@ func TestSlictPtr(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.NotNil(t, *result)
 	assert.Empty(t, *result)
-	assert.Equal(t, 0, len(*result))
+	assert.Empty(t, *result)
 }
 
 func TestMap(t *testing.T) {
@@ -57,7 +57,7 @@ func TestMap(t *testing.T) {
 
 	assert.NotNil(t, result)
 	assert.Empty(t, result)
-	assert.Equal(t, 0, len(result))
+	assert.Empty(t, result)
 }
 
 func TestMapPtr(t *testing.T) {
@@ -68,7 +68,7 @@ func TestMapPtr(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.NotNil(t, *result)
 	assert.Empty(t, *result)
-	assert.Equal(t, 0, len(*result))
+	assert.Empty(t, *result)
 }
 
 func TestChan(t *testing.T) {
@@ -95,7 +95,7 @@ func TestChanPtr(t *testing.T) {
 	// Channel should be closed
 	val, ok := <-*result
 	assert.False(t, ok)
-	assert.Equal(t, "", val)
+	assert.Empty(t, val)
 }
 
 func TestValue(t *testing.T) {
@@ -106,10 +106,10 @@ func TestValue(t *testing.T) {
 	assert.Equal(t, 0, intVal)
 
 	strVal := empty.Value[string]()
-	assert.Equal(t, "", strVal)
+	assert.Empty(t, strVal)
 
 	boolVal := empty.Value[bool]()
-	assert.Equal(t, false, boolVal)
+	assert.False(t, boolVal)
 
 	sliceVal := empty.Value[[]string]()
 	assert.Nil(t, sliceVal)

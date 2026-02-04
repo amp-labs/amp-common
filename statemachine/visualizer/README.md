@@ -125,6 +125,7 @@ stateDiagram-TD
     classDef actionState fill:#e1f5ff,stroke:#01579b,stroke-width:2px
     classDef finalState fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
 ```
+
 ```
 
 This can be:
@@ -264,6 +265,7 @@ stateDiagram-TD
     start --> complete
     complete --> [*]
 ```
+
 ```
 
 ### Automated Generation

@@ -319,6 +319,7 @@ breakpoint.Execute(ctx, smCtx)
 ### Converting Nested Conditionals to Actions
 
 **Before:**
+
 ```go
 if sampling.CanSample(ctx) {
     resp, err := sampling.Sample(ctx, req)
@@ -338,6 +339,7 @@ smCtx.Set("result", result)
 ```
 
 **After:**
+
 ```go
 action := &actions.SampleWithFallback{
     Name:         "generate_content",

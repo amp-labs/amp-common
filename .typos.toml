@@ -22,5 +22,8 @@ extend-ignore-identifiers-re = ["[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0
 # German character replacements (intentional)
 ue = "ue"
 Ue = "Ue"
+# Company names
+HashiCorp = "HashiCorp"
+Hashi = "Hashi"
 
 [default.extend-identifiers]

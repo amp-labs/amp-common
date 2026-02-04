@@ -13,6 +13,45 @@
 //   - RegisterObserver() allows real-time notification when variables are read
 //   - Each event includes the key, value, source (Environment/Context/None), and optional stack trace
 //
+// Security Considerations:
+//
+// When handling secrets and sensitive data, follow these best practices:
+//
+// 1. Never log or print secret values - Be extremely careful not to log environment
+// variables containing secrets. If you log Reader results or error messages, secrets
+// may be exposed.
+//
+// 2. Recording and secrets - Recording is DISABLED by default, so secrets are not
+// captured unless you explicitly call EnableRecording(true). If you enable recording
+// for testing or debugging, disable it before reading secrets:
+//
+//	// If recording was enabled for tests
+//	envutil.EnableRecording(false)
+//	apiKey := envutil.String(ctx, "API_KEY").Value()
+//	envutil.EnableRecording(true)  // Re-enable if needed
+//
+// 3. Separate .env files for config vs secrets - Keep non-sensitive configuration in
+// version-controlled .env files, and sensitive secrets in separate .env.secrets files
+// that are never committed:
+//
+//	# .env - Safe to commit
+//	PORT=8080
+//	LOG_LEVEL=info
+//
+//	# .env.secrets - NEVER commit (add to .gitignore)
+//	DATABASE_PASSWORD=secret
+//	API_KEY=secret
+//
+// 4. Context overrides and secrets - If recording or observers are enabled, context
+// override values are visible. Use context overrides only for non-sensitive configuration
+// in tests.
+//
+// 5. Consider secret management systems for production - For production deployments,
+// use dedicated secret management (Kubernetes Secrets, AWS Secrets Manager, HashiCorp Vault,
+// etc.) and load secrets at runtime, not build time.
+//
+// See also: SECURITY.md for comprehensive security guidelines.
+//
 // Note: This package documentation consolidates information from multiple files (envutil.go and record.go).
 package envutil
 

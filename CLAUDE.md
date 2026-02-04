@@ -68,8 +68,9 @@ go test -v -run TestName ./package-name
 
 - Fluent API with `Reader[T]` type for chaining operations
 - Built-in support for: strings, ints, bools, durations, URLs, UUIDs, file paths, etc.
-- Options pattern: `Default()`, `Required()`, `Validate()`, etc.
-- Example: `envutil.Int("PORT", envutil.Default(8080)).Value()`
+- Options pattern: `Default()`, `IfMissing()`, `Fallback()`, `Validate()`, etc.
+- Example: `envutil.Int(ctx, "PORT", envutil.Default(8080)).Value()`
+- Recording: Disabled by default. If you enable recording for testing/debugging, be careful not to capture secrets. See package documentation and SECURITY.md for details.
 
 **`startup`** - Application initialization and environment configuration
 
@@ -178,6 +179,50 @@ When changes are pushed to `main`, Cloud Build automatically:
 - Tests use `github.com/stretchr/testify` for assertions
 - Package `debug` is for local debugging only and should not be imported in production code
 
+## Testing Requirements
+
+### Mandatory t.Parallel()
+
+**All tests MUST call `t.Parallel()`** at the beginning. This is enforced by the `paralleltest` linter.
+
+```go
+func TestMyFunction(t *testing.T) {
+    t.Parallel()  // REQUIRED at the top of every test function
+
+    t.Run("sub-test name", func(t *testing.T) {
+        t.Parallel()  // REQUIRED in every sub-test too
+
+        // Test code here
+    })
+}
+```
+
+**Why?**
+
+- **Test isolation**: Forces tests to be independent and thread-safe
+- **Catches concurrency bugs**: If your code isn't thread-safe, parallel tests will expose it early
+- **Significantly faster**: Tests run concurrently instead of sequentially, utilizing all CPU cores
+- **Better resource utilization**: Makes efficient use of build server capacity
+
+**Exceptions:**
+
+Sequential tests that modify global state (like environment variables) should:
+
+1. Use `//nolint:tparallel` to disable the linter for that test
+2. Clearly document why `t.Parallel()` is omitted
+3. Be justified - most tests should be parallelizable
+
+Example of legitimate exception:
+
+```go
+//nolint:tparallel // Cannot use t.Parallel() with subtests that call t.Setenv()
+func TestWithEnvVar(t *testing.T) {
+    t.Run("with value", func(t *testing.T) {
+        t.Setenv("MY_VAR", "value")  // Modifies process-wide state
+        // Test code
+    })
+}
+
 ## Linter Configuration
 
 The `.golangci.yml` enables most linters but disables:
@@ -193,6 +238,56 @@ Special rules:
 
 - Variable naming accepts both "Id" and "ID" (via revive)
 - Short variable names allowed within 15 lines (via varnamelen)
+
+## Error Handling
+
+### Error Wrapping
+
+Use `%w` for errors to preserve error wrapping and allow `errors.Is()` and `errors.As()` to work:
+
+```go
+// ✅ Good: Preserves error chain
+if err != nil {
+    return fmt.Errorf("failed to fetch user: %w", err)
+}
+
+// Now callers can use errors.Is() and errors.As()
+if errors.Is(err, sql.ErrNoRows) {
+    // Handle not found
+}
+```
+
+Use `%v` **only** for non-error values like recovered panic values:
+
+```go
+// ✅ Good: Panic value is not an error type
+if r := recover(); r != nil {
+    return fmt.Errorf("panic: %v", r)
+}
+```
+
+**Never use `%v` for actual errors:**
+
+```go
+// ❌ Bad: Breaks error chain
+if err != nil {
+    return fmt.Errorf("failed: %v", err)  // Don't do this!
+}
+```
+
+### Error Classification
+
+Error classification (checking error types, determining if retryable, etc.) should happen in the `errors` package, not in other packages like `retry`.
+
+```go
+// ✅ Good: Classification in errors package
+if errors.IsRetryable(err) {
+    // Retry the operation
+}
+
+// ❌ Bad: Classification logic scattered in retry package
+// The retry package should use errors package for classification
+```
 
 ## Prometheus Metrics
 

@@ -54,6 +54,7 @@ err := helpers.ValidateRequired(input, []string{
 ### Usage Patterns
 
 **Basic Sampling:**
+
 ```go
 content, err := helpers.SampleWithFallback(
     ctx,
@@ -64,6 +65,7 @@ content, err := helpers.SampleWithFallback(
 ```
 
 **JSON Generation:**
+
 ```go
 type Recommendation struct {
     Action   string   `json:"action"`
@@ -81,6 +83,7 @@ err := helpers.SampleJSON(
 ```
 
 **With Retries:**
+
 ```go
 content, err := helpers.SampleWithRetry(
     ctx,
@@ -91,6 +94,7 @@ content, err := helpers.SampleWithRetry(
 ```
 
 **Conditional Sampling:**
+
 ```go
 if helpers.CanSample(ctx, client) {
     content, _ := helpers.SampleWithFallback(ctx, client, prompt, fallback)
@@ -112,6 +116,7 @@ if helpers.CanSample(ctx, client) {
 ### Usage Patterns
 
 **Single Choice:**
+
 ```go
 question := ElicitationQuestion{
     Text: "Which provider?",
@@ -133,6 +138,7 @@ provider := answers["selection"]
 ```
 
 **Confirmation:**
+
 ```go
 confirmed, err := helpers.ElicitConfirmation(
     ctx,
@@ -143,6 +149,7 @@ confirmed, err := helpers.ElicitConfirmation(
 ```
 
 **Multiple Choice:**
+
 ```go
 objects, err := helpers.ElicitMultipleChoice(
     ctx,
@@ -154,6 +161,7 @@ objects, err := helpers.ElicitMultipleChoice(
 ```
 
 **Text with Validation:**
+
 ```go
 projectName, err := helpers.ElicitText(
     ctx,
@@ -181,6 +189,7 @@ projectName, err := helpers.ElicitText(
 ### Usage Patterns
 
 **Required Fields:**
+
 ```go
 err := helpers.ValidateRequired(input, []string{
     "projectId",
@@ -190,6 +199,7 @@ err := helpers.ValidateRequired(input, []string{
 ```
 
 **Enum Validation:**
+
 ```go
 err := helpers.ValidateEnum(provider, []string{
     "salesforce",
@@ -199,11 +209,13 @@ err := helpers.ValidateEnum(provider, []string{
 ```
 
 **Regex Validation:**
+
 ```go
 err := helpers.ValidateRegex(email, `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 ```
 
 **Struct Validation:**
+
 ```go
 type Config struct {
     Provider string   `validate:"required,enum=salesforce|hubspot"`
@@ -219,16 +231,19 @@ err := helpers.ValidateStruct(config)
 All helpers follow consistent error handling:
 
 **Capability Unavailable:**
+
 - Returns fallback/default value
 - Never returns error for unavailability
 - Logs warning for observability
 
 **Validation Failure:**
+
 - Returns descriptive error
 - Includes field name and reason
 - Aggregates multiple errors
 
 **Critical Failure:**
+
 - Returns error
 - Includes context
 - Wrapped for tracing
@@ -299,6 +314,7 @@ defaults := map[string]string{
 Helpers work seamlessly with state machine actions:
 
 **In YAML:**
+
 ```yaml
 - type: sampling
   name: generate_content
@@ -308,6 +324,7 @@ Helpers work seamlessly with state machine actions:
 ```
 
 **In Handler:**
+
 ```go
 func generateContentHandler(ctx context.Context, smCtx *statemachine.Context) error {
     content, err := helpers.SampleWithFallback(
@@ -396,11 +413,13 @@ go test -v
 ```
 
 Run specific tests:
+
 ```bash
 go test -v -run TestSampleWithFallback
 ```
 
 With coverage:
+
 ```bash
 go test -cover
 ```
@@ -424,6 +443,7 @@ When adding new helpers:
 5. Add to reference docs
 
 **Helper Checklist:**
+
 - [ ] Automatic capability checking
 - [ ] Graceful fallback handling
 - [ ] Clear error messages

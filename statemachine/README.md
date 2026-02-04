@@ -26,6 +26,7 @@ The core framework provides:
 The framework is designed to be extended by applications:
 
 **Config Loading:**
+
 ```go
 // Applications implement ConfigLoader to provide embedded configs
 type ConfigLoader interface {
@@ -38,6 +39,7 @@ statemachine.SetConfigLoader(myLoader)
 ```
 
 **Custom Actions:**
+
 ```go
 // Register custom action builders
 factory := statemachine.NewActionFactory()

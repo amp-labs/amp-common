@@ -1,0 +1,77 @@
+name: Question
+description: Ask a question about usage, design, or best practices
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're here to help! Please check the [FAQ](../../FAQ.md) first.
+
+  - type: input
+    id: package
+    attributes:
+      label: Package
+      description: Which package is your question about?
+      placeholder: "e.g., future, actor, pool, envutil"
+    validations:
+      required: false
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: "Ask your question..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide context for your question.
+      placeholder: |
+        What are you trying to accomplish?
+        What have you already tried?
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code Sample
+      description: If applicable, provide a code example related to your question.
+      placeholder: |
+        ```go
+        package main
+
+        // Your code here
+        ```
+      render: go
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checked-docs
+    attributes:
+      label: Documentation Checked
+      description: Have you checked the existing documentation?
+      options:
+        - label: I've checked the package README
+          required: false
+        - label: I've checked the [FAQ](../../FAQ.md)
+          required: false
+        - label: I've checked the [Contributing Guide](../../CONTRIBUTING.md)
+          required: false
+        - label: I've checked the godoc documentation
+          required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about your question.
+      placeholder: "Additional information..."
+    validations:
+      required: false

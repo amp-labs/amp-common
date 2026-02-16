@@ -22,6 +22,6 @@ jobs:
           skip-cache: true
           version: v2.7.1
       - name: Check for Typos
-        uses: crate-ci/typos@v1.42.3
+        uses: crate-ci/typos@v1.43.4
         with:
           config: .typos.toml

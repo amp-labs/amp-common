@@ -10,14 +10,14 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
             allowed:
               - modified: 'go.mod'
               - modified: 'go.sum'
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: changes_inverted
         with:
           predicate-quantifier: every

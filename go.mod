@@ -5,7 +5,7 @@ go 1.25.1
 require (
 	facette.io/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/OneOfOne/xxhash v1.2.8
-	github.com/alitto/pond/v2 v2.6.0
+	github.com/alitto/pond/v2 v2.7.0
 	github.com/andybalholm/brotli v1.2.0
 	github.com/fereidani/httpdecompressor v0.0.0-20250320190614-ccdf59c9caa2
 	github.com/google/uuid v1.6.0

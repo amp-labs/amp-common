@@ -455,7 +455,7 @@ func TestRedBlackTreeSet_Seq(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		result := make([]int, 0)
+		result := make([]int, 0, 5) //nolint:prealloc // iterator-based loop, capacity is a hint
 		for elem := range s.Seq() {
 			result = append(result, int(elem))
 		}

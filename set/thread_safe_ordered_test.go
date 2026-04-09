@@ -594,7 +594,7 @@ func TestThreadSafeOrderedSet_Seq(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		visited := make([]hashing.HashableString, 0)
+		visited := make([]hashing.HashableString, 0, len(expected)) //nolint:prealloc // iterator-based loop
 		for i, element := range s.Seq() {
 			assert.Equal(t, len(visited), i)
 			visited = append(visited, element)

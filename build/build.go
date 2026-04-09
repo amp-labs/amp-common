@@ -1,7 +1,7 @@
 // Package build provides utilities for parsing build information that is
 // embedded at compile time. The Info struct is designed to be populated via
 // -ldflags during the build process in other repositories.
-package build
+package build //nolint:revive // package name is intentional despite shadowing stdlib
 
 import (
 	"encoding/json"

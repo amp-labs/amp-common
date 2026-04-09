@@ -7,10 +7,9 @@ import (
 
 // LogSamplingAttempt logs a sampling request attempt.
 func LogSamplingAttempt(ctx context.Context, operation string, prompt string, opts map[string]any) {
-	fields := []any{
-		"operation", operation,
-		"prompt_length", len(prompt),
-	}
+	fields := make([]any, 0, 4+2*len(opts)) //nolint:mnd // capacity formula: 2 base pairs + 2 per opt entry
+	fields = append(fields, "operation", operation, "prompt_length", len(prompt))
+
 	for k, v := range opts {
 		fields = append(fields, k, v)
 	}

@@ -406,7 +406,7 @@ func TestDefaultOrderedSetSeq(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		var result []testElem
+		var result []testElem //nolint:prealloc // iterator-based loop, size unknown
 		for idx, elem := range s.Seq() {
 			assert.Len(t, result, idx)
 			result = append(result, elem)

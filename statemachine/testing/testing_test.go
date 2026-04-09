@@ -1,4 +1,4 @@
-//nolint:tparallel,paralleltest,testifylint // Test file
+//nolint:tparallel,paralleltest,testifylint,revive // Test file; package name shadows stdlib
 package testing
 
 import (

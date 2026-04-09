@@ -1,5 +1,5 @@
 // Package debug provides debugging utilities for local development only (not for production use).
-package debug
+package debug //nolint:revive // package name is intentional despite shadowing stdlib
 
 import (
 	"context"

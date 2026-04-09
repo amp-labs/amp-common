@@ -1,4 +1,4 @@
-package debug
+package debug //nolint:revive // package name is intentional despite shadowing stdlib
 
 import "encoding/json"
 

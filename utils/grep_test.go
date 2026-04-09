@@ -29,7 +29,7 @@ func TestGrepChannel(t *testing.T) {
 			close(writer)
 		}()
 
-		results := []string{}
+		var results []string //nolint:prealloc // channel-based loop, size unknown
 		for msg := range reader {
 			results = append(results, msg)
 		}
@@ -57,7 +57,7 @@ func TestGrepChannel(t *testing.T) {
 			close(w)
 		}()
 
-		results := []string{}
+		var results []string //nolint:prealloc // channel-based loop, size unknown
 		for msg := range r {
 			results = append(results, msg)
 		}
@@ -79,7 +79,7 @@ func TestGrepChannel(t *testing.T) {
 			close(w)
 		}()
 
-		results := []string{}
+		var results []string //nolint:prealloc // channel-based loop, size unknown
 		for msg := range r {
 			results = append(results, msg)
 		}
@@ -112,7 +112,7 @@ func TestGrepChannel(t *testing.T) {
 
 		close(w)
 
-		results := []string{}
+		var results []string //nolint:prealloc // channel-based loop, size unknown
 		for msg := range r {
 			results = append(results, msg)
 		}
@@ -141,7 +141,7 @@ func TestGrepChannel(t *testing.T) {
 			close(w)
 		}()
 
-		results := []string{}
+		var results []string //nolint:prealloc // channel-based loop, size unknown
 		for msg := range r {
 			results = append(results, msg)
 		}
@@ -166,7 +166,7 @@ func TestGrepChannel(t *testing.T) {
 			close(w)
 		}()
 
-		results := []string{}
+		var results []string //nolint:prealloc // channel-based loop, size unknown
 		for msg := range r {
 			results = append(results, msg)
 		}
@@ -192,7 +192,7 @@ func TestGrepChannel(t *testing.T) {
 			close(w)
 		}()
 
-		results := []string{}
+		var results []string //nolint:prealloc // channel-based loop, size unknown
 		for msg := range r {
 			results = append(results, msg)
 		}

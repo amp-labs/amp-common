@@ -1,3 +1,5 @@
+// Package naming provides string case conversion utilities for transforming
+// between common naming conventions (snake_case, camelCase, PascalCase).
 package naming
 
 import (
@@ -68,16 +70,19 @@ func ToCamelCase(input string) string {
 	}
 
 	// First word is lowercase, rest are title-cased (first letter upper, rest lower)
-	result := strings.ToLower(words[0])
+	var result strings.Builder
+
+	result.WriteString(strings.ToLower(words[0]))
 
 	for i := 1; i < len(words); i++ {
 		if words[i] != "" {
 			runes := []rune(words[i])
-			result += string(unicode.ToUpper(runes[0])) + strings.ToLower(string(runes[1:]))
+			result.WriteRune(unicode.ToUpper(runes[0]))
+			result.WriteString(strings.ToLower(string(runes[1:])))
 		}
 	}
 
-	return result
+	return result.String()
 }
 
 // ToPascalCase converts a string to PascalCase (first letter uppercase).

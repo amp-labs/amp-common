@@ -203,7 +203,7 @@ func TestAll(t *testing.T) {
 		t.Parallel()
 
 		opt := Some(42)
-		values := []int{}
+		values := make([]int, 0, 1) //nolint:prealloc // iterator-based loop, capacity is a hint
 
 		for v := range opt.All() {
 			values = append(values, v)
@@ -216,7 +216,8 @@ func TestAll(t *testing.T) {
 		t.Parallel()
 
 		opt := None[int]()
-		values := []int{}
+
+		var values []int //nolint:prealloc // iterator-based loop, size unknown
 
 		for v := range opt.All() {
 			values = append(values, v)

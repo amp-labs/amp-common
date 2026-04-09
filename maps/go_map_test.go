@@ -499,7 +499,7 @@ func TestKey_HashConsistency(t *testing.T) {
 
 		key := maps.Key[string]{Key: "test"}
 
-		var hashes [][]byte
+		hashes := make([][]byte, 0, 10)
 
 		for range 10 {
 			h := sha256.New()

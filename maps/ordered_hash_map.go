@@ -1,4 +1,4 @@
-package maps
+package maps //nolint:revive // package name is intentional despite shadowing stdlib
 
 import (
 	"iter"

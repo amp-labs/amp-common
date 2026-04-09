@@ -1,4 +1,4 @@
-//nolint:gosec,mnd // Test fixtures with safe file permissions; file mode constants
+//nolint:gosec,mnd,revive // Test fixtures with safe file permissions; file mode constants; package name shadows stdlib
 package testing
 
 import (

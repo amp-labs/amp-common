@@ -253,7 +253,7 @@ func TestSet(t *testing.T) {
 		require.NoError(t, err)
 
 		// Collect all items via Seq
-		var items []hashing.HashableString
+		var items []hashing.HashableString //nolint:prealloc // iterator-based loop, size unknown
 		for item := range s.Seq() {
 			items = append(items, item)
 		}
@@ -551,7 +551,7 @@ func TestStringSet(t *testing.T) {
 		require.NoError(t, err)
 
 		// Collect all items via Seq
-		var items []string
+		var items []string //nolint:prealloc // iterator-based loop, size unknown
 		for item := range s.Seq() {
 			items = append(items, item)
 		}
@@ -929,9 +929,9 @@ func TestOrderedSet(t *testing.T) {
 		require.NoError(t, err)
 
 		// Collect all items and indices via Seq
-		var items []hashing.HashableString
+		var items []hashing.HashableString //nolint:prealloc // iterator-based loop, size unknown
 
-		var indices []int
+		var indices []int //nolint:prealloc // iterator-based loop, size unknown
 
 		for i, item := range set.Seq() {
 			indices = append(indices, i)
@@ -1002,7 +1002,7 @@ func TestOrderedSet(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify order via Seq
-		var items []hashing.HashableString
+		var items []hashing.HashableString //nolint:prealloc // iterator-based loop, size unknown
 		for _, item := range set.Seq() {
 			items = append(items, item)
 		}
@@ -1351,9 +1351,9 @@ func TestStringOrderedSet(t *testing.T) {
 		require.NoError(t, err)
 
 		// Collect all items and indices via Seq
-		var items []string
+		var items []string //nolint:prealloc // iterator-based loop, size unknown
 
-		var indices []int
+		var indices []int //nolint:prealloc // iterator-based loop, size unknown
 
 		for i, item := range set.Seq() {
 			indices = append(indices, i)
@@ -1411,7 +1411,7 @@ func TestStringOrderedSet(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify order via Seq
-		var items []string
+		var items []string //nolint:prealloc // iterator-based loop, size unknown
 		for _, item := range set.Seq() {
 			items = append(items, item)
 		}

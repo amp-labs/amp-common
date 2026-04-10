@@ -1,5 +1,5 @@
 // Package maps provides generic map utilities, including a case-insensitive map implementation.
-package maps
+package maps //nolint:revive // Established package name; renaming would break all consumers.
 
 import (
 	"strings"

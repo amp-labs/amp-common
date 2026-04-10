@@ -1,4 +1,4 @@
-package maps
+package maps //nolint:revive // Established package name; renaming would break all consumers.
 
 import (
 	"fmt"

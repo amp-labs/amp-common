@@ -32,7 +32,7 @@ jobs:
       - name: Generate coverage results
         run: go tool cover -func=cover.out -o=coverage.func.out
       - name: Render Test Summary
-        uses: robherley/go-test-action@v0
+        uses: robherley/go-test-action@v1
         with:
           fromJSONFile: results.json
 

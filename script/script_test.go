@@ -476,7 +476,6 @@ func TestRun_WithEnvFile(t *testing.T) {
 
 	t.Run("loads multiple env files in order", func(t *testing.T) { //nolint:paralleltest
 		// Don't run in parallel - modifies global env vars
-
 		// Create temporary env files
 		tmpDir := t.TempDir()
 
@@ -672,7 +671,6 @@ func TestRun_WithSetEnv(t *testing.T) {
 
 	t.Run("setEnv overrides env file values", func(t *testing.T) { //nolint:paralleltest
 		// Don't run in parallel - modifies global env vars
-
 		// Create temporary env file
 		tmpDir := t.TempDir()
 		envFile := filepath.Join(tmpDir, ".env")

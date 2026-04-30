@@ -103,8 +103,8 @@ func SetupHandler() context.Context {
 // finished. It runs registered BeforeShutdown hooks and then cancels
 // Lifetime, allowing the rest of the process to tear down.
 type DrainableContexts struct {
-	Intake   context.Context
-	Lifetime context.Context
+	Intake   context.Context //nolint:containedctx
+	Lifetime context.Context //nolint:containedctx
 
 	DrainComplete func()
 }
@@ -131,6 +131,7 @@ func SetupDrainable() *DrainableContexts {
 	lifetimeCtx, cancelLifetime := context.WithCancel(context.Background())
 
 	var once sync.Once
+
 	drainComplete := func() {
 		once.Do(func() {
 			cleanup()

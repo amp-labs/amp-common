@@ -64,6 +64,7 @@ func sequenceActionBuilder(factory *ActionFactory, name string, params map[strin
 	}
 
 	actions := make([]Action, 0, len(actionsParam))
+
 	for actionIdx, actionParam := range actionsParam {
 		actionMap, ok := actionParam.(map[string]any)
 		if !ok {

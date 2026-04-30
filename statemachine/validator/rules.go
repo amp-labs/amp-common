@@ -74,6 +74,7 @@ func (r *unreachableStateRule) Check(config *statemachine.Config) RuleResult {
 		for _, transition := range config.Transitions {
 			if transition.From == current && !reachable[transition.To] {
 				reachable[transition.To] = true
+
 				queue = append(queue, transition.To)
 			}
 		}

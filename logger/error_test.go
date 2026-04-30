@@ -34,6 +34,7 @@ func TestAnnotateError_BasicAnnotation(t *testing.T) { //nolint:err113 // test e
 
 	// Verify it's a slogError
 	var se *slogError
+
 	require.ErrorAs(t, annotated, &se)
 	assert.Equal(t, baseErr, se.err)
 	assert.Len(t, se.attrs, 2)
@@ -56,6 +57,7 @@ func TestAnnotateError_SingleAttribute(t *testing.T) { //nolint:err113 // test e
 	annotated := AnnotateError(baseErr, "key", "value")
 
 	var se *slogError
+
 	require.ErrorAs(t, annotated, &se)
 	require.Len(t, se.attrs, 1)
 	assert.Equal(t, "key", se.attrs[0].Key)
@@ -72,6 +74,7 @@ func TestAnnotateError_NoAttributes(t *testing.T) {
 	require.Error(t, annotated)
 
 	var se *slogError
+
 	require.ErrorAs(t, annotated, &se)
 	assert.Empty(t, se.attrs)
 }
@@ -90,6 +93,7 @@ func TestAnnotateError_VariousTypes(t *testing.T) {
 	)
 
 	var se *slogError
+
 	require.ErrorAs(t, annotated, &se)
 	assert.Len(t, se.attrs, 4)
 
@@ -144,6 +148,7 @@ func TestSlogError_ErrorsAs(t *testing.T) {
 	annotated := AnnotateError(baseErr, "key", "value")
 
 	var ce *customError
+
 	require.ErrorAs(t, annotated, &ce)
 	assert.Equal(t, "custom error", ce.msg)
 }
@@ -158,6 +163,7 @@ func TestSlogError_ChainedAnnotation(t *testing.T) {
 
 	// Both annotations should be present
 	var se *slogError
+
 	require.ErrorAs(t, annotated2, &se)
 
 	// The outer annotation should have key2

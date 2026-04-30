@@ -17,7 +17,19 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
+
+	"github.com/amp-labs/amp-common/envutil"
 )
+
+// DrainTimeoutEnvVar is the environment variable that controls how long
+// SetupDrainable will wait between Intake cancellation (SIGTERM) and an
+// explicit DrainComplete call before forcing the drain to complete. The
+// value is parsed by time.ParseDuration (e.g. "5m", "30s", "1h").
+const DrainTimeoutEnvVar = "SHUTDOWN_DRAIN_TIMEOUT"
+
+// DefaultDrainTimeout is used when DrainTimeoutEnvVar is unset or invalid.
+const DefaultDrainTimeout = 5 * time.Minute
 
 var (
 	mut     sync.Mutex     //nolint:gochecknoglobals // Protects hooks slice
@@ -105,12 +117,26 @@ type DrainableContexts struct {
 // DrainComplete (i.e. after the drain), not on signal receipt — so they
 // can rely on Lifetime still being alive while in-flight work finishes,
 // and only fire once the process is genuinely shutting down.
+//
+// As a safety net, if DrainComplete has not been called within the
+// configured drain timeout (see DrainTimeoutEnvVar) after Intake
+// cancellation, DrainComplete is invoked automatically and a loud
+// warning is logged. DrainComplete is idempotent, so an automatic
+// trigger followed by a caller-initiated call (or vice versa) is safe.
 func SetupDrainable() *DrainableContexts {
 	channel = make(chan os.Signal, 1)
 	signal.Notify(channel, syscall.SIGINT, syscall.SIGTERM)
 
 	intakeCtx, cancelIntake := context.WithCancel(context.Background())
 	lifetimeCtx, cancelLifetime := context.WithCancel(context.Background())
+
+	var once sync.Once
+	drainComplete := func() {
+		once.Do(func() {
+			cleanup()
+			cancelLifetime()
+		})
+	}
 
 	go func() {
 		for c := range channel {
@@ -123,13 +149,27 @@ func SetupDrainable() *DrainableContexts {
 		}
 	}()
 
+	timeout := envutil.Duration(context.Background(), DrainTimeoutEnvVar,
+		envutil.Default(DefaultDrainTimeout)).ValueOrElse(DefaultDrainTimeout)
+
+	go func() {
+		<-intakeCtx.Done()
+
+		select {
+		case <-lifetimeCtx.Done():
+			return
+		case <-time.After(timeout):
+			slog.Warn("!!! DRAIN TIMEOUT EXCEEDED — forcing shutdown; in-flight work may be abandoned !!!",
+				"timeout", timeout,
+				"envVar", DrainTimeoutEnvVar)
+			drainComplete()
+		}
+	}()
+
 	return &DrainableContexts{
-		Intake:   intakeCtx,
-		Lifetime: lifetimeCtx,
-		DrainComplete: func() {
-			cleanup()
-			cancelLifetime()
-		},
+		Intake:        intakeCtx,
+		Lifetime:      lifetimeCtx,
+		DrainComplete: drainComplete,
 	}
 }
 

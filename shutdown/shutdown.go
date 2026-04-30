@@ -73,6 +73,66 @@ func SetupHandler() context.Context {
 	return ctx
 }
 
+// DrainableContexts holds the two contexts that govern a drainable process
+// lifecycle, plus the callback that transitions from "draining" to "done".
+//
+// Intake represents the scope during which the process is accepting new work.
+// It is canceled on SIGINT/SIGTERM. Wire it into anything that pulls or
+// receives new work (e.g. a Pub/Sub subscriber, an HTTP listener) so that
+// cancellation translates into "stop accepting new work".
+//
+// Lifetime represents the scope during which the process is alive at all.
+// It is canceled when DrainComplete is called. Wire it into supporting
+// services that must outlive the drain — telemetry, database connections,
+// metrics servers, in-flight handlers — so they remain available while
+// queued work finishes.
+//
+// DrainComplete must be called by the caller once all in-flight work has
+// finished. It runs registered BeforeShutdown hooks and then cancels
+// Lifetime, allowing the rest of the process to tear down.
+type DrainableContexts struct {
+	Intake   context.Context
+	Lifetime context.Context
+
+	DrainComplete func()
+}
+
+// SetupDrainable installs SIGINT/SIGTERM handlers and returns a
+// DrainableContexts whose Intake cancels on signal and whose Lifetime
+// cancels only when the caller invokes DrainComplete.
+//
+// Unlike SetupHandler, BeforeShutdown hooks registered here run inside
+// DrainComplete (i.e. after the drain), not on signal receipt — so they
+// can rely on Lifetime still being alive while in-flight work finishes,
+// and only fire once the process is genuinely shutting down.
+func SetupDrainable() *DrainableContexts {
+	channel = make(chan os.Signal, 1)
+	signal.Notify(channel, syscall.SIGINT, syscall.SIGTERM)
+
+	intakeCtx, cancelIntake := context.WithCancel(context.Background())
+	lifetimeCtx, cancelLifetime := context.WithCancel(context.Background())
+
+	go func() {
+		for c := range channel {
+			slog.Warn("Received " + c.String() + ", shutting down...")
+			close(channel)
+
+			channel = nil
+
+			cancelIntake()
+		}
+	}()
+
+	return &DrainableContexts{
+		Intake:   intakeCtx,
+		Lifetime: lifetimeCtx,
+		DrainComplete: func() {
+			cleanup()
+			cancelLifetime()
+		},
+	}
+}
+
 // cleanup runs all registered hooks and clears the hooks slice.
 // Must be called with channel closed to prevent concurrent modifications.
 func cleanup() {

@@ -3,6 +3,7 @@ package actor
 import (
 	"context"
 	"errors"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -398,6 +399,64 @@ func TestActorSendWithoutContext(t *testing.T) {
 	result, ok := received.Load().(string)
 	require.True(t, ok)
 	assert.Equal(t, "test message", result)
+}
+
+// TestActorSubmitOnClosedInboxReturnsDeadActor verifies that submit recovers
+// from "send on closed channel" and returns ErrDeadActor. Shutdown closes
+// the inbox, and an in-flight sender that already passed the dead-check
+// cannot avoid the closed-channel send. We construct the Ref manually with
+// a pre-closed inbox to make the test deterministic — exercising the same
+// recover path without depending on goroutine scheduling (which would
+// otherwise trip the race detector on the unavoidable close-vs-send window).
+func TestActorSubmitOnClosedInboxReturnsDeadActor(t *testing.T) {
+	t.Parallel()
+
+	inbox := make(chan Message[int, empty], 1)
+	close(inbox)
+
+	ref := &Ref[int, empty]{
+		inboxRead:  inbox,
+		inboxWrite: inbox,
+		getCount:   func() int { return 0 },
+		name:       "closed-inbox",
+	}
+	// dead is left at its zero value (false) on purpose: simulate the window
+	// where the inbox has been closed but the dead flag has not yet been
+	// observed by the sender.
+
+	err := ref.submit(t.Context(), Message[int, empty]{Request: 1})
+	require.ErrorIs(t, err, ErrDeadActor)
+}
+
+// TestActorStopIsIdempotent verifies Stop is safe to call from multiple
+// goroutines: only one caller closes the channel, the rest are no-ops.
+func TestActorStopIsIdempotent(t *testing.T) {
+	t.Parallel()
+
+	act := New[int, empty](func(ref *Ref[int, empty]) Processor[int, empty] {
+		return NewProcessor(func(msg Message[int, empty]) {})
+	})
+
+	ref := act.Run(t.Context(), "stop-idempotent", 1)
+
+	const stoppers = 8
+
+	var wg sync.WaitGroup
+
+	wg.Add(stoppers)
+
+	for range stoppers {
+		go func() {
+			defer wg.Done()
+
+			ref.Stop()
+		}()
+	}
+
+	wg.Wait()
+	ref.Wait()
+
+	assert.False(t, ref.Alive())
 }
 
 func TestActorCustomProcessor(t *testing.T) {

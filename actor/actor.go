@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/amp-labs/amp-common/channels"
@@ -185,11 +186,11 @@ func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth i
 
 				wasBusy = true
 
-				// Due to a race this might already be closed.
-				// If it is, we don't want to panic.
+				// Flip dead before closing the inbox so concurrent senders
+				// see Alive() == false instead of racing with the close.
+				// CloseChannelIgnorePanic recovers if Stop() got here first.
+				ref.dead.Store(true)
 				channels.CloseChannelIgnorePanic(ref.inboxWrite)
-
-				ref.dead = true
 			case <-ticker.C:
 				actorIdle.WithLabelValues(subsystem, name).Dec()
 				actorBusy.WithLabelValues(subsystem, name).Inc()
@@ -231,7 +232,7 @@ type Ref[Request, Response any] struct {
 	inboxRead  <-chan Message[Request, Response]
 	inboxWrite chan<- Message[Request, Response]
 	getCount   func() int
-	dead       bool
+	dead       atomic.Bool
 	name       string
 }
 
@@ -242,18 +243,17 @@ func (r *Ref[Request, Response]) Name() string {
 
 // Alive returns true if the actor is still running.
 func (r *Ref[Request, Response]) Alive() bool {
-	return !r.dead
+	return !r.dead.Load()
 }
 
 // Stop signals the actor to shut down by closing its inbox channel.
 // It is safe to call multiple times.
 func (r *Ref[Request, Response]) Stop() {
-	if r.dead {
+	if !r.dead.CompareAndSwap(false, true) {
 		return
 	}
 
 	channels.CloseChannelIgnorePanic(r.inboxWrite)
-	r.dead = true
 }
 
 // Wait blocks until the actor has fully stopped processing messages.
@@ -263,10 +263,22 @@ func (r *Ref[Request, Response]) Wait() {
 
 // submit is an internal method that sends a message to the actor's inbox,
 // tracking submission metrics and respecting context cancellation.
-func (r *Ref[Request, Response]) submit(ctx context.Context, message Message[Request, Response]) error {
-	if r.dead {
+//
+// The deferred recover catches "send on closed channel" when the run loop
+// (or Stop) closes inboxWrite concurrently with this send: a sender can
+// pass the dead-check, then have the inbox closed before the send goroutine
+// completes. Recovering here lets callers see ErrDeadActor instead of
+// crashing the goroutine.
+func (r *Ref[Request, Response]) submit(ctx context.Context, message Message[Request, Response]) (err error) {
+	if r.dead.Load() {
 		return ErrDeadActor
 	}
+
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = ErrDeadActor
+		}
+	}()
 
 	subsystem := logger.GetSubsystem(ctx)
 
@@ -333,7 +345,7 @@ func (r *Ref[Request, Response]) SendCtx(ctx context.Context, request Request) {
 // Request sends a request to the actor and blocks until a response is received.
 // Uses context.Background(). Returns ErrDeadActor if the actor is stopped.
 func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //nolint:ireturn
-	if r.dead {
+	if r.dead.Load() {
 		var zero Response
 
 		return zero, ErrDeadActor
@@ -369,7 +381,7 @@ func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //
 // RequestCtx sends a request to the actor and blocks until a response is received or the context is canceled.
 // Returns ErrDeadActor if the actor is stopped, or context error if context is canceled.
 func (r *Ref[Request, Response]) RequestCtx(ctx context.Context, request Request) (Response, error) { //nolint:ireturn
-	if r.dead {
+	if r.dead.Load() {
 		var zero Response
 
 		return zero, ErrDeadActor

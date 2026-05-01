@@ -1,6 +1,6 @@
 // Package testing provides testing utilities for state machine workflows.
 //
-//nolint:err113,varnamelen // Test engine uses dynamic errors; short names idiomatic
+//nolint:err113,varnamelen,revive // Test engine uses dynamic errors; short names idiomatic
 package testing
 
 import (

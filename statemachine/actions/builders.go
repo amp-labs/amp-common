@@ -166,6 +166,7 @@ func (p *ParamExtractor) GetStringSlice(key string, required bool) ([]string, er
 	}
 
 	result := make([]string, len(slice))
+
 	for i, item := range slice {
 		str, ok := item.(string)
 		if !ok {

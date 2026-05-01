@@ -105,6 +105,7 @@ func FormatContextForPrompt(contextData map[string]any) string {
 	}
 
 	var sb strings.Builder
+
 	sb.WriteString("**Context:**\n")
 
 	for key, value := range contextData {

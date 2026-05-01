@@ -354,6 +354,7 @@ func TestAtomicContext_ThreadSafety(t *testing.T) {
 		const numGoroutines = 100
 
 		var waitGroup sync.WaitGroup
+
 		waitGroup.Add(numGoroutines)
 
 		// Concurrently swap contexts
@@ -385,6 +386,7 @@ func TestAtomicContext_ThreadSafety(t *testing.T) {
 		)
 
 		var waitGroup sync.WaitGroup
+
 		waitGroup.Add(numReaders + numWriters)
 
 		// Start readers
@@ -431,6 +433,7 @@ func TestAtomicContext_ThreadSafety(t *testing.T) {
 		const numGoroutines = 100
 
 		var waitGroup sync.WaitGroup
+
 		waitGroup.Add(numGoroutines * 2)
 
 		// Readers checking deadline

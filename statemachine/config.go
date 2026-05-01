@@ -270,6 +270,7 @@ func (c *Config) findReachableStates() map[string]bool {
 		for _, transition := range c.Transitions {
 			if transition.From == current && !reachable[transition.To] {
 				reachable[transition.To] = true
+
 				queue = append(queue, transition.To)
 			}
 		}

@@ -208,7 +208,6 @@ func TestErrorRecording(t *testing.T) {
 
 func TestDebugMode(t *testing.T) {
 	// Note: Cannot use t.Parallel() on subtests because t.Setenv modifies global state
-
 	// Test debug mode enabled
 	t.Run("debug mode enabled", func(t *testing.T) {
 		t.Setenv("MCP_DEBUG", "1")

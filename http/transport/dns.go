@@ -2,10 +2,13 @@ package transport
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/amp-labs/amp-common/dns"
+	"github.com/amp-labs/amp-common/utils"
 	"github.com/rs/dnscache"
 )
 
@@ -15,6 +18,51 @@ var dnsResolver *dnscache.Resolver
 
 func init() {
 	dnsResolver = &dnscache.Resolver{}
+}
+
+// useDNSPublicOnlyDialer modifies the given http.Transport to dial through a dnsdialer that
+// resolves names using only public DNS resolvers (e.g. 8.8.8.8, 1.1.1.1) and refuses to connect
+// to private/RFC 1918 addresses. This stops callers from reaching internal services via private
+// DNS names or private IPs. When cache is true, resolved results are cached to reduce DNS traffic.
+func useDNSPublicOnlyDialer(ctx context.Context, trans *http.Transport, cache bool, timeout time.Duration) error {
+	var opts = []dns.Option{
+		dns.WithConnPoolSize(dnsConnPoolSize.Get(ctx)),
+		dns.WithStrategy(dns.Fallback{}),
+		dns.WithResolvers(getDnsPublicResolvers(ctx)...),
+		dns.WithFilter(func(host string, record dns.Record) bool {
+			// Leave non-IP records alone
+			if record.Type != dns.TypeA && record.Type != dns.TypeAAAA {
+				return true
+			}
+
+			public, valid := utils.IsPublicIPString(record.Value)
+
+			// Has to be both public and a valid IP string to be allowed
+			return public && valid
+		}),
+	}
+
+	if timeout > 0 {
+		opts = append(opts, dns.WithTimeout(timeout))
+	}
+
+	if cache {
+		opts = append(opts, dns.WithCache(
+			dnsCacheSize.Get(ctx),
+			dnsMinCacheTtl.Get(ctx),
+			dnsMaxCacheTtl.Get(ctx)))
+	}
+
+	dialer, err := dns.NewDialer(opts...)
+	if err != nil {
+		return fmt.Errorf("could not create a new dialer: %w", err)
+	}
+
+	trans.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return dialer.DialContext(ctx, network, addr)
+	}
+
+	return nil
 }
 
 // useDNSCacheDialer modifies the given http.Transport to use a DNS caching dialer.

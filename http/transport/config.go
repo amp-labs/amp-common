@@ -23,6 +23,12 @@ type config struct {
 	// EnableDNSCache enables DNS result caching to reduce DNS lookup overhead.
 	EnableDNSCache bool
 
+	// PublicOnly uses a DNS library which resolves directly from public DNS resolvers.
+	// This is here more for reasons of security - so that customers can't refer to internal
+	// DNS services directly. It also restricts which IP addresses you're allowed to connect to,
+	// no RFC 1918 addresses.
+	PublicOnly bool
+
 	// InsecureTLS disables TLS certificate verification. Use only for testing.
 	InsecureTLS bool
 
@@ -68,6 +74,12 @@ func EnableDNSCache(c *config) {
 // WARNING: This should only be used for testing purposes.
 func InsecureTLS(c *config) {
 	c.InsecureTLS = true
+}
+
+// PublicOnly returns an Option that restricts which addresses and DNS names
+// the caller is allowed to refer to. No private DNS names, no private IP addresses.
+func PublicOnly(c *config) {
+	c.PublicOnly = true
 }
 
 // WithTransportOverride returns an Option that sets custom RoundTripper implementations.

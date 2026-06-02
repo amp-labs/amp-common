@@ -15,7 +15,8 @@ type filterResolver struct {
 }
 
 func newFilterResolver(addr string, resolver Resolver, filter Filter) *filterResolver {
-	if _, _, err := net.SplitHostPort(addr); err != nil {
+	_, _, err := net.SplitHostPort(addr)
+	if err != nil {
 		addr = net.JoinHostPort(addr, "53")
 	}
 

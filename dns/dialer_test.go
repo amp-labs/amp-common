@@ -13,10 +13,10 @@ import (
 // newTestDialer builds a Dialer wired to the given strategy and cache, with a
 // plain net.Dialer and a single placeholder resolver (the fakeStrategy ignores
 // the resolver set).
-func newTestDialer(strat Strategy, cache *dnsCache) *Dialer {
+func newTestDialer(strategy Strategy, cache *dnsCache) *Dialer {
 	return &Dialer{
 		resolvers: []Resolver{&stubResolver{name: "placeholder"}},
-		strategy:  strat,
+		strategy:  strategy,
 		timeout:   defaultTimeout,
 		poolSize:  defaultPoolSize,
 		dialer:    &net.Dialer{},
@@ -27,12 +27,12 @@ func newTestDialer(strat Strategy, cache *dnsCache) *Dialer {
 func TestDialer_LookupIPs_ParsesAddresses(t *testing.T) {
 	t.Parallel()
 
-	strat := &fakeStrategy{byType: map[RecordType][]Record{
+	strategy := &fakeStrategy{byType: map[RecordType][]Record{
 		TypeA:    {aRec("a.com.", "1.2.3.4")},
 		TypeAAAA: {{Type: TypeAAAA, Name: "a.com.", Value: "::1", TTL: 300}},
 	}}
 
-	d := newTestDialer(strat, newDNSCache(0, 0, 0))
+	d := newTestDialer(strategy, newDNSCache(0, 0, 0))
 
 	ips, err := d.lookupIPs(context.Background(), "a.com")
 
@@ -47,34 +47,34 @@ func TestDialer_LookupIPs_ParsesAddresses(t *testing.T) {
 func TestDialer_LookupIPs_ServesFromCache(t *testing.T) {
 	t.Parallel()
 
-	strat := &fakeStrategy{byType: map[RecordType][]Record{
+	strategy := &fakeStrategy{byType: map[RecordType][]Record{
 		TypeA: {aRec("a.com.", "1.2.3.4")},
 	}}
 
-	d := newTestDialer(strat, newDNSCache(10, time.Second, time.Hour))
+	d := newTestDialer(strategy, newDNSCache(10, time.Second, time.Hour))
 
 	_, err := d.lookupIPs(context.Background(), "a.com")
 	require.NoError(t, err)
 
 	// lookup() fans out one query per record type (A, AAAA, CNAME).
-	firstCalls := strat.calls.Load()
+	firstCalls := strategy.calls.Load()
 	require.Equal(t, int32(3), firstCalls)
 
 	_, err = d.lookupIPs(context.Background(), "a.com")
 	require.NoError(t, err)
 
-	assert.Equal(t, firstCalls, strat.calls.Load(), "a cached lookup must not re-query the resolvers")
+	assert.Equal(t, firstCalls, strategy.calls.Load(), "a cached lookup must not re-query the resolvers")
 }
 
 func TestDialer_LookupIPs_NoAddressesError(t *testing.T) {
 	t.Parallel()
 
 	// Only a CNAME comes back, with no terminal A/AAAA record.
-	strat := &fakeStrategy{byType: map[RecordType][]Record{
+	strategy := &fakeStrategy{byType: map[RecordType][]Record{
 		TypeCNAME: {cnameRec("a.com.", "b.com.")},
 	}}
 
-	d := newTestDialer(strat, newDNSCache(0, 0, 0))
+	d := newTestDialer(strategy, newDNSCache(0, 0, 0))
 
 	_, err := d.lookupIPs(context.Background(), "a.com")
 	require.Error(t, err)
@@ -93,11 +93,11 @@ func TestDialer_DialContext_NoSuitableIPForNetwork(t *testing.T) {
 	t.Parallel()
 
 	// Resolution yields only IPv4, but the caller demands IPv6.
-	strat := &fakeStrategy{byType: map[RecordType][]Record{
+	strategy := &fakeStrategy{byType: map[RecordType][]Record{
 		TypeA: {aRec("a.com.", "1.2.3.4")},
 	}}
 
-	d := newTestDialer(strat, newDNSCache(0, 0, 0))
+	d := newTestDialer(strategy, newDNSCache(0, 0, 0))
 
 	_, err := d.DialContext(context.Background(), "tcp6", "a.com:80")
 	require.Error(t, err)

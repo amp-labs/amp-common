@@ -20,9 +20,9 @@ type tcpConnPool struct {
 	dialer  *net.Dialer
 }
 
-// newTcpConnPool creates a TCP connection pool for addr retaining up to size
+// newTCPConnPool creates a TCP connection pool for addr retaining up to size
 // idle connections (defaulting to 4 when size is non-positive).
-func newTcpConnPool(addr string, timeout time.Duration, size int) *tcpConnPool {
+func newTCPConnPool(addr string, timeout time.Duration, size int) *tcpConnPool {
 	if size <= 0 {
 		size = 4
 	}
@@ -85,6 +85,7 @@ func (p *tcpConnPool) Put(conn *net.TCPConn) {
 
 	if p.closed {
 		p.mu.Unlock()
+
 		_ = conn.Close()
 
 		return

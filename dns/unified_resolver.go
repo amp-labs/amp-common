@@ -20,7 +20,8 @@ type unifiedResolver struct {
 // none is given) backed by both a UDP and a TCP resolver sharing the same
 // timeout and pool size.
 func newUnifiedResolver(addr string, timeout time.Duration, poolSize int) *unifiedResolver {
-	if _, _, err := net.SplitHostPort(addr); err != nil {
+	_, _, err := net.SplitHostPort(addr)
+	if err != nil {
 		addr = net.JoinHostPort(addr, "53")
 	}
 

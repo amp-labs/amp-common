@@ -21,14 +21,15 @@ type tcpResolver struct {
 // newTCPResolver creates a TCP resolver for addr (defaulting to port 53 when
 // none is given), with the given per-query timeout and connection pool size.
 func newTCPResolver(addr string, timeout time.Duration, poolSize int) *tcpResolver {
-	if _, _, err := net.SplitHostPort(addr); err != nil {
+	_, _, err := net.SplitHostPort(addr)
+	if err != nil {
 		addr = net.JoinHostPort(addr, "53")
 	}
 
 	return &tcpResolver{
 		addr:     addr,
 		timeout:  timeout,
-		connPool: newTcpConnPool(addr, timeout, poolSize),
+		connPool: newTCPConnPool(addr, timeout, poolSize),
 	}
 }
 
@@ -43,7 +44,7 @@ func (r *tcpResolver) ResolveType(
 ) ([]Record, TruncationStatus, error) {
 	msg := dns.NewMsg(host, uint16(qtype))
 	if msg == nil {
-		return nil, TruncationStatusUnknown, fmt.Errorf("unsupported query type %q", qtype.String())
+		return nil, TruncationStatusUnknown, fmt.Errorf("%w: %q", errUnsupportedQueryType, qtype.String())
 	}
 
 	msg.UDPSize = 4096
@@ -62,7 +63,7 @@ func (r *tcpResolver) ResolveType(
 	}
 
 	if response.Rcode != dns.RcodeSuccess {
-		return nil, TruncationStatusOK, fmt.Errorf("dns error: %s", dns.RcodeToString[response.Rcode])
+		return nil, TruncationStatusOK, fmt.Errorf("%w: %s", errDNSResponse, dns.RcodeToString[response.Rcode])
 	}
 
 	records := make([]Record, 0, len(response.Answer))
@@ -74,27 +75,27 @@ func (r *tcpResolver) ResolveType(
 			TTL:  ans.Header().TTL,
 		}
 
-		switch a := ans.(type) {
+		switch answer := ans.(type) {
 		case *dns.A:
-			record.Value = a.Addr.String()
+			record.Value = answer.Addr.String()
 		case *dns.AAAA:
-			record.Value = a.Addr.String()
+			record.Value = answer.Addr.String()
 		case *dns.CNAME:
-			record.Value = a.Target
+			record.Value = answer.Target
 		case *dns.MX:
-			record.Value = fmt.Sprintf("%d %s", a.Preference, a.Mx)
+			record.Value = fmt.Sprintf("%d %s", answer.Preference, answer.Mx)
 		case *dns.NS:
-			record.Value = a.Ns
+			record.Value = answer.Ns
 		case *dns.TXT:
-			record.Value = fmt.Sprintf("%v", a.Txt)
+			record.Value = fmt.Sprintf("%v", answer.Txt)
 		case *dns.SOA:
 			record.Value = fmt.Sprintf("%s %s %d %d %d %d %d",
-				a.Ns, a.Mbox, a.Serial, a.Refresh, a.Retry, a.Expire, a.Minttl)
+				answer.Ns, answer.Mbox, answer.Serial, answer.Refresh, answer.Retry, answer.Expire, answer.Minttl)
 		case *dns.PTR:
-			record.Value = a.Ptr
+			record.Value = answer.Ptr
 		case *dns.SRV:
 			record.Value = fmt.Sprintf("%d %d %d %s",
-				a.Priority, a.Weight, a.Port, a.Target)
+				answer.Priority, answer.Weight, answer.Port, answer.Target)
 		default:
 			record.Value = ans.String()
 		}

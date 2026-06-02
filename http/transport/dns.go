@@ -28,7 +28,7 @@ func useDNSPublicOnlyDialer(ctx context.Context, trans *http.Transport, cache bo
 	var opts = []dns.Option{
 		dns.WithConnPoolSize(dnsConnPoolSize.Get(ctx)),
 		dns.WithStrategy(dns.Fallback{}),
-		dns.WithResolvers(getDnsPublicResolvers(ctx)...),
+		dns.WithResolvers(getDNSPublicResolvers(ctx)...),
 		dns.WithFilter(func(host string, record dns.Record) bool {
 			// Leave non-IP records alone
 			if record.Type != dns.TypeA && record.Type != dns.TypeAAAA {
@@ -49,8 +49,8 @@ func useDNSPublicOnlyDialer(ctx context.Context, trans *http.Transport, cache bo
 	if cache {
 		opts = append(opts, dns.WithCache(
 			dnsCacheSize.Get(ctx),
-			dnsMinCacheTtl.Get(ctx),
-			dnsMaxCacheTtl.Get(ctx)))
+			dnsMinCacheTTL.Get(ctx),
+			dnsMaxCacheTTL.Get(ctx)))
 	}
 
 	dialer, err := dns.NewDialer(opts...)
@@ -58,8 +58,12 @@ func useDNSPublicOnlyDialer(ctx context.Context, trans *http.Transport, cache bo
 		return fmt.Errorf("could not create a new dialer: %w", err)
 	}
 
+	// Resolve the configured log level once; the dialer reads it from the
+	// per-request context via dns.WithLogLevel.
+	logLevel := dnsLogging.Get(ctx)
+
 	trans.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-		return dialer.DialContext(ctx, network, addr)
+		return dialer.DialContext(dns.WithLogLevel(ctx, logLevel), network, addr)
 	}
 
 	return nil

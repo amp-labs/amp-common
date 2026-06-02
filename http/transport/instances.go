@@ -174,7 +174,8 @@ var pooledTransportPublicOnlyWithDNSCache = lazy.NewCtx[*http.Transport](
 	},
 )
 
-// unpooledTransportPublicOnlyWithDNSCache is a public-only transport with connection pooling disabled and DNS caching enabled.
+// unpooledTransportPublicOnlyWithDNSCache is a public-only transport with connection pooling
+// disabled and DNS caching enabled.
 var unpooledTransportPublicOnlyWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
 		return transportFactory(ctx, true, true, false, false, true)
@@ -197,8 +198,8 @@ var insecureUnpooledTransportPublicOnlyNoDNSCache = lazy.NewCtx[*http.Transport]
 	},
 )
 
-// insecurePooledTransportPublicOnlyWithDNSCache is a public-only transport with connection pooling and DNS caching enabled,
-// and TLS verification disabled.
+// insecurePooledTransportPublicOnlyWithDNSCache is a public-only transport with connection pooling
+// and DNS caching enabled, and TLS verification disabled.
 var insecurePooledTransportPublicOnlyWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
 		return transportFactory(ctx, false, true, true, false, true)
@@ -278,7 +279,7 @@ var insecureUnpooledTransportPublicOnlyWithDNSCacheIgnoreCompression = lazy.NewC
 // getTransportInstance returns the appropriate singleton transport instance based on the config.
 // If a custom transport override is provided, it returns that instead.
 //
-//nolint:gocyclo
+//nolint:gocyclo,dupl // exhaustive flag dispatch; mirrors getTransportInstancePublicOnly by design
 func getTransportInstance(ctx context.Context, cfg *config) http.RoundTripper {
 	for _, tr := range cfg.TransportOverrides {
 		if tr != nil {
@@ -331,7 +332,7 @@ func getTransportInstance(ctx context.Context, cfg *config) http.RoundTripper {
 // getTransportInstancePublicOnly returns the public-only singleton transport matching the config.
 // It is the PublicOnly counterpart of getTransportInstance, selecting from the public-only matrix.
 //
-//nolint:gocyclo
+//nolint:gocyclo,dupl // exhaustive flag dispatch; mirrors getTransportInstance by design
 func getTransportInstancePublicOnly(ctx context.Context, cfg *config) http.RoundTripper {
 	switch {
 	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:

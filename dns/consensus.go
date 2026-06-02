@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+// majorityDivisor halves the resolver count when deriving the default strict
+// majority threshold (len/2 + 1).
+const majorityDivisor = 2
+
 // ResolveType queries every resolver, groups the answers by equality, and
 // returns the first group whose size meets MinAgreement. When MinAgreement is
 // unset it defaults to a strict majority of the resolvers. Resolvers that error
@@ -17,7 +21,7 @@ func (s Consensus) ResolveType(
 	resolvers []Resolver,
 ) ([]Record, error) {
 	if s.MinAgreement <= 0 {
-		s.MinAgreement = (len(resolvers) / 2) + 1
+		s.MinAgreement = (len(resolvers) / majorityDivisor) + 1
 	}
 
 	// resultGroup collects resolvers that returned an identical answer (under the

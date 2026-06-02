@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+const (
+	// recordsPerTypeHint estimates how many records each query type returns; it
+	// is used only to pre-size the aggregated results slice.
+	recordsPerTypeHint = 4
+
+	// maxCachedTTLSeconds caps the TTL used when caching resolved IPs, before the
+	// cache applies its own min/max bounds.
+	maxCachedTTLSeconds = 300
+)
+
 // Dialer resolves hostnames using its configured resolvers and strategy, then
 // dials the resulting IP addresses. Its [Dialer.DialContext] method matches the
 // signature of [net.Dialer.DialContext], so it can be assigned directly to an
@@ -70,6 +80,7 @@ func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 
 	// Filter IPs based on network type
 	var filteredIPs []net.IP
+
 	switch network {
 	case "tcp4", "udp4":
 		// Only use IPv4 addresses, the caller explicitly asked for v4
@@ -104,13 +115,14 @@ func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 	}
 
 	if len(filteredIPs) == 0 {
-		return nil, fmt.Errorf("no suitable IP addresses found for %s (network: %s)", host, network)
+		return nil, fmt.Errorf("%w for %s (network: %s)", errNoSuitableIPs, host, network)
 	}
 
 	var lastErr error
 
 	for _, ip := range filteredIPs {
 		ipAddr := net.JoinHostPort(ip.String(), portStr)
+
 		conn, err := r.dialer.DialContext(ctx, network, ipAddr)
 		if err == nil {
 			return conn, nil
@@ -130,7 +142,7 @@ func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 // the union of all records found. Per-type failures are logged and skipped
 // rather than failing the whole lookup, so an IPv4-only or IPv6-only host still
 // resolves.
-func (r *Dialer) lookup(ctx context.Context, host string) ([]Record, error) {
+func (r *Dialer) lookup(ctx context.Context, host string) []Record {
 	queryTypes := []RecordType{TypeA, TypeAAAA, TypeCNAME}
 
 	type result struct {
@@ -152,9 +164,9 @@ func (r *Dialer) lookup(ctx context.Context, host string) ([]Record, error) {
 		}(qtype)
 	}
 
-	allRecords := make([]Record, 0, len(queryTypes)*4)
+	allRecords := make([]Record, 0, len(queryTypes)*recordsPerTypeHint)
 
-	for i := 0; i < len(queryTypes); i++ {
+	for range queryTypes {
 		res := <-results
 		if res.err != nil {
 			logDebug(ctx, "query type failed",
@@ -167,7 +179,7 @@ func (r *Dialer) lookup(ctx context.Context, host string) ([]Record, error) {
 		allRecords = append(allRecords, res.records...)
 	}
 
-	return allRecords, nil
+	return allRecords
 }
 
 // lookupIPs returns the IP addresses for host, serving from cache when
@@ -187,19 +199,17 @@ func (r *Dialer) lookupIPs(ctx context.Context, host string) ([]net.IP, error) {
 	logDebug(ctx, "IP cache miss",
 		"host", host)
 
-	records, err := r.lookup(ctx, host)
-	if err != nil {
-		return nil, err
-	}
+	records := r.lookup(ctx, host)
 
 	ips := make([]net.IP, 0, len(records))
-	minTTL := uint32(300)
+	minTTL := uint32(maxCachedTTLSeconds)
 
 	for _, record := range records {
 		if record.Type == TypeA || record.Type == TypeAAAA {
 			ip := net.ParseIP(record.Value)
 			if ip != nil {
 				ips = append(ips, ip)
+
 				if record.TTL < minTTL {
 					minTTL = record.TTL
 				}
@@ -208,7 +218,7 @@ func (r *Dialer) lookupIPs(ctx context.Context, host string) ([]net.IP, error) {
 	}
 
 	if len(ips) == 0 {
-		return nil, fmt.Errorf("no IP addresses found for %s", host)
+		return nil, fmt.Errorf("%w for %s", errNoIPAddresses, host)
 	}
 
 	r.cache.setIPs(host, ips, time.Duration(minTTL)*time.Second)

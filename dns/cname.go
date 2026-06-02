@@ -32,7 +32,8 @@ type cnameResolver struct {
 }
 
 func newCNameResolver(addr string, resolver Resolver) *cnameResolver {
-	if _, _, err := net.SplitHostPort(addr); err != nil {
+	_, _, err := net.SplitHostPort(addr)
+	if err != nil {
 		addr = net.JoinHostPort(addr, "53")
 	}
 
@@ -84,7 +85,7 @@ func (c *cnameResolver) followChain(
 	// have already expanded.
 	visited := map[string]bool{target: true}
 
-	for depth := 0; depth < maxCNAMEDepth; depth++ {
+	for range maxCNAMEDepth {
 		// If we already hold a record of the requested type for the current
 		// target, we're done. This covers a direct answer, a recursive resolver
 		// that returned the terminal record, and a CNAME query (whose answer is

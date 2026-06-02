@@ -195,9 +195,9 @@ func TestCompare_NoDiscrepancyDoesNotInvokeCallback(t *testing.T) {
 	}
 
 	called := false
-	strat := Compare{OnDiscrepancy: func(string, RecordType, map[string][]Record) { called = true }}
+	strategy := Compare{OnDiscrepancy: func(string, RecordType, map[string][]Record) { called = true }}
 
-	recs, err := strat.ResolveType(context.Background(), "a.com", TypeA, resolvers)
+	recs, err := strategy.ResolveType(context.Background(), "a.com", TypeA, resolvers)
 
 	require.NoError(t, err)
 	assert.Equal(t, agreed, recs)
@@ -214,11 +214,11 @@ func TestCompare_DiscrepancyInvokesCallback(t *testing.T) {
 
 	var got map[string][]Record
 
-	strat := Compare{OnDiscrepancy: func(_ string, _ RecordType, results map[string][]Record) {
+	strategy := Compare{OnDiscrepancy: func(_ string, _ RecordType, results map[string][]Record) {
 		got = results
 	}}
 
-	_, err := strat.ResolveType(context.Background(), "a.com", TypeA, resolvers)
+	_, err := strategy.ResolveType(context.Background(), "a.com", TypeA, resolvers)
 
 	require.NoError(t, err)
 	require.Len(t, got, 2, "the callback should receive every resolver's answer keyed by name")

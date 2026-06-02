@@ -11,7 +11,7 @@ type Strategy interface {
 }
 
 // Race queries every resolver concurrently and returns the first successful
-// answer, cancelling the rest. It optimizes for latency and is the default
+// answer, canceling the rest. It optimizes for latency and is the default
 // strategy.
 type Race struct{}
 

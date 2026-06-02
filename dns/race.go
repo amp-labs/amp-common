@@ -7,7 +7,7 @@ import (
 
 // ResolveType queries every resolver concurrently and returns the answer from
 // the first one to succeed, then cancels the rest. If all resolvers fail it
-// returns the last error seen. The context is cancelled on return so in-flight
+// returns the last error seen. The context is canceled on return so in-flight
 // queries that lost the race are not left running.
 func (s Race) ResolveType(
 	ctx context.Context,
@@ -30,6 +30,7 @@ func (s Race) ResolveType(
 	for _, res := range resolvers {
 		go func(r Resolver) {
 			start := time.Now()
+
 			records, _, err := r.ResolveType(ctx, host, qtype)
 			results <- result{
 				records:  records,
@@ -42,7 +43,7 @@ func (s Race) ResolveType(
 
 	var lastErr error
 
-	for i := 0; i < len(resolvers); i++ {
+	for range resolvers {
 		r := <-results
 
 		if r.err == nil {

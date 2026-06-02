@@ -85,6 +85,7 @@ func (p *udpConnPool) Put(conn *net.UDPConn) {
 
 	if p.closed {
 		p.mu.Unlock()
+
 		_ = conn.Close()
 
 		return

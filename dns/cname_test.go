@@ -12,6 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// errBoom is a static sentinel used by tests that need to assert error propagation.
+var errBoom = errors.New("boom")
+
 // recordReq identifies a single ResolveType call (canonical host + type).
 type recordReq struct {
 	host  string
@@ -37,10 +40,6 @@ func newFakeResolver() *fakeResolver {
 	return &fakeResolver{responses: make(map[recordReq]fakeResponse)}
 }
 
-func (f *fakeResolver) add(host string, qtype RecordType, resp fakeResponse) {
-	f.responses[recordReq{dnsutil.Canonical(host), qtype}] = resp
-}
-
 func (f *fakeResolver) ResolveType(
 	_ context.Context,
 	host string,
@@ -62,6 +61,10 @@ func (f *fakeResolver) ResolveType(
 }
 
 func (f *fakeResolver) Name() string { return "fake" }
+
+func (f *fakeResolver) add(host string, qtype RecordType, resp fakeResponse) {
+	f.responses[recordReq{dnsutil.Canonical(host), qtype}] = resp
+}
 
 func cnameRec(name, target string) Record {
 	return Record{Type: TypeCNAME, Name: name, Value: target, TTL: 300}
@@ -158,23 +161,23 @@ func TestCNAMEResolver_MultiHop(t *testing.T) {
 func TestCNAMEResolver_SkipsQueryForInlinedCNAME(t *testing.T) {
 	t.Parallel()
 
-	f := newFakeResolver()
-	f.add("www.example.com", TypeA, fakeResponse{records: []Record{
+	resolver := newFakeResolver()
+	resolver.add("www.example.com", TypeA, fakeResponse{records: []Record{
 		cnameRec("www.example.com.", "a.example.com."),
 		cnameRec("a.example.com.", "b.example.com."),
 	}})
-	f.add("b.example.com", TypeA, fakeResponse{records: []Record{
+	resolver.add("b.example.com", TypeA, fakeResponse{records: []Record{
 		aRec("b.example.com.", "1.2.3.4"),
 	}})
 
-	c := newCNameResolver("8.8.8.8:53", f)
+	c := newCNameResolver("8.8.8.8:53", resolver)
 
 	recs, _, err := c.ResolveType(context.Background(), "www.example.com", TypeA)
 
 	require.NoError(t, err)
-	require.Len(t, f.calls, 2, "the inlined a.example.com link must not be re-queried")
-	assert.Equal(t, recordReq{"www.example.com.", TypeA}, f.calls[0])
-	assert.Equal(t, recordReq{"b.example.com.", TypeA}, f.calls[1])
+	require.Len(t, resolver.calls, 2, "the inlined a.example.com link must not be re-queried")
+	assert.Equal(t, recordReq{"www.example.com.", TypeA}, resolver.calls[0])
+	assert.Equal(t, recordReq{"b.example.com.", TypeA}, resolver.calls[1])
 	assert.True(t, hasRecordOfType(recs, "b.example.com.", TypeA))
 }
 
@@ -214,7 +217,7 @@ func TestCNAMEResolver_ChainTooLong(t *testing.T) {
 	t.Parallel()
 
 	chain := make([]Record, 0, maxCNAMEDepth+5)
-	for i := 0; i < maxCNAMEDepth+5; i++ {
+	for i := range maxCNAMEDepth + 5 {
 		chain = append(chain, cnameRec(fmt.Sprintf("n%d.com.", i), fmt.Sprintf("n%d.com.", i+1)))
 	}
 
@@ -276,16 +279,14 @@ func TestCNAMEResolver_CNAMEQueryDoesNotChase(t *testing.T) {
 func TestCNAMEResolver_InitialErrorPropagates(t *testing.T) {
 	t.Parallel()
 
-	sentinel := errors.New("boom")
-
 	f := newFakeResolver()
-	f.add("example.com", TypeA, fakeResponse{err: sentinel})
+	f.add("example.com", TypeA, fakeResponse{err: errBoom})
 
 	c := newCNameResolver("8.8.8.8:53", f)
 
 	_, _, err := c.ResolveType(context.Background(), "example.com", TypeA)
 
-	require.ErrorIs(t, err, sentinel)
+	require.ErrorIs(t, err, errBoom)
 	assert.Len(t, f.calls, 1)
 }
 

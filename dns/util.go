@@ -9,22 +9,23 @@ type recordKey struct {
 	ttl   uint32
 }
 
-// recordsEqual reports whether a and b contain the same records with the same
-// multiplicities, treating the slices as multisets (order-independent). When
-// ignoreTTL is true, records are compared by value only, so the same data with
-// differing TTLs counts as equal -- useful because each resolver counts its
+// recordsEqual reports whether first and second contain the same records with
+// the same multiplicities, treating the slices as multisets (order-independent).
+// When ignoreTTL is true, records are compared by value only, so the same data
+// with differing TTLs counts as equal -- useful because each resolver counts its
 // TTLs down independently.
-func recordsEqual(a, b []Record, ignoreTTL bool) bool {
+func recordsEqual(first, second []Record, ignoreTTL bool) bool {
 	// Fast path: if lengths differ, they can't be equal
-	if len(a) != len(b) {
+	if len(first) != len(second) {
 		return false
 	}
 
-	// Build a frequency map for slice 'a'. This counts how many times each
-	// unique record appears. For example, if 'a' contains [X, X, Y], the map
+	// Build a frequency map for slice 'first'. This counts how many times each
+	// unique record appears. For example, if 'first' contains [X, X, Y], the map
 	// will be {X: 2, Y: 1}.
-	aMap := make(map[recordKey]int)
-	for _, r := range a {
+	counts := make(map[recordKey]int)
+
+	for _, r := range first {
 		key := recordKey{
 			value: r.Value,
 			ttl:   r.TTL,
@@ -37,13 +38,14 @@ func recordsEqual(a, b []Record, ignoreTTL bool) bool {
 			// 3. We care about "is this the same data" not "same data with exact same TTL"
 			key.ttl = 0
 		}
-		aMap[key]++
+
+		counts[key]++
 	}
 
-	// Check that slice 'b' has the exact same frequency of each record.
-	// For each record in 'b', decrement its count in the map. If we encounter
+	// Check that slice 'second' has the exact same frequency of each record.
+	// For each record in 'second', decrement its count in the map. If we encounter
 	// a record that's not in the map or has count 0, the slices aren't equal.
-	for _, r := range b {
+	for _, r := range second {
 		key := recordKey{
 			value: r.Value,
 			ttl:   r.TTL,
@@ -51,12 +53,14 @@ func recordsEqual(a, b []Record, ignoreTTL bool) bool {
 		if ignoreTTL {
 			key.ttl = 0
 		}
-		count, exists := aMap[key]
+
+		count, exists := counts[key]
 		if !exists || count == 0 {
-			// Either this record isn't in 'a', or 'b' has more copies of it than 'a' does
+			// Either this record isn't in 'first', or 'second' has more copies of it than 'first' does
 			return false
 		}
-		aMap[key]--
+
+		counts[key]--
 	}
 
 	// If we get here, both slices contain the same records with the same frequencies

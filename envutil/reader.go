@@ -193,7 +193,7 @@ func Map[A any, B any](env Reader[A], f func(A) (B, error)) Reader[B] {
 	val, err := f(env.value)
 	// Special logic for unsetting a value.
 	if err != nil {
-		if errors.Is(err, errUnsetValue) {
+		if errors.Is(err, ErrUnsetValue) {
 			return Reader[B]{
 				key: env.key,
 			}

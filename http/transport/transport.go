@@ -111,7 +111,12 @@ func create(ctx context.Context, cfg *config) *http.Transport {
 		transport.DisableKeepAlives = true
 	}
 
-	if cfg.EnableDNSCache {
+	if cfg.PublicOnly {
+		err := useDNSPublicOnlyDialer(ctx, transport, cfg.EnableDNSCache, dialTimeout)
+		if err != nil {
+			panic(err)
+		}
+	} else if cfg.EnableDNSCache {
 		useDNSCacheDialer(transport, dialTimeout, keepAlive)
 	}
 

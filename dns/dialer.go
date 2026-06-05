@@ -64,20 +64,21 @@ func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 
 			var lastErr error
 
-			for _, ip := range ips {
-				ipAddr := net.JoinHostPort(ip.String(), port)
-
+			for _, ipAddr := range ips {
 				conn, err := retry.DoValue[net.Conn](ctx, func(ctx context.Context) (net.Conn, error) {
 					ipAttrs := []spans.Option{
 						spans.WithSpanKind(trace.SpanKindClient),
 						spans.WithAttribute("network", attribute.StringValue(network)),
-						spans.WithAttribute("ip", attribute.StringValue(ip.String())),
+						spans.WithAttribute("ip", attribute.StringValue(ipAddr.String())),
+						spans.WithAttribute("port", attribute.StringValue(port)),
 						spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))),
 					}
 
 					return spans.StartValErr[net.Conn](ctx, "dialIP", ipAttrs...).
 						Enter(func(ctx context.Context, span trace.Span) (net.Conn, error) {
-							conn, err := r.dialer.DialContext(ctx, network, ipAddr)
+							ipAddrStr := net.JoinHostPort(ipAddr.String(), port)
+
+							conn, err := r.dialer.DialContext(ctx, network, ipAddrStr)
 							if err != nil {
 								span.SetStatus(codes.Error, err.Error())
 
@@ -98,7 +99,7 @@ func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 				lastErr = err
 
 				logDebug(ctx, "connection failed, trying next IP",
-					"ip", ip.String(),
+					"ip", ipAddr.String(),
 					"error", err.Error())
 			}
 

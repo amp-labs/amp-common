@@ -74,11 +74,12 @@ func (m *metricsResolver) ResolveType(
 
 		end = time.Now()
 
-		if trunc == TruncationStatusTruncated {
+		switch {
+		case trunc == TruncationStatusTruncated:
 			span.SetStatus(codes.Error, "truncated")
-		} else if err != nil {
+		case err != nil:
 			span.SetStatus(codes.Error, err.Error())
-		} else {
+		default:
 			var ipStrs []string
 
 			for _, ip := range records {

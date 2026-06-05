@@ -60,7 +60,7 @@ func (r *udpResolver) ResolveType(
 			"host", host,
 			"type", qtype.String())
 
-		return nil, TruncationStatusTruncated, errTruncatedUdp
+		return nil, TruncationStatusTruncated, errTruncatedUDP
 	}
 
 	if response.Rcode != dns.RcodeSuccess {

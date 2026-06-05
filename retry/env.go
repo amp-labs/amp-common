@@ -116,28 +116,28 @@ func readBackoff(ctx context.Context, key string) optional.Value[Backoff] {
 func OptionsFromEnv(ctx context.Context, baseKey string) []Option {
 	var opts []Option
 
-	budget, ok := readBudget(ctx, baseKey+"_BUDGET").Get()
-	if ok {
+	budget, present := readBudget(ctx, baseKey+"_BUDGET").Get()
+	if present {
 		opts = append(opts, WithBudget(budget))
 	}
 
-	timeout, ok := readOptionalDuration(ctx, baseKey+"_TIMEOUT").Get()
-	if ok {
+	timeout, present := readOptionalDuration(ctx, baseKey+"_TIMEOUT").Get()
+	if present {
 		opts = append(opts, WithTimeout(Timeout(timeout)))
 	}
 
-	attempts, ok := readOptionalUint(ctx, baseKey+"_ATTEMPTS").Get()
-	if ok {
+	attempts, present := readOptionalUint(ctx, baseKey+"_ATTEMPTS").Get()
+	if present {
 		opts = append(opts, WithAttempts(Attempts(attempts)))
 	}
 
-	jitter, ok := readOptionalFloat(ctx, baseKey+"_JITTER").Get()
-	if ok {
+	jitter, present := readOptionalFloat(ctx, baseKey+"_JITTER").Get()
+	if present {
 		opts = append(opts, WithJitter(Jitter(jitter)))
 	}
 
-	backoff, ok := readBackoff(ctx, baseKey+"_BACKOFF").Get()
-	if ok {
+	backoff, present := readBackoff(ctx, baseKey+"_BACKOFF").Get()
+	if present {
 		opts = append(opts, WithBackoff(backoff))
 	}
 

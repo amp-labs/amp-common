@@ -30,6 +30,6 @@ var (
 	errNoSuitableIPs = errors.New("no suitable IP addresses found")
 	// errNoIPAddresses is returned when a lookup yields no A/AAAA addresses.
 	errNoIPAddresses = errors.New("no IP addresses found")
-	// errTruncatedUdp is returned when a UDP response is truncated.
-	errTruncatedUdp = errors.New("truncated udp response")
+	// errTruncatedUDP is returned when a UDP response is truncated.
+	errTruncatedUDP = errors.New("truncated udp response")
 )

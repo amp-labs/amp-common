@@ -483,6 +483,7 @@ func getTransportInstanceAmpersandDNS(ctx context.Context, cfg *config) http.Rou
 	}
 }
 
+//nolint:gocyclo,dupl
 func getTransportInstanceAmpersandDNSPubOnly(ctx context.Context, cfg *config) http.RoundTripper {
 	switch {
 	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:

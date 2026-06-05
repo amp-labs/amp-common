@@ -90,8 +90,6 @@ func useAmpersandDNSDialer(
 		return dialer.DialContext(dns.WithLogLevel(ctx, logLevel), network, addr)
 	}
 
-	trans.Dial
-
 	return nil
 }
 

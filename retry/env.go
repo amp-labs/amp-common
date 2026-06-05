@@ -12,9 +12,8 @@ import (
 func readOptionalDuration(
 	ctx context.Context,
 	key string,
-	opts ...envutil.Option[time.Duration],
 ) optional.Value[time.Duration] {
-	d := envutil.Duration(ctx, key, opts...)
+	d := envutil.Duration(ctx, key)
 
 	if !d.HasValue() {
 		return optional.None[time.Duration]()
@@ -33,9 +32,8 @@ func readOptionalDuration(
 func readOptionalFloat(
 	ctx context.Context,
 	key string,
-	opts ...envutil.Option[float64],
 ) optional.Value[float64] {
-	f := envutil.Float64(ctx, key, opts...)
+	f := envutil.Float64(ctx, key)
 
 	if !f.HasValue() {
 		return optional.None[float64]()
@@ -54,9 +52,8 @@ func readOptionalFloat(
 func readOptionalUint(
 	ctx context.Context,
 	key string,
-	opts ...envutil.Option[uint],
 ) optional.Value[uint] {
-	u := envutil.Uint[uint](ctx, key, opts...)
+	u := envutil.Uint[uint](ctx, key)
 
 	if !u.HasValue() {
 		return optional.None[uint]()

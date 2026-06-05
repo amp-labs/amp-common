@@ -6,6 +6,10 @@ import (
 	"net"
 
 	"github.com/amp-labs/amp-common/retry"
+	"github.com/amp-labs/amp-common/spans"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Dialer resolves hostnames using its configured resolvers and strategy, then
@@ -43,29 +47,61 @@ func NewDialer(opts ...Option) (*Dialer, error) {
 // and the generic "tcp"/"udp" try IPv4 first then IPv6. It mirrors the
 // signature of [net.Dialer.DialContext].
 func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
-	ips, port, err := r.lookup.Lookup(ctx, network, addr)
-	if err != nil {
-		return nil, err
+	attrs := []spans.Option{
+		spans.WithSpanKind(trace.SpanKindClient),
+		spans.WithAttribute("network", attribute.StringValue(network)),
+		spans.WithAttribute("addr", attribute.StringValue(addr)),
 	}
 
-	var lastErr error
+	return spans.StartValErr[net.Conn](ctx, "dialAddress", attrs...).
+		Enter(func(ctx context.Context, span trace.Span) (net.Conn, error) {
+			ips, port, err := r.lookup.Lookup(ctx, network, addr)
+			if err != nil {
+				span.SetStatus(codes.Error, err.Error())
 
-	for _, ip := range ips {
-		ipAddr := net.JoinHostPort(ip.String(), port)
+				return nil, err
+			}
 
-		conn, err := retry.DoValue[net.Conn](ctx, func(ctx context.Context) (net.Conn, error) {
-			return r.dialer.DialContext(ctx, network, ipAddr)
-		}, r.retryOptions...)
-		if err == nil {
-			return conn, nil
-		}
+			var lastErr error
 
-		lastErr = err
+			for _, ip := range ips {
+				ipAddr := net.JoinHostPort(ip.String(), port)
 
-		logDebug(ctx, "connection failed, trying next IP",
-			"ip", ip.String(),
-			"error", err.Error())
-	}
+				conn, err := retry.DoValue[net.Conn](ctx, func(ctx context.Context) (net.Conn, error) {
+					ipAttrs := []spans.Option{
+						spans.WithSpanKind(trace.SpanKindClient),
+						spans.WithAttribute("network", attribute.StringValue(network)),
+						spans.WithAttribute("ip", attribute.StringValue(ip.String())),
+						spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))),
+					}
 
-	return nil, fmt.Errorf("failed to connect to %q (network: %q): %w", addr, network, lastErr)
+					return spans.StartValErr[net.Conn](ctx, "dialIP", ipAttrs...).
+						Enter(func(ctx context.Context, span trace.Span) (net.Conn, error) {
+							conn, err := r.dialer.DialContext(ctx, network, ipAddr)
+							if err != nil {
+								span.SetStatus(codes.Error, err.Error())
+
+								return nil, err
+							}
+
+							span.SetStatus(codes.Ok, "connection established")
+							span.SetAttributes(attribute.String("local", getAddrStr(conn.LocalAddr())))
+							span.SetAttributes(attribute.String("remote", getAddrStr(conn.RemoteAddr())))
+
+							return conn, nil
+						})
+				}, r.retryOptions...)
+				if err == nil {
+					return conn, nil
+				}
+
+				lastErr = err
+
+				logDebug(ctx, "connection failed, trying next IP",
+					"ip", ip.String(),
+					"error", err.Error())
+			}
+
+			return nil, fmt.Errorf("failed to connect to %q (network: %q): %w", addr, network, lastErr)
+		})
 }

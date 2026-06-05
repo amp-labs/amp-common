@@ -5,6 +5,11 @@ import (
 	"errors"
 	"net"
 	"time"
+
+	"github.com/amp-labs/amp-common/spans"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // metricsResolver decorates another Resolver, recording Prometheus metrics
@@ -47,11 +52,43 @@ func (m *metricsResolver) ResolveType(
 	host string,
 	qtype RecordType,
 ) ([]Record, TruncationStatus, error) {
-	start := time.Now()
+	attrs := []spans.Option{
+		spans.WithSpanKind(trace.SpanKindClient),
+		spans.WithAttribute("query", attribute.StringValue(host)),
+		spans.WithAttribute("type", attribute.StringValue(qtype.String())),
+		spans.WithAttribute("server", attribute.StringValue(m.addr)),
+		spans.WithAttribute("protocol", attribute.StringValue(m.proto)),
+	}
 
-	records, trunc, err := m.resolver.ResolveType(ctx, host, qtype)
+	var (
+		start, end time.Time
+		err        error
+		records    []Record
+		trunc      TruncationStatus
+	)
 
-	end := time.Now()
+	spans.Start(ctx, "dnsQuery", attrs...).Enter(func(ctx context.Context, span trace.Span) {
+		start = time.Now()
+
+		records, trunc, err = m.resolver.ResolveType(ctx, host, qtype)
+
+		end = time.Now()
+
+		if trunc == TruncationStatusTruncated {
+			span.SetStatus(codes.Error, "truncated")
+		} else if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			var ipStrs []string
+
+			for _, ip := range records {
+				ipStrs = append(ipStrs, ip.String())
+			}
+
+			span.SetStatus(codes.Ok, "ok")
+			span.SetAttributes(attribute.StringSlice("results", ipStrs))
+		}
+	})
 
 	if errors.Is(err, context.Canceled) {
 		return records, trunc, err

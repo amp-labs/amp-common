@@ -183,3 +183,11 @@ func filterAnyIP(ips []net.IP) []net.IP {
 
 	return filteredIPs
 }
+
+func getAddrStr(a net.Addr) string {
+	if a == nil {
+		return "<nil>"
+	}
+
+	return fmt.Sprintf("%s (%s)", a.String(), a.Network())
+}

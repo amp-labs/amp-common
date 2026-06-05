@@ -103,7 +103,7 @@ func (l *LookupCoordinator) Lookup(ctx context.Context, network, addr string) ([
 }
 
 func (l *LookupCoordinator) doLookup(ctx context.Context, host string, span trace.Span) ([]net.IP, error) {
-	vals, lookupErr := l.lookupIPs(ctx, host)
+	vals, cache, lookupErr := l.lookupIPs(ctx, host)
 	if lookupErr != nil {
 		outErr := fmt.Errorf("DNS lookup failed for %q: %w", host, lookupErr)
 
@@ -124,6 +124,7 @@ func (l *LookupCoordinator) doLookup(ctx context.Context, host string, span trac
 
 		span.SetStatus(codes.Ok, "DNS lookup succeeded")
 		span.SetAttributes(attribute.StringSlice("results", ipStrs))
+		span.SetAttributes(attribute.Bool("fromCache", cache))
 	}
 
 	return vals, nil
@@ -178,13 +179,13 @@ func (l *LookupCoordinator) lookup(ctx context.Context, host string) []Record {
 // and caches them using the smallest record TTL (capped at 300s and then
 // clamped by the cache's own bounds). It returns an error if no addresses are
 // found.
-func (l *LookupCoordinator) lookupIPs(ctx context.Context, host string) ([]net.IP, error) {
+func (l *LookupCoordinator) lookupIPs(ctx context.Context, host string) ([]net.IP, bool, error) {
 	if cached := l.cache.getIPs(host); cached != nil {
 		logDebug(ctx, "IP cache hit",
 			"host", host,
 			"ips", len(cached))
 
-		return cached, nil
+		return cached, true, nil
 	}
 
 	logDebug(ctx, "IP cache miss",
@@ -209,12 +210,12 @@ func (l *LookupCoordinator) lookupIPs(ctx context.Context, host string) ([]net.I
 	}
 
 	if len(ips) == 0 {
-		return nil, fmt.Errorf("%w for %s", errNoIPAddresses, host)
+		return nil, false, fmt.Errorf("%w for %s", errNoIPAddresses, host)
 	}
 
 	l.cache.setIPs(host, ips, time.Duration(minTTL)*time.Second)
 
-	return ips, nil
+	return ips, false, nil
 }
 
 // lookupLiteralIP handles the case where the caller passed an IP literal

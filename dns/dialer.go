@@ -56,7 +56,6 @@ func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 		conn, err := retry.DoValue[net.Conn](ctx, func(ctx context.Context) (net.Conn, error) {
 			return r.dialer.DialContext(ctx, network, ipAddr)
 		}, r.retryOptions...)
-
 		if err == nil {
 			return conn, nil
 		}

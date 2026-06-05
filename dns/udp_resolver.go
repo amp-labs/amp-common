@@ -63,13 +63,13 @@ func (r *udpResolver) ResolveType(
 		return nil, TruncationStatusTruncated, errTruncatedUDP
 	}
 
-	if response.Rcode != dns.RcodeSuccess {
+	if response.Rcode != dns.RcodeSuccess { //nolint:dupl
 		return nil, TruncationStatusOK, fmt.Errorf("%w: %s", errDNSResponse, dns.RcodeToString[response.Rcode])
 	}
 
 	records := make([]Record, 0, len(response.Answer))
 
-	for _, ans := range response.Answer {
+	for _, ans := range response.Answer { //nolint:dupl
 		record := Record{
 			Name: ans.Header().Name,
 			Type: RecordType(dns.RRToType(ans)),

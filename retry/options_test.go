@@ -129,14 +129,15 @@ func TestMultipleOptions(t *testing.T) {
 	t.Parallel()
 
 	callCount := 0
-	err := Do(t.Context(), func(ctx context.Context) error {
-		callCount++
-		if callCount < 3 {
-			return errors.New("retry") //nolint:err113 // Test error
-		}
+	err := Do(
+		t.Context(), func(ctx context.Context) error {
+			callCount++
+			if callCount < 3 {
+				return errors.New("retry") //nolint:err113 // Test error
+			}
 
-		return nil
-	},
+			return nil
+		},
 		WithAttempts(5),
 		WithBackoff(ExpBackoff{Base: 10 * time.Millisecond, Max: 100 * time.Millisecond, Factor: 2.0}),
 		WithJitter(WithoutJitter),

@@ -8,12 +8,6 @@ import (
 	"codeberg.org/miekg/dns/dnsutil"
 )
 
-// maxCNAMEDepth bounds how many CNAME hops we follow before giving up. It guards
-// against CNAME loops (a -> b -> a) and pathologically long chains. RFC 1034
-// doesn't mandate a specific limit; 16 is far more than any legitimate chain yet
-// still terminates quickly when a resolver hands us something abusive.
-const maxCNAMEDepth = 16
-
 // cnameResolver decorates another Resolver to follow CNAME chains itself.
 //
 // A query for an address record (A/AAAA) is often answered with a CNAME that
@@ -31,6 +25,9 @@ type cnameResolver struct {
 	resolver Resolver
 }
 
+// newCNameResolver wraps resolver in a cnameResolver. addr (defaulting to port
+// 53 when none is given) is used only as the resolver's Name; queries go
+// through the wrapped resolver.
 func newCNameResolver(addr string, resolver Resolver) *cnameResolver {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -43,6 +40,9 @@ func newCNameResolver(addr string, resolver Resolver) *cnameResolver {
 	}
 }
 
+// ResolveType resolves host via the wrapped resolver, then follows any CNAME
+// chain in the answer (see followChain) so the result includes the terminal
+// records of the requested type whenever they are reachable.
 func (c *cnameResolver) ResolveType(
 	ctx context.Context,
 	host string,
@@ -56,6 +56,7 @@ func (c *cnameResolver) ResolveType(
 	return c.followChain(ctx, host, qtype, records, trunc)
 }
 
+// Name returns the resolver address, identifying the underlying server.
 func (c *cnameResolver) Name() string {
 	return c.addr
 }

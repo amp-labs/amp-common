@@ -20,26 +20,49 @@ func init() {
 	dnsResolver = &dnscache.Resolver{}
 }
 
-// useDNSPublicOnlyDialer modifies the given http.Transport to dial through a dnsdialer that
-// resolves names using only public DNS resolvers (e.g. 8.8.8.8, 1.1.1.1) and refuses to connect
-// to private/RFC 1918 addresses. This stops callers from reaching internal services via private
-// DNS names or private IPs. When cache is true, resolved results are cached to reduce DNS traffic.
-func useDNSPublicOnlyDialer(ctx context.Context, trans *http.Transport, cache bool, timeout time.Duration) error {
-	var opts = []dns.Option{
+// useAmpersandDNSDialer modifies the given http.Transport to dial through the Ampersand DNS
+// dialer, which resolves names using its own configured resolvers (public ones by default,
+// e.g. 8.8.8.8, 1.1.1.1) and refuses to connect to private/RFC 1918 addresses. This stops
+// callers from reaching internal services via private DNS names or private IPs. When cache
+// is true, resolved results are cached to reduce DNS traffic.
+func useAmpersandDNSDialer(
+	ctx context.Context,
+	trans *http.Transport,
+	cache, publicOnly bool,
+	timeout time.Duration,
+) error {
+	opts := []dns.Option{
 		dns.WithConnPoolSize(dnsConnPoolSize.Get(ctx)),
 		dns.WithStrategy(dns.Fallback{}),
-		dns.WithResolvers(getDNSPublicResolvers(ctx)...),
-		dns.WithFilter(func(host string, record dns.Record) bool {
-			// Leave non-IP records alone
-			if record.Type != dns.TypeA && record.Type != dns.TypeAAAA {
-				return true
-			}
+		dns.WithResolvers(getAmpersandDNSResolvers(ctx)...),
+	}
 
-			public, valid := utils.IsPublicIPString(record.Value)
+	if publicOnly {
+		opts = append(
+			opts, dns.WithFilter(func(host string, record dns.Record) bool {
+				// Leave non-IP records alone
+				if record.Type != dns.TypeA && record.Type != dns.TypeAAAA {
+					return true
+				}
 
-			// Has to be both public and a valid IP string to be allowed
-			return public && valid
-		}),
+				public, valid := utils.IsPublicIPString(record.Value)
+
+				// Has to be both public and a valid IP string to be allowed
+				return public && valid
+			}),
+		)
+	}
+
+	lookupOpts := dnsLookupRetryOpts.Get(ctx)
+
+	if len(lookupOpts) > 0 {
+		opts = append(opts, dns.WithLookupRetryOptions(lookupOpts...))
+	}
+
+	dialOpts := dnsDialRetryOpts.Get(ctx)
+
+	if len(dialOpts) > 0 {
+		opts = append(opts, dns.WithDialerRetryOptions(dialOpts...))
 	}
 
 	if timeout > 0 {
@@ -50,7 +73,8 @@ func useDNSPublicOnlyDialer(ctx context.Context, trans *http.Transport, cache bo
 		opts = append(opts, dns.WithCache(
 			dnsCacheSize.Get(ctx),
 			dnsMinCacheTTL.Get(ctx),
-			dnsMaxCacheTTL.Get(ctx)))
+			dnsMaxCacheTTL.Get(ctx),
+		))
 	}
 
 	dialer, err := dns.NewDialer(opts...)
@@ -65,6 +89,8 @@ func useDNSPublicOnlyDialer(ctx context.Context, trans *http.Transport, cache bo
 	trans.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 		return dialer.DialContext(dns.WithLogLevel(ctx, logLevel), network, addr)
 	}
+
+	trans.Dial
 
 	return nil
 }

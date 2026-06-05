@@ -36,7 +36,8 @@ func TestNewDialer_BuildsResolverPerAddress(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, d)
-	assert.Len(t, d.resolvers, 2)
+	require.NotNil(t, d.lookup)
+	assert.Len(t, d.lookup.resolvers, 2)
 }
 
 func TestWithResolvers_Accumulates(t *testing.T) {

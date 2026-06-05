@@ -7,6 +7,9 @@ import "context"
 // the full resolver set; the strategy is responsible for querying them (in
 // parallel or in sequence) and reconciling their answers.
 type Strategy interface {
+	// ResolveType resolves host for the given record type using the supplied
+	// resolvers, returning the reconciled records or an error when no acceptable
+	// answer was obtained.
 	ResolveType(ctx context.Context, host string, qtype RecordType, resolvers []Resolver) ([]Record, error)
 }
 

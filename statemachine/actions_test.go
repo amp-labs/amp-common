@@ -89,7 +89,8 @@ func TestConditionalAction(t *testing.T) {
 			thenAction.executed = false
 			elseAction.executed = false
 
-			conditional := NewConditionalAction("conditional",
+			conditional := NewConditionalAction(
+				"conditional",
 				func(ctx context.Context, smCtx *Context) (bool, error) {
 					return tt.condition, nil
 				},
@@ -197,7 +198,8 @@ func TestValidationAction(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			validation := NewValidationAction("validate",
+			validation := NewValidationAction(
+				"validate",
 				func(ctx context.Context, smCtx *Context) (bool, string, error) {
 					return tt.valid, tt.feedback, nil
 				},

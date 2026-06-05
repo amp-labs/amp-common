@@ -3,6 +3,8 @@ package dns
 import (
 	"net"
 	"time"
+
+	"github.com/amp-labs/amp-common/retry"
 )
 
 const (
@@ -16,13 +18,15 @@ const (
 // options holds the accumulated configuration produced by the [Option]
 // functions before a [Dialer] is built.
 type options struct {
-	resolvers []string
-	filter    Filter
-	strategy  Strategy
-	dialer    *net.Dialer
-	timeout   time.Duration
-	poolSize  int
-	cache     *dnsCache
+	resolvers          []string
+	filter             Filter
+	strategy           Strategy
+	dialer             *net.Dialer
+	timeout            time.Duration
+	poolSize           int
+	cache              *dnsCache
+	lookupRetryOptions []retry.Option
+	dialerRetryOptions []retry.Option
 }
 
 // newOptions returns the default configuration: race strategy, a plain dialer,
@@ -37,11 +41,12 @@ func newOptions() *options {
 	}
 }
 
-// createDialer assembles the resolver stack and returns a ready [Dialer]. Each
-// configured address is wrapped in a unifiedResolver (UDP with TCP fallback),
-// then a cnameResolver, and finally a filterResolver when a filter is set. It
-// returns [ErrNoResolvers] if no addresses were configured.
-func (o *options) createDialer() (*Dialer, error) {
+// createLookupCoordinator assembles the resolver stack and returns a ready
+// [LookupCoordinator]. Each configured address is wrapped in a unifiedResolver
+// (UDP with TCP fallback), then a cnameResolver, and finally a filterResolver
+// when a filter is set. It returns [ErrNoResolvers] if no addresses were
+// configured.
+func (o *options) createLookupCoordinator() (*LookupCoordinator, error) {
 	if len(o.resolvers) == 0 {
 		return nil, ErrNoResolvers
 	}
@@ -63,13 +68,28 @@ func (o *options) createDialer() (*Dialer, error) {
 		resolvers = append(resolvers, r)
 	}
 
+	return &LookupCoordinator{
+		resolvers:    resolvers,
+		filter:       o.filter,
+		strategy:     o.strategy,
+		cache:        o.cache,
+		retryOptions: o.lookupRetryOptions,
+	}, nil
+}
+
+// createDialer builds the [LookupCoordinator] (see createLookupCoordinator)
+// and pairs it with the configured net.Dialer to produce a ready [Dialer]. It
+// returns [ErrNoResolvers] if no addresses were configured.
+func (o *options) createDialer() (*Dialer, error) {
+	lookup, err := o.createLookupCoordinator()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Dialer{
-		resolvers: resolvers,
-		strategy:  o.strategy,
-		timeout:   o.timeout,
-		poolSize:  o.poolSize,
-		dialer:    o.dialer,
-		cache:     o.cache,
+		lookup:       lookup,
+		dialer:       o.dialer,
+		retryOptions: o.dialerRetryOptions,
 	}, nil
 }
 
@@ -134,5 +154,23 @@ func WithConnPoolSize(size int) Option {
 func WithCache(size int, minTTL, maxTTL time.Duration) Option {
 	return func(r *options) {
 		r.cache = newDNSCache(size, minTTL, maxTTL)
+	}
+}
+
+// WithLookupRetryOptions sets the [retry.Option] set applied to DNS lookups
+// (the whole resolution attempt, not individual resolver queries). By default
+// lookups are not retried. Later calls replace earlier ones.
+func WithLookupRetryOptions(opts ...retry.Option) Option {
+	return func(r *options) {
+		r.lookupRetryOptions = opts
+	}
+}
+
+// WithDialerRetryOptions sets the [retry.Option] set applied when dialing each
+// resolved IP. By default each IP is dialed once before moving to the next.
+// Later calls replace earlier ones.
+func WithDialerRetryOptions(opts ...retry.Option) Option {
+	return func(r *options) {
+		r.dialerRetryOptions = opts
 	}
 }

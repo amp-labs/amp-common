@@ -338,7 +338,8 @@ func TestWithAttribute(t *testing.T) {
 	tracer := tp.Tracer("test-tracer")
 	ctx := spans.WithTracer(context.Background(), tracer)
 
-	spans.Start(ctx, "test-span",
+	spans.Start(
+		ctx, "test-span",
 		spans.WithAttribute("test.key", attribute.StringValue("test-value")),
 		spans.WithAttribute("test.number", attribute.IntValue(42)),
 	).Enter(func(ctx context.Context, span otelTrace.Span) {})
@@ -439,7 +440,8 @@ func TestWithSpanStartOptions(t *testing.T) {
 	tracer := tp.Tracer("test-tracer")
 	ctx := spans.WithTracer(context.Background(), tracer)
 
-	spans.Start(ctx, "test-span",
+	spans.Start(
+		ctx, "test-span",
 		spans.WithSpanStartOptions(
 			otelTrace.WithAttributes(
 				attribute.String("custom.attr", "value"),
@@ -476,7 +478,8 @@ func TestWithSpanDecorator(t *testing.T) {
 
 	decoratorCalled := false
 
-	spans.Start(ctx, "test-span",
+	spans.Start(
+		ctx, "test-span",
 		spans.WithSpanDecorator(func(span otelTrace.Span) {
 			decoratorCalled = true
 
@@ -590,7 +593,8 @@ func TestMultipleOptions(t *testing.T) {
 	tracer := tp.Tracer("test-tracer")
 	ctx := spans.WithTracer(context.Background(), tracer)
 
-	spans.Start(ctx, "original-name",
+	spans.Start(
+		ctx, "original-name",
 		spans.WithName("custom-name"),
 		spans.WithAttribute("key1", attribute.StringValue("value1")),
 		spans.WithAttribute("key2", attribute.IntValue(123)),

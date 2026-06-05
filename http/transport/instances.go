@@ -11,13 +11,14 @@ import (
 // This is a helper function used to initialize the singleton transport instances.
 func transportFactory(
 	ctx context.Context,
-	disableConnectionPooling, enableDNSCache, insecureTLS, disableCompression, publicOnly bool,
+	disableConnectionPooling, enableDNSCache, insecureTLS, disableCompression, ampersandDNS, publicOnly bool,
 ) *http.Transport {
 	return create(ctx, &config{
 		DisableConnectionPooling: disableConnectionPooling,
 		EnableDNSCache:           enableDNSCache,
 		InsecureTLS:              insecureTLS,
 		DisableCompression:       disableCompression,
+		AmpersandDNS:             ampersandDNS,
 		PublicOnly:               publicOnly,
 	})
 }
@@ -28,28 +29,28 @@ func transportFactory(
 // pooledTransportNoDNSCache is a transport with connection pooling enabled and no DNS caching.
 var pooledTransportNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, false, false, false)
+		return transportFactory(ctx, false, false, false, false, false, false)
 	},
 )
 
 // unpooledTransportNoDNSCache is a transport with connection pooling disabled and no DNS caching.
 var unpooledTransportNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, false, false, false)
+		return transportFactory(ctx, true, false, false, false, false, false)
 	},
 )
 
 // pooledTransportWithDNSCache is a transport with connection pooling and DNS caching enabled.
 var pooledTransportWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, false, false, false)
+		return transportFactory(ctx, false, true, false, false, false, false)
 	},
 )
 
 // unpooledTransportWithDNSCache is a transport with connection pooling disabled and DNS caching enabled.
 var unpooledTransportWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, false, false, false)
+		return transportFactory(ctx, true, true, false, false, false, false)
 	},
 )
 
@@ -57,7 +58,7 @@ var unpooledTransportWithDNSCache = lazy.NewCtx[*http.Transport](
 // no DNS caching, and TLS verification disabled.
 var insecurePooledTransportNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, true, false, false)
+		return transportFactory(ctx, false, false, true, false, false, false)
 	},
 )
 
@@ -65,7 +66,7 @@ var insecurePooledTransportNoDNSCache = lazy.NewCtx[*http.Transport](
 // no DNS caching, and TLS verification disabled.
 var insecureUnpooledTransportNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, true, false, false)
+		return transportFactory(ctx, true, false, true, false, false, false)
 	},
 )
 
@@ -73,7 +74,7 @@ var insecureUnpooledTransportNoDNSCache = lazy.NewCtx[*http.Transport](
 // and TLS verification disabled.
 var insecurePooledTransportWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, true, false, false)
+		return transportFactory(ctx, false, true, true, false, false, false)
 	},
 )
 
@@ -81,7 +82,7 @@ var insecurePooledTransportWithDNSCache = lazy.NewCtx[*http.Transport](
 // DNS caching enabled, and TLS verification disabled.
 var insecureUnpooledTransportWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, true, false, false)
+		return transportFactory(ctx, true, true, true, false, false, false)
 	},
 )
 
@@ -89,7 +90,7 @@ var insecureUnpooledTransportWithDNSCache = lazy.NewCtx[*http.Transport](
 // no DNS caching, and compression disabled.
 var pooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, false, true, false)
+		return transportFactory(ctx, false, false, false, true, false, false)
 	},
 )
 
@@ -97,7 +98,7 @@ var pooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 // no DNS caching, and compression disabled.
 var unpooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, false, true, false)
+		return transportFactory(ctx, true, false, false, true, false, false)
 	},
 )
 
@@ -105,7 +106,7 @@ var unpooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 // and compression disabled.
 var pooledTransportWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, false, true, false)
+		return transportFactory(ctx, false, true, false, true, false, false)
 	},
 )
 
@@ -113,7 +114,7 @@ var pooledTransportWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 // DNS caching enabled, and compression disabled.
 var unpooledTransportWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, false, true, false)
+		return transportFactory(ctx, true, true, false, true, false, false)
 	},
 )
 
@@ -121,7 +122,7 @@ var unpooledTransportWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport
 // no DNS caching, TLS verification disabled, and compression disabled.
 var insecurePooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, true, true, false)
+		return transportFactory(ctx, false, false, true, true, false, false)
 	},
 )
 
@@ -129,7 +130,7 @@ var insecurePooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Trans
 // no DNS caching, TLS verification disabled, and compression disabled.
 var insecureUnpooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, true, true, false)
+		return transportFactory(ctx, true, false, true, true, false, false)
 	},
 )
 
@@ -137,7 +138,7 @@ var insecureUnpooledTransportNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Tra
 // TLS verification disabled, and compression disabled.
 var insecurePooledTransportWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, true, true, false)
+		return transportFactory(ctx, false, true, true, true, false, false)
 	},
 )
 
@@ -145,141 +146,246 @@ var insecurePooledTransportWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Tra
 // DNS caching enabled, TLS verification disabled, and compression disabled.
 var insecureUnpooledTransportWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, true, true, false)
+		return transportFactory(ctx, true, true, true, true, false, false)
 	},
 )
 
-// Public-only variants mirror the transports above but route DNS through public
-// resolvers only, blocking private DNS names and RFC 1918 addresses. They form the
-// same pooling/DNS-cache/TLS/compression matrix as the standard transports.
+// Ampersand DNS variants mirror the transports above but route DNS through the
+// Ampersand DNS dialer, blocking private DNS names and RFC 1918 addresses. They form
+// the same pooling/DNS-cache/TLS/compression matrix as the standard transports.
 
-// pooledTransportPublicOnlyNoDNSCache is a public-only transport with connection pooling enabled and no DNS caching.
-var pooledTransportPublicOnlyNoDNSCache = lazy.NewCtx[*http.Transport](
+// pooledTransportAmpersandDNSNoDNSCache is an Ampersand DNS transport with connection pooling
+// enabled and no DNS caching.
+var pooledTransportAmpersandDNSNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, false, false, true)
+		return transportFactory(ctx, false, false, false, false, true, false)
 	},
 )
 
-// unpooledTransportPublicOnlyNoDNSCache is a public-only transport with connection pooling disabled and no DNS caching.
-var unpooledTransportPublicOnlyNoDNSCache = lazy.NewCtx[*http.Transport](
+// unpooledTransportAmpersandDNSNoDNSCache is an Ampersand DNS transport with connection pooling
+// disabled and no DNS caching.
+var unpooledTransportAmpersandDNSNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, false, false, true)
+		return transportFactory(ctx, true, false, false, false, true, false)
 	},
 )
 
-// pooledTransportPublicOnlyWithDNSCache is a public-only transport with connection pooling and DNS caching enabled.
-var pooledTransportPublicOnlyWithDNSCache = lazy.NewCtx[*http.Transport](
+// pooledTransportAmpersandDNSWithDNSCache is an Ampersand DNS transport with connection pooling
+// and DNS caching enabled.
+var pooledTransportAmpersandDNSWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, false, false, true)
+		return transportFactory(ctx, false, true, false, false, true, false)
 	},
 )
 
-// unpooledTransportPublicOnlyWithDNSCache is a public-only transport with connection pooling
+// unpooledTransportAmpersandDNSWithDNSCache is an Ampersand DNS transport with connection pooling
 // disabled and DNS caching enabled.
-var unpooledTransportPublicOnlyWithDNSCache = lazy.NewCtx[*http.Transport](
+var unpooledTransportAmpersandDNSWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, false, false, true)
+		return transportFactory(ctx, true, true, false, false, true, false)
 	},
 )
 
-// insecurePooledTransportPublicOnlyNoDNSCache is a public-only transport with connection pooling enabled,
+// insecurePooledTransportAmpersandDNSNoDNSCache is an Ampersand DNS transport with connection pooling enabled,
 // no DNS caching, and TLS verification disabled.
-var insecurePooledTransportPublicOnlyNoDNSCache = lazy.NewCtx[*http.Transport](
+var insecurePooledTransportAmpersandDNSNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, true, false, true)
+		return transportFactory(ctx, false, false, true, false, true, false)
 	},
 )
 
-// insecureUnpooledTransportPublicOnlyNoDNSCache is a public-only transport with connection pooling disabled,
+// insecureUnpooledTransportAmpersandDNSNoDNSCache is an Ampersand DNS transport with connection pooling disabled,
 // no DNS caching, and TLS verification disabled.
-var insecureUnpooledTransportPublicOnlyNoDNSCache = lazy.NewCtx[*http.Transport](
+var insecureUnpooledTransportAmpersandDNSNoDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, true, false, true)
+		return transportFactory(ctx, true, false, true, false, true, false)
 	},
 )
 
-// insecurePooledTransportPublicOnlyWithDNSCache is a public-only transport with connection pooling
+// insecurePooledTransportAmpersandDNSWithDNSCache is an Ampersand DNS transport with connection pooling
 // and DNS caching enabled, and TLS verification disabled.
-var insecurePooledTransportPublicOnlyWithDNSCache = lazy.NewCtx[*http.Transport](
+var insecurePooledTransportAmpersandDNSWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, true, false, true)
+		return transportFactory(ctx, false, true, true, false, true, false)
 	},
 )
 
-var insecureUnpooledTransportPublicOnlyWithDNSCache = lazy.NewCtx[*http.Transport](
+// insecureUnpooledTransportAmpersandDNSWithDNSCache is an Ampersand DNS transport with connection pooling
+// disabled, DNS caching enabled, and TLS verification disabled.
+var insecureUnpooledTransportAmpersandDNSWithDNSCache = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, true, false, true)
+		return transportFactory(ctx, true, true, true, false, true, false)
 	},
 )
 
-// pooledTransportPublicOnlyNoDNSCacheIgnoreCompression is a public-only transport with connection pooling enabled,
+// pooledTransportAmpersandDNSNoDNSCacheIgnoreCompression is an Ampersand DNS transport with connection pooling enabled,
 // no DNS caching, and compression disabled.
-var pooledTransportPublicOnlyNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var pooledTransportAmpersandDNSNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, false, true, true)
+		return transportFactory(ctx, false, false, false, true, true, false)
 	},
 )
 
-// unpooledTransportPublicOnlyNoDNSCacheIgnoreCompression is a public-only transport with connection pooling disabled,
+// unpooledTransportAmpersandDNSNoDNSCacheIgnoreCompression is an Ampersand DNS transport with
+// connection pooling disabled,
 // no DNS caching, and compression disabled.
-var unpooledTransportPublicOnlyNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var unpooledTransportAmpersandDNSNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, false, true, true)
+		return transportFactory(ctx, true, false, false, true, true, false)
 	},
 )
 
-// pooledTransportPublicOnlyWithDNSCacheIgnoreCompression is a public-only transport with connection pooling
+// pooledTransportAmpersandDNSWithDNSCacheIgnoreCompression is an Ampersand DNS transport with connection pooling
 // and DNS caching enabled, and compression disabled.
-var pooledTransportPublicOnlyWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var pooledTransportAmpersandDNSWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, false, true, true)
+		return transportFactory(ctx, false, true, false, true, true, false)
 	},
 )
 
-// unpooledTransportPublicOnlyWithDNSCacheIgnoreCompression is a public-only transport with connection pooling
+// unpooledTransportAmpersandDNSWithDNSCacheIgnoreCompression is an Ampersand DNS transport with connection pooling
 // disabled, DNS caching enabled, and compression disabled.
-var unpooledTransportPublicOnlyWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var unpooledTransportAmpersandDNSWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, false, true, true)
+		return transportFactory(ctx, true, true, false, true, true, false)
 	},
 )
 
-// insecurePooledTransportPublicOnlyNoDNSCacheIgnoreCompression is a public-only transport with connection pooling
+// insecurePooledTransportAmpersandDNSNoDNSCacheIgnoreCompression is an Ampersand DNS transport with connection pooling
 // enabled, no DNS caching, TLS verification disabled, and compression disabled.
-var insecurePooledTransportPublicOnlyNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var insecurePooledTransportAmpersandDNSNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, false, true, true, true)
+		return transportFactory(ctx, false, false, true, true, true, false)
 	},
 )
 
-// insecureUnpooledTransportPublicOnlyNoDNSCacheIgnoreCompression is a public-only transport with connection pooling
+// insecureUnpooledTransportAmpersandDNSNoDNSCacheIgnoreCompression is an Ampersand DNS transport
+// with connection pooling
 // disabled, no DNS caching, TLS verification disabled, and compression disabled.
-var insecureUnpooledTransportPublicOnlyNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var insecureUnpooledTransportAmpersandDNSNoDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, false, true, true, true)
+		return transportFactory(ctx, true, false, true, true, true, false)
 	},
 )
 
-// insecurePooledTransportPublicOnlyWithDNSCacheIgnoreCompression is a public-only transport with connection pooling
+// insecurePooledTransportAmpersandDNSWithDNSCacheIgnoreCompression is an Ampersand DNS transport
+// with connection pooling
 // and DNS caching enabled, TLS verification disabled, and compression disabled.
-var insecurePooledTransportPublicOnlyWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var insecurePooledTransportAmpersandDNSWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, false, true, true, true, true)
+		return transportFactory(ctx, false, true, true, true, true, false)
 	},
 )
 
-// insecureUnpooledTransportPublicOnlyWithDNSCacheIgnoreCompression is a public-only transport with connection pooling
+// insecureUnpooledTransportAmpersandDNSWithDNSCacheIgnoreCompression is an Ampersand DNS transport
+// with connection pooling
 // disabled, DNS caching enabled, TLS verification disabled, and compression disabled.
-var insecureUnpooledTransportPublicOnlyWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
+var insecureUnpooledTransportAmpersandDNSWithDNSCacheIgnoreCompression = lazy.NewCtx[*http.Transport](
 	func(ctx context.Context) *http.Transport {
-		return transportFactory(ctx, true, true, true, true, true)
+		return transportFactory(ctx, true, true, true, true, true, false)
+	},
+)
+
+var pooledTransportAmpersandDNSNoDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, false, false, false, true, true)
+	},
+)
+
+var unpooledTransportAmpersandDNSNoDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, false, false, false, true, true)
+	},
+)
+
+var pooledTransportAmpersandDNSWithDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, true, false, false, true, true)
+	},
+)
+
+var unpooledTransportAmpersandDNSWithDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, true, false, false, true, true)
+	},
+)
+
+var insecurePooledTransportAmpersandDNSNoDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, false, true, false, true, true)
+	},
+)
+
+var insecureUnpooledTransportAmpersandDNSNoDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, false, true, false, true, true)
+	},
+)
+
+var insecurePooledTransportAmpersandDNSWithDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, true, true, false, true, true)
+	},
+)
+
+var insecureUnpooledTransportAmpersandDNSWithDNSCachePubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, true, true, false, true, true)
+	},
+)
+
+var pooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, false, false, true, true, true)
+	},
+)
+
+var unpooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, false, false, true, true, true)
+	},
+)
+
+var pooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, true, false, true, true, true)
+	},
+)
+
+var unpooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, true, false, true, true, true)
+	},
+)
+
+var insecurePooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, false, true, true, true, true)
+	},
+)
+
+var insecureUnpooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, false, true, true, true, true)
+	},
+)
+
+var insecurePooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, false, true, true, true, true, true)
+	},
+)
+
+var insecureUnpooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly = lazy.NewCtx[*http.Transport](
+	func(ctx context.Context) *http.Transport {
+		return transportFactory(ctx, true, true, true, true, true, true)
 	},
 )
 
 // getTransportInstance returns the appropriate singleton transport instance based on the config.
 // If a custom transport override is provided, it returns that instead.
 //
-//nolint:gocyclo,dupl // exhaustive flag dispatch; mirrors getTransportInstancePublicOnly by design
+//nolint:gocyclo,dupl // exhaustive flag dispatch; mirrors getTransportInstanceAmpersandDNS by design
 func getTransportInstance(ctx context.Context, cfg *config) http.RoundTripper {
 	for _, tr := range cfg.TransportOverrides {
 		if tr != nil {
@@ -287,8 +393,12 @@ func getTransportInstance(ctx context.Context, cfg *config) http.RoundTripper {
 		}
 	}
 
-	if cfg.PublicOnly {
-		return getTransportInstancePublicOnly(ctx, cfg)
+	if cfg.AmpersandDNS {
+		if cfg.PublicOnly {
+			return getTransportInstanceAmpersandDNSPubOnly(ctx, cfg)
+		} else {
+			return getTransportInstanceAmpersandDNS(ctx, cfg)
+		}
 	}
 
 	switch {
@@ -329,45 +439,85 @@ func getTransportInstance(ctx context.Context, cfg *config) http.RoundTripper {
 	}
 }
 
-// getTransportInstancePublicOnly returns the public-only singleton transport matching the config.
-// It is the PublicOnly counterpart of getTransportInstance, selecting from the public-only matrix.
+// getTransportInstanceAmpersandDNS returns the Ampersand DNS singleton transport matching the
+// config. It is the AmpersandDNS counterpart of getTransportInstance, selecting from the
+// Ampersand DNS matrix.
 //
 //nolint:gocyclo,dupl // exhaustive flag dispatch; mirrors getTransportInstance by design
-func getTransportInstancePublicOnly(ctx context.Context, cfg *config) http.RoundTripper {
+func getTransportInstanceAmpersandDNS(ctx context.Context, cfg *config) http.RoundTripper {
 	switch {
 	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
-		return unpooledTransportPublicOnlyWithDNSCacheIgnoreCompression.Get(ctx)
+		return unpooledTransportAmpersandDNSWithDNSCacheIgnoreCompression.Get(ctx)
 	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.EnableDNSCache:
-		return pooledTransportPublicOnlyWithDNSCacheIgnoreCompression.Get(ctx)
+		return pooledTransportAmpersandDNSWithDNSCacheIgnoreCompression.Get(ctx)
 	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.DisableConnectionPooling:
-		return unpooledTransportPublicOnlyNoDNSCacheIgnoreCompression.Get(ctx)
+		return unpooledTransportAmpersandDNSNoDNSCacheIgnoreCompression.Get(ctx)
 	case cfg.DisableCompression && !cfg.InsecureTLS:
-		return pooledTransportPublicOnlyNoDNSCacheIgnoreCompression.Get(ctx)
+		return pooledTransportAmpersandDNSNoDNSCacheIgnoreCompression.Get(ctx)
 	case cfg.DisableCompression && cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
-		return insecureUnpooledTransportPublicOnlyWithDNSCacheIgnoreCompression.Get(ctx)
+		return insecureUnpooledTransportAmpersandDNSWithDNSCacheIgnoreCompression.Get(ctx)
 	case cfg.DisableCompression && cfg.InsecureTLS && cfg.EnableDNSCache:
-		return insecurePooledTransportPublicOnlyWithDNSCacheIgnoreCompression.Get(ctx)
+		return insecurePooledTransportAmpersandDNSWithDNSCacheIgnoreCompression.Get(ctx)
 	case cfg.DisableCompression && cfg.InsecureTLS && cfg.DisableConnectionPooling:
-		return insecureUnpooledTransportPublicOnlyNoDNSCacheIgnoreCompression.Get(ctx)
+		return insecureUnpooledTransportAmpersandDNSNoDNSCacheIgnoreCompression.Get(ctx)
 	case cfg.DisableCompression && cfg.InsecureTLS:
-		return insecurePooledTransportPublicOnlyNoDNSCacheIgnoreCompression.Get(ctx)
+		return insecurePooledTransportAmpersandDNSNoDNSCacheIgnoreCompression.Get(ctx)
 	case !cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
-		return unpooledTransportPublicOnlyWithDNSCache.Get(ctx)
+		return unpooledTransportAmpersandDNSWithDNSCache.Get(ctx)
 	case !cfg.InsecureTLS && cfg.EnableDNSCache:
-		return pooledTransportPublicOnlyWithDNSCache.Get(ctx)
+		return pooledTransportAmpersandDNSWithDNSCache.Get(ctx)
 	case !cfg.InsecureTLS && cfg.DisableConnectionPooling:
-		return unpooledTransportPublicOnlyNoDNSCache.Get(ctx)
+		return unpooledTransportAmpersandDNSNoDNSCache.Get(ctx)
 	case !cfg.InsecureTLS:
-		return pooledTransportPublicOnlyNoDNSCache.Get(ctx)
+		return pooledTransportAmpersandDNSNoDNSCache.Get(ctx)
 	case cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
-		return insecureUnpooledTransportPublicOnlyWithDNSCache.Get(ctx)
+		return insecureUnpooledTransportAmpersandDNSWithDNSCache.Get(ctx)
 	case cfg.InsecureTLS && cfg.EnableDNSCache:
-		return insecurePooledTransportPublicOnlyWithDNSCache.Get(ctx)
+		return insecurePooledTransportAmpersandDNSWithDNSCache.Get(ctx)
 	case cfg.InsecureTLS && cfg.DisableConnectionPooling:
-		return insecureUnpooledTransportPublicOnlyNoDNSCache.Get(ctx)
+		return insecureUnpooledTransportAmpersandDNSNoDNSCache.Get(ctx)
 	case cfg.InsecureTLS:
-		return insecurePooledTransportPublicOnlyNoDNSCache.Get(ctx)
+		return insecurePooledTransportAmpersandDNSNoDNSCache.Get(ctx)
 	default:
-		return pooledTransportPublicOnlyNoDNSCache.Get(ctx)
+		return pooledTransportAmpersandDNSNoDNSCache.Get(ctx)
+	}
+}
+
+func getTransportInstanceAmpersandDNSPubOnly(ctx context.Context, cfg *config) http.RoundTripper {
+	switch {
+	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
+		return unpooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.EnableDNSCache:
+		return pooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case cfg.DisableCompression && !cfg.InsecureTLS && cfg.DisableConnectionPooling:
+		return unpooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case cfg.DisableCompression && !cfg.InsecureTLS:
+		return pooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case cfg.DisableCompression && cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
+		return insecureUnpooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case cfg.DisableCompression && cfg.InsecureTLS && cfg.EnableDNSCache:
+		return insecurePooledTransportAmpersandDNSWithDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case cfg.DisableCompression && cfg.InsecureTLS && cfg.DisableConnectionPooling:
+		return insecureUnpooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case cfg.DisableCompression && cfg.InsecureTLS:
+		return insecurePooledTransportAmpersandDNSNoDNSCacheIgnoreCompressionPubOnly.Get(ctx)
+	case !cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
+		return unpooledTransportAmpersandDNSWithDNSCachePubOnly.Get(ctx)
+	case !cfg.InsecureTLS && cfg.EnableDNSCache:
+		return pooledTransportAmpersandDNSWithDNSCachePubOnly.Get(ctx)
+	case !cfg.InsecureTLS && cfg.DisableConnectionPooling:
+		return unpooledTransportAmpersandDNSNoDNSCachePubOnly.Get(ctx)
+	case !cfg.InsecureTLS:
+		return pooledTransportAmpersandDNSNoDNSCachePubOnly.Get(ctx)
+	case cfg.InsecureTLS && cfg.EnableDNSCache && cfg.DisableConnectionPooling:
+		return insecureUnpooledTransportAmpersandDNSWithDNSCachePubOnly.Get(ctx)
+	case cfg.InsecureTLS && cfg.EnableDNSCache:
+		return insecurePooledTransportAmpersandDNSWithDNSCachePubOnly.Get(ctx)
+	case cfg.InsecureTLS && cfg.DisableConnectionPooling:
+		return insecureUnpooledTransportAmpersandDNSNoDNSCachePubOnly.Get(ctx)
+	case cfg.InsecureTLS:
+		return insecurePooledTransportAmpersandDNSNoDNSCachePubOnly.Get(ctx)
+	default:
+		return pooledTransportAmpersandDNSNoDNSCachePubOnly.Get(ctx)
 	}
 }

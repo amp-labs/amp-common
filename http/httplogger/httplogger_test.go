@@ -78,7 +78,8 @@ func TestLogError_WithQueryParams(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodGet, "https://api.example.com/path?page=1&limit=10", nil)
+		t.Context(), http.MethodGet, "https://api.example.com/path?page=1&limit=10", nil,
+	)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
@@ -102,7 +103,8 @@ func TestLogError_WithRedactedQueryParams(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodGet, "https://api.example.com/path?api_key=secret123&page=1", nil)
+		t.Context(), http.MethodGet, "https://api.example.com/path?api_key=secret123&page=1", nil,
+	)
 	require.NoError(t, err)
 
 	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
@@ -185,7 +187,8 @@ func TestLogError_ComplexError(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/users?admin=true", nil)
+		t.Context(), http.MethodPost, "https://api.example.com/users?admin=true", nil,
+	)
 	require.NoError(t, err)
 
 	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {
@@ -274,7 +277,8 @@ func TestLogError_SpecialCharactersInURL(t *testing.T) {
 
 	req, err := http.NewRequestWithContext(
 		t.Context(), http.MethodGet,
-		"https://api.example.com/search?q=hello%20world&filter=a%26b", nil)
+		"https://api.example.com/search?q=hello%20world&filter=a%26b", nil,
+	)
 	require.NoError(t, err)
 
 	params := &httplogger.LogErrorParams{
@@ -370,7 +374,8 @@ func TestLogRequest_IncludeBodyOverride(t *testing.T) {
 			logger := slog.New(slog.NewJSONHandler(&logBuffer, nil))
 
 			req, err := http.NewRequestWithContext(
-				t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(testCase.body))
+				t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(testCase.body),
+			)
 			require.NoError(t, err)
 			req.Header.Set("Content-Type", "application/json")
 
@@ -420,7 +425,8 @@ func TestLogRequest_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
 
 	// Test with small body
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/small", bytes.NewReader(smallBody))
+		t.Context(), http.MethodPost, "https://api.example.com/small", bytes.NewReader(smallBody),
+	)
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -434,7 +440,8 @@ func TestLogRequest_IncludeBodyOverride_ConditionalOnSize(t *testing.T) {
 	logBuffer.Reset()
 
 	req, err = http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/large", bytes.NewReader(largeBody))
+		t.Context(), http.MethodPost, "https://api.example.com/large", bytes.NewReader(largeBody),
+	)
 	require.NoError(t, err)
 
 	httplogger.LogRequest(t.Context(), req, largeBody, "corr-large", params)
@@ -463,7 +470,8 @@ func TestLogRequest_IncludeBodyOverride_ChecksEndpoint(t *testing.T) {
 
 	// Test with /auth endpoint
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/auth/login", bytes.NewReader(body))
+		t.Context(), http.MethodPost, "https://api.example.com/auth/login", bytes.NewReader(body),
+	)
 	require.NoError(t, err)
 
 	httplogger.LogRequest(t.Context(), req, body, "corr-auth", params)
@@ -476,7 +484,8 @@ func TestLogRequest_IncludeBodyOverride_ChecksEndpoint(t *testing.T) {
 	logBuffer.Reset()
 
 	req, err = http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(body))
+		t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(body),
+	)
 	require.NoError(t, err)
 
 	httplogger.LogRequest(t.Context(), req, body, "corr-data", params)
@@ -666,7 +675,8 @@ func TestLogRequest_IncludeBodyOverride_NilOverride(t *testing.T) {
 
 	body := []byte(`{"key":"value"}`)
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(body))
+		t.Context(), http.MethodPost, "https://api.example.com/data", bytes.NewReader(body),
+	)
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -782,7 +792,8 @@ func TestLogRequest_WithBody(t *testing.T) {
 
 	body := []byte(`{"username":"alice","email":"alice@example.com"}`)
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://api.example.com/users", bytes.NewReader(body))
+		t.Context(), http.MethodPost, "https://api.example.com/users", bytes.NewReader(body),
+	)
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -844,7 +855,8 @@ func TestLogRequest_WithRedactedQueryParams(t *testing.T) {
 
 	req, err := http.NewRequestWithContext(
 		t.Context(), http.MethodGet,
-		"https://api.example.com/search?q=golang&api_key=secret123&page=1", nil)
+		"https://api.example.com/search?q=golang&api_key=secret123&page=1", nil,
+	)
 	require.NoError(t, err)
 
 	redactFunc := func(ctx context.Context, key, value string) (redact.Action, int) {

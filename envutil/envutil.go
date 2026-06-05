@@ -432,7 +432,8 @@ func String2(
 ) Reader[tuple.Tuple2[string, string]] {
 	return Combine2(
 		String(ctx, key1, opts...),
-		String(ctx, key2, opts...))
+		String(ctx, key2, opts...),
+	)
 }
 
 // String3 returns a Reader containing a tuple of 3 environment variables.
@@ -448,7 +449,8 @@ func String3(
 	return Combine3(
 		String(ctx, key1, opts...),
 		String(ctx, key2, opts...),
-		String(ctx, key3, opts...))
+		String(ctx, key3, opts...),
+	)
 }
 
 // String4 returns a Reader containing a tuple of 4 environment variables.
@@ -466,7 +468,8 @@ func String4(
 		String(ctx, key1, opts...),
 		String(ctx, key2, opts...),
 		String(ctx, key3, opts...),
-		String(ctx, key4, opts...))
+		String(ctx, key4, opts...),
+	)
 }
 
 // String5 returns a Reader containing a tuple of 5 environment variables.
@@ -486,7 +489,8 @@ func String5(
 		String(ctx, key2, opts...),
 		String(ctx, key3, opts...),
 		String(ctx, key4, opts...),
-		String(ctx, key5, opts...))
+		String(ctx, key5, opts...),
+	)
 }
 
 // String6 returns a Reader containing a tuple of 6 environment variables.
@@ -508,5 +512,6 @@ func String6(
 		String(ctx, key3, opts...),
 		String(ctx, key4, opts...),
 		String(ctx, key5, opts...),
-		String(ctx, key6, opts...))
+		String(ctx, key6, opts...),
+	)
 }

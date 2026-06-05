@@ -68,7 +68,8 @@ func (l *DefaultLogger) StateEntered(ctx context.Context, state string, data map
 	}
 
 	if hasCtx {
-		fields = append(fields,
+		fields = append(
+			fields,
 			"session_id", smCtx.SessionID,
 			"project_id", smCtx.ProjectID,
 			"provider", smCtx.Provider,
@@ -99,7 +100,8 @@ func (l *DefaultLogger) StateExited(ctx context.Context, state string, duration 
 	}
 
 	if hasCtx {
-		fields = append(fields,
+		fields = append(
+			fields,
 			"session_id", smCtx.SessionID,
 			"project_id", smCtx.ProjectID,
 			"provider", smCtx.Provider,
@@ -133,7 +135,8 @@ func (l *DefaultLogger) TransitionExecuted(ctx context.Context, from, to string)
 	}
 
 	if hasCtx {
-		fields = append(fields,
+		fields = append(
+			fields,
 			"session_id", smCtx.SessionID,
 			"project_id", smCtx.ProjectID,
 			"provider", smCtx.Provider,
@@ -149,7 +152,8 @@ func (l *DefaultLogger) TransitionExecuted(ctx context.Context, from, to string)
 
 func (l *DefaultLogger) ActionStarted(ctx context.Context, action string) {
 	// Use logger.Get(ctx) for automatic trace correlation
-	logger.Get(ctx).InfoContext(ctx, "Action started",
+	logger.Get(ctx).InfoContext(
+		ctx, "Action started",
 		"action", action,
 	)
 }
@@ -157,13 +161,15 @@ func (l *DefaultLogger) ActionStarted(ctx context.Context, action string) {
 func (l *DefaultLogger) ActionCompleted(ctx context.Context, action string, duration time.Duration, err error) {
 	// Use logger.Get(ctx) for automatic trace correlation
 	if err != nil {
-		logger.Get(ctx).ErrorContext(ctx, "Action completed with error",
+		logger.Get(ctx).ErrorContext(
+			ctx, "Action completed with error",
 			"action", action,
 			"duration_ms", duration.Milliseconds(),
 			"error", err,
 		)
 	} else {
-		logger.Get(ctx).InfoContext(ctx, "Action completed",
+		logger.Get(ctx).InfoContext(
+			ctx, "Action completed",
 			"action", action,
 			"duration_ms", duration.Milliseconds(),
 		)

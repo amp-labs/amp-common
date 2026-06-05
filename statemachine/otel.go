@@ -99,7 +99,8 @@ func logSpanDebug(ctx context.Context, phase string, spanName string, span trace
 	}
 
 	spanCtx := span.SpanContext()
-	slog.InfoContext(ctx, "OTEL Span "+phase,
+	slog.InfoContext(
+		ctx, "OTEL Span "+phase,
 		"span_name", spanName,
 		"trace_id", spanCtx.TraceID().String(),
 		"span_id", spanCtx.SpanID().String(),

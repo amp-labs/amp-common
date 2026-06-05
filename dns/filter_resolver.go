@@ -14,6 +14,9 @@ type filterResolver struct {
 	filter   Filter
 }
 
+// newFilterResolver wraps resolver in a filterResolver applying filter. addr
+// (defaulting to port 53 when none is given) is used only as the resolver's
+// Name; queries go through the wrapped resolver.
 func newFilterResolver(addr string, resolver Resolver, filter Filter) *filterResolver {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {

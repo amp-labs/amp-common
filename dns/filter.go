@@ -13,6 +13,7 @@ type filterImpl struct {
 	filter func(host string, record Record) bool
 }
 
+// Accept implements [Filter] by delegating to the wrapped predicate.
 func (f *filterImpl) Accept(host string, record Record) bool {
 	return f.filter(host, record)
 }

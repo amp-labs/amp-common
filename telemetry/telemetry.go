@@ -112,7 +112,8 @@ func Initialize(ctx context.Context, config *Config) error {
 	}
 
 	// Create resource with service information
-	res, err := resource.New(ctx,
+	res, err := resource.New(
+		ctx,
 		resource.WithAttributes(
 			semconv.ServiceNameKey.String(config.ServiceName),
 			semconv.ServiceVersionKey.String(config.ServiceVersion),
@@ -124,7 +125,8 @@ func Initialize(ctx context.Context, config *Config) error {
 	}
 
 	// Create OTLP trace exporter
-	exporter, err := otlptracehttp.New(ctx,
+	exporter, err := otlptracehttp.New(
+		ctx,
 		otlptracehttp.WithEndpointURL(config.Endpoint),
 		otlptracehttp.WithTimeout(config.Timeout),
 	)
@@ -158,7 +160,8 @@ func Initialize(ctx context.Context, config *Config) error {
 		propagation.Baggage{},
 	))
 
-	slog.Info("OpenTelemetry tracing initialized",
+	slog.Info(
+		"OpenTelemetry tracing initialized",
 		"service", config.ServiceName,
 		"version", config.ServiceVersion,
 		"environment", config.Environment,
@@ -172,7 +175,8 @@ func Initialize(ctx context.Context, config *Config) error {
 // Valid values are between 0.0 (no traces) and 1.0 (all traces).
 // Invalid values fall back to the default of 0.1.
 func getSampleRate(ctx context.Context) float64 {
-	rate, err := envutil.Float64(ctx, "OTEL_TRACE_SAMPLE_RATE",
+	rate, err := envutil.Float64(
+		ctx, "OTEL_TRACE_SAMPLE_RATE",
 		envutil.Default(defaultSampleRate),
 		envutil.Validate(func(v float64) error {
 			if v < 0 || v > 1 {
@@ -184,7 +188,8 @@ func getSampleRate(ctx context.Context) float64 {
 	).Value()
 	if err != nil {
 		// Log validation error and fall back to default
-		slog.Warn("Invalid OTEL_TRACE_SAMPLE_RATE, using default",
+		slog.Warn(
+			"Invalid OTEL_TRACE_SAMPLE_RATE, using default",
 			"error", err,
 			"default", defaultSampleRate,
 		)

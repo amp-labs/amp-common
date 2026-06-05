@@ -695,7 +695,8 @@ func WithSlackChannel(ctx context.Context, channel string) context.Context {
 
 	return context.WithValue(
 		context.WithValue(ctx, contextKey("slack"), true),
-		contextKey("slack_channel"), channel)
+		contextKey("slack_channel"), channel,
+	)
 }
 
 // SetSlackChannel configures the Slack channel using a callback setter function.

@@ -43,9 +43,9 @@ func newOptions() *options {
 
 // createLookupCoordinator assembles the resolver stack and returns a ready
 // [LookupCoordinator]. Each configured address is wrapped in a unifiedResolver
-// (UDP with TCP fallback), then a cnameResolver, and finally a filterResolver
-// when a filter is set. It returns [ErrNoResolvers] if no addresses were
-// configured.
+// (UDP with TCP fallback), then a metricsResolver, then a cnameResolver, and
+// finally a filterResolver when a filter is set. It returns [ErrNoResolvers]
+// if no addresses were configured.
 func (o *options) createLookupCoordinator() (*LookupCoordinator, error) {
 	if len(o.resolvers) == 0 {
 		return nil, ErrNoResolvers
@@ -54,18 +54,18 @@ func (o *options) createLookupCoordinator() (*LookupCoordinator, error) {
 	resolvers := make([]Resolver, 0, len(o.resolvers))
 
 	for _, addr := range o.resolvers {
-		var r Resolver = newUnifiedResolver(addr, o.timeout, o.poolSize)
+		var resolver Resolver = newUnifiedResolver(addr, o.timeout, o.poolSize)
 
 		// Follow CNAME chains using this resolver before filtering, so the
 		// filter sees the flattened result (including any terminal A/AAAA we had
 		// to chase) rather than a bare CNAME.
-		r = newCNameResolver(addr, r)
+		resolver = newCNameResolver(addr, resolver)
 
 		if o.filter != nil {
-			r = newFilterResolver(addr, r, o.filter)
+			resolver = newFilterResolver(addr, resolver, o.filter)
 		}
 
-		resolvers = append(resolvers, r)
+		resolvers = append(resolvers, resolver)
 	}
 
 	return &LookupCoordinator{

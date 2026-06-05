@@ -7,6 +7,10 @@ import (
 	"time"
 
 	"github.com/amp-labs/amp-common/retry"
+	"github.com/amp-labs/amp-common/spans"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // LookupCoordinator turns a "host:port" address into the set of IP addresses a
@@ -73,12 +77,17 @@ func (l *LookupCoordinator) Lookup(ctx context.Context, network, addr string) ([
 	}
 
 	ips, err := retry.DoValue[[]net.IP](ctx, func(ctx context.Context) ([]net.IP, error) {
-		vals, lookupErr := l.lookupIPs(ctx, host)
-		if lookupErr != nil {
-			return nil, fmt.Errorf("DNS lookup failed for %q: %w", host, lookupErr)
+		attrs := []spans.Option{
+			spans.WithSpanKind(trace.SpanKindClient),
+			spans.WithAttribute("network", attribute.StringValue(network)),
+			spans.WithAttribute("addr", attribute.StringValue(addr)),
+			spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))),
 		}
 
-		return vals, nil
+		return spans.StartValErr[[]net.IP](ctx, "dnsLookup", attrs...).
+			Enter(func(ctx context.Context, span trace.Span) ([]net.IP, error) {
+				return l.doLookup(ctx, host, span)
+			})
 	}, l.retryOptions...)
 	if err != nil {
 		return nil, "", fmt.Errorf("DNS lookup failed for %q: %w", host, err)
@@ -91,6 +100,33 @@ func (l *LookupCoordinator) Lookup(ctx context.Context, network, addr string) ([
 	}
 
 	return filteredIPs, port, nil
+}
+
+func (l *LookupCoordinator) doLookup(ctx context.Context, host string, span trace.Span) ([]net.IP, error) {
+	vals, lookupErr := l.lookupIPs(ctx, host)
+	if lookupErr != nil {
+		outErr := fmt.Errorf("DNS lookup failed for %q: %w", host, lookupErr)
+
+		if span.IsRecording() {
+			span.SetStatus(codes.Error, outErr.Error())
+			span.RecordError(outErr)
+		}
+
+		return nil, outErr
+	}
+
+	if span.IsRecording() {
+		var ipStrs []string
+
+		for _, ip := range vals {
+			ipStrs = append(ipStrs, ip.String())
+		}
+
+		span.SetStatus(codes.Ok, "DNS lookup succeeded")
+		span.SetAttributes(attribute.StringSlice("results", ipStrs))
+	}
+
+	return vals, nil
 }
 
 // lookup queries A, AAAA, and CNAME records for host concurrently and returns

@@ -46,7 +46,7 @@ func TestLookupCoordinator_LookupIPs_ParsesAddresses(t *testing.T) {
 
 	l := newTestCoordinator(strategy, newDNSCache(0, 0, 0))
 
-	ips, err := l.lookupIPs(context.Background(), "a.com")
+	ips, _, err := l.lookupIPs(context.Background(), "a.com")
 
 	require.NoError(t, err)
 	require.Len(t, ips, 2)
@@ -65,14 +65,14 @@ func TestLookupCoordinator_LookupIPs_ServesFromCache(t *testing.T) {
 
 	l := newTestCoordinator(strategy, newDNSCache(10, time.Second, time.Hour))
 
-	_, err := l.lookupIPs(context.Background(), "a.com")
+	_, _, err := l.lookupIPs(context.Background(), "a.com")
 	require.NoError(t, err)
 
 	// lookup() fans out one query per record type (A, AAAA, CNAME).
 	firstCalls := strategy.calls.Load()
 	require.Equal(t, int32(3), firstCalls)
 
-	_, err = l.lookupIPs(context.Background(), "a.com")
+	_, _, err = l.lookupIPs(context.Background(), "a.com")
 	require.NoError(t, err)
 
 	assert.Equal(t, firstCalls, strategy.calls.Load(), "a cached lookup must not re-query the resolvers")
@@ -88,7 +88,7 @@ func TestLookupCoordinator_LookupIPs_NoAddressesError(t *testing.T) {
 
 	l := newTestCoordinator(strategy, newDNSCache(0, 0, 0))
 
-	_, err := l.lookupIPs(context.Background(), "a.com")
+	_, _, err := l.lookupIPs(context.Background(), "a.com")
 	require.ErrorIs(t, err, errNoIPAddresses)
 }
 

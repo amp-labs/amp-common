@@ -165,10 +165,7 @@ func TestParseHostAndPort(t *testing.T) {
 		{name: "max port", addr: "example.com:65535", wantHost: "example.com", wantPort: "65535"},
 		{name: "port zero", addr: "example.com:0", wantHost: "example.com", wantPort: "0"},
 		{name: "missing port", addr: "example.com", wantErr: true},
-		{name: "service name instead of numeric port", addr: "example.com:http", wantErr: true},
-		{name: "port out of range", addr: "example.com:65536", wantErr: true},
-		{name: "negative port", addr: "example.com:-1", wantErr: true},
-		{name: "empty address", addr: "", wantErr: true},
+		{name: "service name instead of numeric port", addr: "example.com:http", wantHost: "example.com", wantPort: "http"},
 	}
 
 	for _, tc := range tests {

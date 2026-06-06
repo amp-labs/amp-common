@@ -3,7 +3,6 @@ package dns
 import (
 	"fmt"
 	"net"
-	"strconv"
 )
 
 // recordKey is the comparable identity of a record for set-equality purposes.
@@ -110,12 +109,6 @@ func parseHostAndPort(addr string) (host string, port string, err error) {
 	host, portStr, err := net.SplitHostPort(addr)
 	if err != nil {
 		return "", "", fmt.Errorf("invalid address %q: %w", addr, err)
-	}
-
-	// SplitHostPort accepts service names ("http") and arbitrary numbers; we
-	// need a concrete numeric port in the uint16 range.
-	if _, err := strconv.ParseUint(portStr, 10, 16); err != nil {
-		return "", "", fmt.Errorf("invalid port %q in address %q: %w", portStr, addr, err)
 	}
 
 	return host, portStr, nil

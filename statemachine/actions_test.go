@@ -69,9 +69,6 @@ func TestSequenceActionStopsOnError(t *testing.T) {
 func TestConditionalAction(t *testing.T) {
 	t.Parallel()
 
-	thenAction := &mockAction{name: "then"}
-	elseAction := &mockAction{name: "else"}
-
 	tests := []struct {
 		name          string
 		condition     bool
@@ -86,8 +83,8 @@ func TestConditionalAction(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			thenAction.executed = false
-			elseAction.executed = false
+			thenAction := &mockAction{name: "then"}
+			elseAction := &mockAction{name: "else"}
 
 			conditional := NewConditionalAction(
 				"conditional",

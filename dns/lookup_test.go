@@ -121,7 +121,7 @@ func TestLookupCoordinator_Lookup_FiltersByNetwork(t *testing.T) {
 
 			ips, port, err := l.Lookup(context.Background(), testCase.network, "a.com:443")
 			require.NoError(t, err)
-			assert.Equal(t, uint16(443), port)
+			assert.Equal(t, "443", port)
 
 			got := make([]string, len(ips))
 			for i, ip := range ips {

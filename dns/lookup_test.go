@@ -195,7 +195,7 @@ func TestLookupCoordinator_Lookup_LiteralIPSkipsResolution(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, ips, 1)
 	assert.Equal(t, "127.0.0.1", ips[0].String())
-	assert.Equal(t, uint16(8080), port)
+	assert.Equal(t, "8080", port)
 }
 
 func TestLookupCoordinator_Lookup_LiteralIPThroughFilter(t *testing.T) {

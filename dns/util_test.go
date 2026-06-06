@@ -156,14 +156,14 @@ func TestParseHostAndPort(t *testing.T) {
 		name     string
 		addr     string
 		wantHost string
-		wantPort uint16
+		wantPort string
 		wantErr  bool
 	}{
-		{name: "hostname with port", addr: "example.com:443", wantHost: "example.com", wantPort: 443},
-		{name: "IPv4 with port", addr: "1.2.3.4:80", wantHost: "1.2.3.4", wantPort: 80},
-		{name: "bracketed IPv6 with port", addr: "[::1]:8080", wantHost: "::1", wantPort: 8080},
-		{name: "max port", addr: "example.com:65535", wantHost: "example.com", wantPort: 65535},
-		{name: "port zero", addr: "example.com:0", wantHost: "example.com", wantPort: 0},
+		{name: "hostname with port", addr: "example.com:443", wantHost: "example.com", wantPort: "443"},
+		{name: "IPv4 with port", addr: "1.2.3.4:80", wantHost: "1.2.3.4", wantPort: "80"},
+		{name: "bracketed IPv6 with port", addr: "[::1]:8080", wantHost: "::1", wantPort: "8080"},
+		{name: "max port", addr: "example.com:65535", wantHost: "example.com", wantPort: "65535"},
+		{name: "port zero", addr: "example.com:0", wantHost: "example.com", wantPort: "0"},
 		{name: "missing port", addr: "example.com", wantErr: true},
 		{name: "service name instead of numeric port", addr: "example.com:http", wantErr: true},
 		{name: "port out of range", addr: "example.com:65536", wantErr: true},

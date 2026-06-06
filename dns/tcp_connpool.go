@@ -1,4 +1,4 @@
-package dns
+package dns //nolint:dupl
 
 import (
 	"net"

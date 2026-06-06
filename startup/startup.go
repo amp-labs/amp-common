@@ -25,13 +25,11 @@ const (
 	// auditLogFlushInterval is the interval at which audit log events are flushed to disk.
 	auditLogFlushInterval = 5 * time.Second
 	// auditLogFilePerms is the file permission for audit log files.
-	auditLogFilePerms = 0600
+	auditLogFilePerms = 0o600
 )
 
-var (
-	// ErrEnvDebugIsDirectory is returned when ENV_DEBUG points to a directory instead of a file.
-	ErrEnvDebugIsDirectory = errors.New("ENV_DEBUG path is a directory")
-)
+// ErrEnvDebugIsDirectory is returned when ENV_DEBUG points to a directory instead of a file.
+var ErrEnvDebugIsDirectory = errors.New("ENV_DEBUG path is a directory")
 
 // Option is a functional option for configuring environment loading behavior.
 type Option func(*options)
@@ -235,9 +233,12 @@ func ConfigureEnvironment(opts ...Option) error {
 		envutil.Map(
 			envutil.Map(
 				envutil.String(context.Background(), "ENV_FILE"),
-				xform.TrimString),
-			xform.SplitString(";")),
-		sanitizeEnvFileList).
+				xform.TrimString,
+			),
+			xform.SplitString(";"),
+		),
+		sanitizeEnvFileList,
+	).
 		ValueOrElse(nil)
 
 	envDebug := envutil.String(context.Background(), "ENV_DEBUG")

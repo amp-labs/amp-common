@@ -4,17 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"time"
-)
 
-const (
-	// recordsPerTypeHint estimates how many records each query type returns; it
-	// is used only to pre-size the aggregated results slice.
-	recordsPerTypeHint = 4
-
-	// maxCachedTTLSeconds caps the TTL used when caching resolved IPs, before the
-	// cache applies its own min/max bounds.
-	maxCachedTTLSeconds = 300
+	"github.com/amp-labs/amp-common/retry"
+	"github.com/amp-labs/amp-common/spans"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Dialer resolves hostnames using its configured resolvers and strategy, then
@@ -22,23 +17,15 @@ const (
 // signature of [net.Dialer.DialContext], so it can be assigned directly to an
 // [net/http.Transport]'s DialContext field. Build one with [NewDialer].
 type Dialer struct {
-	// resolvers is the list of DNS resolvers we'll query (e.g., UDP resolvers for 8.8.8.8, 1.1.1.1)
-	resolvers []Resolver
+	// lookup performs the hostname-to-IP resolution (strategy, caching, filtering)
+	lookup *LookupCoordinator
 
-	// strategy determines how we coordinate queries (Race, Fallback, Consensus, Compare)
-	strategy Strategy
-
-	// timeout is the per-query timeout we apply to individual DNS queries
-	timeout time.Duration
-
-	// poolSize is the max connections to pool per resolver, defaults to 4
-	poolSize int
-
-	// dialer is reused for TCP/UDP connections to avoid allocating a new one each time
+	// dialer opens the final connection to a resolved IP (see WithDialer)
 	dialer *net.Dialer
 
-	// cache stores DNS lookup results with TTL-based expiration, disabled by default
-	cache *dnsCache
+	// retryOptions configures how a failed dial of an individual IP is retried
+	// (see WithDialerRetryOptions); empty means each IP is tried once
+	retryOptions []retry.Option
 }
 
 // NewDialer builds a [Dialer] from the given options. It returns
@@ -60,168 +47,62 @@ func NewDialer(opts ...Option) (*Dialer, error) {
 // and the generic "tcp"/"udp" try IPv4 first then IPv6. It mirrors the
 // signature of [net.Dialer.DialContext].
 func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
-	// Split addr into host and port (standard net package format)
-	host, portStr, err := net.SplitHostPort(addr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid address %q: %w", addr, err)
+	attrs := []spans.Option{
+		spans.WithSpanKind(trace.SpanKindClient),
+		spans.WithAttribute("network", attribute.StringValue(network)),
+		spans.WithAttribute("addr", attribute.StringValue(addr)),
 	}
 
-	// If host is already an IP address, use it directly without DNS lookup. No point
-	// in doing DNS resolution for something that's already an IP.
-	if ip := net.ParseIP(host); ip != nil {
-		return r.dialer.DialContext(ctx, network, addr)
-	}
+	return spans.StartValErr[net.Conn](ctx, "dialAddress", attrs...).
+		Enter(func(ctx context.Context, span trace.Span) (net.Conn, error) {
+			ips, port, err := r.lookup.Lookup(ctx, network, addr)
+			if err != nil {
+				span.SetStatus(codes.Error, err.Error())
 
-	// Perform DNS lookup using whichever strategy is configured
-	ips, err := r.lookupIPs(ctx, host)
-	if err != nil {
-		return nil, fmt.Errorf("DNS lookup failed for %s: %w", host, err)
-	}
-
-	// Filter IPs based on network type
-	var filteredIPs []net.IP
-
-	switch network {
-	case "tcp4", "udp4":
-		// Only use IPv4 addresses, the caller explicitly asked for v4
-		for _, ip := range ips {
-			if ip.To4() != nil {
-				filteredIPs = append(filteredIPs, ip)
+				return nil, err
 			}
-		}
-	case "tcp6", "udp6":
-		// Only use IPv6 addresses, the caller explicitly asked for v6
-		for _, ip := range ips {
-			if ip.To4() == nil && ip.To16() != nil {
-				filteredIPs = append(filteredIPs, ip)
-			}
-		}
-	default:
-		// For "tcp" and "udp", use all IPs we got. Try IPv4 first for better compatibility,
-		// more things support IPv4 than IPv6 in practice.
-		filteredIPs = make([]net.IP, 0, len(ips))
-		// Add IPv4 addresses first
-		for _, ip := range ips {
-			if ip.To4() != nil {
-				filteredIPs = append(filteredIPs, ip)
-			}
-		}
-		// Then add IPv6 addresses
-		for _, ip := range ips {
-			if ip.To4() == nil && ip.To16() != nil {
-				filteredIPs = append(filteredIPs, ip)
-			}
-		}
-	}
 
-	if len(filteredIPs) == 0 {
-		return nil, fmt.Errorf("%w for %s (network: %s)", errNoSuitableIPs, host, network)
-	}
+			var lastErr error
 
-	var lastErr error
+			for _, ipAddr := range ips {
+				conn, err := retry.DoValue[net.Conn](ctx, func(ctx context.Context) (net.Conn, error) {
+					ipAttrs := []spans.Option{
+						spans.WithSpanKind(trace.SpanKindClient),
+						spans.WithAttribute("network", attribute.StringValue(network)),
+						spans.WithAttribute("ip", attribute.StringValue(ipAddr.String())),
+						spans.WithAttribute("port", attribute.StringValue(port)),
+						spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))),
+					}
 
-	for _, ip := range filteredIPs {
-		ipAddr := net.JoinHostPort(ip.String(), portStr)
+					return spans.StartValErr[net.Conn](ctx, "dialIP", ipAttrs...).
+						Enter(func(ctx context.Context, span trace.Span) (net.Conn, error) {
+							ipAddrStr := net.JoinHostPort(ipAddr.String(), port)
 
-		conn, err := r.dialer.DialContext(ctx, network, ipAddr)
-		if err == nil {
-			return conn, nil
-		}
+							conn, err := r.dialer.DialContext(ctx, network, ipAddrStr)
+							if err != nil {
+								span.SetStatus(codes.Error, err.Error())
 
-		lastErr = err
+								return nil, err
+							}
 
-		logDebug(ctx, "connection failed, trying next IP",
-			"ip", ip.String(),
-			"error", err.Error())
-	}
+							span.SetStatus(codes.Ok, "connection established")
+							span.SetAttributes(attribute.String("local", getAddrStr(conn.LocalAddr())))
+							span.SetAttributes(attribute.String("remote", getAddrStr(conn.RemoteAddr())))
 
-	return nil, fmt.Errorf("failed to connect to %s: %w", host, lastErr)
-}
-
-// lookup queries A, AAAA, and CNAME records for host concurrently and returns
-// the union of all records found. Per-type failures are logged and skipped
-// rather than failing the whole lookup, so an IPv4-only or IPv6-only host still
-// resolves.
-func (r *Dialer) lookup(ctx context.Context, host string) []Record {
-	queryTypes := []RecordType{TypeA, TypeAAAA, TypeCNAME}
-
-	type result struct {
-		records []Record
-		err     error
-		qtype   RecordType
-	}
-
-	results := make(chan result, len(queryTypes))
-
-	for _, qtype := range queryTypes {
-		go func(qt RecordType) {
-			records, err := r.strategy.ResolveType(ctx, host, qt, r.resolvers)
-			results <- result{
-				records: records,
-				err:     err,
-				qtype:   qt,
-			}
-		}(qtype)
-	}
-
-	allRecords := make([]Record, 0, len(queryTypes)*recordsPerTypeHint)
-
-	for range queryTypes {
-		res := <-results
-		if res.err != nil {
-			logDebug(ctx, "query type failed",
-				"type", res.qtype.String(),
-				"error", res.err.Error())
-
-			continue
-		}
-
-		allRecords = append(allRecords, res.records...)
-	}
-
-	return allRecords
-}
-
-// lookupIPs returns the IP addresses for host, serving from cache when
-// possible. On a miss it performs a full lookup, extracts the A/AAAA addresses,
-// and caches them using the smallest record TTL (capped at 300s and then
-// clamped by the cache's own bounds). It returns an error if no addresses are
-// found.
-func (r *Dialer) lookupIPs(ctx context.Context, host string) ([]net.IP, error) {
-	if cached := r.cache.getIPs(host); cached != nil {
-		logDebug(ctx, "IP cache hit",
-			"host", host,
-			"ips", len(cached))
-
-		return cached, nil
-	}
-
-	logDebug(ctx, "IP cache miss",
-		"host", host)
-
-	records := r.lookup(ctx, host)
-
-	ips := make([]net.IP, 0, len(records))
-	minTTL := uint32(maxCachedTTLSeconds)
-
-	for _, record := range records {
-		if record.Type == TypeA || record.Type == TypeAAAA {
-			ip := net.ParseIP(record.Value)
-			if ip != nil {
-				ips = append(ips, ip)
-
-				if record.TTL < minTTL {
-					minTTL = record.TTL
+							return conn, nil
+						})
+				}, r.retryOptions...)
+				if err == nil {
+					return conn, nil
 				}
+
+				lastErr = err
+
+				logDebug(ctx, "connection failed, trying next IP",
+					"ip", ipAddr.String(),
+					"error", err.Error())
 			}
-		}
-	}
 
-	if len(ips) == 0 {
-		return nil, fmt.Errorf("%w for %s", errNoIPAddresses, host)
-	}
-
-	r.cache.setIPs(host, ips, time.Duration(minTTL)*time.Second)
-
-	return ips, nil
+			return nil, fmt.Errorf("failed to connect to %q (network: %q): %w", addr, network, lastErr)
+		})
 }

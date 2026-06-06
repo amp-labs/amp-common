@@ -561,7 +561,8 @@ func TestRequest_JSONContent(t *testing.T) {
 
 	jsonBody := `{"key":"value","number":123}`
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(jsonBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(jsonBody)),
+	)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/json")
@@ -584,7 +585,8 @@ func TestRequest_TextContent(t *testing.T) {
 
 	textBody := "hello world"
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)),
+	)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "text/plain")
@@ -604,7 +606,8 @@ func TestRequest_BinaryContent(t *testing.T) {
 	// Binary data (PNG header)
 	binaryData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(bytes.NewReader(binaryData)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(bytes.NewReader(binaryData)),
+	)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "image/png")
@@ -735,7 +738,8 @@ func TestRequest_XMLContent(t *testing.T) {
 
 	xmlBody := `<?xml version="1.0"?><root><item>value</item></root>`
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(xmlBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(xmlBody)),
+	)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/xml")
@@ -753,7 +757,8 @@ func TestRequest_FormURLEncoded(t *testing.T) {
 
 	formBody := "key1=value1&key2=value2"
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(formBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(formBody)),
+	)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -804,7 +809,8 @@ func TestRequest_CharsetConversion(t *testing.T) {
 	// UTF-8 text
 	utf8Text := "Hello, 世界" //nolint:gosmopolitan // Intentional test data for UTF-8 handling
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(utf8Text)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(utf8Text)),
+	)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "text/plain; charset=utf-8")
@@ -852,7 +858,8 @@ func TestRequest_NosniffWithoutContentType(t *testing.T) {
 	// Text that would normally be detected as text/plain, but nosniff should force binary
 	textBody := "This is plain text that would normally be detected as text/plain"
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)),
+	)
 	require.NoError(t, err)
 
 	// No Content-Type header, but set X-Content-Type-Options to nosniff
@@ -878,7 +885,8 @@ func TestRequest_NosniffWithInvalidContentType(t *testing.T) {
 
 	textBody := "Some text content"
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)),
+	)
 	require.NoError(t, err)
 
 	// Invalid Content-Type header (will fail to parse)
@@ -898,7 +906,8 @@ func TestRequest_NosniffWithWhitespace(t *testing.T) {
 
 	textBody := "Text content"
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)),
+	)
 	require.NoError(t, err)
 
 	// X-Content-Type-Options with leading/trailing whitespace
@@ -917,7 +926,8 @@ func TestRequest_NosniffNotSet(t *testing.T) {
 
 	textBody := "This is plain text"
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)),
+	)
 	require.NoError(t, err)
 
 	// No Content-Type header and no X-Content-Type-Options
@@ -937,7 +947,8 @@ func TestRequest_NosniffDifferentValue(t *testing.T) {
 
 	textBody := "This is plain text"
 	req, err := http.NewRequestWithContext(
-		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)))
+		t.Context(), http.MethodPost, "https://example.com", io.NopCloser(strings.NewReader(textBody)),
+	)
 	require.NoError(t, err)
 
 	// X-Content-Type-Options set to something other than "nosniff"

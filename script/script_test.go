@@ -150,7 +150,8 @@ func TestNew(t *testing.T) {
 
 		var buf bytes.Buffer
 
-		script := New("test-script",
+		script := New(
+			"test-script",
 			LogLevel(slog.LevelDebug),
 			LegacyLogLevel(slog.LevelInfo),
 			LogOutput(&buf),
@@ -410,7 +411,8 @@ func TestWithEnvFilesProvider(t *testing.T) {
 func TestWithEnvFile_Multiple(t *testing.T) {
 	t.Parallel()
 
-	script := New("test",
+	script := New(
+		"test",
 		WithEnvFile("/path/1/.env"),
 		WithEnvFile("/path/2/.env"),
 	)
@@ -621,7 +623,8 @@ func TestWithSetEnv(t *testing.T) {
 func TestWithSetEnv_Multiple(t *testing.T) {
 	t.Parallel()
 
-	script := New("test",
+	script := New(
+		"test",
 		WithSetEnv("KEY1", "value1"),
 		WithSetEnv("KEY2", "value2"),
 		WithSetEnv("KEY3", "value3"),

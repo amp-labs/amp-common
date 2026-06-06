@@ -11,10 +11,11 @@ import (
 	"github.com/amp-labs/amp-common/envtypes"
 	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/lazy"
+	"github.com/amp-labs/amp-common/retry"
 	"github.com/amp-labs/amp-common/xform"
 )
 
-// Defaults applied when the corresponding AMP_PUBLIC_DNS_* env vars are unset or fail to parse.
+// Defaults applied when the corresponding AMP_DNS_* env vars are unset or fail to parse.
 const (
 	defaultDNSPort         = 53
 	defaultDNSConnPoolSize = 4
@@ -24,15 +25,15 @@ const (
 	defaultDNSMaxCacheTTL = 24 * time.Hour
 )
 
-// defaultPublicDNSResolvers is the "host:port" fallback resolver list (Google and Cloudflare public DNS).
-var defaultPublicDNSResolvers = []string{
+// defaultDNSResolvers is the "host:port" fallback resolver list (Google and Cloudflare public DNS).
+var defaultDNSResolvers = []string{
 	"8.8.8.8:53",
 	"1.1.1.1:53",
 }
 
-// getDefaultPublicDNSResolvers returns the fallback resolvers as parsed HostPort values, used
-// whenever AMP_PUBLIC_DNS_RESOLVERS is unset or any configured entry fails to parse.
-func getDefaultPublicDNSResolvers() []envtypes.HostPort {
+// getDefaultDNSResolvers returns the fallback resolvers as parsed HostPort values, used
+// whenever AMP_DNS_RESOLVERS is unset or any configured entry fails to parse.
+func getDefaultDNSResolvers() []envtypes.HostPort {
 	return []envtypes.HostPort{
 		{
 			Host: "8.8.8.8",
@@ -45,18 +46,18 @@ func getDefaultPublicDNSResolvers() []envtypes.HostPort {
 	}
 }
 
-// dnsPublicResolvers lazily parses AMP_PUBLIC_DNS_RESOLVERS, a comma-separated list of "host:port"
-// entries, into HostPort values. It falls back to the public defaults if the variable is unset or
-// any entry fails to parse, so a misconfiguration never leaves the dialer without resolvers.
-var dnsPublicResolvers = lazy.NewCtx[[]envtypes.HostPort](func(ctx context.Context) []envtypes.HostPort {
+// ampersandDNSResolvers lazily parses AMP_DNS_RESOLVERS, a comma-separated list of "host:port"
+// entries, into HostPort values. It falls back to the built-in defaults if the variable is unset
+// or any entry fails to parse, so a misconfiguration never leaves the dialer without resolvers.
+var ampersandDNSResolvers = lazy.NewCtx[[]envtypes.HostPort](func(ctx context.Context) []envtypes.HostPort {
 	// Read the env var
-	r := envutil.String(ctx, "AMP_PUBLIC_DNS_RESOLVERS")
+	r := envutil.String(ctx, "AMP_DNS_RESOLVERS")
 
 	// Split it by comma in to a list
 	s := envutil.Map(r, xform.SplitString(","))
 
 	// Fall back to a default list if not set
-	s = s.WithDefault(defaultPublicDNSResolvers)
+	s = s.WithDefault(defaultDNSResolvers)
 
 	// Convert "host:port" format to proper envtypes.HostPort types.
 	hps := envutil.Map[[]string, []envtypes.HostPort](
@@ -90,16 +91,16 @@ var dnsPublicResolvers = lazy.NewCtx[[]envtypes.HostPort](func(ctx context.Conte
 	)
 
 	// Do all the parsing, and if anything fails fall back to a safe list.
-	return hps.ValueOrElseFunc(getDefaultPublicDNSResolvers)
+	return hps.ValueOrElseFunc(getDefaultDNSResolvers)
 })
 
-// getDNSPublicResolvers returns the configured public resolvers as "host:port" strings ready to
+// getAmpersandDNSResolvers returns the configured resolvers as "host:port" strings ready to
 // hand to the dnsdialer, substituting the defaults if the resolved list is somehow empty.
-func getDNSPublicResolvers(ctx context.Context) []string {
-	resolvers := dnsPublicResolvers.Get(ctx)
+func getAmpersandDNSResolvers(ctx context.Context) []string {
+	resolvers := ampersandDNSResolvers.Get(ctx)
 
 	if len(resolvers) == 0 {
-		resolvers = getDefaultPublicDNSResolvers()
+		resolvers = getDefaultDNSResolvers()
 	}
 
 	out := make([]string, 0, len(resolvers))
@@ -111,12 +112,13 @@ func getDNSPublicResolvers(ctx context.Context) []string {
 	return out
 }
 
+// errUnknownLogLevel is returned when AMP_DNS_LOGGING contains an unrecognized value.
 var errUnknownLogLevel = errors.New("unknown log level")
 
-// dnsLogging lazily reads AMP_PUBLIC_DNS_LOGGING ("none", "errors", or "verbose") and resolves it
+// dnsLogging lazily reads AMP_DNS_LOGGING ("none", "errors", or "verbose") and resolves it
 // to a dns.LogLevel, defaulting to LogLevelNone for unset or unrecognized values.
 var dnsLogging = lazy.NewCtx[dns.LogLevel](func(ctx context.Context) dns.LogLevel {
-	s := envutil.String(ctx, "AMP_PUBLIC_DNS_LOGGING", envutil.Default("none"))
+	s := envutil.String(ctx, "AMP_DNS_LOGGING", envutil.Default("none"))
 
 	lvl := envutil.Map[string, dns.LogLevel](s, func(s string) (dns.LogLevel, error) {
 		s = strings.TrimSpace(s)
@@ -137,30 +139,44 @@ var dnsLogging = lazy.NewCtx[dns.LogLevel](func(ctx context.Context) dns.LogLeve
 	return lvl.ValueOrElse(dns.LogLevelNone)
 })
 
-// dnsConnPoolSize is the per-resolver connection pool size, from AMP_PUBLIC_DNS_CONNECTION_POOL_SIZE.
+// dnsConnPoolSize is the per-resolver connection pool size, from AMP_DNS_CONNECTION_POOL_SIZE.
 var dnsConnPoolSize = lazy.NewCtx[int](func(ctx context.Context) int {
-	return envutil.Int[int](ctx, "AMP_PUBLIC_DNS_CONNECTION_POOL_SIZE",
+	return envutil.Int[int](ctx, "AMP_DNS_CONNECTION_POOL_SIZE",
 		envutil.Default(defaultDNSConnPoolSize)).
 		ValueOrElse(defaultDNSConnPoolSize)
 })
 
-// dnsCacheSize is the maximum number of cached DNS entries, from AMP_PUBLIC_DNS_CACHE_SIZE.
+// dnsCacheSize is the maximum number of cached DNS entries, from AMP_DNS_CACHE_SIZE.
 var dnsCacheSize = lazy.NewCtx[int](func(ctx context.Context) int {
-	return envutil.Int[int](ctx, "AMP_PUBLIC_DNS_CACHE_SIZE",
+	return envutil.Int[int](ctx, "AMP_DNS_CACHE_SIZE",
 		envutil.Default(defaultDNSCacheSize)).
 		ValueOrElse(defaultDNSCacheSize)
 })
 
-// dnsMinCacheTTL is the floor applied to cached entry TTLs, from AMP_PUBLIC_DNS_MIN_CACHE_TTL.
+// dnsMinCacheTTL is the floor applied to cached entry TTLs, from AMP_DNS_MIN_CACHE_TTL.
 var dnsMinCacheTTL = lazy.NewCtx[time.Duration](func(ctx context.Context) time.Duration {
-	return envutil.Duration(ctx, "AMP_PUBLIC_DNS_MIN_CACHE_TTL",
+	return envutil.Duration(ctx, "AMP_DNS_MIN_CACHE_TTL",
 		envutil.Default(defaultDNSMinCacheTTL)).
 		ValueOrElse(defaultDNSMinCacheTTL)
 })
 
-// dnsMaxCacheTTL is the ceiling applied to cached entry TTLs, from AMP_PUBLIC_DNS_MAX_CACHE_TTL.
+// dnsMaxCacheTTL is the ceiling applied to cached entry TTLs, from AMP_DNS_MAX_CACHE_TTL.
 var dnsMaxCacheTTL = lazy.NewCtx[time.Duration](func(ctx context.Context) time.Duration {
-	return envutil.Duration(ctx, "AMP_PUBLIC_DNS_MAX_CACHE_TTL",
+	return envutil.Duration(ctx, "AMP_DNS_MAX_CACHE_TTL",
 		envutil.Default(defaultDNSMaxCacheTTL)).
 		ValueOrElse(defaultDNSMaxCacheTTL)
+})
+
+// dnsLookupRetryOpts holds retry options for DNS lookups, read from the
+// AMP_DNS_LOOKUP_RETRY_* family of environment variables. An empty
+// slice means no retry configuration was provided and the dialer's defaults apply.
+var dnsLookupRetryOpts = lazy.NewCtx[[]retry.Option](func(ctx context.Context) []retry.Option {
+	return retry.OptionsFromEnv(ctx, "AMP_DNS_LOOKUP_RETRY")
+})
+
+// dnsDialRetryOpts holds retry options for dialing resolved addresses, read from the
+// AMP_DNS_DIAL_RETRY_* family of environment variables. An empty slice means
+// no retry configuration was provided and the dialer's defaults apply.
+var dnsDialRetryOpts = lazy.NewCtx[[]retry.Option](func(ctx context.Context) []retry.Option {
+	return retry.OptionsFromEnv(ctx, "AMP_DNS_DIAL_RETRY")
 })

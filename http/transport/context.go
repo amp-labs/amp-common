@@ -10,10 +10,12 @@ import (
 // other packages.
 type contextKey string
 
+// contextKeyTransport is the context key under which a custom http.RoundTripper
+// override is stored (see WithTransport and Get).
 const contextKeyTransport contextKey = "http-transport"
 
 // WithTransport allows setting a custom http.Transport in the context.
-// This can be used to override the default transport used by GetContext.
+// This can be used to override the default transport returned by Get.
 // Note that the transport should be reused for multiple requests to
 // take advantage of connection pooling - if you need pooling.
 func WithTransport(ctx context.Context, transport http.RoundTripper) context.Context {

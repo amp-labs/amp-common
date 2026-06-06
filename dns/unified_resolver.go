@@ -12,8 +12,8 @@ import (
 // doesn't fit. It is the base resolver [NewDialer] wraps for each address.
 type unifiedResolver struct {
 	addr string
-	udp  *udpResolver
-	tcp  *tcpResolver
+	udp  Resolver
+	tcp  Resolver
 }
 
 // newUnifiedResolver creates a resolver for addr (defaulting to port 53 when
@@ -25,10 +25,13 @@ func newUnifiedResolver(addr string, timeout time.Duration, poolSize int) *unifi
 		addr = net.JoinHostPort(addr, "53")
 	}
 
+	udp := newUDPResolver(addr, timeout, poolSize)
+	tcp := newTCPResolver(addr, timeout, poolSize)
+
 	return &unifiedResolver{
 		addr: addr,
-		udp:  newUDPResolver(addr, timeout, poolSize),
-		tcp:  newTCPResolver(addr, timeout, poolSize),
+		udp:  newMetricsResolver(addr, "udp", udp),
+		tcp:  newMetricsResolver(addr, "tcp", tcp),
 	}
 }
 

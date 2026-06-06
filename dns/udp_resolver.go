@@ -1,4 +1,4 @@
-package dns
+package dns //nolint:dupl
 
 import (
 	"context"
@@ -60,16 +60,16 @@ func (r *udpResolver) ResolveType(
 			"host", host,
 			"type", qtype.String())
 
-		return nil, TruncationStatusTruncated, fmt.Errorf("tcp retry after truncated udp response failed: %w", err)
+		return nil, TruncationStatusTruncated, errTruncatedUDP
 	}
 
-	if response.Rcode != dns.RcodeSuccess {
+	if response.Rcode != dns.RcodeSuccess { //nolint:dupl
 		return nil, TruncationStatusOK, fmt.Errorf("%w: %s", errDNSResponse, dns.RcodeToString[response.Rcode])
 	}
 
 	records := make([]Record, 0, len(response.Answer))
 
-	for _, ans := range response.Answer {
+	for _, ans := range response.Answer { //nolint:dupl
 		record := Record{
 			Name: ans.Header().Name,
 			Type: RecordType(dns.RRToType(ans)),

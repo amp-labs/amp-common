@@ -21,7 +21,8 @@ var (
 func TestDoCtx_RecoversPanic(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(t.Context(), 2,
+	err := DoCtx(
+		t.Context(), 2,
 		func(ctx context.Context) error {
 			panic("intentional panic for testing")
 		},
@@ -36,7 +37,8 @@ func TestDoCtx_RecoversPanic(t *testing.T) {
 func TestDoCtx_RecoversPanicError(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(t.Context(), 2,
+	err := DoCtx(
+		t.Context(), 2,
 		func(ctx context.Context) error {
 			panic(errTestPanic)
 		},
@@ -53,7 +55,8 @@ func TestDoCtx_MixedSuccessAndPanic(t *testing.T) {
 
 	var successCount atomic.Int32
 
-	err := DoCtx(t.Context(), 3,
+	err := DoCtx(
+		t.Context(), 3,
 		func(ctx context.Context) error {
 			successCount.Add(1)
 			time.Sleep(10 * time.Millisecond)
@@ -84,7 +87,8 @@ func TestDoCtx_MixedSuccessAndPanic(t *testing.T) {
 func TestDoCtx_MultiplePanics(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(t.Context(), 3,
+	err := DoCtx(
+		t.Context(), 3,
 		func(ctx context.Context) error {
 			panic("panic 1")
 		},
@@ -112,7 +116,8 @@ func TestDoCtx_PanicDoesNotAffectOtherGoroutines(t *testing.T) {
 
 	var completed atomic.Int32
 
-	err := DoCtx(t.Context(), 10,
+	err := DoCtx(
+		t.Context(), 10,
 		func(ctx context.Context) error {
 			time.Sleep(50 * time.Millisecond)
 			completed.Add(1)
@@ -147,7 +152,8 @@ func TestDoCtx_SuccessfulExecution(t *testing.T) {
 
 	var counter atomic.Int32
 
-	err := DoCtx(t.Context(), 3,
+	err := DoCtx(
+		t.Context(), 3,
 		func(ctx context.Context) error {
 			counter.Add(1)
 
@@ -172,7 +178,8 @@ func TestDoCtx_SuccessfulExecution(t *testing.T) {
 func TestDoCtx_ErrorReturnedInsteadOfPanic(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(t.Context(), 2,
+	err := DoCtx(
+		t.Context(), 2,
 		func(ctx context.Context) error {
 			return errTest
 		},
@@ -190,7 +197,8 @@ func TestDoCtx_ErrorReturnedInsteadOfPanic(t *testing.T) {
 func TestDoCtx_PanicWithNilValue(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(t.Context(), 1,
+	err := DoCtx(
+		t.Context(), 1,
 		func(ctx context.Context) error {
 			var nilPtr *string
 
@@ -208,7 +216,8 @@ func TestDoCtx_PanicWithNilValue(t *testing.T) {
 func TestDo_RecoversPanic(t *testing.T) {
 	t.Parallel()
 
-	err := Do(2,
+	err := Do(
+		2,
 		func(ctx context.Context) error {
 			panic("panic in Do function")
 		},
@@ -222,7 +231,8 @@ func TestDo_RecoversPanic(t *testing.T) {
 func TestDoCtx_PanicWithStackTrace(t *testing.T) {
 	t.Parallel()
 
-	err := DoCtx(t.Context(), 1,
+	err := DoCtx(
+		t.Context(), 1,
 		func(ctx context.Context) error {
 			helper()
 
@@ -247,7 +257,8 @@ func TestDoCtx_ContextCancellationAfterPanic(t *testing.T) {
 
 	var canceledCount atomic.Int32
 
-	err := DoCtx(t.Context(), 5,
+	err := DoCtx(
+		t.Context(), 5,
 		func(ctx context.Context) error {
 			// Panic immediately
 			panic("early panic")
@@ -290,7 +301,8 @@ func TestDoWithExecutor_SuccessfulExecution(t *testing.T) {
 
 	var counter atomic.Int32
 
-	err := DoWithExecutor(exec,
+	err := DoWithExecutor(
+		exec,
 		func(ctx context.Context) error {
 			counter.Add(1)
 
@@ -313,7 +325,8 @@ func TestDoWithExecutor_RecoversPanic(t *testing.T) {
 	exec := newDefaultExecutor(2, 2)
 	defer should.Close(exec, "closing executor")
 
-	err := DoWithExecutor(exec,
+	err := DoWithExecutor(
+		exec,
 		func(ctx context.Context) error {
 			panic("intentional panic in DoWithExecutor")
 		},
@@ -330,7 +343,8 @@ func TestDoWithExecutor_ReturnsError(t *testing.T) {
 	exec := newDefaultExecutor(2, 2)
 	defer should.Close(exec, "closing executor")
 
-	err := DoWithExecutor(exec,
+	err := DoWithExecutor(
+		exec,
 		func(ctx context.Context) error {
 			return errTest
 		},
@@ -352,7 +366,8 @@ func TestDoWithExecutor_ExecutorReuse(t *testing.T) {
 
 	var firstBatch atomic.Int32
 
-	err := DoWithExecutor(exec,
+	err := DoWithExecutor(
+		exec,
 		func(ctx context.Context) error {
 			firstBatch.Add(1)
 
@@ -370,7 +385,8 @@ func TestDoWithExecutor_ExecutorReuse(t *testing.T) {
 
 	var secondBatch atomic.Int32
 
-	err = DoWithExecutor(exec,
+	err = DoWithExecutor(
+		exec,
 		func(ctx context.Context) error {
 			secondBatch.Add(1)
 
@@ -400,7 +416,8 @@ func TestDoCtxWithExecutor_SuccessfulExecution(t *testing.T) {
 
 	var counter atomic.Int32
 
-	err := DoCtxWithExecutor(t.Context(), exec,
+	err := DoCtxWithExecutor(
+		t.Context(), exec,
 		func(ctx context.Context) error {
 			counter.Add(1)
 
@@ -423,7 +440,8 @@ func TestDoCtxWithExecutor_RecoversPanic(t *testing.T) {
 	exec := newDefaultExecutor(2, 2)
 	defer should.Close(exec, "closing executor")
 
-	err := DoCtxWithExecutor(t.Context(), exec,
+	err := DoCtxWithExecutor(
+		t.Context(), exec,
 		func(ctx context.Context) error {
 			panic("intentional panic in DoCtxWithExecutor")
 		},
@@ -440,7 +458,8 @@ func TestDoCtxWithExecutor_ReturnsError(t *testing.T) {
 	exec := newDefaultExecutor(2, 2)
 	defer should.Close(exec, "closing executor")
 
-	err := DoCtxWithExecutor(t.Context(), exec,
+	err := DoCtxWithExecutor(
+		t.Context(), exec,
 		func(ctx context.Context) error {
 			return errTest
 		},
@@ -464,7 +483,8 @@ func TestDoCtxWithExecutor_ContextCancellation(t *testing.T) {
 
 	var executed atomic.Int32
 
-	err := DoCtxWithExecutor(ctx, exec,
+	err := DoCtxWithExecutor(
+		ctx, exec,
 		func(ctx context.Context) error {
 			executed.Add(1)
 			time.Sleep(100 * time.Millisecond)
@@ -486,7 +506,8 @@ func TestDoCtxWithExecutor_ExecutorReuse(t *testing.T) {
 
 	var firstBatch atomic.Int32
 
-	err := DoCtxWithExecutor(t.Context(), exec,
+	err := DoCtxWithExecutor(
+		t.Context(), exec,
 		func(ctx context.Context) error {
 			firstBatch.Add(1)
 
@@ -504,7 +525,8 @@ func TestDoCtxWithExecutor_ExecutorReuse(t *testing.T) {
 
 	var secondBatch atomic.Int32
 
-	err = DoCtxWithExecutor(t.Context(), exec,
+	err = DoCtxWithExecutor(
+		t.Context(), exec,
 		func(ctx context.Context) error {
 			secondBatch.Add(1)
 
@@ -534,7 +556,8 @@ func TestDoCtxWithExecutor_MixedSuccessAndError(t *testing.T) {
 
 	var successCount atomic.Int32
 
-	err := DoCtxWithExecutor(t.Context(), exec,
+	err := DoCtxWithExecutor(
+		t.Context(), exec,
 		func(ctx context.Context) error {
 			successCount.Add(1)
 			time.Sleep(10 * time.Millisecond)
@@ -578,7 +601,8 @@ func TestDoCtxWithExecutor_ConcurrencyLimit(t *testing.T) {
 
 	var maxActive atomic.Int32
 
-	err := DoCtxWithExecutor(t.Context(), exec,
+	err := DoCtxWithExecutor(
+		t.Context(), exec,
 		func(ctx context.Context) error {
 			current := activeCount.Add(1)
 			defer activeCount.Add(-1)

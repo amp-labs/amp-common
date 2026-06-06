@@ -289,7 +289,8 @@ func TestPromise_Cancel_CallsCancelFuncs(t *testing.T) {
 	var callCount atomic.Int32
 
 	// Add cancel functions
-	promise.cancelFuncs = append(promise.cancelFuncs,
+	promise.cancelFuncs = append(
+		promise.cancelFuncs,
 		func() { callCount.Add(1) },
 		func() { callCount.Add(10) },
 		func() { callCount.Add(100) },
@@ -316,7 +317,8 @@ func TestPromise_Cancel_CallsFuncsOnce(t *testing.T) {
 
 	var callCount atomic.Int32
 
-	promise.cancelFuncs = append(promise.cancelFuncs,
+	promise.cancelFuncs = append(
+		promise.cancelFuncs,
 		func() { callCount.Add(1) },
 	)
 
@@ -336,7 +338,8 @@ func TestPromise_Cancel_ConcurrentFuncExecution(t *testing.T) {
 
 	var callCount atomic.Int32
 
-	promise.cancelFuncs = append(promise.cancelFuncs,
+	promise.cancelFuncs = append(
+		promise.cancelFuncs,
 		func() { callCount.Add(1) },
 	)
 
@@ -405,7 +408,8 @@ func TestPromise_Complete_ThenCancel(t *testing.T) {
 
 	var callCount atomic.Int32
 
-	promise.cancelFuncs = append(promise.cancelFuncs,
+	promise.cancelFuncs = append(
+		promise.cancelFuncs,
 		func() { callCount.Add(1) },
 	)
 

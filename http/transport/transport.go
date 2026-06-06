@@ -7,19 +7,20 @@
 // # Basic Usage
 //
 //	// Create a new transport with defaults
-//	transport := transport.New()
+//	tr := transport.New(ctx)
 //
 //	// Get a singleton instance with specific options
-//	rt := transport.Get(transport.EnableDNSCache)
+//	rt := transport.Get(ctx, transport.EnableDNSCache)
 //
-//	// Use context to override transport
-//	ctx := transport.WithTransport(ctx, customTransport)
-//	rt := transport.GetContext(ctx)
+//	// Use context to override the transport returned by Get
+//	ctx = transport.WithTransport(ctx, customTransport)
+//	rt := transport.Get(ctx)
 //
 // # Configuration Options
 //
 //   - DisableConnectionPooling: Disable HTTP keep-alive and connection reuse
 //   - EnableDNSCache: Use cached DNS lookups to reduce DNS traffic
+//   - AmpersandDNS: Route DNS through the Ampersand DNS dialer (blocks private DNS names and IPs)
 //   - InsecureTLS: Skip TLS certificate verification (use only for testing)
 //   - WithTransportOverride: Provide a custom transport implementation
 //
@@ -35,6 +36,11 @@
 //   - HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2: Force HTTP/2 attempts (default: false)
 //   - HTTP_TRANSPORT_DIAL_TIMEOUT: Connection dial timeout (default: 30s)
 //   - HTTP_TRANSPORT_DIAL_KEEPALIVE: TCP keep-alive duration (default: 30s)
+//
+// Transports using the AmpersandDNS option are additionally configurable via the
+// AMP_DNS_* environment variables (see dns_env.go): AMP_DNS_RESOLVERS, AMP_DNS_LOGGING,
+// AMP_DNS_CONNECTION_POOL_SIZE, AMP_DNS_CACHE_SIZE, AMP_DNS_MIN_CACHE_TTL,
+// AMP_DNS_MAX_CACHE_TTL, and the AMP_DNS_LOOKUP_RETRY_* / AMP_DNS_DIAL_RETRY_* families.
 package transport
 
 import (
@@ -111,8 +117,8 @@ func create(ctx context.Context, cfg *config) *http.Transport {
 		transport.DisableKeepAlives = true
 	}
 
-	if cfg.PublicOnly {
-		err := useDNSPublicOnlyDialer(ctx, transport, cfg.EnableDNSCache, dialTimeout)
+	if cfg.AmpersandDNS {
+		err := useAmpersandDNSDialer(ctx, transport, cfg.EnableDNSCache, cfg.PublicOnly, dialTimeout)
 		if err != nil {
 			panic(err)
 		}

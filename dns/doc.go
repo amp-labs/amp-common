@@ -35,6 +35,8 @@
 //     connection.
 //   - unifiedResolver tries UDP first and transparently retries over TCP when
 //     the response is truncated.
+//   - metricsResolver records Prometheus metrics (lookup count, error count,
+//     and latency) labeled by the server's "host:port" address.
 //   - cnameResolver follows CNAME chains so callers always see the terminal
 //     address records, even from a non-recursive server.
 //   - filterResolver drops records the caller's [Filter] rejects.

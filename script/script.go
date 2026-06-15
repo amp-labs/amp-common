@@ -73,6 +73,15 @@ func LegacyLogLevel(lvl slog.Level) Option {
 	}
 }
 
+// LogJSON will configure the logger to use structured JSON logging (or to disable it).
+func LogJSON(json bool) Option {
+	return func(script *Script) {
+		script.loggerOpts = append(script.loggerOpts, func(options *logger.Options) {
+			options.JSON = json
+		})
+	}
+}
+
 // LogLevel sets the minimum log level for the script's logger.
 func LogLevel(lvl slog.Level) Option {
 	return func(script *Script) {

@@ -12,7 +12,7 @@ import (
 // drainPriority writes all values into the priority pump, closes the input so the
 // pump drains its heap, and returns the values in delivery order.
 func drainPriority[T any](less func(a, b T) bool, values ...T) []T {
-	in, out, _ := CreatePriority(context.Background(), less)
+	in, out, _ := CreatePriority(context.Background(), 0, less)
 
 	for _, v := range values {
 		in <- v
@@ -96,10 +96,52 @@ func TestCreatePriority_MixedPriorityStableWithinWeight(t *testing.T) {
 	assert.Equal(t, []int{2, 4, 1, 3, 5}, ids)
 }
 
+func TestCreatePriority_BoundedBlocksWhenFull(t *testing.T) {
+	t.Parallel()
+
+	const maxSize = 2
+
+	in, out, count := CreatePriority(context.Background(), maxSize, func(a, b int) bool { return a > b })
+
+	// Nothing reads from out, so these fill the bounded buffer.
+	for _, v := range []int{1, 2} {
+		in <- v
+	}
+
+	require.Eventually(t, func() bool {
+		return count() == maxSize
+	}, time.Second, time.Millisecond, "buffer should fill to its bound")
+
+	// A further send must block until the consumer drains an item.
+	sent := make(chan struct{})
+
+	go func() {
+		in <- 3
+
+		close(sent)
+	}()
+
+	select {
+	case <-sent:
+		t.Fatal("send should block while the bounded buffer is full")
+	case <-time.After(100 * time.Millisecond):
+		// Expected: still blocked.
+	}
+
+	<-out // make room
+
+	select {
+	case <-sent:
+		// Expected: the blocked send proceeds now that there is room.
+	case <-time.After(time.Second):
+		t.Fatal("send did not unblock after the buffer was drained")
+	}
+}
+
 func TestCreatePriority_ClosesOutputWhenInputClosed(t *testing.T) {
 	t.Parallel()
 
-	in, out, _ := CreatePriority(context.Background(), func(a, b int) bool { return a > b })
+	in, out, _ := CreatePriority(context.Background(), 0, func(a, b int) bool { return a > b })
 
 	close(in)
 
@@ -116,7 +158,7 @@ func TestCreatePriority_ContextCancelClosesOutput(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	in, out, _ := CreatePriority(ctx, func(a, b int) bool { return a > b })
+	in, out, _ := CreatePriority(ctx, 0, func(a, b int) bool { return a > b })
 
 	for _, v := range []int{1, 2} {
 		in <- v
@@ -146,7 +188,7 @@ func TestCreatePriority_ContextCancelClosesOutput(t *testing.T) {
 func TestCreatePriority_LengthFunctionReportsBuffered(t *testing.T) {
 	t.Parallel()
 
-	in, out, count := CreatePriority(context.Background(), func(a, b int) bool { return a > b })
+	in, out, count := CreatePriority(context.Background(), 0, func(a, b int) bool { return a > b })
 
 	const total = 6
 

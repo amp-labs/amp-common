@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 )
 
-// CreatePriority creates an unbounded, priority-ordered channel pump, mirroring
-// the shape of Create and InfiniteChan: it returns a send-only channel, a
-// receive-only channel, and a function reporting the number of buffered items.
+// CreatePriority creates a priority-ordered channel pump, mirroring the shape of
+// Create and InfiniteChan: it returns a send-only channel, a receive-only
+// channel, and a function reporting the number of buffered items.
 //
 // Values written to the send channel are buffered in an internal heap and
 // delivered on the receive channel in priority order, as defined by less:
@@ -16,10 +16,18 @@ import (
 // priority — those for which neither less(a, b) nor less(b, a) holds — are
 // delivered in FIFO order of submission.
 //
-// Like InfiniteChan, the buffer is unbounded, so the send channel never blocks
-// on capacity and no backpressure is applied. Priority only has a visible effect
-// when values accumulate faster than the consumer drains them; if the receiver
-// keeps up with arrivals, delivery order closely tracks arrival order.
+// maxSize bounds the number of buffered (queued but not yet delivered) values:
+//   - maxSize <= 0: unbounded, like InfiniteChan — the send channel never blocks
+//     on capacity and no backpressure is applied.
+//   - maxSize > 0: bounded — once maxSize values are buffered, sends on the
+//     returned channel block until the consumer drains one, applying
+//     backpressure to producers. The send itself remains a normal channel send,
+//     so a blocked producer can still be unblocked by closing the channel or by
+//     a select that also watches a context.
+//
+// Priority only has a visible effect when values accumulate faster than the
+// consumer drains them; if the receiver keeps up with arrivals, delivery order
+// closely tracks arrival order.
 //
 // Lifecycle:
 //   - Closing the send channel drains all buffered values to the receive channel
@@ -29,8 +37,8 @@ import (
 //
 // The design follows github.com/brunoga/prioritychannel, adapted to this
 // package's (send, recv, len) convention and extended with a FIFO tie-break for
-// equal-priority values. less must be non-nil.
-func CreatePriority[T any](ctx context.Context, less func(a, b T) bool) (chan<- T, <-chan T, func() int) {
+// equal-priority values and an optional size bound. less must be non-nil.
+func CreatePriority[T any](ctx context.Context, maxSize int, less func(a, b T) bool) (chan<- T, <-chan T, func() int) {
 	input := make(chan T)
 	output := make(chan T)
 
@@ -61,10 +69,11 @@ func CreatePriority[T any](ctx context.Context, less func(a, b T) bool) (chan<- 
 				outChan = output
 			}
 
-			// inChan is nil once the input is closed, disabling the receive
-			// case so the loop drains the heap and then exits.
+			// inChan is nil — disabling the receive case — once the input is
+			// closed (so the loop drains the heap and exits) or the buffer is
+			// full (so producers block on send, applying backpressure).
 			inChan := input
-			if inputClosed {
+			if inputClosed || (maxSize > 0 && queue.Len() >= maxSize) {
 				inChan = nil
 			}
 

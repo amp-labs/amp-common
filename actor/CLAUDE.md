@@ -29,7 +29,8 @@ ref.Publish(ctx, "broadcast")  // Non-blocking send
 
 ```go
 // RunPriority gives the actor a heap-backed inbox instead of a FIFO channel.
-ref := myActor.RunPriority(ctx, "my-actor")  // unbounded, no depth arg
+ref := myActor.RunPriority(ctx, "my-actor", 0)    // 0 / negative = unbounded
+ref := myActor.RunPriority(ctx, "my-actor", 1000) // bounded: blocks at 1000 queued
 
 // Higher Weight is processed first; equal Weight keeps FIFO (submission) order.
 ref.SendWithWeight("urgent", 10)
@@ -40,7 +41,8 @@ ref.Publish(actor.Message[string, int]{Request: "urgent", Weight: 10})
 ```
 
 - Weight only matters when messages accumulate (consumer slower than producers).
-- The priority inbox is **unbounded** (heap, like `channels.InfiniteChan`) — submits never block on a full mailbox, so there is no backpressure. Use `Run` when you need bounded FIFO delivery.
+- `maxSize <= 0`: inbox is **unbounded** (heap, like `channels.InfiniteChan`) — submits never block on a full mailbox.
+- `maxSize > 0`: inbox is **bounded** — once that many messages are queued, submits block until the actor drains one, applying backpressure. `SendCtx`/`RequestCtx` honor their context while blocked.
 - `Stop()` drains queued messages in priority order; canceling `ctx` discards them.
 - `Weight` is ignored by `Run`-started (FIFO) actors.
 

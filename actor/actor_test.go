@@ -459,13 +459,14 @@ func TestActorStopIsIdempotent(t *testing.T) {
 	assert.False(t, ref.Alive())
 }
 
-// blockingPriorityActor starts a RunPriority actor whose processor records the
-// order in which it handles non-blocker requests. The first request it receives
-// (the "blocker", value < 0) holds the actor until release is closed, so that
-// subsequent submissions accumulate in the priority heap and are then delivered
-// in weight order. It returns the ref, a started channel closed once the blocker
-// is processing, the release channel, and an accessor for the recorded order.
-func blockingPriorityActor(t *testing.T) (
+// blockingPriorityActor starts a RunPriority actor (with the given inbox bound)
+// whose processor records the order in which it handles non-blocker requests.
+// The first request it receives (the "blocker", value < 0) holds the actor until
+// release is closed, so that subsequent submissions accumulate in the priority
+// heap and are then delivered in weight order. It returns the ref, a started
+// channel closed once the blocker is processing, the release channel, and an
+// accessor for the recorded order.
+func blockingPriorityActor(t *testing.T, maxSize int) (
 	ref *Ref[int, empty],
 	started <-chan struct{},
 	release chan<- struct{},
@@ -497,7 +498,7 @@ func blockingPriorityActor(t *testing.T) (
 		})
 	})
 
-	ref = act.RunPriority(t.Context(), "priority")
+	ref = act.RunPriority(t.Context(), "priority", maxSize)
 
 	return ref, startedCh, releaseCh, func() []int {
 		recordMu.Lock()
@@ -510,7 +511,7 @@ func blockingPriorityActor(t *testing.T) (
 func TestActorRunPriorityProcessesHighestWeightFirst(t *testing.T) {
 	t.Parallel()
 
-	ref, started, release, order := blockingPriorityActor(t)
+	ref, started, release, order := blockingPriorityActor(t, 0) // unbounded
 	defer ref.Stop()
 
 	// Occupy the actor so subsequent submissions queue in the priority heap.
@@ -538,7 +539,7 @@ func TestActorRunPriorityProcessesHighestWeightFirst(t *testing.T) {
 func TestActorRunPriorityEqualWeightKeepsFIFO(t *testing.T) {
 	t.Parallel()
 
-	ref, started, release, order := blockingPriorityActor(t)
+	ref, started, release, order := blockingPriorityActor(t, 0) // unbounded
 	defer ref.Stop()
 
 	ref.Send(-1)
@@ -558,6 +559,51 @@ func TestActorRunPriorityEqualWeightKeepsFIFO(t *testing.T) {
 	assert.Equal(t, []int{10, 20, 30, 40}, order())
 }
 
+func TestActorRunPriorityBoundedAppliesBackpressure(t *testing.T) {
+	t.Parallel()
+
+	// Bound the inbox at 2 queued messages.
+	ref, started, release, order := blockingPriorityActor(t, 2)
+	defer ref.Stop()
+
+	// Hold the actor so the queue fills without being drained.
+	ref.Send(-1)
+	<-started
+
+	// Fill the bounded inbox (capacity 2).
+	ref.SendWithWeight(10, 1)
+	ref.SendWithWeight(20, 2)
+
+	// A third submission must block until the actor drains one message.
+	sent := make(chan struct{})
+
+	go func() {
+		ref.SendWithWeight(30, 3)
+
+		close(sent)
+	}()
+
+	select {
+	case <-sent:
+		t.Fatal("submit should block while the bounded inbox is full")
+	case <-time.After(100 * time.Millisecond):
+		// Expected: still blocked (unbounded would have accepted it).
+	}
+
+	// Let the actor drain; the blocked submit then proceeds and all three run.
+	close(release)
+
+	select {
+	case <-sent:
+	case <-time.After(2 * time.Second):
+		t.Fatal("submit did not unblock after the actor drained")
+	}
+
+	require.Eventually(t, func() bool {
+		return len(order()) == 3
+	}, 2*time.Second, time.Millisecond)
+}
+
 func TestActorRunPriorityRequestResponse(t *testing.T) {
 	t.Parallel()
 
@@ -568,7 +614,7 @@ func TestActorRunPriorityRequestResponse(t *testing.T) {
 		})
 	})
 
-	ref := act.RunPriority(t.Context(), "priority-rr")
+	ref := act.RunPriority(t.Context(), "priority-rr", 0)
 	defer ref.Stop()
 
 	result, err := ref.RequestCtxWithWeight(t.Context(), 21, 5)

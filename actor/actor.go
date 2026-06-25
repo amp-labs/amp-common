@@ -144,14 +144,15 @@ func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth i
 // SendCtxWithWeight, RequestWithWeight, or RequestCtxWithWeight to set the weight, or set the Weight
 // field directly when using Publish/PublishCtx.
 //
-// The priority inbox is unbounded (heap-backed), so submitting never blocks on a full mailbox and no
-// backpressure is applied — mirroring channels.InfiniteChan. Use Run instead when bounded FIFO
-// delivery is required.
+// maxSize bounds the inbox: when maxSize <= 0 the inbox is unbounded (heap-backed, mirroring
+// channels.InfiniteChan), so submitting never blocks on a full mailbox. When maxSize > 0, once that
+// many messages are queued, submitting blocks until the actor drains one — applying backpressure
+// (SendCtx/RequestCtx honor their context while blocked). Use Run instead for bounded FIFO delivery.
 //
 // Stopping via Stop drains and processes any queued messages in priority order before the run loop
 // exits; canceling ctx stops immediately and discards queued messages.
-func (a *Actor[Request, Response]) RunPriority(ctx context.Context, name string) *Ref[Request, Response] {
-	w, r, count := channels.CreatePriority(ctx, func(x, y Message[Request, Response]) bool {
+func (a *Actor[Request, Response]) RunPriority(ctx context.Context, name string, maxSize int) *Ref[Request, Response] {
+	w, r, count := channels.CreatePriority(ctx, maxSize, func(x, y Message[Request, Response]) bool {
 		return x.Weight > y.Weight
 	})
 

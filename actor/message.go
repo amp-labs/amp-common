@@ -11,4 +11,9 @@ type Message[Request, Response any] struct {
 	// ResponseChan is an optional channel for receiving the response.
 	// If nil, no response is expected (fire-and-forget).
 	ResponseChan chan try.Try[Response]
+	// Weight sets the message's priority when the actor was started with
+	// RunPriority: higher weights are processed first, and messages of equal
+	// weight are processed in submission (FIFO) order. Weight is ignored by
+	// actors started with Run, which deliver messages in plain FIFO order.
+	Weight int
 }

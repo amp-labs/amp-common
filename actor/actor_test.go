@@ -459,6 +459,127 @@ func TestActorStopIsIdempotent(t *testing.T) {
 	assert.False(t, ref.Alive())
 }
 
+// blockingPriorityActor starts a RunPriority actor whose processor records the
+// order in which it handles non-blocker requests. The first request it receives
+// (the "blocker", value < 0) holds the actor until release is closed, so that
+// subsequent submissions accumulate in the priority heap and are then delivered
+// in weight order. It returns the ref, a started channel closed once the blocker
+// is processing, the release channel, and an accessor for the recorded order.
+func blockingPriorityActor(t *testing.T) (
+	ref *Ref[int, empty],
+	started <-chan struct{},
+	release chan<- struct{},
+	order func() []int,
+) {
+	t.Helper()
+
+	startedCh := make(chan struct{})
+	releaseCh := make(chan struct{})
+
+	var (
+		recordMu sync.Mutex
+		got      []int
+	)
+
+	act := New[int, empty](func(ref *Ref[int, empty]) Processor[int, empty] {
+		return NewProcessor(func(msg Message[int, empty]) {
+			if msg.Request < 0 { // blocker
+				close(startedCh)
+				<-releaseCh
+
+				return
+			}
+
+			recordMu.Lock()
+			defer recordMu.Unlock()
+
+			got = append(got, msg.Request)
+		})
+	})
+
+	ref = act.RunPriority(t.Context(), "priority")
+
+	return ref, startedCh, releaseCh, func() []int {
+		recordMu.Lock()
+		defer recordMu.Unlock()
+
+		return append([]int(nil), got...)
+	}
+}
+
+func TestActorRunPriorityProcessesHighestWeightFirst(t *testing.T) {
+	t.Parallel()
+
+	ref, started, release, order := blockingPriorityActor(t)
+	defer ref.Stop()
+
+	// Occupy the actor so subsequent submissions queue in the priority heap.
+	ref.Send(-1)
+	<-started
+
+	// The input channel is unbuffered, so each call returns only once the pump
+	// has ingested the value into the heap. By the time the last returns, all
+	// five are buffered and ordered by weight.
+	ref.SendWithWeight(1, 1)
+	ref.SendWithWeight(5, 5)
+	ref.SendWithWeight(3, 3)
+	ref.SendWithWeight(2, 2)
+	ref.SendWithWeight(4, 4)
+
+	close(release)
+
+	require.Eventually(t, func() bool {
+		return len(order()) == 5
+	}, 2*time.Second, time.Millisecond)
+
+	assert.Equal(t, []int{5, 4, 3, 2, 1}, order())
+}
+
+func TestActorRunPriorityEqualWeightKeepsFIFO(t *testing.T) {
+	t.Parallel()
+
+	ref, started, release, order := blockingPriorityActor(t)
+	defer ref.Stop()
+
+	ref.Send(-1)
+	<-started
+
+	// Equal weights must be processed in submission order.
+	for _, v := range []int{10, 20, 30, 40} {
+		ref.SendWithWeight(v, 7)
+	}
+
+	close(release)
+
+	require.Eventually(t, func() bool {
+		return len(order()) == 4
+	}, 2*time.Second, time.Millisecond)
+
+	assert.Equal(t, []int{10, 20, 30, 40}, order())
+}
+
+func TestActorRunPriorityRequestResponse(t *testing.T) {
+	t.Parallel()
+
+	// RunPriority must still support the request/response path.
+	act := New[int, int](func(ref *Ref[int, int]) Processor[int, int] {
+		return SimpleProcessor(func(req int) (int, error) {
+			return req * 2, nil
+		})
+	})
+
+	ref := act.RunPriority(t.Context(), "priority-rr")
+	defer ref.Stop()
+
+	result, err := ref.RequestCtxWithWeight(t.Context(), 21, 5)
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+
+	result, err = ref.RequestWithWeight(9, 1)
+	require.NoError(t, err)
+	assert.Equal(t, 18, result)
+}
+
 func TestActorCustomProcessor(t *testing.T) {
 	t.Parallel()
 

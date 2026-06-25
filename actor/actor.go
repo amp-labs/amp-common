@@ -130,11 +130,46 @@ func (a *Actor[Request, Response]) runProcessor(
 
 // Run starts the actor and returns a reference that can be used to send messages to it.
 // The name parameter is used for logging and metrics. The depth parameter specifies the mailbox
-// buffer size (0 for unbuffered). The actor runs until the context is canceled or Stop is called
-// on the returned reference.
+// buffer size (0 for unbuffered). Messages are delivered in FIFO order. The actor runs until the
+// context is canceled or Stop is called on the returned reference.
 func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth int) *Ref[Request, Response] {
 	w, r, count := channels.Create[Message[Request, Response]](depth)
 
+	return a.run(ctx, name, w, r, count, depth > 0)
+}
+
+// RunPriority starts the actor with a priority-ordered inbox instead of a FIFO one and returns a
+// reference for sending messages. Messages submitted with a higher Weight are processed first;
+// messages of equal Weight are processed in submission (FIFO) order. Use SendWithWeight,
+// SendCtxWithWeight, RequestWithWeight, or RequestCtxWithWeight to set the weight, or set the Weight
+// field directly when using Publish/PublishCtx.
+//
+// maxSize bounds the inbox: when maxSize <= 0 the inbox is unbounded (heap-backed, mirroring
+// channels.InfiniteChan), so submitting never blocks on a full mailbox. When maxSize > 0, once that
+// many messages are queued, submitting blocks until the actor drains one — applying backpressure
+// (SendCtx/RequestCtx honor their context while blocked). Use Run instead for bounded FIFO delivery.
+//
+// Stopping via Stop drains and processes any queued messages in priority order before the run loop
+// exits; canceling ctx stops immediately and discards queued messages.
+func (a *Actor[Request, Response]) RunPriority(ctx context.Context, name string, maxSize int) *Ref[Request, Response] {
+	w, r, count := channels.CreatePriority(ctx, maxSize, func(x, y Message[Request, Response]) bool {
+		return x.Weight > y.Weight
+	})
+
+	return a.run(ctx, name, w, r, count, true)
+}
+
+// run wires up a Ref around the given inbox channels and starts the actor's processing goroutine.
+// It backs both Run (FIFO inbox) and RunPriority (heap inbox). trackQueue controls whether the
+// enqueued-messages gauge is reported (meaningful only when the inbox actually buffers).
+func (a *Actor[Request, Response]) run(
+	ctx context.Context,
+	name string,
+	w chan<- Message[Request, Response],
+	r <-chan Message[Request, Response],
+	count func() int,
+	trackQueue bool,
+) *Ref[Request, Response] {
 	ref := &Ref[Request, Response]{
 		inboxRead:  r,
 		inboxWrite: w,
@@ -197,7 +232,7 @@ func (a *Actor[Request, Response]) Run(ctx context.Context, name string, depth i
 
 				wasBusy = true
 
-				if depth > 0 {
+				if trackQueue {
 					enqueuedMessages.WithLabelValues(subsystem, name).Set(float64(ref.getCount()))
 				}
 			case msg, ok := <-ref.inboxRead:
@@ -322,8 +357,17 @@ func (r *Ref[Request, Response]) PublishCtx(ctx context.Context, message Message
 // This is a fire-and-forget operation. Errors are logged but not returned.
 // Uses context.Background().
 func (r *Ref[Request, Response]) Send(request Request) {
+	r.SendWithWeight(request, 0)
+}
+
+// SendWithWeight is like Send but assigns the message the given priority weight.
+// The weight is honored only when the actor was started with RunPriority (higher
+// weight is processed first; equal weights keep FIFO order); Run-started actors
+// ignore it. Uses context.Background().
+func (r *Ref[Request, Response]) SendWithWeight(request Request, weight int) {
 	err := r.submit(context.Background(), Message[Request, Response]{
 		Request: request,
+		Weight:  weight,
 	})
 	if err != nil {
 		slog.Error("Send: error sending actor message", "actor", r.name, "error", err)
@@ -334,8 +378,16 @@ func (r *Ref[Request, Response]) Send(request Request) {
 // This is a fire-and-forget operation. Errors are logged but not returned.
 // Respects the provided context for cancellation.
 func (r *Ref[Request, Response]) SendCtx(ctx context.Context, request Request) {
+	r.SendCtxWithWeight(ctx, request, 0)
+}
+
+// SendCtxWithWeight is like SendCtx but assigns the message the given priority
+// weight, honored only when the actor was started with RunPriority (higher
+// weight first; equal weights keep FIFO order). Respects the provided context.
+func (r *Ref[Request, Response]) SendCtxWithWeight(ctx context.Context, request Request, weight int) {
 	err := r.submit(ctx, Message[Request, Response]{
 		Request: request,
+		Weight:  weight,
 	})
 	if err != nil {
 		slog.Error("SendCtx: error sending actor message", "actor", r.name, "error", err)
@@ -345,6 +397,13 @@ func (r *Ref[Request, Response]) SendCtx(ctx context.Context, request Request) {
 // Request sends a request to the actor and blocks until a response is received.
 // Uses context.Background(). Returns ErrDeadActor if the actor is stopped.
 func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //nolint:ireturn
+	return r.RequestWithWeight(request, 0)
+}
+
+// RequestWithWeight is like Request but assigns the message the given priority
+// weight, honored only when the actor was started with RunPriority (higher
+// weight first; equal weights keep FIFO order). Uses context.Background().
+func (r *Ref[Request, Response]) RequestWithWeight(request Request, weight int) (Response, error) { //nolint:ireturn
 	if r.dead.Load() {
 		var zero Response
 
@@ -356,6 +415,7 @@ func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //
 	err := r.submit(context.Background(), Message[Request, Response]{
 		Request:      request,
 		ResponseChan: responseChan,
+		Weight:       weight,
 	})
 	if err != nil {
 		channels.CloseChannelIgnorePanic(responseChan)
@@ -381,6 +441,17 @@ func (r *Ref[Request, Response]) Request(request Request) (Response, error) { //
 // RequestCtx sends a request to the actor and blocks until a response is received or the context is canceled.
 // Returns ErrDeadActor if the actor is stopped, or context error if context is canceled.
 func (r *Ref[Request, Response]) RequestCtx(ctx context.Context, request Request) (Response, error) { //nolint:ireturn
+	return r.RequestCtxWithWeight(ctx, request, 0)
+}
+
+// RequestCtxWithWeight is like RequestCtx but assigns the message the given
+// priority weight, honored only when the actor was started with RunPriority
+// (higher weight first; equal weights keep FIFO order). Respects the context.
+func (r *Ref[Request, Response]) RequestCtxWithWeight( //nolint:ireturn
+	ctx context.Context,
+	request Request,
+	weight int,
+) (Response, error) {
 	if r.dead.Load() {
 		var zero Response
 
@@ -392,6 +463,7 @@ func (r *Ref[Request, Response]) RequestCtx(ctx context.Context, request Request
 	err := r.submit(ctx, Message[Request, Response]{
 		Request:      request,
 		ResponseChan: msgChan,
+		Weight:       weight,
 	})
 	if err != nil {
 		channels.CloseChannelIgnorePanic(msgChan)

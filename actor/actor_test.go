@@ -459,6 +459,173 @@ func TestActorStopIsIdempotent(t *testing.T) {
 	assert.False(t, ref.Alive())
 }
 
+// blockingPriorityActor starts a RunPriority actor (with the given inbox bound)
+// whose processor records the order in which it handles non-blocker requests.
+// The first request it receives (the "blocker", value < 0) holds the actor until
+// release is closed, so that subsequent submissions accumulate in the priority
+// heap and are then delivered in weight order. It returns the ref, a started
+// channel closed once the blocker is processing, the release channel, and an
+// accessor for the recorded order.
+func blockingPriorityActor(t *testing.T, maxSize int) (
+	ref *Ref[int, empty],
+	started <-chan struct{},
+	release chan<- struct{},
+	order func() []int,
+) {
+	t.Helper()
+
+	startedCh := make(chan struct{})
+	releaseCh := make(chan struct{})
+
+	var (
+		recordMu sync.Mutex
+		got      []int
+	)
+
+	act := New[int, empty](func(ref *Ref[int, empty]) Processor[int, empty] {
+		return NewProcessor(func(msg Message[int, empty]) {
+			if msg.Request < 0 { // blocker
+				close(startedCh)
+				<-releaseCh
+
+				return
+			}
+
+			recordMu.Lock()
+			defer recordMu.Unlock()
+
+			got = append(got, msg.Request)
+		})
+	})
+
+	ref = act.RunPriority(t.Context(), "priority", maxSize)
+
+	return ref, startedCh, releaseCh, func() []int {
+		recordMu.Lock()
+		defer recordMu.Unlock()
+
+		return append([]int(nil), got...)
+	}
+}
+
+func TestActorRunPriorityProcessesHighestWeightFirst(t *testing.T) {
+	t.Parallel()
+
+	ref, started, release, order := blockingPriorityActor(t, 0) // unbounded
+	defer ref.Stop()
+
+	// Occupy the actor so subsequent submissions queue in the priority heap.
+	ref.Send(-1)
+	<-started
+
+	// The input channel is unbuffered, so each call returns only once the pump
+	// has ingested the value into the heap. By the time the last returns, all
+	// five are buffered and ordered by weight.
+	ref.SendWithWeight(1, 1)
+	ref.SendWithWeight(5, 5)
+	ref.SendWithWeight(3, 3)
+	ref.SendWithWeight(2, 2)
+	ref.SendWithWeight(4, 4)
+
+	close(release)
+
+	require.Eventually(t, func() bool {
+		return len(order()) == 5
+	}, 2*time.Second, time.Millisecond)
+
+	assert.Equal(t, []int{5, 4, 3, 2, 1}, order())
+}
+
+func TestActorRunPriorityEqualWeightKeepsFIFO(t *testing.T) {
+	t.Parallel()
+
+	ref, started, release, order := blockingPriorityActor(t, 0) // unbounded
+	defer ref.Stop()
+
+	ref.Send(-1)
+	<-started
+
+	// Equal weights must be processed in submission order.
+	for _, v := range []int{10, 20, 30, 40} {
+		ref.SendWithWeight(v, 7)
+	}
+
+	close(release)
+
+	require.Eventually(t, func() bool {
+		return len(order()) == 4
+	}, 2*time.Second, time.Millisecond)
+
+	assert.Equal(t, []int{10, 20, 30, 40}, order())
+}
+
+func TestActorRunPriorityBoundedAppliesBackpressure(t *testing.T) {
+	t.Parallel()
+
+	// Bound the inbox at 2 queued messages.
+	ref, started, release, order := blockingPriorityActor(t, 2)
+	defer ref.Stop()
+
+	// Hold the actor so the queue fills without being drained.
+	ref.Send(-1)
+	<-started
+
+	// Fill the bounded inbox (capacity 2).
+	ref.SendWithWeight(10, 1)
+	ref.SendWithWeight(20, 2)
+
+	// A third submission must block until the actor drains one message.
+	sent := make(chan struct{})
+
+	go func() {
+		ref.SendWithWeight(30, 3)
+
+		close(sent)
+	}()
+
+	select {
+	case <-sent:
+		t.Fatal("submit should block while the bounded inbox is full")
+	case <-time.After(100 * time.Millisecond):
+		// Expected: still blocked (unbounded would have accepted it).
+	}
+
+	// Let the actor drain; the blocked submit then proceeds and all three run.
+	close(release)
+
+	select {
+	case <-sent:
+	case <-time.After(2 * time.Second):
+		t.Fatal("submit did not unblock after the actor drained")
+	}
+
+	require.Eventually(t, func() bool {
+		return len(order()) == 3
+	}, 2*time.Second, time.Millisecond)
+}
+
+func TestActorRunPriorityRequestResponse(t *testing.T) {
+	t.Parallel()
+
+	// RunPriority must still support the request/response path.
+	act := New[int, int](func(ref *Ref[int, int]) Processor[int, int] {
+		return SimpleProcessor(func(req int) (int, error) {
+			return req * 2, nil
+		})
+	})
+
+	ref := act.RunPriority(t.Context(), "priority-rr", 0)
+	defer ref.Stop()
+
+	result, err := ref.RequestCtxWithWeight(t.Context(), 21, 5)
+	require.NoError(t, err)
+	assert.Equal(t, 42, result)
+
+	result, err = ref.RequestWithWeight(9, 1)
+	require.NoError(t, err)
+	assert.Equal(t, 18, result)
+}
+
 func TestActorCustomProcessor(t *testing.T) {
 	t.Parallel()
 

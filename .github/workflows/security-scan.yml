@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Run gosec Security Scanner
         uses: securego/gosec@master
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -43,5 +43,10 @@ jobs:
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
         with:
+          # The action checks out the repo itself (via actions/checkout@v6). We already
+          # checked out above with v7, and the two leave duplicate auth extraheaders in
+          # git config -> "remote: Duplicate header: Authorization" -> HTTP 400. Skip the
+          # action's redundant checkout and reuse ours.
+          repo-checkout: false
           output-format: sarif
           output-file: govulncheck-results.sarif

@@ -404,6 +404,45 @@ func TestUint64(t *testing.T) {
 	}
 }
 
+func TestSizeInBytes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		input     string
+		expected  uint64
+		wantError bool
+	}{
+		{"bare zero", "0", 0, false},
+		{"bare integer", "4096", 4096, false},
+		{"max uint64", "18446744073709551615", 18446744073709551615, false},
+		{"SI kilobytes", "1 kb", 1000, false},
+		{"IEC kibibytes", "1 kib", 1024, false},
+		{"SI megabytes", "4 MB", 4000000, false},
+		{"IEC mebibytes", "4 MiB", 4194304, false},
+		{"no space", "2KB", 2000, false},
+		{"fractional", "1.5 kib", 1536, false},
+		{"negative", "-1", 0, true},
+		{"invalid", "abc", 0, true},
+		{"empty", "", 0, true},
+		{"bad unit", "10 furlongs", 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := xform.SizeInBytes(tt.input)
+			if tt.wantError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
 func TestFloat64(t *testing.T) {
 	t.Parallel()
 

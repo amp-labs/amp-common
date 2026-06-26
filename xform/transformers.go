@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/amp-labs/amp-common/envtypes"
+	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
 )
 
@@ -209,6 +210,25 @@ func URL(value string) (*url.URL, error) {
 // Accepts formats like: "6ba7b810-9dad-11d1-80b4-00c04fd430c8" or "6ba7b8109dad11d180b400c04fd430c8".
 func UUID(value string) (uuid.UUID, error) {
 	return uuid.Parse(value)
+}
+
+// SizeInBytes parses a string as a descriptor of number of bytes. It can accept
+// either a scalar form (e.g. "4" => 4 bytes) or a humanized form with units
+// (e.g. "1 kib" => 1024 bytes, "1 kb" => 1000 bytes).
+func SizeInBytes(value string) (uint64, error) {
+	// First see if it's just an integer - if so, treat it as a raw byte count
+	size, err := strconv.ParseUint(value, 10, 64)
+	if err == nil {
+		return size, nil
+	}
+
+	// Not just an integer? See if it has units attached.
+	size, err = humanize.ParseBytes(value)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse %q as a byte count: %w", value, err)
+	}
+
+	return size, nil
 }
 
 // Path treats the input as a local filesystem path and returns a LocalPath struct.

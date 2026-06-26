@@ -300,6 +300,18 @@ func UUID(ctx context.Context, key string, opts ...Option[uuid.UUID]) Reader[uui
 	return rdr
 }
 
+// SizeInBytes returns a Reader for a byte-count environment variable.
+// Accepts a bare integer (e.g. "4096") as a raw byte count, or a humanized
+// form with units (e.g. "4 kib" => 4096, "4 kb" => 4000).
+func SizeInBytes(ctx context.Context, key string, opts ...Option[uint64]) Reader[uint64] {
+	rdr := Map(get(ctx, key), xform.SizeInBytes)
+	for _, opt := range opts {
+		rdr = opt(rdr)
+	}
+
+	return rdr
+}
+
 // SlogLevel returns a Reader for a slog.Level environment variable.
 // Accepts: "debug", "info", "warn", "error" (case-insensitive).
 func SlogLevel(ctx context.Context, key string, opts ...Option[slog.Level]) Reader[slog.Level] {

@@ -349,6 +349,44 @@ func TestUUID(t *testing.T) {
 	})
 }
 
+//nolint:tparallel // Cannot use t.Parallel() with subtests that call t.Setenv()
+func TestSizeInBytes(t *testing.T) {
+	t.Run("bare integer", func(t *testing.T) {
+		t.Setenv("TEST_SIZE_BYTES", "4096")
+
+		reader := envutil.SizeInBytes(t.Context(), "TEST_SIZE_BYTES")
+		value, err := reader.Value()
+		require.NoError(t, err)
+		assert.Equal(t, uint64(4096), value)
+	})
+
+	t.Run("humanized units", func(t *testing.T) {
+		t.Setenv("TEST_SIZE_HUMANIZED", "4 KiB")
+
+		reader := envutil.SizeInBytes(t.Context(), "TEST_SIZE_HUMANIZED")
+		value, err := reader.Value()
+		require.NoError(t, err)
+		assert.Equal(t, uint64(4096), value)
+	})
+
+	t.Run("with default", func(t *testing.T) {
+		t.Parallel()
+
+		reader := envutil.SizeInBytes(t.Context(), "TEST_SIZE_MISSING", envutil.Default(uint64(1024)))
+		value, err := reader.Value()
+		require.NoError(t, err)
+		assert.Equal(t, uint64(1024), value)
+	})
+
+	t.Run("invalid value", func(t *testing.T) {
+		t.Setenv("TEST_SIZE_INVALID", "not-a-size")
+
+		reader := envutil.SizeInBytes(t.Context(), "TEST_SIZE_INVALID")
+		_, err := reader.Value()
+		require.Error(t, err)
+	})
+}
+
 func TestSlogLevel(t *testing.T) {
 	tests := []struct {
 		name     string

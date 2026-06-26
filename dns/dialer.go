@@ -71,7 +71,7 @@ func (r *Dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 						spans.WithAttribute("network", attribute.StringValue(network)),
 						spans.WithAttribute("ip", attribute.StringValue(ipAddr.String())),
 						spans.WithAttribute("port", attribute.StringValue(port)),
-						spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))),
+						spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))), //nolint:gosec
 					}
 
 					return spans.StartValErr[net.Conn](ctx, "dialIP", ipAttrs...).

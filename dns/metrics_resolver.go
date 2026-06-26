@@ -80,7 +80,7 @@ func (m *metricsResolver) ResolveType(
 		case err != nil:
 			span.SetStatus(codes.Error, err.Error())
 		default:
-			var ipStrs []string
+			ipStrs := make([]string, 0, len(records))
 
 			for _, ip := range records {
 				ipStrs = append(ipStrs, ip.String())

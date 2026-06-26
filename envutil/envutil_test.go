@@ -349,6 +349,7 @@ func TestUUID(t *testing.T) {
 	})
 }
 
+//nolint:tparallel // Cannot use t.Parallel() with subtests that call t.Setenv()
 func TestSizeInBytes(t *testing.T) {
 	t.Run("bare integer", func(t *testing.T) {
 		t.Setenv("TEST_SIZE_BYTES", "4096")

@@ -81,7 +81,7 @@ func (l *LookupCoordinator) Lookup(ctx context.Context, network, addr string) ([
 			spans.WithSpanKind(trace.SpanKindClient),
 			spans.WithAttribute("network", attribute.StringValue(network)),
 			spans.WithAttribute("addr", attribute.StringValue(addr)),
-			spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))),
+			spans.WithAttribute("attempt", attribute.Int64Value(int64(retry.Attempt(ctx)))), //nolint:gosec
 		}
 
 		return spans.StartValErr[[]net.IP](ctx, "dnsLookup", attrs...).

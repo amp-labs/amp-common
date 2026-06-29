@@ -3,7 +3,7 @@ module github.com/amp-labs/amp-common
 go 1.25.1
 
 require (
-	codeberg.org/miekg/dns v0.6.81
+	codeberg.org/miekg/dns v0.6.83
 	facette.io/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/OneOfOne/xxhash v1.2.8
 	github.com/alitto/pond/v2 v2.7.1

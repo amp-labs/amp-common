@@ -165,7 +165,7 @@ func ParsePath(path string) ([]PathSegment, error) {
 // - a scalar (string, number, bool) if the path resolves to a leaf
 // - map[string]any when the path resolves to an object
 // - []any when the path resolves to an array or when a wildcard collects values
-// - []any{[]any{}, []any{}} is possible when quering nested arrays.
+// - []any{[]any{}, []any{}} is possible when querying nested arrays.
 func GetValue(input map[string]any, path string, caseInsensitive bool) (any, error) {
 	return getValue(input, path, caseInsensitive, 0)
 }
@@ -207,6 +207,7 @@ func getValue(input map[string]any, path string, caseInsensitive bool, offset in
 			// return an error. The returned slice contains values (including nil) from
 			// each element's resolution.
 			items := make([]any, 0)
+
 			for arrayIndex, item := range array {
 				mapping, ok := item.(map[string]any)
 				if !ok {
@@ -270,11 +271,13 @@ func getValue(input map[string]any, path string, caseInsensitive bool, offset in
 // "[*]" for wildcard segments. This is intended for error messages and recursion.
 func newPath(segments []PathSegment) string {
 	var reconstructedSb86 strings.Builder
+
 	for _, segment := range segments {
 		value := fmt.Sprintf("['%s']", segment.Key)
 		if segment.IsWildKey() {
 			value = "[*]"
 		}
+
 		reconstructedSb86.WriteString(value)
 	}
 
@@ -296,6 +299,7 @@ func asArray(object any) ([]any, bool) {
 	}
 
 	slice, ok := object.([]any)
+
 	return slice, ok
 }
 

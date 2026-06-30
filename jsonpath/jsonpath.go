@@ -28,7 +28,19 @@ var (
 	ErrPathCannotTraverse      = errors.New("path segment cannot be traversed")
 	ErrPathKeyNotFound         = errors.New("key not found at path segment")
 	ErrPathCannotCreateNested  = errors.New("cannot create nested path")
+	ErrAddPathNotSupported     = errors.New("path does not support AddPath with wild '*' key")
 )
+
+// ArrayWildIndex represents a wildcard index in JSONPath notation.
+//
+// Normally, a concrete numeric index is used to access a specific array item.
+// For our connectors, we often need to match all items in an array, so `*` is used instead.
+//
+// Example:
+//
+//	"$['line_items']['data'][*]['description']"
+//	==> line_items[data][0,1,2, ... ][description]
+const ArrayWildIndex = "*"
 
 type PathSegment struct {
 	// Key is the key name of the segment.
@@ -36,9 +48,32 @@ type PathSegment struct {
 	Key string
 }
 
-// ParsePath parses a JSONPath bracket notation string into segments.
-// Example: ParsePath("$['mailingaddress']['street']") returns
-// []PathSegment{{Key: "mailingaddress"}, {Key: "street"}}, nil.
+func (s PathSegment) IsWildKey() bool {
+	return s.Key == ArrayWildIndex
+}
+
+// ParsePath parses a JSONPath-like bracket notation into a slice of PathSegment.
+//
+// The accepted form begins with "$" and uses bracket notation for keys and wildcards,
+// for example: "$['mailingaddress']['street']" or "$['items'][*]['id']".
+//
+// Behavior and error cases:
+//   - Returns ErrPathEmpty when the input string is empty.
+//   - Returns ErrPathMustStartWithDollar when the path does not start with "$[".
+//   - Returns ErrPathEmptySegment when any segment is empty (for example "[”]").
+//     The returned error includes the zero-based segment index when possible.
+//   - Returns ErrPathNoValidSegments when no valid segments can be extracted.
+//   - Returns ErrPathInvalidSyntax when the reconstructed segments do not exactly
+//     match the original input (this catches malformed syntax such as extra characters).
+//
+// On success, returns a slice of PathSegment in the order they appear in the path.
+// Example:
+//
+//	ParsePath("$['mailingaddress']['street']")
+//
+// returns
+//
+//	[]PathSegment{{Key: "mailingaddress"}, {Key: "street"}}, nil
 func ParsePath(path string) ([]PathSegment, error) {
 	if path == "" {
 		return nil, ErrPathEmpty
@@ -76,7 +111,7 @@ func ParsePath(path string) ([]PathSegment, error) {
 	}
 
 	// Extract segments using regex
-	segmentPattern := `\['([^']+)'\]`
+	segmentPattern := `\['([^']+)'\]|\[(\*)\]`
 	segmentRe := regexp.MustCompile(segmentPattern)
 	matches := segmentRe.FindAllStringSubmatch(path, -1)
 
@@ -84,33 +119,63 @@ func ParsePath(path string) ([]PathSegment, error) {
 		return nil, fmt.Errorf("%w: %s", ErrPathNoValidSegments, path)
 	}
 
-	// Validate path by reconstructing it
-	reconstructed := "$"
-
-	var reconstructedSb86 strings.Builder
-	for _, match := range matches {
-		reconstructedSb86.WriteString(fmt.Sprintf("['%s']", match[1]))
+	// A match is an array of tuples [][]string.
+	// Here is an example of some tuples:
+	// [0]: "['line_items']"
+	// [1]: "line_items"  // captured key
+	// [2]: ""            // wildcard capture empty
+	//
+	// [0]: "[*]"
+	// [1]: ""            // key capture empty
+	// [2]: "*"           // wildcard capture
+	keys := make([]string, 0, len(matches))
+	for _, m := range matches {
+		if len(m) > 1 && m[1] != "" {
+			keys = append(keys, m[1])
+		} else if len(m) > 2 && m[2] == ArrayWildIndex {
+			keys = append(keys, ArrayWildIndex)
+		}
 	}
 
-	reconstructed += reconstructedSb86.String()
+	segments := make([]PathSegment, len(keys))
+	for idx, key := range keys {
+		segments[idx] = PathSegment{Key: key}
+	}
 
-	if reconstructed != path {
+	// Validate path by reconstructing it. This ensures exact syntax match and
+	// rejects inputs that contain valid-looking segments plus extra characters.
+	if newPath(segments) != path {
 		return nil, fmt.Errorf("%w: %s", ErrPathInvalidSyntax, path)
-	}
-
-	segments := make([]PathSegment, len(matches))
-	for idx, match := range matches {
-		segments[idx] = PathSegment{Key: match[1]}
 	}
 
 	return segments, nil
 }
 
-// GetValue retrieves a value from a nested path.
-// Returns nil, nil if the value at the path exists but is null.
-// Returns error if a key in the path is not found or type mismatch occurs.
-// If caseInsensitive is true, key matching is case-insensitive with exact matches preferred.
+// GetValue retrieves the value located at the JSON-like path inside the input map.
+//
+// The path uses dot/bracket style parsed by ParsePath and may include wildcards ([*]).
+// If the final value exists and is JSON null, GetValue returns (nil, nil).
+// If any key along the path is missing, any traversal fails due to unexpected types,
+// or path parsing fails, an error is returned describing the failing segment.
+//
+// caseInsensitive controls key lookup behavior: when true, lookupKey will match keys
+// case-insensitively but prefers exact-case matches when available.
+//
+// Examples of returned values:
+// - a scalar (string, number, bool) if the path resolves to a leaf
+// - map[string]any when the path resolves to an object
+// - []any when the path resolves to an array or when a wildcard collects values
+// - []any{[]any{}, []any{}} is possible when querying nested arrays.
 func GetValue(input map[string]any, path string, caseInsensitive bool) (any, error) {
+	return getValue(input, path, caseInsensitive, 0)
+}
+
+// getValue is the recursive implementation behind GetValue.
+//
+// offset is the number of path segments that have already been processed by an outer call.
+// It is used only for producing stable, meaningful error messages that refer to the
+// absolute segment index within the original path.
+func getValue(input map[string]any, path string, caseInsensitive bool, offset int) (any, error) {
 	segments, err := ParsePath(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse path: %w", err)
@@ -119,32 +184,79 @@ func GetValue(input map[string]any, path string, caseInsensitive bool) (any, err
 	current := any(input)
 
 	for segmentIndex, segment := range segments {
+		// globalIndex refers to the position in the original path (for error messages).
+		globalIndex := segmentIndex + offset
+
+		if segment.IsWildKey() {
+			// Wildcard expects an array/slice at this position and will iterate its items.
+			array, ok := asArray(current)
+			if !ok {
+				return nil, fmt.Errorf(
+					"%w: segment %d ('%s'), parent is type %T but expected []any",
+					ErrPathCannotTraverse, globalIndex, segment.Key, current,
+				)
+			}
+
+			// If wildcard is last segment, return the array as-is.
+			if segmentIndex+1 == len(segments) {
+				return array, nil
+			}
+
+			// Otherwise, collect results from each array element by recursing into the
+			// remaining subpath. If any element cannot be traversed as an object,
+			// return an error. The returned slice contains values (including nil) from
+			// each element's resolution.
+			items := make([]any, 0)
+
+			for arrayIndex, item := range array {
+				mapping, ok := item.(map[string]any)
+				if !ok {
+					return nil, fmt.Errorf(
+						"%w: segment %d ('%s', index[%d]), parent is type %T but expected map[string]any",
+						ErrPathCannotTraverse, globalIndex, segment.Key, arrayIndex, item,
+					)
+				}
+
+				value, err := getValue(mapping, newPath(segments[segmentIndex+1:]), caseInsensitive, globalIndex+1)
+				if err != nil {
+					return nil, err
+				}
+
+				items = append(items, value)
+			}
+
+			return items, nil
+		}
+
+		// Non-wildcard: expect current to be an object/map.
 		currentMap, ok := current.(map[string]any)
 		if !ok {
 			if current == nil {
+				// Parent is null while more segments remain.
 				return nil, fmt.Errorf(
 					"%w: segment %d ('%s'), parent is null",
-					ErrPathSegmentNotFound, segmentIndex, segment.Key,
+					ErrPathSegmentNotFound, globalIndex, segment.Key,
 				)
 			}
 
 			return nil, fmt.Errorf(
 				"%w: segment %d ('%s'), parent is type %T",
-				ErrPathCannotTraverse, segmentIndex, segment.Key, current,
+				ErrPathCannotTraverse, globalIndex, segment.Key, current,
 			)
 		}
 
-		// Lookup with configurable case sensitivity
+		// Lookup with configurable case sensitivity. lookupKey returns the value and
+		// whether the key was found according to the caseInsensitive policy.
 		value, exists := lookupKey(currentMap, segment.Key, caseInsensitive)
 		if !exists {
-			return nil, fmt.Errorf("%w: key '%s' at segment %d", ErrPathKeyNotFound, segment.Key, segmentIndex)
+			return nil, fmt.Errorf("%w: key '%s' at segment %d", ErrPathKeyNotFound, segment.Key, globalIndex)
 		}
 
-		// Handle null in middle of path
+		// If this value is nil while further segments remain, that's a missing path.
 		if value == nil && segmentIndex < len(segments)-1 {
 			return nil, fmt.Errorf(
 				"%w: segment %d ('%s'), parent is null",
-				ErrPathSegmentNotFound, segmentIndex+1, segments[segmentIndex+1].Key,
+				ErrPathSegmentNotFound, globalIndex+1, segments[globalIndex+1].Key,
 			)
 		}
 
@@ -152,6 +264,43 @@ func GetValue(input map[string]any, path string, caseInsensitive bool) (any, err
 	}
 
 	return current, nil
+}
+
+// newPath reconstructs a string path from the given PathSegment slice.
+// The returned path begins with '$' and uses "['key']" for normal segments,
+// "[*]" for wildcard segments. This is intended for error messages and recursion.
+func newPath(segments []PathSegment) string {
+	var reconstructedSb86 strings.Builder
+
+	for _, segment := range segments {
+		value := fmt.Sprintf("['%s']", segment.Key)
+		if segment.IsWildKey() {
+			value = "[*]"
+		}
+
+		reconstructedSb86.WriteString(value)
+	}
+
+	return "$" + reconstructedSb86.String()
+}
+
+// asArray normalizes different array-like types to []any.
+//
+// It accepts []map[string]any (a common internal representation) and []any.
+// Returns the normalized slice and true when the input is an array-like type.
+func asArray(object any) ([]any, bool) {
+	if slice, ok := object.([]map[string]any); ok {
+		result := make([]any, len(slice))
+		for i, item := range slice {
+			result[i] = item
+		}
+
+		return result, true
+	}
+
+	slice, ok := object.([]any)
+
+	return slice, ok
 }
 
 // lookupKey performs key lookup with optional case-insensitive matching.
@@ -185,6 +334,12 @@ func AddPath(input map[string]any, path string, value any) error {
 
 	if len(segments) == 0 {
 		return ErrPathMustHaveOneSegment
+	}
+
+	for _, segment := range segments {
+		if segment.IsWildKey() {
+			return ErrAddPathNotSupported
+		}
 	}
 
 	// Navigate to parent, creating maps as needed

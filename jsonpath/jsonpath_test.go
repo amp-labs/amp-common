@@ -118,6 +118,18 @@ func TestParsePath(t *testing.T) {
 			wantLen:  1,
 			wantKeys: []string{"field123"},
 		},
+		{
+			name:     "wildcard selector for the array member",
+			path:     "$['items'][*]['id']",
+			wantLen:  3,
+			wantKeys: []string{"items", "*", "id"},
+		},
+		{
+			name:     "multiple wildcard array selectors",
+			path:     "$['items'][*]['tags'][*]",
+			wantLen:  4,
+			wantKeys: []string{"items", "*", "tags", "*"},
+		},
 	}
 
 	for _, testCase := range tests {
@@ -302,6 +314,68 @@ func TestGetValue(t *testing.T) {
 			},
 			path: "$['config']",
 			want: map[string]any{"enabled": true},
+		},
+		{
+			name: "nested arrays",
+			input: map[string]any{
+				"id": "msg1",
+				"payload": map[string]any{
+					"body": map[string]any{"data": "xyz", "size": 77},
+					"headers": map[string]any{
+						"From": "alice",
+					},
+					"food": []any{
+						map[string]any{"id": "001", "value": "Fish"},
+						map[string]any{"id": "002", "value": "Chicken"},
+					},
+				},
+			},
+			path: "$['payload']['food'][*]['value']",
+			want: []any{"Fish", "Chicken"},
+		},
+		{
+			name: "multiple nested array fields",
+			input: map[string]any{
+				"items": []any{
+					map[string]any{
+						"id":   1,
+						"name": "one",
+						"tags": []any{
+							map[string]any{"key": "color", "val": "red"},
+							map[string]any{"key": "size", "val": "large"},
+						},
+					},
+					map[string]any{
+						"id":   2,
+						"name": "two",
+						"tags": []any{
+							map[string]any{"key": "color", "val": "blue"},
+						},
+					},
+				},
+			},
+			path: "$['items'][*]['tags'][*]['val']",
+			want: []any{
+				[]any{"red", "large"},
+				[]any{"blue"},
+			},
+		},
+		{
+			name: "array as last key in path",
+			input: map[string]any{
+				"items": []any{"Fish", "Chicken"},
+			},
+			path: "$['items'][*]",
+			want: []any{"Fish", "Chicken"},
+		},
+		{
+			name: "cannot get value when array item is a primitive",
+			input: map[string]any{
+				"items": []any{"Fish", "Chicken"},
+			},
+			path:      "$['items'][*]['id']",
+			wantErr:   true,
+			errString: "path segment cannot be traversed: segment 1 ('*', index[0]), parent is type string but expected map[string]any",
 		},
 	}
 
@@ -562,6 +636,16 @@ func TestAddPath(t *testing.T) {
 				"tags": []string{"a", "b"},
 			},
 		},
+		{
+			name: "add array value",
+			input: map[string]any{
+				"tags": []string{"a", "b"},
+			},
+			path:      "$['tags'][*]",
+			value:     []string{"1", "2"},
+			wantErr:   true,
+			errString: ErrAddPathNotSupported.Error(),
+		},
 	}
 
 	for _, testCase := range tests {
@@ -644,6 +728,16 @@ func TestValidatePath(t *testing.T) {
 			path:      "$['']",
 			wantErr:   true,
 			errString: "segment 0",
+		},
+		{
+			name:    "wildcard selector for the array member",
+			path:    "$['items'][*]['id']",
+			wantErr: false,
+		},
+		{
+			name:    "multiple wildcard array selectors",
+			path:    "$['items'][*]['tags'][*]",
+			wantErr: false,
 		},
 	}
 
@@ -794,6 +888,11 @@ func TestExtractRootField(t *testing.T) {
 			fieldName: "$email",
 			want:      "$email",
 		},
+		{
+			name:      "wildcard as root element",
+			fieldName: "$[*]",
+			want:      "*",
+		},
 	}
 
 	for _, testCase := range tests {
@@ -871,6 +970,24 @@ func deepEqual(left, right any) bool {
 
 		for idx := range leftVal {
 			if leftVal[idx] != rightVal[idx] {
+				return false
+			}
+		}
+
+		return true
+	case []any:
+		rightVal, ok := right.([]any)
+		if !ok {
+			return false
+		}
+
+		if len(leftVal) != len(rightVal) {
+			return false
+		}
+
+		for i, lValue := range leftVal {
+			rValue := rightVal[i]
+			if !deepEqual(lValue, rValue) {
 				return false
 			}
 		}

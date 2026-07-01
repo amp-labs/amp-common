@@ -260,6 +260,35 @@ func (a *Actor[Request, Response]) run(
 	return ref
 }
 
+// RunWithInbox starts the actor on a caller-supplied inbox instead of the
+// built-in FIFO (Run) or heap (RunPriority) ones, returning a reference for
+// sending messages. It is the same engine that backs Run and RunPriority,
+// exported so other packages can plug in alternative inboxes — for example the
+// gpq-backed priority inbox in actor/gpqinbox — without pulling their
+// dependencies into this package.
+//
+// w, r and count are the inbox's send channel, receive channel and
+// buffered-count function: the same (send, recv, len) triple returned by
+// channels.Create and channels.CreatePriority. The actor closes w when it stops
+// (via Stop or ctx cancellation); the inbox implementation is responsible for
+// draining and closing r in response so the run loop can exit. trackQueue
+// controls whether the enqueued-messages gauge is reported (meaningful only
+// when the inbox actually buffers).
+//
+// This is a low-level seam: prefer Run or RunPriority unless you specifically
+// need a custom inbox. Passing mismatched channels or a count that does not
+// reflect r's buffering yields undefined behavior.
+func (a *Actor[Request, Response]) RunWithInbox(
+	ctx context.Context,
+	name string,
+	w chan<- Message[Request, Response],
+	r <-chan Message[Request, Response],
+	count func() int,
+	trackQueue bool,
+) *Ref[Request, Response] {
+	return a.run(ctx, name, w, r, count, trackQueue)
+}
+
 // Ref is a reference to a running actor. It provides methods to send messages,
 // make requests, and control the actor's lifecycle.
 type Ref[Request, Response any] struct {

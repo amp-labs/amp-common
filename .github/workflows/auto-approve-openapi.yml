@@ -1,0 +1,44 @@
+name: Automatically approve openapi type regeneration
+
+# Approves the auto/openapi-* PRs opened by gen-openapi-types.yml, but only when
+# the diff is limited to the generated openapi types and module files.
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'openapi/api.gen.go'
+      - 'openapi/commit.json'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  auto-approve:
+    if: startsWith(github.event.pull_request.head.ref, 'auto/openapi-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            allowed:
+              - added|modified: 'openapi/api.gen.go'
+              - added|modified: 'openapi/commit.json'
+      - uses: dorny/paths-filter@v4
+        id: changes_inverted
+        with:
+          predicate-quantifier: every
+          filters: |
+            not_allowed:
+              - '!openapi/api.gen.go'
+              - '!openapi/commit.json'
+              - '!go.mod'
+              - '!go.sum'
+      - name: Approve PR
+        if: steps.changes.outputs.allowed == 'true' && steps.changes_inverted.outputs.not_allowed == 'false'
+        run: |
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }}/reviews" \
+            -d '{"event":"APPROVE"}'

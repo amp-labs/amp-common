@@ -17,6 +17,7 @@ require (
 	github.com/klauspost/compress v1.18.6
 	github.com/manifoldco/promptui v0.9.0
 	github.com/neilotoole/slogt v1.1.0
+	github.com/oapi-codegen/runtime v1.4.2
 	github.com/pierrec/lz4/v4 v4.1.27
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
@@ -35,6 +36,7 @@ require (
 )
 
 require (
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

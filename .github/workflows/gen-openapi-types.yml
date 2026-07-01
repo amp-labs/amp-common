@@ -1,0 +1,68 @@
+name: Generate Go types from openapi
+
+# Regenerates openapi/api.gen.go from the Ampersand OpenAPI spec and opens a PR.
+# Triggered by a repository_dispatch from the openapi repo whenever api/** changes
+# on main (see openapi/.github/workflows/trigger-amp-common-gen.yml), or manually.
+
+on:
+  repository_dispatch:
+    types: [gen-openapi-types]
+  workflow_dispatch:
+    inputs:
+      openapi_commit_id:
+        description: 'openapi commit hash to generate from (default: main)'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install oapi-codegen
+        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.1
+
+      - name: Resolve openapi commit id
+        id: commit
+        run: |
+          COMMIT_ID="${{ github.event.client_payload.sha || github.event.inputs.openapi_commit_id }}"
+          if [ -z "$COMMIT_ID" ]; then
+            COMMIT_ID=$(git ls-remote https://github.com/amp-labs/openapi.git refs/heads/main | cut -f1)
+          fi
+          echo "id=$COMMIT_ID" >> "$GITHUB_OUTPUT"
+          echo "short=${COMMIT_ID:0:12}" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate Go types
+        working-directory: openapi
+        run: make gen OPENAPI_COMMIT_ID=${{ steps.commit.outputs.id }}
+
+      - name: Tidy modules
+        run: go mod tidy
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.AMPERSAND_OPS_PAT }}
+          branch: auto/openapi-${{ steps.commit.outputs.short }}
+          delete-branch: true
+          add-paths: |
+            openapi/api.gen.go
+            openapi/commit.json
+            go.mod
+            go.sum
+          commit-message: "[auto] Update openapi Go types to ${{ steps.commit.outputs.id }}"
+          title: "[auto] Update openapi Go types to ${{ steps.commit.outputs.id }}"
+          body: |
+            Regenerated `openapi/api.gen.go` from
+            [amp-labs/openapi@${{ steps.commit.outputs.short }}](https://github.com/amp-labs/openapi/commit/${{ steps.commit.outputs.id }}).
+
+            This PR was opened automatically by the `gen-openapi-types` workflow.

@@ -323,19 +323,37 @@ func TestBudget_NotOverload_LowRate(t *testing.T) {
 
 	now := time.Now()
 
-	// Simulate low load
+	// Simulate low load spread across the full window. A single bucket would
+	// make the window (movingRate.second()) collapse to the sub-second offset
+	// of time.Now(), which inflates the computed rate and makes this test flake
+	// ~13% of the time. Fill all 60 buckets so the window is a stable ~60s,
+	// matching TestBudget_Overload.
 	budget.initialCalls = &movingRate{
 		BucketLength: time.Second,
 		BucketNum:    60,
-		counts:       []int{10},
 		lastUpdate:   now,
+	}
+
+	for range 10 {
+		budget.initialCalls.counts = append(budget.initialCalls.counts, 1)
+	}
+
+	for range 50 {
+		budget.initialCalls.counts = append(budget.initialCalls.counts, 0)
 	}
 
 	budget.retriedCalls = &movingRate{
 		BucketLength: time.Second,
 		BucketNum:    60,
-		counts:       []int{2},
 		lastUpdate:   now,
+	}
+
+	for range 2 {
+		budget.retriedCalls.counts = append(budget.retriedCalls.counts, 1)
+	}
+
+	for range 58 {
+		budget.retriedCalls.counts = append(budget.retriedCalls.counts, 0)
 	}
 
 	overloaded := budget.overload(false)

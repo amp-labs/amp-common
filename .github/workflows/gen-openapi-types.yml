@@ -54,6 +54,7 @@ jobs:
         run: go mod tidy
 
       - name: Create Pull Request
+        id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.AMPERSAND_OPS_PAT }}
@@ -71,3 +72,11 @@ jobs:
             [amp-labs/openapi@${{ steps.commit.outputs.short }}](https://github.com/amp-labs/openapi/commit/${{ steps.commit.outputs.id }}).
 
             This PR was opened automatically by the `gen-openapi-types` workflow.
+
+      # Queue the PR to merge once checks pass and auto-approve-openapi approves.
+      # Requires "Allow auto-merge" enabled in the repo settings.
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-number
+        run: gh pr merge --auto --squash --delete-branch "${{ steps.cpr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ secrets.AMPERSAND_OPS_PAT }}

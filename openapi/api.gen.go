@@ -5439,7 +5439,7 @@ type BuilderInfo struct {
 	} `json:"builder"`
 	OrgRole *struct {
 		Org struct {
-			// CreateTime The time the organization was created.
+			// CreateTime The time at which the organization was created.
 			CreateTime time.Time `json:"createTime"`
 
 			// DefaultTeamId The ID of the Everyone team for the org.
@@ -7443,7 +7443,7 @@ type Operation struct {
 
 // Org defines model for Org.
 type Org struct {
-	// CreateTime The time the organization was created.
+	// CreateTime The time at which the organization was created.
 	CreateTime time.Time `json:"createTime"`
 
 	// DefaultTeamId The ID of the Everyone team for the org.

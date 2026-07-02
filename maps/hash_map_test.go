@@ -1336,15 +1336,17 @@ func TestHashMap_Exists(t *testing.T) {
 			_ = m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
 		}
 
+		// Match the first entry visited so short-circuiting is observable
+		// regardless of the non-deterministic hash map iteration order.
 		callCount := 0
 		result := m.Exists(func(key testKey, value int) bool {
 			callCount++
 
-			return value == 5
+			return true
 		})
 
 		assert.True(t, result)
-		assert.Greater(t, 100, callCount, "should short circuit")
+		assert.Equal(t, 1, callCount, "should short circuit on the first entry")
 	})
 }
 
@@ -1419,14 +1421,16 @@ func TestHashMap_FindFirst(t *testing.T) {
 			_ = m.Add(testKey{value: fmt.Sprintf("key%d", i)}, i) //nolint:errcheck
 		}
 
+		// Match the first entry visited so short-circuiting is observable
+		// regardless of the non-deterministic hash map iteration order.
 		callCount := 0
 		result := m.FindFirst(func(key testKey, value int) bool {
 			callCount++
 
-			return value == 5
+			return true
 		})
 
 		assert.True(t, result.NonEmpty())
-		assert.Greater(t, 100, callCount, "should short circuit")
+		assert.Equal(t, 1, callCount, "should short circuit on the first entry")
 	})
 }

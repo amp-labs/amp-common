@@ -6038,10 +6038,10 @@ type Destination struct {
 		Url *string `json:"url,omitempty"`
 	} `json:"metadata"`
 
-	// Name User-defined name for the destination
+	// Name User-defined name for the destination.
 	Name string `json:"name"`
 
-	// Type The type of the destination
+	// Type The type of the destination.
 	Type string `json:"type"`
 
 	// UpdateTime The time the destination was updated.
@@ -6081,7 +6081,7 @@ type DestinationWithSecrets struct {
 		Url *string `json:"url,omitempty"`
 	} `json:"metadata"`
 
-	// Name User-defined name for the destination
+	// Name User-defined name for the destination.
 	Name string `json:"name"`
 
 	// Secrets Destination secrets (only included when includeSecrets is true)
@@ -6090,7 +6090,7 @@ type DestinationWithSecrets struct {
 		WebhookSigningKey *string `json:"webhookSigningKey,omitempty"`
 	} `json:"secrets,omitempty"`
 
-	// Type The type of the destination
+	// Type The type of the destination.
 	Type string `json:"type"`
 
 	// UpdateTime The time the destination was updated.

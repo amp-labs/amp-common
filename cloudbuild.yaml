@@ -5,7 +5,6 @@ steps:
       - '-c'
       - |
         # Basic setup
-        # Basic setup
         set -euo pipefail
         CB_ROOT_DIR="$(pwd)"
 
@@ -15,8 +14,10 @@ steps:
         gcloud secrets versions access latest --secret=github-amp-common-ssh-key > /root/.ssh/id_ed25519-common
         chmod 600 /root/.ssh/id_ed25519-common
 
+        # github-ops: push with the ops key (has write access to the target repos).
+        # github.com: fetch private modules (go get) with the amp-common key.
         cat <<EOF > /root/.ssh/config
-        Host github-server
+        Host github-ops
           HostName github.com
           User git
           IdentityFile ~/.ssh/id_ed25519-ops
@@ -28,6 +29,8 @@ steps:
         EOF
 
         git config --global url."ssh://git@github.com/".insteadOf https://github.com/
+        git config --global user.email "devops@withampersand.com"
+        git config --global user.name "Ampersand Ops"
 
         export BRANCH_NAME=${BRANCH_NAME}
         export PROJECT_ID=${PROJECT_ID}
@@ -41,50 +44,58 @@ steps:
         T="$(gcloud secrets versions access latest --secret=github-ops-token)"
         export GH_TOKEN="$$T"
 
-        # Clone server repo (we'll be updating this)
         ssh-keyscan -t rsa github.com >> /root/.ssh/known_hosts
-        git clone --depth=1 git@github-server:amp-labs/server.git -b main
-
-        # Close old PRs
-        cd server
-
-        gh pr list --label amp-common --search "[auto]" --json number | \
-          jq -r '.[].number' | \
-          while read num; do \
-            gh pr close "$num" -d -c "Closing due to being out of date"; \
-          done
-
-        # Update the dependency
-        git checkout -B "auto/amp-common-update-to-${COMMIT_SHA}"
-
-        go get "github.com/amp-labs/amp-common@${COMMIT_SHA}"
-        go mod tidy || true
-        git add go.mod go.sum
-
-        git config --global user.email "devops@withampersand.com"
-        git config --global user.name "Ampersand Ops"
-        git commit -m "[auto] Update amp-common to ${COMMIT_SHA}"
-
-        git push origin --force \
-          "auto/amp-common-update-to-${COMMIT_SHA}:auto/amp-common-update-to-${COMMIT_SHA}"
 
         U="https://github.com/amp-labs/amp-common/commit/${COMMIT_SHA}"
         TR="https://github.com/amp-labs/amp-common/tree/main"
+        TXT="This PR updates the amp-common dependency to version [${COMMIT_SHA}]($$U) from [main]($$TR)"
 
-        VER="[${COMMIT_SHA}]($$U)"
-        BR="[main]($$TR)"
+        # Open (and auto-merge) an [auto] amp-common dependency bump PR in $$1.
+        update_repo() {
+          repo="$$1"
+          echo "=== Updating amp-common in $$repo ==="
 
-        TXT="This PR updates the amp-common dependency to version $$VER from $$BR"
+          cd "$$CB_ROOT_DIR"
+          rm -rf "$$repo"
+          git clone --depth=1 "git@github-ops:amp-labs/$$repo.git" -b main
+          cd "$$repo"
 
-        PR_URL=$(gh pr create --base main \
-          --title "[auto] Update amp-common dependency" \
-          --head "auto/amp-common-update-to-${COMMIT_SHA}" \
-          --body "$$TXT" \
-          --label amp-common)
+          # Ensure the label the automation filters on exists (no-op if present).
+          gh label create amp-common --color ededed \
+            --description "Automated amp-common dependency updates" --force || true
 
-        echo "Created PR: $$PR_URL"
+          # Close stale [auto] amp-common PRs.
+          gh pr list --label amp-common --search "[auto]" --json number | \
+            jq -r '.[].number' | \
+            while read num; do \
+              gh pr close "$num" -d -c "Closing due to being out of date"; \
+            done
 
-        gh pr merge $$PR_URL --auto --squash --delete-branch
+          # Update the dependency.
+          git checkout -B "auto/amp-common-update-to-${COMMIT_SHA}"
+
+          go get "github.com/amp-labs/amp-common@${COMMIT_SHA}"
+          go mod tidy || true
+          git add go.mod go.sum
+
+          git commit -m "[auto] Update amp-common to ${COMMIT_SHA}"
+
+          git push origin --force \
+            "auto/amp-common-update-to-${COMMIT_SHA}:auto/amp-common-update-to-${COMMIT_SHA}"
+
+          PR_URL=$(gh pr create --base main \
+            --title "[auto] Update amp-common dependency" \
+            --head "auto/amp-common-update-to-${COMMIT_SHA}" \
+            --body "$$TXT" \
+            --label amp-common)
+
+          echo "Created PR in $$repo: $$PR_URL"
+
+          gh pr merge "$$PR_URL" --auto --squash --delete-branch
+        }
+
+        update_repo server
+        update_repo connectors
     entrypoint: bash
 options:
   machineType: E2_HIGHCPU_8

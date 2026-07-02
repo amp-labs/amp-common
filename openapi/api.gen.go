@@ -17,6 +17,102 @@ const (
 	BearerScopes       bearerContextKey       = "Bearer.Scopes"
 )
 
+// Defines values for AccessTokenOptsAttachmentType.
+const (
+	AccessTokenHeaderAttachment AccessTokenOptsAttachmentType = "accessTokenHeaderAttachment"
+)
+
+// Valid indicates whether the value is a known member of the AccessTokenOptsAttachmentType enum.
+func (e AccessTokenOptsAttachmentType) Valid() bool {
+	switch e {
+	case AccessTokenHeaderAttachment:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ApiKeyAsBasicOptsFieldUsed.
+const (
+	PasswordField ApiKeyAsBasicOptsFieldUsed = "password"
+	UsernameField ApiKeyAsBasicOptsFieldUsed = "username"
+)
+
+// Valid indicates whether the value is a known member of the ApiKeyAsBasicOptsFieldUsed enum.
+func (e ApiKeyAsBasicOptsFieldUsed) Valid() bool {
+	switch e {
+	case PasswordField:
+		return true
+	case UsernameField:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ApiKeyOptsAttachmentType.
+const (
+	Header ApiKeyOptsAttachmentType = "header"
+	Query  ApiKeyOptsAttachmentType = "query"
+)
+
+// Valid indicates whether the value is a known member of the ApiKeyOptsAttachmentType enum.
+func (e ApiKeyOptsAttachmentType) Valid() bool {
+	switch e {
+	case Header:
+		return true
+	case Query:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssociationChangeEventEnabled.
+const (
+	AssociationChangeEventEnabledAlways AssociationChangeEventEnabled = "always"
+)
+
+// Valid indicates whether the value is a known member of the AssociationChangeEventEnabled enum.
+func (e AssociationChangeEventEnabled) Valid() bool {
+	switch e {
+	case AssociationChangeEventEnabledAlways:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuthType.
+const (
+	AuthTypeApiKey AuthType = "apiKey"
+	AuthTypeBasic  AuthType = "basic"
+	AuthTypeCustom AuthType = "custom"
+	AuthTypeJwt    AuthType = "jwt"
+	AuthTypeNone   AuthType = "none"
+	AuthTypeOauth2 AuthType = "oauth2"
+)
+
+// Valid indicates whether the value is a known member of the AuthType enum.
+func (e AuthType) Valid() bool {
+	switch e {
+	case AuthTypeApiKey:
+		return true
+	case AuthTypeBasic:
+		return true
+	case AuthTypeCustom:
+		return true
+	case AuthTypeJwt:
+		return true
+	case AuthTypeNone:
+		return true
+	case AuthTypeOauth2:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BuilderInfoOrgRolePrincipalType.
 const (
 	BuilderInfoOrgRolePrincipalTypeBuilder BuilderInfoOrgRolePrincipalType = "builder"
@@ -53,153 +149,69 @@ func (e BuilderInfoProjectRolesPrincipalType) Valid() bool {
 	}
 }
 
-// Defines values for ConfigContentReadObjectsBackfillFieldFiltersOperator.
+// Defines values for ConfigCreateEventEnabled.
 const (
-	ConfigContentReadObjectsBackfillFieldFiltersOperatorEq ConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
+	ConfigCreateEventEnabledAlways ConfigCreateEventEnabled = "always"
+	ConfigCreateEventEnabledNever  ConfigCreateEventEnabled = "never"
 )
 
-// Valid indicates whether the value is a known member of the ConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e ConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
+// Valid indicates whether the value is a known member of the ConfigCreateEventEnabled enum.
+func (e ConfigCreateEventEnabled) Valid() bool {
 	switch e {
-	case ConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
+	case ConfigCreateEventEnabledAlways:
+		return true
+	case ConfigCreateEventEnabledNever:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for ConfigContentReadObjectsFieldFiltersOperator.
+// Defines values for ConfigDeleteEventEnabled.
 const (
-	ConfigContentReadObjectsFieldFiltersOperatorEq ConfigContentReadObjectsFieldFiltersOperator = "eq"
+	ConfigDeleteEventEnabledAlways ConfigDeleteEventEnabled = "always"
+	ConfigDeleteEventEnabledNever  ConfigDeleteEventEnabled = "never"
 )
 
-// Valid indicates whether the value is a known member of the ConfigContentReadObjectsFieldFiltersOperator enum.
-func (e ConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
+// Valid indicates whether the value is a known member of the ConfigDeleteEventEnabled enum.
+func (e ConfigDeleteEventEnabled) Valid() bool {
 	switch e {
-	case ConfigContentReadObjectsFieldFiltersOperatorEq:
+	case ConfigDeleteEventEnabledAlways:
+		return true
+	case ConfigDeleteEventEnabledNever:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for ConfigContentReadObjectsSelectedFieldsAuto.
+// Defines values for ConfigUpdateEventEnabled.
 const (
-	ConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll ConfigContentReadObjectsSelectedFieldsAuto = "all"
+	ConfigUpdateEventEnabledAlways ConfigUpdateEventEnabled = "always"
+	ConfigUpdateEventEnabledNever  ConfigUpdateEventEnabled = "never"
 )
 
-// Valid indicates whether the value is a known member of the ConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e ConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
+// Valid indicates whether the value is a known member of the ConfigUpdateEventEnabled enum.
+func (e ConfigUpdateEventEnabled) Valid() bool {
 	switch e {
-	case ConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
+	case ConfigUpdateEventEnabledAlways:
+		return true
+	case ConfigUpdateEventEnabledNever:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for ConfigContentSubscribeObjectsCreateEventEnabled.
+// Defines values for ConfigUpdateEventWatchFieldsAuto.
 const (
-	ConfigContentSubscribeObjectsCreateEventEnabledAlways ConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	ConfigContentSubscribeObjectsCreateEventEnabledNever  ConfigContentSubscribeObjectsCreateEventEnabled = "never"
+	ConfigUpdateEventWatchFieldsAutoAll ConfigUpdateEventWatchFieldsAuto = "all"
 )
 
-// Valid indicates whether the value is a known member of the ConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e ConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
+// Valid indicates whether the value is a known member of the ConfigUpdateEventWatchFieldsAuto enum.
+func (e ConfigUpdateEventWatchFieldsAuto) Valid() bool {
 	switch e {
-	case ConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case ConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	ConfigContentSubscribeObjectsDeleteEventEnabledAlways ConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	ConfigContentSubscribeObjectsDeleteEventEnabledNever  ConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e ConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case ConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case ConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	ConfigContentSubscribeObjectsUpdateEventEnabledAlways ConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	ConfigContentSubscribeObjectsUpdateEventEnabledNever  ConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e ConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case ConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case ConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	ConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll ConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the ConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e ConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case ConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
+	case ConfigUpdateEventWatchFieldsAutoAll:
 		return true
 	default:
 		return false
@@ -239,63 +251,36 @@ func (e ConnectionAuthScheme) Valid() bool {
 	}
 }
 
-// Defines values for ConnectionProviderMetadataSource.
-const (
-	ConnectionProviderMetadataSourceInput    ConnectionProviderMetadataSource = "input"
-	ConnectionProviderMetadataSourceProvider ConnectionProviderMetadataSource = "provider"
-	ConnectionProviderMetadataSourceToken    ConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the ConnectionProviderMetadataSource enum.
-func (e ConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case ConnectionProviderMetadataSourceInput:
-		return true
-	case ConnectionProviderMetadataSourceProvider:
-		return true
-	case ConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ConnectionStatus.
 const (
-	ConnectionStatusBadCredentials ConnectionStatus = "bad_credentials"
-	ConnectionStatusCreated        ConnectionStatus = "created"
-	ConnectionStatusWorking        ConnectionStatus = "working"
+	BadCredentials ConnectionStatus = "bad_credentials"
+	Created        ConnectionStatus = "created"
+	Working        ConnectionStatus = "working"
 )
 
 // Valid indicates whether the value is a known member of the ConnectionStatus enum.
 func (e ConnectionStatus) Valid() bool {
 	switch e {
-	case ConnectionStatusBadCredentials:
+	case BadCredentials:
 		return true
-	case ConnectionStatusCreated:
+	case Created:
 		return true
-	case ConnectionStatusWorking:
+	case Working:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for ConnectionRequestProviderMetadataSource.
+// Defines values for CreateEventEnabled.
 const (
-	ConnectionRequestProviderMetadataSourceInput    ConnectionRequestProviderMetadataSource = "input"
-	ConnectionRequestProviderMetadataSourceProvider ConnectionRequestProviderMetadataSource = "provider"
-	ConnectionRequestProviderMetadataSourceToken    ConnectionRequestProviderMetadataSource = "token"
+	CreateEventEnabledAlways CreateEventEnabled = "always"
 )
 
-// Valid indicates whether the value is a known member of the ConnectionRequestProviderMetadataSource enum.
-func (e ConnectionRequestProviderMetadataSource) Valid() bool {
+// Valid indicates whether the value is a known member of the CreateEventEnabled enum.
+func (e CreateEventEnabled) Valid() bool {
 	switch e {
-	case ConnectionRequestProviderMetadataSourceInput:
-		return true
-	case ConnectionRequestProviderMetadataSourceProvider:
-		return true
-	case ConnectionRequestProviderMetadataSourceToken:
+	case CreateEventEnabledAlways:
 		return true
 	default:
 		return false
@@ -304,415 +289,193 @@ func (e ConnectionRequestProviderMetadataSource) Valid() bool {
 
 // Defines values for CreateJWTKeyRequestAlgorithm.
 const (
-	CreateJWTKeyRequestAlgorithmRS256 CreateJWTKeyRequestAlgorithm = "RS256"
+	RS256 CreateJWTKeyRequestAlgorithm = "RS256"
 )
 
 // Valid indicates whether the value is a known member of the CreateJWTKeyRequestAlgorithm enum.
 func (e CreateJWTKeyRequestAlgorithm) Valid() bool {
 	switch e {
-	case CreateJWTKeyRequestAlgorithmRS256:
+	case RS256:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for CustomAuthConnectRequestProviderMetadataSource.
+// Defines values for CustomAuthInputFieldType.
 const (
-	CustomAuthConnectRequestProviderMetadataSourceInput    CustomAuthConnectRequestProviderMetadataSource = "input"
-	CustomAuthConnectRequestProviderMetadataSourceProvider CustomAuthConnectRequestProviderMetadataSource = "provider"
-	CustomAuthConnectRequestProviderMetadataSourceToken    CustomAuthConnectRequestProviderMetadataSource = "token"
+	FieldTypePassword CustomAuthInputFieldType = "fieldTypePassword"
+	FieldTypeSelect   CustomAuthInputFieldType = "fieldTypeSelect"
+	FieldTypeText     CustomAuthInputFieldType = "fieldTypeText"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnectRequestProviderMetadataSource enum.
-func (e CustomAuthConnectRequestProviderMetadataSource) Valid() bool {
+// Valid indicates whether the value is a known member of the CustomAuthInputFieldType enum.
+func (e CustomAuthInputFieldType) Valid() bool {
 	switch e {
-	case CustomAuthConnectRequestProviderMetadataSourceInput:
+	case FieldTypePassword:
 		return true
-	case CustomAuthConnectRequestProviderMetadataSourceProvider:
+	case FieldTypeSelect:
 		return true
-	case CustomAuthConnectRequestProviderMetadataSourceToken:
+	case FieldTypeText:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for CustomAuthConnectResponse1ConnectionAuthScheme.
+// Defines values for DeleteEventEnabled.
 const (
-	CustomAuthConnectResponse1ConnectionAuthSchemeApiKey                      CustomAuthConnectResponse1ConnectionAuthScheme = "apiKey"
-	CustomAuthConnectResponse1ConnectionAuthSchemeBasic                       CustomAuthConnectResponse1ConnectionAuthScheme = "basic"
-	CustomAuthConnectResponse1ConnectionAuthSchemeNone                        CustomAuthConnectResponse1ConnectionAuthScheme = "none"
-	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCode     CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/authorizationCode"
-	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCodePKCE CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2clientCredentials     CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/clientCredentials"
-	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2password              CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/password"
+	DeleteEventEnabledAlways DeleteEventEnabled = "always"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnectResponse1ConnectionAuthScheme enum.
-func (e CustomAuthConnectResponse1ConnectionAuthScheme) Valid() bool {
+// Valid indicates whether the value is a known member of the DeleteEventEnabled enum.
+func (e DeleteEventEnabled) Valid() bool {
 	switch e {
-	case CustomAuthConnectResponse1ConnectionAuthSchemeApiKey:
-		return true
-	case CustomAuthConnectResponse1ConnectionAuthSchemeBasic:
-		return true
-	case CustomAuthConnectResponse1ConnectionAuthSchemeNone:
-		return true
-	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2password:
+	case DeleteEventEnabledAlways:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for CustomAuthConnectResponse1ConnectionProviderMetadataSource.
+// Defines values for DeliveryMode.
 const (
-	CustomAuthConnectResponse1ConnectionProviderMetadataSourceInput    CustomAuthConnectResponse1ConnectionProviderMetadataSource = "input"
-	CustomAuthConnectResponse1ConnectionProviderMetadataSourceProvider CustomAuthConnectResponse1ConnectionProviderMetadataSource = "provider"
-	CustomAuthConnectResponse1ConnectionProviderMetadataSourceToken    CustomAuthConnectResponse1ConnectionProviderMetadataSource = "token"
+	Auto      DeliveryMode = "auto"
+	OnRequest DeliveryMode = "onRequest"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnectResponse1ConnectionProviderMetadataSource enum.
-func (e CustomAuthConnectResponse1ConnectionProviderMetadataSource) Valid() bool {
+// Valid indicates whether the value is a known member of the DeliveryMode enum.
+func (e DeliveryMode) Valid() bool {
 	switch e {
-	case CustomAuthConnectResponse1ConnectionProviderMetadataSourceInput:
+	case Auto:
 		return true
-	case CustomAuthConnectResponse1ConnectionProviderMetadataSourceProvider:
-		return true
-	case CustomAuthConnectResponse1ConnectionProviderMetadataSourceToken:
+	case OnRequest:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for CustomAuthConnectResponse1ConnectionStatus.
+// Defines values for FieldChangedEventEnabled.
 const (
-	CustomAuthConnectResponse1ConnectionStatusBadCredentials CustomAuthConnectResponse1ConnectionStatus = "bad_credentials"
-	CustomAuthConnectResponse1ConnectionStatusCreated        CustomAuthConnectResponse1ConnectionStatus = "created"
-	CustomAuthConnectResponse1ConnectionStatusWorking        CustomAuthConnectResponse1ConnectionStatus = "working"
+	FieldChangedEventEnabledAlways FieldChangedEventEnabled = "always"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnectResponse1ConnectionStatus enum.
-func (e CustomAuthConnectResponse1ConnectionStatus) Valid() bool {
+// Valid indicates whether the value is a known member of the FieldChangedEventEnabled enum.
+func (e FieldChangedEventEnabled) Valid() bool {
 	switch e {
-	case CustomAuthConnectResponse1ConnectionStatusBadCredentials:
-		return true
-	case CustomAuthConnectResponse1ConnectionStatusCreated:
-		return true
-	case CustomAuthConnectResponse1ConnectionStatusWorking:
+	case FieldChangedEventEnabledAlways:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for GenerateConnectionRequestProviderMetadataSource.
+// Defines values for FieldCreatedEventEnabled.
 const (
-	GenerateConnectionRequestProviderMetadataSourceInput    GenerateConnectionRequestProviderMetadataSource = "input"
-	GenerateConnectionRequestProviderMetadataSourceProvider GenerateConnectionRequestProviderMetadataSource = "provider"
-	GenerateConnectionRequestProviderMetadataSourceToken    GenerateConnectionRequestProviderMetadataSource = "token"
+	FieldCreatedEventEnabledAlways FieldCreatedEventEnabled = "always"
 )
 
-// Valid indicates whether the value is a known member of the GenerateConnectionRequestProviderMetadataSource enum.
-func (e GenerateConnectionRequestProviderMetadataSource) Valid() bool {
+// Valid indicates whether the value is a known member of the FieldCreatedEventEnabled enum.
+func (e FieldCreatedEventEnabled) Valid() bool {
 	switch e {
-	case GenerateConnectionRequestProviderMetadataSourceInput:
-		return true
-	case GenerateConnectionRequestProviderMetadataSourceProvider:
-		return true
-	case GenerateConnectionRequestProviderMetadataSourceToken:
+	case FieldCreatedEventEnabledAlways:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for HydratedRevisionContentReadObjectsAllFieldsMetadataValueType.
+// Defines values for FieldDeletedEventEnabled.
 const (
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeBoolean      HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "boolean"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeDate         HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "date"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeDatetime     HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "datetime"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeFloat        HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "float"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeInt          HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "int"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeMultiSelect  HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "multiSelect"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeOther        HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "other"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeReference    HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "reference"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeSingleSelect HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "singleSelect"
-	HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeString       HydratedRevisionContentReadObjectsAllFieldsMetadataValueType = "string"
+	FieldDeletedEventEnabledAlways FieldDeletedEventEnabled = "always"
 )
 
-// Valid indicates whether the value is a known member of the HydratedRevisionContentReadObjectsAllFieldsMetadataValueType enum.
-func (e HydratedRevisionContentReadObjectsAllFieldsMetadataValueType) Valid() bool {
+// Valid indicates whether the value is a known member of the FieldDeletedEventEnabled enum.
+func (e FieldDeletedEventEnabled) Valid() bool {
 	switch e {
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeBoolean:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeDate:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeDatetime:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeFloat:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeInt:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeMultiSelect:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeOther:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeReference:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeSingleSelect:
-		return true
-	case HydratedRevisionContentReadObjectsAllFieldsMetadataValueTypeString:
+	case FieldDeletedEventEnabledAlways:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for HydratedRevisionContentReadObjectsOptionalFieldsAuto.
+// Defines values for FieldMetadataValueType.
 const (
-	HydratedRevisionContentReadObjectsOptionalFieldsAutoAll HydratedRevisionContentReadObjectsOptionalFieldsAuto = "all"
+	Boolean      FieldMetadataValueType = "boolean"
+	Date         FieldMetadataValueType = "date"
+	Datetime     FieldMetadataValueType = "datetime"
+	Float        FieldMetadataValueType = "float"
+	Int          FieldMetadataValueType = "int"
+	MultiSelect  FieldMetadataValueType = "multiSelect"
+	Other        FieldMetadataValueType = "other"
+	Reference    FieldMetadataValueType = "reference"
+	SingleSelect FieldMetadataValueType = "singleSelect"
+	String       FieldMetadataValueType = "string"
 )
 
-// Valid indicates whether the value is a known member of the HydratedRevisionContentReadObjectsOptionalFieldsAuto enum.
-func (e HydratedRevisionContentReadObjectsOptionalFieldsAuto) Valid() bool {
+// Valid indicates whether the value is a known member of the FieldMetadataValueType enum.
+func (e FieldMetadataValueType) Valid() bool {
 	switch e {
-	case HydratedRevisionContentReadObjectsOptionalFieldsAutoAll:
+	case Boolean:
+		return true
+	case Date:
+		return true
+	case Datetime:
+		return true
+	case Float:
+		return true
+	case Int:
+		return true
+	case MultiSelect:
+		return true
+	case Other:
+		return true
+	case Reference:
+		return true
+	case SingleSelect:
+		return true
+	case String:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for InstallationConfigContentReadObjectsBackfillFieldFiltersOperator.
+// Defines values for FieldSettingWriteOnCreate.
 const (
-	InstallationConfigContentReadObjectsBackfillFieldFiltersOperatorEq InstallationConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
+	FieldSettingWriteOnCreateAlways FieldSettingWriteOnCreate = "always"
+	FieldSettingWriteOnCreateNever  FieldSettingWriteOnCreate = "never"
 )
 
-// Valid indicates whether the value is a known member of the InstallationConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e InstallationConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
+// Valid indicates whether the value is a known member of the FieldSettingWriteOnCreate enum.
+func (e FieldSettingWriteOnCreate) Valid() bool {
 	switch e {
-	case InstallationConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
+	case FieldSettingWriteOnCreateAlways:
+		return true
+	case FieldSettingWriteOnCreateNever:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for InstallationConfigContentReadObjectsFieldFiltersOperator.
+// Defines values for FieldSettingWriteOnUpdate.
 const (
-	InstallationConfigContentReadObjectsFieldFiltersOperatorEq InstallationConfigContentReadObjectsFieldFiltersOperator = "eq"
+	FieldSettingWriteOnUpdateAlways  FieldSettingWriteOnUpdate = "always"
+	FieldSettingWriteOnUpdateIfEmpty FieldSettingWriteOnUpdate = "ifEmpty"
+	FieldSettingWriteOnUpdateNever   FieldSettingWriteOnUpdate = "never"
 )
 
-// Valid indicates whether the value is a known member of the InstallationConfigContentReadObjectsFieldFiltersOperator enum.
-func (e InstallationConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
+// Valid indicates whether the value is a known member of the FieldSettingWriteOnUpdate enum.
+func (e FieldSettingWriteOnUpdate) Valid() bool {
 	switch e {
-	case InstallationConfigContentReadObjectsFieldFiltersOperatorEq:
+	case FieldSettingWriteOnUpdateAlways:
 		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	InstallationConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll InstallationConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e InstallationConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case InstallationConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
+	case FieldSettingWriteOnUpdateIfEmpty:
 		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	InstallationConfigContentSubscribeObjectsCreateEventEnabledAlways InstallationConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	InstallationConfigContentSubscribeObjectsCreateEventEnabledNever  InstallationConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e InstallationConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case InstallationConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case InstallationConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	InstallationConfigContentSubscribeObjectsDeleteEventEnabledAlways InstallationConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	InstallationConfigContentSubscribeObjectsDeleteEventEnabledNever  InstallationConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e InstallationConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case InstallationConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case InstallationConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	InstallationConfigContentSubscribeObjectsUpdateEventEnabledAlways InstallationConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	InstallationConfigContentSubscribeObjectsUpdateEventEnabledNever  InstallationConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e InstallationConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case InstallationConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case InstallationConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConnectionAuthScheme.
-const (
-	InstallationConnectionAuthSchemeApiKey                      InstallationConnectionAuthScheme = "apiKey"
-	InstallationConnectionAuthSchemeBasic                       InstallationConnectionAuthScheme = "basic"
-	InstallationConnectionAuthSchemeNone                        InstallationConnectionAuthScheme = "none"
-	InstallationConnectionAuthSchemeOauth2authorizationCode     InstallationConnectionAuthScheme = "oauth2/authorizationCode"
-	InstallationConnectionAuthSchemeOauth2authorizationCodePKCE InstallationConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	InstallationConnectionAuthSchemeOauth2clientCredentials     InstallationConnectionAuthScheme = "oauth2/clientCredentials"
-	InstallationConnectionAuthSchemeOauth2password              InstallationConnectionAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConnectionAuthScheme enum.
-func (e InstallationConnectionAuthScheme) Valid() bool {
-	switch e {
-	case InstallationConnectionAuthSchemeApiKey:
-		return true
-	case InstallationConnectionAuthSchemeBasic:
-		return true
-	case InstallationConnectionAuthSchemeNone:
-		return true
-	case InstallationConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case InstallationConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case InstallationConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case InstallationConnectionAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConnectionProviderMetadataSource.
-const (
-	InstallationConnectionProviderMetadataSourceInput    InstallationConnectionProviderMetadataSource = "input"
-	InstallationConnectionProviderMetadataSourceProvider InstallationConnectionProviderMetadataSource = "provider"
-	InstallationConnectionProviderMetadataSourceToken    InstallationConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConnectionProviderMetadataSource enum.
-func (e InstallationConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case InstallationConnectionProviderMetadataSourceInput:
-		return true
-	case InstallationConnectionProviderMetadataSourceProvider:
-		return true
-	case InstallationConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstallationConnectionStatus.
-const (
-	InstallationConnectionStatusBadCredentials InstallationConnectionStatus = "bad_credentials"
-	InstallationConnectionStatusCreated        InstallationConnectionStatus = "created"
-	InstallationConnectionStatusWorking        InstallationConnectionStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the InstallationConnectionStatus enum.
-func (e InstallationConnectionStatus) Valid() bool {
-	switch e {
-	case InstallationConnectionStatusBadCredentials:
-		return true
-	case InstallationConnectionStatusCreated:
-		return true
-	case InstallationConnectionStatusWorking:
+	case FieldSettingWriteOnUpdateNever:
 		return true
 	default:
 		return false
@@ -721,16 +484,16 @@ func (e InstallationConnectionStatus) Valid() bool {
 
 // Defines values for InstallationHealthStatus.
 const (
-	InstallationHealthStatusHealthy   InstallationHealthStatus = "healthy"
-	InstallationHealthStatusUnhealthy InstallationHealthStatus = "unhealthy"
+	Healthy   InstallationHealthStatus = "healthy"
+	Unhealthy InstallationHealthStatus = "unhealthy"
 )
 
 // Valid indicates whether the value is a known member of the InstallationHealthStatus enum.
 func (e InstallationHealthStatus) Valid() bool {
 	switch e {
-	case InstallationHealthStatusHealthy:
+	case Healthy:
 		return true
-	case InstallationHealthStatusUnhealthy:
+	case Unhealthy:
 		return true
 	default:
 		return false
@@ -739,190 +502,34 @@ func (e InstallationHealthStatus) Valid() bool {
 
 // Defines values for InstallationLastOperationStatus.
 const (
-	InstallationLastOperationStatusFailure    InstallationLastOperationStatus = "failure"
-	InstallationLastOperationStatusInProgress InstallationLastOperationStatus = "in_progress"
-	InstallationLastOperationStatusSuccess    InstallationLastOperationStatus = "success"
+	Failure    InstallationLastOperationStatus = "failure"
+	InProgress InstallationLastOperationStatus = "in_progress"
+	Success    InstallationLastOperationStatus = "success"
 )
 
 // Valid indicates whether the value is a known member of the InstallationLastOperationStatus enum.
 func (e InstallationLastOperationStatus) Valid() bool {
 	switch e {
-	case InstallationLastOperationStatusFailure:
+	case Failure:
 		return true
-	case InstallationLastOperationStatusInProgress:
+	case InProgress:
 		return true
-	case InstallationLastOperationStatusSuccess:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentReadObjectsDeliveryMode.
-const (
-	IntegrationLatestRevisionContentReadObjectsDeliveryModeAuto      IntegrationLatestRevisionContentReadObjectsDeliveryMode = "auto"
-	IntegrationLatestRevisionContentReadObjectsDeliveryModeOnRequest IntegrationLatestRevisionContentReadObjectsDeliveryMode = "onRequest"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentReadObjectsDeliveryMode enum.
-func (e IntegrationLatestRevisionContentReadObjectsDeliveryMode) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentReadObjectsDeliveryModeAuto:
-		return true
-	case IntegrationLatestRevisionContentReadObjectsDeliveryModeOnRequest:
+	case Success:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for IntegrationLatestRevisionContentReadObjectsEnabled.
+// Defines values for IntegrationObjectEnabled.
 const (
-	IntegrationLatestRevisionContentReadObjectsEnabledAlways IntegrationLatestRevisionContentReadObjectsEnabled = "always"
+	IntegrationObjectEnabledAlways IntegrationObjectEnabled = "always"
 )
 
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentReadObjectsEnabled enum.
-func (e IntegrationLatestRevisionContentReadObjectsEnabled) Valid() bool {
+// Valid indicates whether the value is a known member of the IntegrationObjectEnabled enum.
+func (e IntegrationObjectEnabled) Valid() bool {
 	switch e {
-	case IntegrationLatestRevisionContentReadObjectsEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentReadObjectsOptionalFieldsAuto.
-const (
-	IntegrationLatestRevisionContentReadObjectsOptionalFieldsAutoAll IntegrationLatestRevisionContentReadObjectsOptionalFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentReadObjectsOptionalFieldsAuto enum.
-func (e IntegrationLatestRevisionContentReadObjectsOptionalFieldsAuto) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentReadObjectsOptionalFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled.
-const (
-	IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled enum.
-func (e IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabled.
-const (
-	IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabled enum.
-func (e IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabled.
-const (
-	IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabled enum.
-func (e IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabled.
-const (
-	IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabled enum.
-func (e IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll      IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-	IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "selected"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	case IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled.
-const (
-	IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled enum.
-func (e IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled.
-const (
-	IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled enum.
-func (e IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled.
-const (
-	IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled enum.
-func (e IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled) Valid() bool {
-	switch e {
-	case IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways:
+	case IntegrationObjectEnabledAlways:
 		return true
 	default:
 		return false
@@ -946,22 +553,22 @@ func (e InviteParentType) Valid() bool {
 
 // Defines values for InviteStatus.
 const (
-	InviteStatusAccepted InviteStatus = "accepted"
-	InviteStatusExpired  InviteStatus = "expired"
-	InviteStatusPending  InviteStatus = "pending"
-	InviteStatusRevoked  InviteStatus = "revoked"
+	Accepted InviteStatus = "accepted"
+	Expired  InviteStatus = "expired"
+	Pending  InviteStatus = "pending"
+	Revoked  InviteStatus = "revoked"
 )
 
 // Valid indicates whether the value is a known member of the InviteStatus enum.
 func (e InviteStatus) Valid() bool {
 	switch e {
-	case InviteStatusAccepted:
+	case Accepted:
 		return true
-	case InviteStatusExpired:
+	case Expired:
 		return true
-	case InviteStatusPending:
+	case Pending:
 		return true
-	case InviteStatusRevoked:
+	case Revoked:
 		return true
 	default:
 		return false
@@ -970,19 +577,19 @@ func (e InviteStatus) Valid() bool {
 
 // Defines values for JSONPatchOperationOp.
 const (
-	JSONPatchOperationOpAdd     JSONPatchOperationOp = "add"
-	JSONPatchOperationOpRemove  JSONPatchOperationOp = "remove"
-	JSONPatchOperationOpReplace JSONPatchOperationOp = "replace"
+	Add     JSONPatchOperationOp = "add"
+	Remove  JSONPatchOperationOp = "remove"
+	Replace JSONPatchOperationOp = "replace"
 )
 
 // Valid indicates whether the value is a known member of the JSONPatchOperationOp enum.
 func (e JSONPatchOperationOp) Valid() bool {
 	switch e {
-	case JSONPatchOperationOpAdd:
+	case Add:
 		return true
-	case JSONPatchOperationOpRemove:
+	case Remove:
 		return true
-	case JSONPatchOperationOpReplace:
+	case Replace:
 		return true
 	default:
 		return false
@@ -991,70 +598,13 @@ func (e JSONPatchOperationOp) Valid() bool {
 
 // Defines values for JWTKeyAlgorithm.
 const (
-	JWTKeyAlgorithmRSA JWTKeyAlgorithm = "RSA"
+	RSA JWTKeyAlgorithm = "RSA"
 )
 
 // Valid indicates whether the value is a known member of the JWTKeyAlgorithm enum.
 func (e JWTKeyAlgorithm) Valid() bool {
 	switch e {
-	case JWTKeyAlgorithmRSA:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for NotificationEventTopicRouteEventType.
-const (
-	NotificationEventTopicRouteEventTypeConnectionCreated          NotificationEventTopicRouteEventType = "connection.created"
-	NotificationEventTopicRouteEventTypeConnectionDeleted          NotificationEventTopicRouteEventType = "connection.deleted"
-	NotificationEventTopicRouteEventTypeConnectionError            NotificationEventTopicRouteEventType = "connection.error"
-	NotificationEventTopicRouteEventTypeConnectionRefreshed        NotificationEventTopicRouteEventType = "connection.refreshed"
-	NotificationEventTopicRouteEventTypeConnectionUpdated          NotificationEventTopicRouteEventType = "connection.updated"
-	NotificationEventTopicRouteEventTypeDestinationWebhookDisabled NotificationEventTopicRouteEventType = "destination.webhook.disabled"
-	NotificationEventTopicRouteEventTypeInstallationCreated        NotificationEventTopicRouteEventType = "installation.created"
-	NotificationEventTopicRouteEventTypeInstallationDeleted        NotificationEventTopicRouteEventType = "installation.deleted"
-	NotificationEventTopicRouteEventTypeInstallationUpdated        NotificationEventTopicRouteEventType = "installation.updated"
-	NotificationEventTopicRouteEventTypeReadBackfillDone           NotificationEventTopicRouteEventType = "read.backfill.done"
-	NotificationEventTopicRouteEventTypeReadSchedulePaused         NotificationEventTopicRouteEventType = "read.schedule.paused"
-	NotificationEventTopicRouteEventTypeReadTriggeredDone          NotificationEventTopicRouteEventType = "read.triggered.done"
-	NotificationEventTopicRouteEventTypeReadTriggeredError         NotificationEventTopicRouteEventType = "read.triggered.error"
-	NotificationEventTopicRouteEventTypeSubscribeCreateError       NotificationEventTopicRouteEventType = "subscribe.create.error"
-	NotificationEventTopicRouteEventTypeWriteAsyncDone             NotificationEventTopicRouteEventType = "write.async.done"
-)
-
-// Valid indicates whether the value is a known member of the NotificationEventTopicRouteEventType enum.
-func (e NotificationEventTopicRouteEventType) Valid() bool {
-	switch e {
-	case NotificationEventTopicRouteEventTypeConnectionCreated:
-		return true
-	case NotificationEventTopicRouteEventTypeConnectionDeleted:
-		return true
-	case NotificationEventTopicRouteEventTypeConnectionError:
-		return true
-	case NotificationEventTopicRouteEventTypeConnectionRefreshed:
-		return true
-	case NotificationEventTopicRouteEventTypeConnectionUpdated:
-		return true
-	case NotificationEventTopicRouteEventTypeDestinationWebhookDisabled:
-		return true
-	case NotificationEventTopicRouteEventTypeInstallationCreated:
-		return true
-	case NotificationEventTopicRouteEventTypeInstallationDeleted:
-		return true
-	case NotificationEventTopicRouteEventTypeInstallationUpdated:
-		return true
-	case NotificationEventTopicRouteEventTypeReadBackfillDone:
-		return true
-	case NotificationEventTopicRouteEventTypeReadSchedulePaused:
-		return true
-	case NotificationEventTopicRouteEventTypeReadTriggeredDone:
-		return true
-	case NotificationEventTopicRouteEventTypeReadTriggeredError:
-		return true
-	case NotificationEventTopicRouteEventTypeSubscribeCreateError:
-		return true
-	case NotificationEventTopicRouteEventTypeWriteAsyncDone:
+	case RSA:
 		return true
 	default:
 		return false
@@ -1063,97 +613,94 @@ func (e NotificationEventTopicRouteEventType) Valid() bool {
 
 // Defines values for NotificationEventType.
 const (
-	NotificationEventTypeConnectionCreated          NotificationEventType = "connection.created"
-	NotificationEventTypeConnectionDeleted          NotificationEventType = "connection.deleted"
-	NotificationEventTypeConnectionError            NotificationEventType = "connection.error"
-	NotificationEventTypeConnectionRefreshed        NotificationEventType = "connection.refreshed"
-	NotificationEventTypeConnectionUpdated          NotificationEventType = "connection.updated"
-	NotificationEventTypeDestinationWebhookDisabled NotificationEventType = "destination.webhook.disabled"
-	NotificationEventTypeInstallationCreated        NotificationEventType = "installation.created"
-	NotificationEventTypeInstallationDeleted        NotificationEventType = "installation.deleted"
-	NotificationEventTypeInstallationUpdated        NotificationEventType = "installation.updated"
-	NotificationEventTypeReadBackfillDone           NotificationEventType = "read.backfill.done"
-	NotificationEventTypeReadSchedulePaused         NotificationEventType = "read.schedule.paused"
-	NotificationEventTypeReadTriggeredDone          NotificationEventType = "read.triggered.done"
-	NotificationEventTypeReadTriggeredError         NotificationEventType = "read.triggered.error"
-	NotificationEventTypeSubscribeCreateError       NotificationEventType = "subscribe.create.error"
-	NotificationEventTypeWriteAsyncDone             NotificationEventType = "write.async.done"
+	ConnectionCreated          NotificationEventType = "connection.created"
+	ConnectionDeleted          NotificationEventType = "connection.deleted"
+	ConnectionError            NotificationEventType = "connection.error"
+	ConnectionRefreshed        NotificationEventType = "connection.refreshed"
+	ConnectionUpdated          NotificationEventType = "connection.updated"
+	DestinationWebhookDisabled NotificationEventType = "destination.webhook.disabled"
+	InstallationCreated        NotificationEventType = "installation.created"
+	InstallationDeleted        NotificationEventType = "installation.deleted"
+	InstallationUpdated        NotificationEventType = "installation.updated"
+	ReadBackfillDone           NotificationEventType = "read.backfill.done"
+	ReadSchedulePaused         NotificationEventType = "read.schedule.paused"
+	ReadTriggeredDone          NotificationEventType = "read.triggered.done"
+	ReadTriggeredError         NotificationEventType = "read.triggered.error"
+	SubscribeCreateError       NotificationEventType = "subscribe.create.error"
+	WriteAsyncDone             NotificationEventType = "write.async.done"
 )
 
 // Valid indicates whether the value is a known member of the NotificationEventType enum.
 func (e NotificationEventType) Valid() bool {
 	switch e {
-	case NotificationEventTypeConnectionCreated:
+	case ConnectionCreated:
 		return true
-	case NotificationEventTypeConnectionDeleted:
+	case ConnectionDeleted:
 		return true
-	case NotificationEventTypeConnectionError:
+	case ConnectionError:
 		return true
-	case NotificationEventTypeConnectionRefreshed:
+	case ConnectionRefreshed:
 		return true
-	case NotificationEventTypeConnectionUpdated:
+	case ConnectionUpdated:
 		return true
-	case NotificationEventTypeDestinationWebhookDisabled:
+	case DestinationWebhookDisabled:
 		return true
-	case NotificationEventTypeInstallationCreated:
+	case InstallationCreated:
 		return true
-	case NotificationEventTypeInstallationDeleted:
+	case InstallationDeleted:
 		return true
-	case NotificationEventTypeInstallationUpdated:
+	case InstallationUpdated:
 		return true
-	case NotificationEventTypeReadBackfillDone:
+	case ReadBackfillDone:
 		return true
-	case NotificationEventTypeReadSchedulePaused:
+	case ReadSchedulePaused:
 		return true
-	case NotificationEventTypeReadTriggeredDone:
+	case ReadTriggeredDone:
 		return true
-	case NotificationEventTypeReadTriggeredError:
+	case ReadTriggeredError:
 		return true
-	case NotificationEventTypeSubscribeCreateError:
+	case SubscribeCreateError:
 		return true
-	case NotificationEventTypeWriteAsyncDone:
+	case WriteAsyncDone:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for ObjectMetadataFieldsValueType.
+// Defines values for Oauth2OptsGrantType.
 const (
-	ObjectMetadataFieldsValueTypeBoolean      ObjectMetadataFieldsValueType = "boolean"
-	ObjectMetadataFieldsValueTypeDate         ObjectMetadataFieldsValueType = "date"
-	ObjectMetadataFieldsValueTypeDatetime     ObjectMetadataFieldsValueType = "datetime"
-	ObjectMetadataFieldsValueTypeFloat        ObjectMetadataFieldsValueType = "float"
-	ObjectMetadataFieldsValueTypeInt          ObjectMetadataFieldsValueType = "int"
-	ObjectMetadataFieldsValueTypeMultiSelect  ObjectMetadataFieldsValueType = "multiSelect"
-	ObjectMetadataFieldsValueTypeOther        ObjectMetadataFieldsValueType = "other"
-	ObjectMetadataFieldsValueTypeReference    ObjectMetadataFieldsValueType = "reference"
-	ObjectMetadataFieldsValueTypeSingleSelect ObjectMetadataFieldsValueType = "singleSelect"
-	ObjectMetadataFieldsValueTypeString       ObjectMetadataFieldsValueType = "string"
+	AuthorizationCode     Oauth2OptsGrantType = "authorizationCode"
+	AuthorizationCodePKCE Oauth2OptsGrantType = "authorizationCodePKCE"
+	ClientCredentials     Oauth2OptsGrantType = "clientCredentials"
+	Password              Oauth2OptsGrantType = "password"
 )
 
-// Valid indicates whether the value is a known member of the ObjectMetadataFieldsValueType enum.
-func (e ObjectMetadataFieldsValueType) Valid() bool {
+// Valid indicates whether the value is a known member of the Oauth2OptsGrantType enum.
+func (e Oauth2OptsGrantType) Valid() bool {
 	switch e {
-	case ObjectMetadataFieldsValueTypeBoolean:
+	case AuthorizationCode:
 		return true
-	case ObjectMetadataFieldsValueTypeDate:
+	case AuthorizationCodePKCE:
 		return true
-	case ObjectMetadataFieldsValueTypeDatetime:
+	case ClientCredentials:
 		return true
-	case ObjectMetadataFieldsValueTypeFloat:
+	case Password:
 		return true
-	case ObjectMetadataFieldsValueTypeInt:
-		return true
-	case ObjectMetadataFieldsValueTypeMultiSelect:
-		return true
-	case ObjectMetadataFieldsValueTypeOther:
-		return true
-	case ObjectMetadataFieldsValueTypeReference:
-		return true
-	case ObjectMetadataFieldsValueTypeSingleSelect:
-		return true
-	case ObjectMetadataFieldsValueTypeString:
+	default:
+		return false
+	}
+}
+
+// Defines values for OptionalFieldsAutoOption.
+const (
+	OptionalFieldsAutoOptionAll OptionalFieldsAutoOption = "all"
+)
+
+// Valid indicates whether the value is a known member of the OptionalFieldsAutoOption enum.
+func (e OptionalFieldsAutoOption) Valid() bool {
+	switch e {
+	case OptionalFieldsAutoOptionAll:
 		return true
 	default:
 		return false
@@ -1162,37 +709,16 @@ func (e ObjectMetadataFieldsValueType) Valid() bool {
 
 // Defines values for PatchJWTKeyRequestUpdateMask.
 const (
-	PatchJWTKeyRequestUpdateMaskActive PatchJWTKeyRequestUpdateMask = "active"
-	PatchJWTKeyRequestUpdateMaskLabel  PatchJWTKeyRequestUpdateMask = "label"
+	Active PatchJWTKeyRequestUpdateMask = "active"
+	Label  PatchJWTKeyRequestUpdateMask = "label"
 )
 
 // Valid indicates whether the value is a known member of the PatchJWTKeyRequestUpdateMask enum.
 func (e PatchJWTKeyRequestUpdateMask) Valid() bool {
 	switch e {
-	case PatchJWTKeyRequestUpdateMaskActive:
+	case Active:
 		return true
-	case PatchJWTKeyRequestUpdateMaskLabel:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ProviderMetadataSource.
-const (
-	ProviderMetadataSourceInput    ProviderMetadataSource = "input"
-	ProviderMetadataSourceProvider ProviderMetadataSource = "provider"
-	ProviderMetadataSourceToken    ProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the ProviderMetadataSource enum.
-func (e ProviderMetadataSource) Valid() bool {
-	switch e {
-	case ProviderMetadataSourceInput:
-		return true
-	case ProviderMetadataSourceProvider:
-		return true
-	case ProviderMetadataSourceToken:
+	case Label:
 		return true
 	default:
 		return false
@@ -1201,211 +727,49 @@ func (e ProviderMetadataSource) Valid() bool {
 
 // Defines values for ProviderMetadataInfoSource.
 const (
-	ProviderMetadataInfoSourceInput    ProviderMetadataInfoSource = "input"
-	ProviderMetadataInfoSourceProvider ProviderMetadataInfoSource = "provider"
-	ProviderMetadataInfoSourceToken    ProviderMetadataInfoSource = "token"
+	Input    ProviderMetadataInfoSource = "input"
+	Provider ProviderMetadataInfoSource = "provider"
+	Token    ProviderMetadataInfoSource = "token"
 )
 
 // Valid indicates whether the value is a known member of the ProviderMetadataInfoSource enum.
 func (e ProviderMetadataInfoSource) Valid() bool {
 	switch e {
-	case ProviderMetadataInfoSourceInput:
+	case Input:
 		return true
-	case ProviderMetadataInfoSourceProvider:
+	case Provider:
 		return true
-	case ProviderMetadataInfoSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentReadObjectsDeliveryMode.
-const (
-	RevisionContentReadObjectsDeliveryModeAuto      RevisionContentReadObjectsDeliveryMode = "auto"
-	RevisionContentReadObjectsDeliveryModeOnRequest RevisionContentReadObjectsDeliveryMode = "onRequest"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentReadObjectsDeliveryMode enum.
-func (e RevisionContentReadObjectsDeliveryMode) Valid() bool {
-	switch e {
-	case RevisionContentReadObjectsDeliveryModeAuto:
-		return true
-	case RevisionContentReadObjectsDeliveryModeOnRequest:
+	case Token:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RevisionContentReadObjectsEnabled.
+// Defines values for ReadFilterOperator.
 const (
-	RevisionContentReadObjectsEnabledAlways RevisionContentReadObjectsEnabled = "always"
+	Eq ReadFilterOperator = "eq"
 )
 
-// Valid indicates whether the value is a known member of the RevisionContentReadObjectsEnabled enum.
-func (e RevisionContentReadObjectsEnabled) Valid() bool {
+// Valid indicates whether the value is a known member of the ReadFilterOperator enum.
+func (e ReadFilterOperator) Valid() bool {
 	switch e {
-	case RevisionContentReadObjectsEnabledAlways:
+	case Eq:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for RevisionContentReadObjectsOptionalFieldsAuto.
+// Defines values for SelectedFieldsAutoConfig.
 const (
-	RevisionContentReadObjectsOptionalFieldsAutoAll RevisionContentReadObjectsOptionalFieldsAuto = "all"
+	SelectedFieldsAll SelectedFieldsAutoConfig = "all"
 )
 
-// Valid indicates whether the value is a known member of the RevisionContentReadObjectsOptionalFieldsAuto enum.
-func (e RevisionContentReadObjectsOptionalFieldsAuto) Valid() bool {
+// Valid indicates whether the value is a known member of the SelectedFieldsAutoConfig enum.
+func (e SelectedFieldsAutoConfig) Valid() bool {
 	switch e {
-	case RevisionContentReadObjectsOptionalFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentSubscribeObjectsAssociationChangeEventEnabled.
-const (
-	RevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways RevisionContentSubscribeObjectsAssociationChangeEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentSubscribeObjectsAssociationChangeEventEnabled enum.
-func (e RevisionContentSubscribeObjectsAssociationChangeEventEnabled) Valid() bool {
-	switch e {
-	case RevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentSubscribeObjectsCreateEventEnabled.
-const (
-	RevisionContentSubscribeObjectsCreateEventEnabledAlways RevisionContentSubscribeObjectsCreateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentSubscribeObjectsCreateEventEnabled enum.
-func (e RevisionContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case RevisionContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentSubscribeObjectsDeleteEventEnabled.
-const (
-	RevisionContentSubscribeObjectsDeleteEventEnabledAlways RevisionContentSubscribeObjectsDeleteEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentSubscribeObjectsDeleteEventEnabled enum.
-func (e RevisionContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case RevisionContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentSubscribeObjectsUpdateEventEnabled.
-const (
-	RevisionContentSubscribeObjectsUpdateEventEnabledAlways RevisionContentSubscribeObjectsUpdateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentSubscribeObjectsUpdateEventEnabled enum.
-func (e RevisionContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case RevisionContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	RevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll      RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-	RevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "selected"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case RevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	case RevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentWatchSchemaAllObjectsFieldChangedEnabled.
-const (
-	RevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways RevisionContentWatchSchemaAllObjectsFieldChangedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentWatchSchemaAllObjectsFieldChangedEnabled enum.
-func (e RevisionContentWatchSchemaAllObjectsFieldChangedEnabled) Valid() bool {
-	switch e {
-	case RevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentWatchSchemaAllObjectsFieldCreatedEnabled.
-const (
-	RevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways RevisionContentWatchSchemaAllObjectsFieldCreatedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentWatchSchemaAllObjectsFieldCreatedEnabled enum.
-func (e RevisionContentWatchSchemaAllObjectsFieldCreatedEnabled) Valid() bool {
-	switch e {
-	case RevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RevisionContentWatchSchemaAllObjectsFieldDeletedEnabled.
-const (
-	RevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways RevisionContentWatchSchemaAllObjectsFieldDeletedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the RevisionContentWatchSchemaAllObjectsFieldDeletedEnabled enum.
-func (e RevisionContentWatchSchemaAllObjectsFieldDeletedEnabled) Valid() bool {
-	switch e {
-	case RevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateConnectionRequestConnectionProviderMetadataSource.
-const (
-	UpdateConnectionRequestConnectionProviderMetadataSourceInput    UpdateConnectionRequestConnectionProviderMetadataSource = "input"
-	UpdateConnectionRequestConnectionProviderMetadataSourceProvider UpdateConnectionRequestConnectionProviderMetadataSource = "provider"
-	UpdateConnectionRequestConnectionProviderMetadataSourceToken    UpdateConnectionRequestConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the UpdateConnectionRequestConnectionProviderMetadataSource enum.
-func (e UpdateConnectionRequestConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case UpdateConnectionRequestConnectionProviderMetadataSourceInput:
-		return true
-	case UpdateConnectionRequestConnectionProviderMetadataSourceProvider:
-		return true
-	case UpdateConnectionRequestConnectionProviderMetadataSourceToken:
+	case SelectedFieldsAll:
 		return true
 	default:
 		return false
@@ -1442,381 +806,87 @@ func (e UpdateConnectionRequestUpdateMask) Valid() bool {
 	}
 }
 
-// Defines values for CustomAuthConnectJSONBodyProviderMetadataSource.
+// Defines values for UpdateEventEnabled.
 const (
-	CustomAuthConnectJSONBodyProviderMetadataSourceInput    CustomAuthConnectJSONBodyProviderMetadataSource = "input"
-	CustomAuthConnectJSONBodyProviderMetadataSourceProvider CustomAuthConnectJSONBodyProviderMetadataSource = "provider"
-	CustomAuthConnectJSONBodyProviderMetadataSourceToken    CustomAuthConnectJSONBodyProviderMetadataSource = "token"
+	UpdateEventEnabledAlways UpdateEventEnabled = "always"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnectJSONBodyProviderMetadataSource enum.
-func (e CustomAuthConnectJSONBodyProviderMetadataSource) Valid() bool {
+// Valid indicates whether the value is a known member of the UpdateEventEnabled enum.
+func (e UpdateEventEnabled) Valid() bool {
 	switch e {
-	case CustomAuthConnectJSONBodyProviderMetadataSourceInput:
-		return true
-	case CustomAuthConnectJSONBodyProviderMetadataSourceProvider:
-		return true
-	case CustomAuthConnectJSONBodyProviderMetadataSourceToken:
+	case UpdateEventEnabledAlways:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme.
+// Defines values for UpdateEventWatchFieldsAuto.
 const (
-	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeApiKey                      CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "apiKey"
-	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeBasic                       CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "basic"
-	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeNone                        CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "none"
-	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCode     CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/authorizationCode"
-	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCodePKCE CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2clientCredentials     CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/clientCredentials"
-	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2password              CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/password"
+	All      UpdateEventWatchFieldsAuto = "all"
+	Selected UpdateEventWatchFieldsAuto = "selected"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme enum.
-func (e CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme) Valid() bool {
+// Valid indicates whether the value is a known member of the UpdateEventWatchFieldsAuto enum.
+func (e UpdateEventWatchFieldsAuto) Valid() bool {
 	switch e {
-	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeApiKey:
+	case All:
 		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeBasic:
-		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeNone:
-		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2password:
+	case Selected:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource.
+// Defines values for ValueDefaultBooleanApplyOnUpdate.
 const (
-	CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceInput    CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource = "input"
-	CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceProvider CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource = "provider"
-	CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceToken    CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource = "token"
+	ValueDefaultBooleanApplyOnUpdateAlways ValueDefaultBooleanApplyOnUpdate = "always"
+	ValueDefaultBooleanApplyOnUpdateNever  ValueDefaultBooleanApplyOnUpdate = "never"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource enum.
-func (e CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource) Valid() bool {
+// Valid indicates whether the value is a known member of the ValueDefaultBooleanApplyOnUpdate enum.
+func (e ValueDefaultBooleanApplyOnUpdate) Valid() bool {
 	switch e {
-	case CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceInput:
+	case ValueDefaultBooleanApplyOnUpdateAlways:
 		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceProvider:
-		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceToken:
+	case ValueDefaultBooleanApplyOnUpdateNever:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for CustomAuthConnect200JSONResponseBody1ConnectionStatus.
+// Defines values for ValueDefaultIntegerApplyOnUpdate.
 const (
-	CustomAuthConnect200JSONResponseBody1ConnectionStatusBadCredentials CustomAuthConnect200JSONResponseBody1ConnectionStatus = "bad_credentials"
-	CustomAuthConnect200JSONResponseBody1ConnectionStatusCreated        CustomAuthConnect200JSONResponseBody1ConnectionStatus = "created"
-	CustomAuthConnect200JSONResponseBody1ConnectionStatusWorking        CustomAuthConnect200JSONResponseBody1ConnectionStatus = "working"
+	ValueDefaultIntegerApplyOnUpdateAlways ValueDefaultIntegerApplyOnUpdate = "always"
+	ValueDefaultIntegerApplyOnUpdateNever  ValueDefaultIntegerApplyOnUpdate = "never"
 )
 
-// Valid indicates whether the value is a known member of the CustomAuthConnect200JSONResponseBody1ConnectionStatus enum.
-func (e CustomAuthConnect200JSONResponseBody1ConnectionStatus) Valid() bool {
+// Valid indicates whether the value is a known member of the ValueDefaultIntegerApplyOnUpdate enum.
+func (e ValueDefaultIntegerApplyOnUpdate) Valid() bool {
 	switch e {
-	case CustomAuthConnect200JSONResponseBody1ConnectionStatusBadCredentials:
+	case ValueDefaultIntegerApplyOnUpdateAlways:
 		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionStatusCreated:
-		return true
-	case CustomAuthConnect200JSONResponseBody1ConnectionStatusWorking:
+	case ValueDefaultIntegerApplyOnUpdateNever:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for AcceptInvite200JSONResponseBodyOrgRolePrincipalType.
+// Defines values for ValueDefaultStringApplyOnUpdate.
 const (
-	AcceptInvite200JSONResponseBodyOrgRolePrincipalTypeBuilder AcceptInvite200JSONResponseBodyOrgRolePrincipalType = "builder"
-	AcceptInvite200JSONResponseBodyOrgRolePrincipalTypeTeam    AcceptInvite200JSONResponseBodyOrgRolePrincipalType = "team"
+	ValueDefaultStringApplyOnUpdateAlways ValueDefaultStringApplyOnUpdate = "always"
+	ValueDefaultStringApplyOnUpdateNever  ValueDefaultStringApplyOnUpdate = "never"
 )
 
-// Valid indicates whether the value is a known member of the AcceptInvite200JSONResponseBodyOrgRolePrincipalType enum.
-func (e AcceptInvite200JSONResponseBodyOrgRolePrincipalType) Valid() bool {
+// Valid indicates whether the value is a known member of the ValueDefaultStringApplyOnUpdate enum.
+func (e ValueDefaultStringApplyOnUpdate) Valid() bool {
 	switch e {
-	case AcceptInvite200JSONResponseBodyOrgRolePrincipalTypeBuilder:
+	case ValueDefaultStringApplyOnUpdateAlways:
 		return true
-	case AcceptInvite200JSONResponseBodyOrgRolePrincipalTypeTeam:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for AcceptInvite200JSONResponseBodyProjectRolesPrincipalType.
-const (
-	AcceptInvite200JSONResponseBodyProjectRolesPrincipalTypeBuilder AcceptInvite200JSONResponseBodyProjectRolesPrincipalType = "builder"
-	AcceptInvite200JSONResponseBodyProjectRolesPrincipalTypeTeam    AcceptInvite200JSONResponseBodyProjectRolesPrincipalType = "team"
-)
-
-// Valid indicates whether the value is a known member of the AcceptInvite200JSONResponseBodyProjectRolesPrincipalType enum.
-func (e AcceptInvite200JSONResponseBodyProjectRolesPrincipalType) Valid() bool {
-	switch e {
-	case AcceptInvite200JSONResponseBodyProjectRolesPrincipalTypeBuilder:
-		return true
-	case AcceptInvite200JSONResponseBodyProjectRolesPrincipalTypeTeam:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetMyInfo200JSONResponseBodyOrgRolePrincipalType.
-const (
-	GetMyInfo200JSONResponseBodyOrgRolePrincipalTypeBuilder GetMyInfo200JSONResponseBodyOrgRolePrincipalType = "builder"
-	GetMyInfo200JSONResponseBodyOrgRolePrincipalTypeTeam    GetMyInfo200JSONResponseBodyOrgRolePrincipalType = "team"
-)
-
-// Valid indicates whether the value is a known member of the GetMyInfo200JSONResponseBodyOrgRolePrincipalType enum.
-func (e GetMyInfo200JSONResponseBodyOrgRolePrincipalType) Valid() bool {
-	switch e {
-	case GetMyInfo200JSONResponseBodyOrgRolePrincipalTypeBuilder:
-		return true
-	case GetMyInfo200JSONResponseBodyOrgRolePrincipalTypeTeam:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetMyInfo200JSONResponseBodyProjectRolesPrincipalType.
-const (
-	GetMyInfo200JSONResponseBodyProjectRolesPrincipalTypeBuilder GetMyInfo200JSONResponseBodyProjectRolesPrincipalType = "builder"
-	GetMyInfo200JSONResponseBodyProjectRolesPrincipalTypeTeam    GetMyInfo200JSONResponseBodyProjectRolesPrincipalType = "team"
-)
-
-// Valid indicates whether the value is a known member of the GetMyInfo200JSONResponseBodyProjectRolesPrincipalType enum.
-func (e GetMyInfo200JSONResponseBodyProjectRolesPrincipalType) Valid() bool {
-	switch e {
-	case GetMyInfo200JSONResponseBodyProjectRolesPrincipalTypeBuilder:
-		return true
-	case GetMyInfo200JSONResponseBodyProjectRolesPrincipalTypeTeam:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for OauthConnectJSONBodyProviderMetadataSource.
-const (
-	OauthConnectJSONBodyProviderMetadataSourceInput    OauthConnectJSONBodyProviderMetadataSource = "input"
-	OauthConnectJSONBodyProviderMetadataSourceProvider OauthConnectJSONBodyProviderMetadataSource = "provider"
-	OauthConnectJSONBodyProviderMetadataSourceToken    OauthConnectJSONBodyProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the OauthConnectJSONBodyProviderMetadataSource enum.
-func (e OauthConnectJSONBodyProviderMetadataSource) Valid() bool {
-	switch e {
-	case OauthConnectJSONBodyProviderMetadataSourceInput:
-		return true
-	case OauthConnectJSONBodyProviderMetadataSourceProvider:
-		return true
-	case OauthConnectJSONBodyProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListOrgInvites200JSONResponseBodyParentType.
-const (
-	ListOrgInvites200JSONResponseBodyParentTypeOrg ListOrgInvites200JSONResponseBodyParentType = "org"
-)
-
-// Valid indicates whether the value is a known member of the ListOrgInvites200JSONResponseBodyParentType enum.
-func (e ListOrgInvites200JSONResponseBodyParentType) Valid() bool {
-	switch e {
-	case ListOrgInvites200JSONResponseBodyParentTypeOrg:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListOrgInvites200JSONResponseBodyStatus.
-const (
-	ListOrgInvites200JSONResponseBodyStatusAccepted ListOrgInvites200JSONResponseBodyStatus = "accepted"
-	ListOrgInvites200JSONResponseBodyStatusExpired  ListOrgInvites200JSONResponseBodyStatus = "expired"
-	ListOrgInvites200JSONResponseBodyStatusPending  ListOrgInvites200JSONResponseBodyStatus = "pending"
-	ListOrgInvites200JSONResponseBodyStatusRevoked  ListOrgInvites200JSONResponseBodyStatus = "revoked"
-)
-
-// Valid indicates whether the value is a known member of the ListOrgInvites200JSONResponseBodyStatus enum.
-func (e ListOrgInvites200JSONResponseBodyStatus) Valid() bool {
-	switch e {
-	case ListOrgInvites200JSONResponseBodyStatusAccepted:
-		return true
-	case ListOrgInvites200JSONResponseBodyStatusExpired:
-		return true
-	case ListOrgInvites200JSONResponseBodyStatusPending:
-		return true
-	case ListOrgInvites200JSONResponseBodyStatusRevoked:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateOrgInvite201JSONResponseBodyParentType.
-const (
-	CreateOrgInvite201JSONResponseBodyParentTypeOrg CreateOrgInvite201JSONResponseBodyParentType = "org"
-)
-
-// Valid indicates whether the value is a known member of the CreateOrgInvite201JSONResponseBodyParentType enum.
-func (e CreateOrgInvite201JSONResponseBodyParentType) Valid() bool {
-	switch e {
-	case CreateOrgInvite201JSONResponseBodyParentTypeOrg:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateOrgInvite201JSONResponseBodyStatus.
-const (
-	CreateOrgInvite201JSONResponseBodyStatusAccepted CreateOrgInvite201JSONResponseBodyStatus = "accepted"
-	CreateOrgInvite201JSONResponseBodyStatusExpired  CreateOrgInvite201JSONResponseBodyStatus = "expired"
-	CreateOrgInvite201JSONResponseBodyStatusPending  CreateOrgInvite201JSONResponseBodyStatus = "pending"
-	CreateOrgInvite201JSONResponseBodyStatusRevoked  CreateOrgInvite201JSONResponseBodyStatus = "revoked"
-)
-
-// Valid indicates whether the value is a known member of the CreateOrgInvite201JSONResponseBodyStatus enum.
-func (e CreateOrgInvite201JSONResponseBodyStatus) Valid() bool {
-	switch e {
-	case CreateOrgInvite201JSONResponseBodyStatusAccepted:
-		return true
-	case CreateOrgInvite201JSONResponseBodyStatusExpired:
-		return true
-	case CreateOrgInvite201JSONResponseBodyStatusPending:
-		return true
-	case CreateOrgInvite201JSONResponseBodyStatusRevoked:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetOrgInvite200JSONResponseBodyParentType.
-const (
-	GetOrgInvite200JSONResponseBodyParentTypeOrg GetOrgInvite200JSONResponseBodyParentType = "org"
-)
-
-// Valid indicates whether the value is a known member of the GetOrgInvite200JSONResponseBodyParentType enum.
-func (e GetOrgInvite200JSONResponseBodyParentType) Valid() bool {
-	switch e {
-	case GetOrgInvite200JSONResponseBodyParentTypeOrg:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetOrgInvite200JSONResponseBodyStatus.
-const (
-	GetOrgInvite200JSONResponseBodyStatusAccepted GetOrgInvite200JSONResponseBodyStatus = "accepted"
-	GetOrgInvite200JSONResponseBodyStatusExpired  GetOrgInvite200JSONResponseBodyStatus = "expired"
-	GetOrgInvite200JSONResponseBodyStatusPending  GetOrgInvite200JSONResponseBodyStatus = "pending"
-	GetOrgInvite200JSONResponseBodyStatusRevoked  GetOrgInvite200JSONResponseBodyStatus = "revoked"
-)
-
-// Valid indicates whether the value is a known member of the GetOrgInvite200JSONResponseBodyStatus enum.
-func (e GetOrgInvite200JSONResponseBodyStatus) Valid() bool {
-	switch e {
-	case GetOrgInvite200JSONResponseBodyStatusAccepted:
-		return true
-	case GetOrgInvite200JSONResponseBodyStatusExpired:
-		return true
-	case GetOrgInvite200JSONResponseBodyStatusPending:
-		return true
-	case GetOrgInvite200JSONResponseBodyStatusRevoked:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListConnections200JSONResponseBodyAuthScheme.
-const (
-	ListConnections200JSONResponseBodyAuthSchemeApiKey                      ListConnections200JSONResponseBodyAuthScheme = "apiKey"
-	ListConnections200JSONResponseBodyAuthSchemeBasic                       ListConnections200JSONResponseBodyAuthScheme = "basic"
-	ListConnections200JSONResponseBodyAuthSchemeNone                        ListConnections200JSONResponseBodyAuthScheme = "none"
-	ListConnections200JSONResponseBodyAuthSchemeOauth2authorizationCode     ListConnections200JSONResponseBodyAuthScheme = "oauth2/authorizationCode"
-	ListConnections200JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE ListConnections200JSONResponseBodyAuthScheme = "oauth2/authorizationCodePKCE"
-	ListConnections200JSONResponseBodyAuthSchemeOauth2clientCredentials     ListConnections200JSONResponseBodyAuthScheme = "oauth2/clientCredentials"
-	ListConnections200JSONResponseBodyAuthSchemeOauth2password              ListConnections200JSONResponseBodyAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the ListConnections200JSONResponseBodyAuthScheme enum.
-func (e ListConnections200JSONResponseBodyAuthScheme) Valid() bool {
-	switch e {
-	case ListConnections200JSONResponseBodyAuthSchemeApiKey:
-		return true
-	case ListConnections200JSONResponseBodyAuthSchemeBasic:
-		return true
-	case ListConnections200JSONResponseBodyAuthSchemeNone:
-		return true
-	case ListConnections200JSONResponseBodyAuthSchemeOauth2authorizationCode:
-		return true
-	case ListConnections200JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case ListConnections200JSONResponseBodyAuthSchemeOauth2clientCredentials:
-		return true
-	case ListConnections200JSONResponseBodyAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListConnections200JSONResponseBodyProviderMetadataSource.
-const (
-	ListConnections200JSONResponseBodyProviderMetadataSourceInput    ListConnections200JSONResponseBodyProviderMetadataSource = "input"
-	ListConnections200JSONResponseBodyProviderMetadataSourceProvider ListConnections200JSONResponseBodyProviderMetadataSource = "provider"
-	ListConnections200JSONResponseBodyProviderMetadataSourceToken    ListConnections200JSONResponseBodyProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the ListConnections200JSONResponseBodyProviderMetadataSource enum.
-func (e ListConnections200JSONResponseBodyProviderMetadataSource) Valid() bool {
-	switch e {
-	case ListConnections200JSONResponseBodyProviderMetadataSourceInput:
-		return true
-	case ListConnections200JSONResponseBodyProviderMetadataSourceProvider:
-		return true
-	case ListConnections200JSONResponseBodyProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListConnections200JSONResponseBodyStatus.
-const (
-	ListConnections200JSONResponseBodyStatusBadCredentials ListConnections200JSONResponseBodyStatus = "bad_credentials"
-	ListConnections200JSONResponseBodyStatusCreated        ListConnections200JSONResponseBodyStatus = "created"
-	ListConnections200JSONResponseBodyStatusWorking        ListConnections200JSONResponseBodyStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the ListConnections200JSONResponseBodyStatus enum.
-func (e ListConnections200JSONResponseBodyStatus) Valid() bool {
-	switch e {
-	case ListConnections200JSONResponseBodyStatusBadCredentials:
-		return true
-	case ListConnections200JSONResponseBodyStatusCreated:
-		return true
-	case ListConnections200JSONResponseBodyStatusWorking:
+	case ValueDefaultStringApplyOnUpdateNever:
 		return true
 	default:
 		return false
@@ -1835,303 +905,6 @@ func (e GetConnectionParamsRefresh) Valid() bool {
 	case Force:
 		return true
 	case IfExpired:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetConnection200JSONResponseBodyAuthScheme.
-const (
-	GetConnection200JSONResponseBodyAuthSchemeApiKey                      GetConnection200JSONResponseBodyAuthScheme = "apiKey"
-	GetConnection200JSONResponseBodyAuthSchemeBasic                       GetConnection200JSONResponseBodyAuthScheme = "basic"
-	GetConnection200JSONResponseBodyAuthSchemeNone                        GetConnection200JSONResponseBodyAuthScheme = "none"
-	GetConnection200JSONResponseBodyAuthSchemeOauth2authorizationCode     GetConnection200JSONResponseBodyAuthScheme = "oauth2/authorizationCode"
-	GetConnection200JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE GetConnection200JSONResponseBodyAuthScheme = "oauth2/authorizationCodePKCE"
-	GetConnection200JSONResponseBodyAuthSchemeOauth2clientCredentials     GetConnection200JSONResponseBodyAuthScheme = "oauth2/clientCredentials"
-	GetConnection200JSONResponseBodyAuthSchemeOauth2password              GetConnection200JSONResponseBodyAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the GetConnection200JSONResponseBodyAuthScheme enum.
-func (e GetConnection200JSONResponseBodyAuthScheme) Valid() bool {
-	switch e {
-	case GetConnection200JSONResponseBodyAuthSchemeApiKey:
-		return true
-	case GetConnection200JSONResponseBodyAuthSchemeBasic:
-		return true
-	case GetConnection200JSONResponseBodyAuthSchemeNone:
-		return true
-	case GetConnection200JSONResponseBodyAuthSchemeOauth2authorizationCode:
-		return true
-	case GetConnection200JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case GetConnection200JSONResponseBodyAuthSchemeOauth2clientCredentials:
-		return true
-	case GetConnection200JSONResponseBodyAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetConnection200JSONResponseBodyProviderMetadataSource.
-const (
-	GetConnection200JSONResponseBodyProviderMetadataSourceInput    GetConnection200JSONResponseBodyProviderMetadataSource = "input"
-	GetConnection200JSONResponseBodyProviderMetadataSourceProvider GetConnection200JSONResponseBodyProviderMetadataSource = "provider"
-	GetConnection200JSONResponseBodyProviderMetadataSourceToken    GetConnection200JSONResponseBodyProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the GetConnection200JSONResponseBodyProviderMetadataSource enum.
-func (e GetConnection200JSONResponseBodyProviderMetadataSource) Valid() bool {
-	switch e {
-	case GetConnection200JSONResponseBodyProviderMetadataSourceInput:
-		return true
-	case GetConnection200JSONResponseBodyProviderMetadataSourceProvider:
-		return true
-	case GetConnection200JSONResponseBodyProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetConnection200JSONResponseBodyStatus.
-const (
-	GetConnection200JSONResponseBodyStatusBadCredentials GetConnection200JSONResponseBodyStatus = "bad_credentials"
-	GetConnection200JSONResponseBodyStatusCreated        GetConnection200JSONResponseBodyStatus = "created"
-	GetConnection200JSONResponseBodyStatusWorking        GetConnection200JSONResponseBodyStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the GetConnection200JSONResponseBodyStatus enum.
-func (e GetConnection200JSONResponseBodyStatus) Valid() bool {
-	switch e {
-	case GetConnection200JSONResponseBodyStatusBadCredentials:
-		return true
-	case GetConnection200JSONResponseBodyStatusCreated:
-		return true
-	case GetConnection200JSONResponseBodyStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateConnectionJSONBodyConnectionProviderMetadataSource.
-const (
-	UpdateConnectionJSONBodyConnectionProviderMetadataSourceInput    UpdateConnectionJSONBodyConnectionProviderMetadataSource = "input"
-	UpdateConnectionJSONBodyConnectionProviderMetadataSourceProvider UpdateConnectionJSONBodyConnectionProviderMetadataSource = "provider"
-	UpdateConnectionJSONBodyConnectionProviderMetadataSourceToken    UpdateConnectionJSONBodyConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the UpdateConnectionJSONBodyConnectionProviderMetadataSource enum.
-func (e UpdateConnectionJSONBodyConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case UpdateConnectionJSONBodyConnectionProviderMetadataSourceInput:
-		return true
-	case UpdateConnectionJSONBodyConnectionProviderMetadataSourceProvider:
-		return true
-	case UpdateConnectionJSONBodyConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateConnectionJSONBodyUpdateMask.
-const (
-	UpdateConnectionJSONBodyUpdateMaskApiKey                    UpdateConnectionJSONBodyUpdateMask = "apiKey"
-	UpdateConnectionJSONBodyUpdateMaskBasicAuth                 UpdateConnectionJSONBodyUpdateMask = "basicAuth"
-	UpdateConnectionJSONBodyUpdateMaskOauth2ClientCredentials   UpdateConnectionJSONBodyUpdateMask = "oauth2ClientCredentials"
-	UpdateConnectionJSONBodyUpdateMaskOauth2PasswordCredentials UpdateConnectionJSONBodyUpdateMask = "oauth2PasswordCredentials"
-	UpdateConnectionJSONBodyUpdateMaskProviderMetadata          UpdateConnectionJSONBodyUpdateMask = "providerMetadata"
-	UpdateConnectionJSONBodyUpdateMaskProviderWorkspaceRef      UpdateConnectionJSONBodyUpdateMask = "providerWorkspaceRef"
-)
-
-// Valid indicates whether the value is a known member of the UpdateConnectionJSONBodyUpdateMask enum.
-func (e UpdateConnectionJSONBodyUpdateMask) Valid() bool {
-	switch e {
-	case UpdateConnectionJSONBodyUpdateMaskApiKey:
-		return true
-	case UpdateConnectionJSONBodyUpdateMaskBasicAuth:
-		return true
-	case UpdateConnectionJSONBodyUpdateMaskOauth2ClientCredentials:
-		return true
-	case UpdateConnectionJSONBodyUpdateMaskOauth2PasswordCredentials:
-		return true
-	case UpdateConnectionJSONBodyUpdateMaskProviderMetadata:
-		return true
-	case UpdateConnectionJSONBodyUpdateMaskProviderWorkspaceRef:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateConnection200JSONResponseBodyAuthScheme.
-const (
-	UpdateConnection200JSONResponseBodyAuthSchemeApiKey                      UpdateConnection200JSONResponseBodyAuthScheme = "apiKey"
-	UpdateConnection200JSONResponseBodyAuthSchemeBasic                       UpdateConnection200JSONResponseBodyAuthScheme = "basic"
-	UpdateConnection200JSONResponseBodyAuthSchemeNone                        UpdateConnection200JSONResponseBodyAuthScheme = "none"
-	UpdateConnection200JSONResponseBodyAuthSchemeOauth2authorizationCode     UpdateConnection200JSONResponseBodyAuthScheme = "oauth2/authorizationCode"
-	UpdateConnection200JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE UpdateConnection200JSONResponseBodyAuthScheme = "oauth2/authorizationCodePKCE"
-	UpdateConnection200JSONResponseBodyAuthSchemeOauth2clientCredentials     UpdateConnection200JSONResponseBodyAuthScheme = "oauth2/clientCredentials"
-	UpdateConnection200JSONResponseBodyAuthSchemeOauth2password              UpdateConnection200JSONResponseBodyAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the UpdateConnection200JSONResponseBodyAuthScheme enum.
-func (e UpdateConnection200JSONResponseBodyAuthScheme) Valid() bool {
-	switch e {
-	case UpdateConnection200JSONResponseBodyAuthSchemeApiKey:
-		return true
-	case UpdateConnection200JSONResponseBodyAuthSchemeBasic:
-		return true
-	case UpdateConnection200JSONResponseBodyAuthSchemeNone:
-		return true
-	case UpdateConnection200JSONResponseBodyAuthSchemeOauth2authorizationCode:
-		return true
-	case UpdateConnection200JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case UpdateConnection200JSONResponseBodyAuthSchemeOauth2clientCredentials:
-		return true
-	case UpdateConnection200JSONResponseBodyAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateConnection200JSONResponseBodyProviderMetadataSource.
-const (
-	UpdateConnection200JSONResponseBodyProviderMetadataSourceInput    UpdateConnection200JSONResponseBodyProviderMetadataSource = "input"
-	UpdateConnection200JSONResponseBodyProviderMetadataSourceProvider UpdateConnection200JSONResponseBodyProviderMetadataSource = "provider"
-	UpdateConnection200JSONResponseBodyProviderMetadataSourceToken    UpdateConnection200JSONResponseBodyProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the UpdateConnection200JSONResponseBodyProviderMetadataSource enum.
-func (e UpdateConnection200JSONResponseBodyProviderMetadataSource) Valid() bool {
-	switch e {
-	case UpdateConnection200JSONResponseBodyProviderMetadataSourceInput:
-		return true
-	case UpdateConnection200JSONResponseBodyProviderMetadataSourceProvider:
-		return true
-	case UpdateConnection200JSONResponseBodyProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateConnection200JSONResponseBodyStatus.
-const (
-	UpdateConnection200JSONResponseBodyStatusBadCredentials UpdateConnection200JSONResponseBodyStatus = "bad_credentials"
-	UpdateConnection200JSONResponseBodyStatusCreated        UpdateConnection200JSONResponseBodyStatus = "created"
-	UpdateConnection200JSONResponseBodyStatusWorking        UpdateConnection200JSONResponseBodyStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the UpdateConnection200JSONResponseBodyStatus enum.
-func (e UpdateConnection200JSONResponseBodyStatus) Valid() bool {
-	switch e {
-	case UpdateConnection200JSONResponseBodyStatusBadCredentials:
-		return true
-	case UpdateConnection200JSONResponseBodyStatusCreated:
-		return true
-	case UpdateConnection200JSONResponseBodyStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GenerateConnectionJSONBodyProviderMetadataSource.
-const (
-	GenerateConnectionJSONBodyProviderMetadataSourceInput    GenerateConnectionJSONBodyProviderMetadataSource = "input"
-	GenerateConnectionJSONBodyProviderMetadataSourceProvider GenerateConnectionJSONBodyProviderMetadataSource = "provider"
-	GenerateConnectionJSONBodyProviderMetadataSourceToken    GenerateConnectionJSONBodyProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the GenerateConnectionJSONBodyProviderMetadataSource enum.
-func (e GenerateConnectionJSONBodyProviderMetadataSource) Valid() bool {
-	switch e {
-	case GenerateConnectionJSONBodyProviderMetadataSourceInput:
-		return true
-	case GenerateConnectionJSONBodyProviderMetadataSourceProvider:
-		return true
-	case GenerateConnectionJSONBodyProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GenerateConnection201JSONResponseBodyAuthScheme.
-const (
-	GenerateConnection201JSONResponseBodyAuthSchemeApiKey                      GenerateConnection201JSONResponseBodyAuthScheme = "apiKey"
-	GenerateConnection201JSONResponseBodyAuthSchemeBasic                       GenerateConnection201JSONResponseBodyAuthScheme = "basic"
-	GenerateConnection201JSONResponseBodyAuthSchemeNone                        GenerateConnection201JSONResponseBodyAuthScheme = "none"
-	GenerateConnection201JSONResponseBodyAuthSchemeOauth2authorizationCode     GenerateConnection201JSONResponseBodyAuthScheme = "oauth2/authorizationCode"
-	GenerateConnection201JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE GenerateConnection201JSONResponseBodyAuthScheme = "oauth2/authorizationCodePKCE"
-	GenerateConnection201JSONResponseBodyAuthSchemeOauth2clientCredentials     GenerateConnection201JSONResponseBodyAuthScheme = "oauth2/clientCredentials"
-	GenerateConnection201JSONResponseBodyAuthSchemeOauth2password              GenerateConnection201JSONResponseBodyAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the GenerateConnection201JSONResponseBodyAuthScheme enum.
-func (e GenerateConnection201JSONResponseBodyAuthScheme) Valid() bool {
-	switch e {
-	case GenerateConnection201JSONResponseBodyAuthSchemeApiKey:
-		return true
-	case GenerateConnection201JSONResponseBodyAuthSchemeBasic:
-		return true
-	case GenerateConnection201JSONResponseBodyAuthSchemeNone:
-		return true
-	case GenerateConnection201JSONResponseBodyAuthSchemeOauth2authorizationCode:
-		return true
-	case GenerateConnection201JSONResponseBodyAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case GenerateConnection201JSONResponseBodyAuthSchemeOauth2clientCredentials:
-		return true
-	case GenerateConnection201JSONResponseBodyAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GenerateConnection201JSONResponseBodyProviderMetadataSource.
-const (
-	GenerateConnection201JSONResponseBodyProviderMetadataSourceInput    GenerateConnection201JSONResponseBodyProviderMetadataSource = "input"
-	GenerateConnection201JSONResponseBodyProviderMetadataSourceProvider GenerateConnection201JSONResponseBodyProviderMetadataSource = "provider"
-	GenerateConnection201JSONResponseBodyProviderMetadataSourceToken    GenerateConnection201JSONResponseBodyProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the GenerateConnection201JSONResponseBodyProviderMetadataSource enum.
-func (e GenerateConnection201JSONResponseBodyProviderMetadataSource) Valid() bool {
-	switch e {
-	case GenerateConnection201JSONResponseBodyProviderMetadataSourceInput:
-		return true
-	case GenerateConnection201JSONResponseBodyProviderMetadataSourceProvider:
-		return true
-	case GenerateConnection201JSONResponseBodyProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GenerateConnection201JSONResponseBodyStatus.
-const (
-	GenerateConnection201JSONResponseBodyStatusBadCredentials GenerateConnection201JSONResponseBodyStatus = "bad_credentials"
-	GenerateConnection201JSONResponseBodyStatusCreated        GenerateConnection201JSONResponseBodyStatus = "created"
-	GenerateConnection201JSONResponseBodyStatusWorking        GenerateConnection201JSONResponseBodyStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the GenerateConnection201JSONResponseBodyStatus enum.
-func (e GenerateConnection201JSONResponseBodyStatus) Valid() bool {
-	switch e {
-	case GenerateConnection201JSONResponseBodyStatusBadCredentials:
-		return true
-	case GenerateConnection201JSONResponseBodyStatusCreated:
-		return true
-	case GenerateConnection201JSONResponseBodyStatusWorking:
 		return true
 	default:
 		return false
@@ -2159,2160 +932,6 @@ func (e CreateDestinationJSONBodyType) Valid() bool {
 	}
 }
 
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever  ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever  ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever  ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme.
-const (
-	ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeApiKey                      ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme = "apiKey"
-	ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeBasic                       ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme = "basic"
-	ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeNone                        ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme = "none"
-	ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode     ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCode"
-	ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials     ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme = "oauth2/clientCredentials"
-	ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2password              ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme enum.
-func (e ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeApiKey:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeBasic:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeNone:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource.
-const (
-	ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSourceInput    ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource = "input"
-	ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSourceProvider ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource = "provider"
-	ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSourceToken    ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource enum.
-func (e ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSourceInput:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSourceProvider:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyConnectionStatus.
-const (
-	ListInstallationsForProject200JSONResponseBodyConnectionStatusBadCredentials ListInstallationsForProject200JSONResponseBodyConnectionStatus = "bad_credentials"
-	ListInstallationsForProject200JSONResponseBodyConnectionStatusCreated        ListInstallationsForProject200JSONResponseBodyConnectionStatus = "created"
-	ListInstallationsForProject200JSONResponseBodyConnectionStatusWorking        ListInstallationsForProject200JSONResponseBodyConnectionStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyConnectionStatus enum.
-func (e ListInstallationsForProject200JSONResponseBodyConnectionStatus) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyConnectionStatusBadCredentials:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionStatusCreated:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyConnectionStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyHealthStatus.
-const (
-	ListInstallationsForProject200JSONResponseBodyHealthStatusHealthy   ListInstallationsForProject200JSONResponseBodyHealthStatus = "healthy"
-	ListInstallationsForProject200JSONResponseBodyHealthStatusUnhealthy ListInstallationsForProject200JSONResponseBodyHealthStatus = "unhealthy"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyHealthStatus enum.
-func (e ListInstallationsForProject200JSONResponseBodyHealthStatus) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyHealthStatusHealthy:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyHealthStatusUnhealthy:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallationsForProject200JSONResponseBodyLastOperationStatus.
-const (
-	ListInstallationsForProject200JSONResponseBodyLastOperationStatusFailure    ListInstallationsForProject200JSONResponseBodyLastOperationStatus = "failure"
-	ListInstallationsForProject200JSONResponseBodyLastOperationStatusInProgress ListInstallationsForProject200JSONResponseBodyLastOperationStatus = "in_progress"
-	ListInstallationsForProject200JSONResponseBodyLastOperationStatusSuccess    ListInstallationsForProject200JSONResponseBodyLastOperationStatus = "success"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallationsForProject200JSONResponseBodyLastOperationStatus enum.
-func (e ListInstallationsForProject200JSONResponseBodyLastOperationStatus) Valid() bool {
-	switch e {
-	case ListInstallationsForProject200JSONResponseBodyLastOperationStatusFailure:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyLastOperationStatusInProgress:
-		return true
-	case ListInstallationsForProject200JSONResponseBodyLastOperationStatusSuccess:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeAuto      ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode = "auto"
-	ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode = "onRequest"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeAuto:
-		return true
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll      ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-	ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "selected"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled.
-const (
-	ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled enum.
-func (e ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled) Valid() bool {
-	switch e {
-	case ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryModeAuto      CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode = "auto"
-	CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode = "onRequest"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryModeAuto:
-		return true
-	case CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAuto.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAuto enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAuto) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll      CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-	CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "selected"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	case CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled.
-const (
-	CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled enum.
-func (e CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled) Valid() bool {
-	switch e {
-	case CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeAuto      GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode = "auto"
-	GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode = "onRequest"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeAuto:
-		return true
-	case GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll      GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-	GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "selected"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	case GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled.
-const (
-	GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled enum.
-func (e GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled) Valid() bool {
-	switch e {
-	case GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator.
-const (
-	ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator enum.
-func (e ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever  ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever  ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever  ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConnectionAuthScheme.
-const (
-	ListInstallations200JSONResponseBodyConnectionAuthSchemeApiKey                      ListInstallations200JSONResponseBodyConnectionAuthScheme = "apiKey"
-	ListInstallations200JSONResponseBodyConnectionAuthSchemeBasic                       ListInstallations200JSONResponseBodyConnectionAuthScheme = "basic"
-	ListInstallations200JSONResponseBodyConnectionAuthSchemeNone                        ListInstallations200JSONResponseBodyConnectionAuthScheme = "none"
-	ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode     ListInstallations200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCode"
-	ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE ListInstallations200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials     ListInstallations200JSONResponseBodyConnectionAuthScheme = "oauth2/clientCredentials"
-	ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2password              ListInstallations200JSONResponseBodyConnectionAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConnectionAuthScheme enum.
-func (e ListInstallations200JSONResponseBodyConnectionAuthScheme) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConnectionAuthSchemeApiKey:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionAuthSchemeBasic:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionAuthSchemeNone:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConnectionProviderMetadataSource.
-const (
-	ListInstallations200JSONResponseBodyConnectionProviderMetadataSourceInput    ListInstallations200JSONResponseBodyConnectionProviderMetadataSource = "input"
-	ListInstallations200JSONResponseBodyConnectionProviderMetadataSourceProvider ListInstallations200JSONResponseBodyConnectionProviderMetadataSource = "provider"
-	ListInstallations200JSONResponseBodyConnectionProviderMetadataSourceToken    ListInstallations200JSONResponseBodyConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConnectionProviderMetadataSource enum.
-func (e ListInstallations200JSONResponseBodyConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConnectionProviderMetadataSourceInput:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionProviderMetadataSourceProvider:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyConnectionStatus.
-const (
-	ListInstallations200JSONResponseBodyConnectionStatusBadCredentials ListInstallations200JSONResponseBodyConnectionStatus = "bad_credentials"
-	ListInstallations200JSONResponseBodyConnectionStatusCreated        ListInstallations200JSONResponseBodyConnectionStatus = "created"
-	ListInstallations200JSONResponseBodyConnectionStatusWorking        ListInstallations200JSONResponseBodyConnectionStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyConnectionStatus enum.
-func (e ListInstallations200JSONResponseBodyConnectionStatus) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyConnectionStatusBadCredentials:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionStatusCreated:
-		return true
-	case ListInstallations200JSONResponseBodyConnectionStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyHealthStatus.
-const (
-	ListInstallations200JSONResponseBodyHealthStatusHealthy   ListInstallations200JSONResponseBodyHealthStatus = "healthy"
-	ListInstallations200JSONResponseBodyHealthStatusUnhealthy ListInstallations200JSONResponseBodyHealthStatus = "unhealthy"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyHealthStatus enum.
-func (e ListInstallations200JSONResponseBodyHealthStatus) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyHealthStatusHealthy:
-		return true
-	case ListInstallations200JSONResponseBodyHealthStatusUnhealthy:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListInstallations200JSONResponseBodyLastOperationStatus.
-const (
-	ListInstallations200JSONResponseBodyLastOperationStatusFailure    ListInstallations200JSONResponseBodyLastOperationStatus = "failure"
-	ListInstallations200JSONResponseBodyLastOperationStatusInProgress ListInstallations200JSONResponseBodyLastOperationStatus = "in_progress"
-	ListInstallations200JSONResponseBodyLastOperationStatusSuccess    ListInstallations200JSONResponseBodyLastOperationStatus = "success"
-)
-
-// Valid indicates whether the value is a known member of the ListInstallations200JSONResponseBodyLastOperationStatus enum.
-func (e ListInstallations200JSONResponseBodyLastOperationStatus) Valid() bool {
-	switch e {
-	case ListInstallations200JSONResponseBodyLastOperationStatusFailure:
-		return true
-	case ListInstallations200JSONResponseBodyLastOperationStatusInProgress:
-		return true
-	case ListInstallations200JSONResponseBodyLastOperationStatusSuccess:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperator.
-const (
-	CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperatorEq CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperator enum.
-func (e CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabledAlways CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabledNever  CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabledNever  CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabledNever  CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever  CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever  CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever  CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConnectionAuthScheme.
-const (
-	CreateInstallation201JSONResponseBodyConnectionAuthSchemeApiKey                      CreateInstallation201JSONResponseBodyConnectionAuthScheme = "apiKey"
-	CreateInstallation201JSONResponseBodyConnectionAuthSchemeBasic                       CreateInstallation201JSONResponseBodyConnectionAuthScheme = "basic"
-	CreateInstallation201JSONResponseBodyConnectionAuthSchemeNone                        CreateInstallation201JSONResponseBodyConnectionAuthScheme = "none"
-	CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode     CreateInstallation201JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCode"
-	CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE CreateInstallation201JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials     CreateInstallation201JSONResponseBodyConnectionAuthScheme = "oauth2/clientCredentials"
-	CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2password              CreateInstallation201JSONResponseBodyConnectionAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConnectionAuthScheme enum.
-func (e CreateInstallation201JSONResponseBodyConnectionAuthScheme) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConnectionAuthSchemeApiKey:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionAuthSchemeBasic:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionAuthSchemeNone:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource.
-const (
-	CreateInstallation201JSONResponseBodyConnectionProviderMetadataSourceInput    CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource = "input"
-	CreateInstallation201JSONResponseBodyConnectionProviderMetadataSourceProvider CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource = "provider"
-	CreateInstallation201JSONResponseBodyConnectionProviderMetadataSourceToken    CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource enum.
-func (e CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConnectionProviderMetadataSourceInput:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionProviderMetadataSourceProvider:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyConnectionStatus.
-const (
-	CreateInstallation201JSONResponseBodyConnectionStatusBadCredentials CreateInstallation201JSONResponseBodyConnectionStatus = "bad_credentials"
-	CreateInstallation201JSONResponseBodyConnectionStatusCreated        CreateInstallation201JSONResponseBodyConnectionStatus = "created"
-	CreateInstallation201JSONResponseBodyConnectionStatusWorking        CreateInstallation201JSONResponseBodyConnectionStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyConnectionStatus enum.
-func (e CreateInstallation201JSONResponseBodyConnectionStatus) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyConnectionStatusBadCredentials:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionStatusCreated:
-		return true
-	case CreateInstallation201JSONResponseBodyConnectionStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyHealthStatus.
-const (
-	CreateInstallation201JSONResponseBodyHealthStatusHealthy   CreateInstallation201JSONResponseBodyHealthStatus = "healthy"
-	CreateInstallation201JSONResponseBodyHealthStatusUnhealthy CreateInstallation201JSONResponseBodyHealthStatus = "unhealthy"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyHealthStatus enum.
-func (e CreateInstallation201JSONResponseBodyHealthStatus) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyHealthStatusHealthy:
-		return true
-	case CreateInstallation201JSONResponseBodyHealthStatusUnhealthy:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateInstallation201JSONResponseBodyLastOperationStatus.
-const (
-	CreateInstallation201JSONResponseBodyLastOperationStatusFailure    CreateInstallation201JSONResponseBodyLastOperationStatus = "failure"
-	CreateInstallation201JSONResponseBodyLastOperationStatusInProgress CreateInstallation201JSONResponseBodyLastOperationStatus = "in_progress"
-	CreateInstallation201JSONResponseBodyLastOperationStatusSuccess    CreateInstallation201JSONResponseBodyLastOperationStatus = "success"
-)
-
-// Valid indicates whether the value is a known member of the CreateInstallation201JSONResponseBodyLastOperationStatus enum.
-func (e CreateInstallation201JSONResponseBodyLastOperationStatus) Valid() bool {
-	switch e {
-	case CreateInstallation201JSONResponseBodyLastOperationStatusFailure:
-		return true
-	case CreateInstallation201JSONResponseBodyLastOperationStatusInProgress:
-		return true
-	case CreateInstallation201JSONResponseBodyLastOperationStatusSuccess:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator.
-const (
-	GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator enum.
-func (e GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever  GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever  GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever  GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConnectionAuthScheme.
-const (
-	GetInstallation200JSONResponseBodyConnectionAuthSchemeApiKey                      GetInstallation200JSONResponseBodyConnectionAuthScheme = "apiKey"
-	GetInstallation200JSONResponseBodyConnectionAuthSchemeBasic                       GetInstallation200JSONResponseBodyConnectionAuthScheme = "basic"
-	GetInstallation200JSONResponseBodyConnectionAuthSchemeNone                        GetInstallation200JSONResponseBodyConnectionAuthScheme = "none"
-	GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode     GetInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCode"
-	GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE GetInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials     GetInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/clientCredentials"
-	GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2password              GetInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConnectionAuthScheme enum.
-func (e GetInstallation200JSONResponseBodyConnectionAuthScheme) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConnectionAuthSchemeApiKey:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionAuthSchemeBasic:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionAuthSchemeNone:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConnectionProviderMetadataSource.
-const (
-	GetInstallation200JSONResponseBodyConnectionProviderMetadataSourceInput    GetInstallation200JSONResponseBodyConnectionProviderMetadataSource = "input"
-	GetInstallation200JSONResponseBodyConnectionProviderMetadataSourceProvider GetInstallation200JSONResponseBodyConnectionProviderMetadataSource = "provider"
-	GetInstallation200JSONResponseBodyConnectionProviderMetadataSourceToken    GetInstallation200JSONResponseBodyConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConnectionProviderMetadataSource enum.
-func (e GetInstallation200JSONResponseBodyConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConnectionProviderMetadataSourceInput:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionProviderMetadataSourceProvider:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyConnectionStatus.
-const (
-	GetInstallation200JSONResponseBodyConnectionStatusBadCredentials GetInstallation200JSONResponseBodyConnectionStatus = "bad_credentials"
-	GetInstallation200JSONResponseBodyConnectionStatusCreated        GetInstallation200JSONResponseBodyConnectionStatus = "created"
-	GetInstallation200JSONResponseBodyConnectionStatusWorking        GetInstallation200JSONResponseBodyConnectionStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyConnectionStatus enum.
-func (e GetInstallation200JSONResponseBodyConnectionStatus) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyConnectionStatusBadCredentials:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionStatusCreated:
-		return true
-	case GetInstallation200JSONResponseBodyConnectionStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyHealthStatus.
-const (
-	GetInstallation200JSONResponseBodyHealthStatusHealthy   GetInstallation200JSONResponseBodyHealthStatus = "healthy"
-	GetInstallation200JSONResponseBodyHealthStatusUnhealthy GetInstallation200JSONResponseBodyHealthStatus = "unhealthy"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyHealthStatus enum.
-func (e GetInstallation200JSONResponseBodyHealthStatus) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyHealthStatusHealthy:
-		return true
-	case GetInstallation200JSONResponseBodyHealthStatusUnhealthy:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetInstallation200JSONResponseBodyLastOperationStatus.
-const (
-	GetInstallation200JSONResponseBodyLastOperationStatusFailure    GetInstallation200JSONResponseBodyLastOperationStatus = "failure"
-	GetInstallation200JSONResponseBodyLastOperationStatusInProgress GetInstallation200JSONResponseBodyLastOperationStatus = "in_progress"
-	GetInstallation200JSONResponseBodyLastOperationStatusSuccess    GetInstallation200JSONResponseBodyLastOperationStatus = "success"
-)
-
-// Valid indicates whether the value is a known member of the GetInstallation200JSONResponseBodyLastOperationStatus enum.
-func (e GetInstallation200JSONResponseBodyLastOperationStatus) Valid() bool {
-	switch e {
-	case GetInstallation200JSONResponseBodyLastOperationStatusFailure:
-		return true
-	case GetInstallation200JSONResponseBodyLastOperationStatusInProgress:
-		return true
-	case GetInstallation200JSONResponseBodyLastOperationStatusSuccess:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperatorEq UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperator.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperatorEq UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperator enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabledAlways UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabledNever  UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabledAlways UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabledNever  UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabledAlways UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabledNever  UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever  UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever  UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever  UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConnectionAuthScheme.
-const (
-	UpdateInstallation200JSONResponseBodyConnectionAuthSchemeApiKey                      UpdateInstallation200JSONResponseBodyConnectionAuthScheme = "apiKey"
-	UpdateInstallation200JSONResponseBodyConnectionAuthSchemeBasic                       UpdateInstallation200JSONResponseBodyConnectionAuthScheme = "basic"
-	UpdateInstallation200JSONResponseBodyConnectionAuthSchemeNone                        UpdateInstallation200JSONResponseBodyConnectionAuthScheme = "none"
-	UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode     UpdateInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCode"
-	UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE UpdateInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials     UpdateInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/clientCredentials"
-	UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2password              UpdateInstallation200JSONResponseBodyConnectionAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConnectionAuthScheme enum.
-func (e UpdateInstallation200JSONResponseBodyConnectionAuthScheme) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConnectionAuthSchemeApiKey:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionAuthSchemeBasic:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionAuthSchemeNone:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource.
-const (
-	UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSourceInput    UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource = "input"
-	UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSourceProvider UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource = "provider"
-	UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSourceToken    UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource enum.
-func (e UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSourceInput:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSourceProvider:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyConnectionStatus.
-const (
-	UpdateInstallation200JSONResponseBodyConnectionStatusBadCredentials UpdateInstallation200JSONResponseBodyConnectionStatus = "bad_credentials"
-	UpdateInstallation200JSONResponseBodyConnectionStatusCreated        UpdateInstallation200JSONResponseBodyConnectionStatus = "created"
-	UpdateInstallation200JSONResponseBodyConnectionStatusWorking        UpdateInstallation200JSONResponseBodyConnectionStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyConnectionStatus enum.
-func (e UpdateInstallation200JSONResponseBodyConnectionStatus) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyConnectionStatusBadCredentials:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionStatusCreated:
-		return true
-	case UpdateInstallation200JSONResponseBodyConnectionStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyHealthStatus.
-const (
-	UpdateInstallation200JSONResponseBodyHealthStatusHealthy   UpdateInstallation200JSONResponseBodyHealthStatus = "healthy"
-	UpdateInstallation200JSONResponseBodyHealthStatusUnhealthy UpdateInstallation200JSONResponseBodyHealthStatus = "unhealthy"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyHealthStatus enum.
-func (e UpdateInstallation200JSONResponseBodyHealthStatus) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyHealthStatusHealthy:
-		return true
-	case UpdateInstallation200JSONResponseBodyHealthStatusUnhealthy:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateInstallation200JSONResponseBodyLastOperationStatus.
-const (
-	UpdateInstallation200JSONResponseBodyLastOperationStatusFailure    UpdateInstallation200JSONResponseBodyLastOperationStatus = "failure"
-	UpdateInstallation200JSONResponseBodyLastOperationStatusInProgress UpdateInstallation200JSONResponseBodyLastOperationStatus = "in_progress"
-	UpdateInstallation200JSONResponseBodyLastOperationStatusSuccess    UpdateInstallation200JSONResponseBodyLastOperationStatus = "success"
-)
-
-// Valid indicates whether the value is a known member of the UpdateInstallation200JSONResponseBodyLastOperationStatus enum.
-func (e UpdateInstallation200JSONResponseBodyLastOperationStatus) Valid() bool {
-	switch e {
-	case UpdateInstallation200JSONResponseBodyLastOperationStatusFailure:
-		return true
-	case UpdateInstallation200JSONResponseBodyLastOperationStatusInProgress:
-		return true
-	case UpdateInstallation200JSONResponseBodyLastOperationStatusSuccess:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for PatchObjectConfigContentJSONBody0Action.
 const (
 	PatchObjectConfigContentJSONBody0ActionRead      PatchObjectConfigContentJSONBody0Action = "read"
@@ -4328,27 +947,6 @@ func (e PatchObjectConfigContentJSONBody0Action) Valid() bool {
 	case PatchObjectConfigContentJSONBody0ActionSubscribe:
 		return true
 	case PatchObjectConfigContentJSONBody0ActionWrite:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContentJSONBody0ChangesOp.
-const (
-	PatchObjectConfigContentJSONBody0ChangesOpAdd     PatchObjectConfigContentJSONBody0ChangesOp = "add"
-	PatchObjectConfigContentJSONBody0ChangesOpRemove  PatchObjectConfigContentJSONBody0ChangesOp = "remove"
-	PatchObjectConfigContentJSONBody0ChangesOpReplace PatchObjectConfigContentJSONBody0ChangesOp = "replace"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContentJSONBody0ChangesOp enum.
-func (e PatchObjectConfigContentJSONBody0ChangesOp) Valid() bool {
-	switch e {
-	case PatchObjectConfigContentJSONBody0ChangesOpAdd:
-		return true
-	case PatchObjectConfigContentJSONBody0ChangesOpRemove:
-		return true
-	case PatchObjectConfigContentJSONBody0ChangesOpReplace:
 		return true
 	default:
 		return false
@@ -4376,1204 +974,30 @@ func (e PatchObjectConfigContentJSONBody1Action) Valid() bool {
 	}
 }
 
-// Defines values for PatchObjectConfigContentJSONBody1ChangesOp.
-const (
-	Add     PatchObjectConfigContentJSONBody1ChangesOp = "add"
-	Remove  PatchObjectConfigContentJSONBody1ChangesOp = "remove"
-	Replace PatchObjectConfigContentJSONBody1ChangesOp = "replace"
-)
+// AccessTokenOpts Configuration that defines how an OAuth 2.0 access token is attached to
+// outbound API requests. When provided, this configuration overrides the
+// default access-token handling behavior for the connector.
+type AccessTokenOpts struct {
+	// AttachmentType How the access token should be attached to requests.
+	AttachmentType AccessTokenOptsAttachmentType `json:"attachmentType" validate:"required"`
 
-// Valid indicates whether the value is a known member of the PatchObjectConfigContentJSONBody1ChangesOp enum.
-func (e PatchObjectConfigContentJSONBody1ChangesOp) Valid() bool {
-	switch e {
-	case Add:
-		return true
-	case Remove:
-		return true
-	case Replace:
-		return true
-	default:
-		return false
-	}
+	// DocsURL URL with more information about how access token is used.
+	DocsURL string `json:"docsURL,omitempty"`
+
+	// Header Configuration for access token in header. Must be provided if type is in-header.
+	Header *AccessTokenOptsHeader `json:"header,omitempty"`
 }
 
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator = "eq"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperatorEq:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAutoSelectedFieldsAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "always"
-	PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever  PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "always"
-	PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever  PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "always"
-	PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever  PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled = "never"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabledNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "always"
-	PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever  PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate = "never"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateAlways:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways  PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "always"
-	PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "ifEmpty"
-	PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever   PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate = "never"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateAlways:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateIfEmpty:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdateNever:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeApiKey                      PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme = "apiKey"
-	PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeBasic                       PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme = "basic"
-	PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeNone                        PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme = "none"
-	PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode     PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCode"
-	PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme = "oauth2/authorizationCodePKCE"
-	PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials     PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme = "oauth2/clientCredentials"
-	PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2password              PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme = "oauth2/password"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeApiKey:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeBasic:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeNone:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCode:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2authorizationCodePKCE:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2clientCredentials:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionAuthSchemeOauth2password:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSourceInput    PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource = "input"
-	PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSourceProvider PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource = "provider"
-	PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSourceToken    PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource = "token"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSourceInput:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSourceProvider:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSourceToken:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyConnectionStatus.
-const (
-	PatchObjectConfigContent200JSONResponseBodyConnectionStatusBadCredentials PatchObjectConfigContent200JSONResponseBodyConnectionStatus = "bad_credentials"
-	PatchObjectConfigContent200JSONResponseBodyConnectionStatusCreated        PatchObjectConfigContent200JSONResponseBodyConnectionStatus = "created"
-	PatchObjectConfigContent200JSONResponseBodyConnectionStatusWorking        PatchObjectConfigContent200JSONResponseBodyConnectionStatus = "working"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyConnectionStatus enum.
-func (e PatchObjectConfigContent200JSONResponseBodyConnectionStatus) Valid() bool {
-	switch e {
-	case PatchObjectConfigContent200JSONResponseBodyConnectionStatusBadCredentials:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionStatusCreated:
-		return true
-	case PatchObjectConfigContent200JSONResponseBodyConnectionStatusWorking:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyHealthStatus.
-const (
-	Healthy   PatchObjectConfigContent200JSONResponseBodyHealthStatus = "healthy"
-	Unhealthy PatchObjectConfigContent200JSONResponseBodyHealthStatus = "unhealthy"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyHealthStatus enum.
-func (e PatchObjectConfigContent200JSONResponseBodyHealthStatus) Valid() bool {
-	switch e {
-	case Healthy:
-		return true
-	case Unhealthy:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for PatchObjectConfigContent200JSONResponseBodyLastOperationStatus.
-const (
-	Failure    PatchObjectConfigContent200JSONResponseBodyLastOperationStatus = "failure"
-	InProgress PatchObjectConfigContent200JSONResponseBodyLastOperationStatus = "in_progress"
-	Success    PatchObjectConfigContent200JSONResponseBodyLastOperationStatus = "success"
-)
-
-// Valid indicates whether the value is a known member of the PatchObjectConfigContent200JSONResponseBodyLastOperationStatus enum.
-func (e PatchObjectConfigContent200JSONResponseBodyLastOperationStatus) Valid() bool {
-	switch e {
-	case Failure:
-		return true
-	case InProgress:
-		return true
-	case Success:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType.
-const (
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeBoolean      GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "boolean"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeDate         GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "date"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeDatetime     GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "datetime"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeFloat        GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "float"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeInt          GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "int"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeMultiSelect  GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "multiSelect"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeOther        GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "other"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeReference    GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "reference"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeSingleSelect GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "singleSelect"
-	GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeString       GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType = "string"
-)
-
-// Valid indicates whether the value is a known member of the GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType enum.
-func (e GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType) Valid() bool {
-	switch e {
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeBoolean:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeDate:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeDatetime:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeFloat:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeInt:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeMultiSelect:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeOther:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeReference:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeSingleSelect:
-		return true
-	case GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueTypeString:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType.
-const (
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeBoolean      GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "boolean"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeDate         GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "date"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeDatetime     GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "datetime"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeFloat        GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "float"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeInt          GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "int"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeMultiSelect  GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "multiSelect"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeOther        GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "other"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeReference    GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "reference"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeSingleSelect GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "singleSelect"
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeString       GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType = "string"
-)
-
-// Valid indicates whether the value is a known member of the GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType enum.
-func (e GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType) Valid() bool {
-	switch e {
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeBoolean:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeDate:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeDatetime:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeFloat:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeInt:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeMultiSelect:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeOther:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeReference:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeSingleSelect:
-		return true
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueTypeString:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAuto.
-const (
-	GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAutoAll GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAuto enum.
-func (e GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAuto) Valid() bool {
-	switch e {
-	case GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeAuto      BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode = "auto"
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode = "onRequest"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeAuto:
-		return true
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryModeOnRequest:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto = "all"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAutoAll:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll      BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "all"
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto = "selected"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoAll:
-		return true
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAutoSelected:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled.
-const (
-	BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled = "always"
-)
-
-// Valid indicates whether the value is a known member of the BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled enum.
-func (e BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled) Valid() bool {
-	switch e {
-	case BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabledAlways:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListJWTKeys200JSONResponseBodyAlgorithm.
-const (
-	ListJWTKeys200JSONResponseBodyAlgorithmRSA ListJWTKeys200JSONResponseBodyAlgorithm = "RSA"
-)
-
-// Valid indicates whether the value is a known member of the ListJWTKeys200JSONResponseBodyAlgorithm enum.
-func (e ListJWTKeys200JSONResponseBodyAlgorithm) Valid() bool {
-	switch e {
-	case ListJWTKeys200JSONResponseBodyAlgorithmRSA:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateJWTKeyJSONBodyAlgorithm.
-const (
-	CreateJWTKeyJSONBodyAlgorithmRS256 CreateJWTKeyJSONBodyAlgorithm = "RS256"
-)
-
-// Valid indicates whether the value is a known member of the CreateJWTKeyJSONBodyAlgorithm enum.
-func (e CreateJWTKeyJSONBodyAlgorithm) Valid() bool {
-	switch e {
-	case CreateJWTKeyJSONBodyAlgorithmRS256:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetJWTKey200JSONResponseBodyAlgorithm.
-const (
-	GetJWTKey200JSONResponseBodyAlgorithmRSA GetJWTKey200JSONResponseBodyAlgorithm = "RSA"
-)
-
-// Valid indicates whether the value is a known member of the GetJWTKey200JSONResponseBodyAlgorithm enum.
-func (e GetJWTKey200JSONResponseBodyAlgorithm) Valid() bool {
-	switch e {
-	case GetJWTKey200JSONResponseBodyAlgorithmRSA:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateJWTKeyJSONBodyUpdateMask.
-const (
-	UpdateJWTKeyJSONBodyUpdateMaskActive UpdateJWTKeyJSONBodyUpdateMask = "active"
-	UpdateJWTKeyJSONBodyUpdateMaskLabel  UpdateJWTKeyJSONBodyUpdateMask = "label"
-)
-
-// Valid indicates whether the value is a known member of the UpdateJWTKeyJSONBodyUpdateMask enum.
-func (e UpdateJWTKeyJSONBodyUpdateMask) Valid() bool {
-	switch e {
-	case UpdateJWTKeyJSONBodyUpdateMaskActive:
-		return true
-	case UpdateJWTKeyJSONBodyUpdateMaskLabel:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateJWTKey200JSONResponseBodyAlgorithm.
-const (
-	UpdateJWTKey200JSONResponseBodyAlgorithmRSA UpdateJWTKey200JSONResponseBodyAlgorithm = "RSA"
-)
-
-// Valid indicates whether the value is a known member of the UpdateJWTKey200JSONResponseBodyAlgorithm enum.
-func (e UpdateJWTKey200JSONResponseBodyAlgorithm) Valid() bool {
-	switch e {
-	case UpdateJWTKey200JSONResponseBodyAlgorithmRSA:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListEventTopicRoutesParamsEventType.
-const (
-	ListEventTopicRoutesParamsEventTypeConnectionCreated          ListEventTopicRoutesParamsEventType = "connection.created"
-	ListEventTopicRoutesParamsEventTypeConnectionDeleted          ListEventTopicRoutesParamsEventType = "connection.deleted"
-	ListEventTopicRoutesParamsEventTypeConnectionError            ListEventTopicRoutesParamsEventType = "connection.error"
-	ListEventTopicRoutesParamsEventTypeConnectionRefreshed        ListEventTopicRoutesParamsEventType = "connection.refreshed"
-	ListEventTopicRoutesParamsEventTypeConnectionUpdated          ListEventTopicRoutesParamsEventType = "connection.updated"
-	ListEventTopicRoutesParamsEventTypeDestinationWebhookDisabled ListEventTopicRoutesParamsEventType = "destination.webhook.disabled"
-	ListEventTopicRoutesParamsEventTypeInstallationCreated        ListEventTopicRoutesParamsEventType = "installation.created"
-	ListEventTopicRoutesParamsEventTypeInstallationDeleted        ListEventTopicRoutesParamsEventType = "installation.deleted"
-	ListEventTopicRoutesParamsEventTypeInstallationUpdated        ListEventTopicRoutesParamsEventType = "installation.updated"
-	ListEventTopicRoutesParamsEventTypeReadBackfillDone           ListEventTopicRoutesParamsEventType = "read.backfill.done"
-	ListEventTopicRoutesParamsEventTypeReadSchedulePaused         ListEventTopicRoutesParamsEventType = "read.schedule.paused"
-	ListEventTopicRoutesParamsEventTypeReadTriggeredDone          ListEventTopicRoutesParamsEventType = "read.triggered.done"
-	ListEventTopicRoutesParamsEventTypeReadTriggeredError         ListEventTopicRoutesParamsEventType = "read.triggered.error"
-	ListEventTopicRoutesParamsEventTypeSubscribeCreateError       ListEventTopicRoutesParamsEventType = "subscribe.create.error"
-	ListEventTopicRoutesParamsEventTypeWriteAsyncDone             ListEventTopicRoutesParamsEventType = "write.async.done"
-)
-
-// Valid indicates whether the value is a known member of the ListEventTopicRoutesParamsEventType enum.
-func (e ListEventTopicRoutesParamsEventType) Valid() bool {
-	switch e {
-	case ListEventTopicRoutesParamsEventTypeConnectionCreated:
-		return true
-	case ListEventTopicRoutesParamsEventTypeConnectionDeleted:
-		return true
-	case ListEventTopicRoutesParamsEventTypeConnectionError:
-		return true
-	case ListEventTopicRoutesParamsEventTypeConnectionRefreshed:
-		return true
-	case ListEventTopicRoutesParamsEventTypeConnectionUpdated:
-		return true
-	case ListEventTopicRoutesParamsEventTypeDestinationWebhookDisabled:
-		return true
-	case ListEventTopicRoutesParamsEventTypeInstallationCreated:
-		return true
-	case ListEventTopicRoutesParamsEventTypeInstallationDeleted:
-		return true
-	case ListEventTopicRoutesParamsEventTypeInstallationUpdated:
-		return true
-	case ListEventTopicRoutesParamsEventTypeReadBackfillDone:
-		return true
-	case ListEventTopicRoutesParamsEventTypeReadSchedulePaused:
-		return true
-	case ListEventTopicRoutesParamsEventTypeReadTriggeredDone:
-		return true
-	case ListEventTopicRoutesParamsEventTypeReadTriggeredError:
-		return true
-	case ListEventTopicRoutesParamsEventTypeSubscribeCreateError:
-		return true
-	case ListEventTopicRoutesParamsEventTypeWriteAsyncDone:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListEventTopicRoutes200JSONResponseBodyEventType.
-const (
-	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionCreated          ListEventTopicRoutes200JSONResponseBodyEventType = "connection.created"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionDeleted          ListEventTopicRoutes200JSONResponseBodyEventType = "connection.deleted"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionError            ListEventTopicRoutes200JSONResponseBodyEventType = "connection.error"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionRefreshed        ListEventTopicRoutes200JSONResponseBodyEventType = "connection.refreshed"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionUpdated          ListEventTopicRoutes200JSONResponseBodyEventType = "connection.updated"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeDestinationWebhookDisabled ListEventTopicRoutes200JSONResponseBodyEventType = "destination.webhook.disabled"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationCreated        ListEventTopicRoutes200JSONResponseBodyEventType = "installation.created"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationDeleted        ListEventTopicRoutes200JSONResponseBodyEventType = "installation.deleted"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationUpdated        ListEventTopicRoutes200JSONResponseBodyEventType = "installation.updated"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeReadBackfillDone           ListEventTopicRoutes200JSONResponseBodyEventType = "read.backfill.done"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeReadSchedulePaused         ListEventTopicRoutes200JSONResponseBodyEventType = "read.schedule.paused"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeReadTriggeredDone          ListEventTopicRoutes200JSONResponseBodyEventType = "read.triggered.done"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeReadTriggeredError         ListEventTopicRoutes200JSONResponseBodyEventType = "read.triggered.error"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeSubscribeCreateError       ListEventTopicRoutes200JSONResponseBodyEventType = "subscribe.create.error"
-	ListEventTopicRoutes200JSONResponseBodyEventTypeWriteAsyncDone             ListEventTopicRoutes200JSONResponseBodyEventType = "write.async.done"
-)
-
-// Valid indicates whether the value is a known member of the ListEventTopicRoutes200JSONResponseBodyEventType enum.
-func (e ListEventTopicRoutes200JSONResponseBodyEventType) Valid() bool {
-	switch e {
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionCreated:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionDeleted:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionError:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionRefreshed:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionUpdated:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeDestinationWebhookDisabled:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationCreated:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationDeleted:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationUpdated:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeReadBackfillDone:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeReadSchedulePaused:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeReadTriggeredDone:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeReadTriggeredError:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeSubscribeCreateError:
-		return true
-	case ListEventTopicRoutes200JSONResponseBodyEventTypeWriteAsyncDone:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateEventTopicRouteJSONBodyEventType.
-const (
-	CreateEventTopicRouteJSONBodyEventTypeConnectionCreated          CreateEventTopicRouteJSONBodyEventType = "connection.created"
-	CreateEventTopicRouteJSONBodyEventTypeConnectionDeleted          CreateEventTopicRouteJSONBodyEventType = "connection.deleted"
-	CreateEventTopicRouteJSONBodyEventTypeConnectionError            CreateEventTopicRouteJSONBodyEventType = "connection.error"
-	CreateEventTopicRouteJSONBodyEventTypeConnectionRefreshed        CreateEventTopicRouteJSONBodyEventType = "connection.refreshed"
-	CreateEventTopicRouteJSONBodyEventTypeConnectionUpdated          CreateEventTopicRouteJSONBodyEventType = "connection.updated"
-	CreateEventTopicRouteJSONBodyEventTypeDestinationWebhookDisabled CreateEventTopicRouteJSONBodyEventType = "destination.webhook.disabled"
-	CreateEventTopicRouteJSONBodyEventTypeInstallationCreated        CreateEventTopicRouteJSONBodyEventType = "installation.created"
-	CreateEventTopicRouteJSONBodyEventTypeInstallationDeleted        CreateEventTopicRouteJSONBodyEventType = "installation.deleted"
-	CreateEventTopicRouteJSONBodyEventTypeInstallationUpdated        CreateEventTopicRouteJSONBodyEventType = "installation.updated"
-	CreateEventTopicRouteJSONBodyEventTypeReadBackfillDone           CreateEventTopicRouteJSONBodyEventType = "read.backfill.done"
-	CreateEventTopicRouteJSONBodyEventTypeReadSchedulePaused         CreateEventTopicRouteJSONBodyEventType = "read.schedule.paused"
-	CreateEventTopicRouteJSONBodyEventTypeReadTriggeredDone          CreateEventTopicRouteJSONBodyEventType = "read.triggered.done"
-	CreateEventTopicRouteJSONBodyEventTypeReadTriggeredError         CreateEventTopicRouteJSONBodyEventType = "read.triggered.error"
-	CreateEventTopicRouteJSONBodyEventTypeSubscribeCreateError       CreateEventTopicRouteJSONBodyEventType = "subscribe.create.error"
-	CreateEventTopicRouteJSONBodyEventTypeWriteAsyncDone             CreateEventTopicRouteJSONBodyEventType = "write.async.done"
-)
-
-// Valid indicates whether the value is a known member of the CreateEventTopicRouteJSONBodyEventType enum.
-func (e CreateEventTopicRouteJSONBodyEventType) Valid() bool {
-	switch e {
-	case CreateEventTopicRouteJSONBodyEventTypeConnectionCreated:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeConnectionDeleted:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeConnectionError:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeConnectionRefreshed:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeConnectionUpdated:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeDestinationWebhookDisabled:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeInstallationCreated:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeInstallationDeleted:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeInstallationUpdated:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeReadBackfillDone:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeReadSchedulePaused:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeReadTriggeredDone:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeReadTriggeredError:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeSubscribeCreateError:
-		return true
-	case CreateEventTopicRouteJSONBodyEventTypeWriteAsyncDone:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateEventTopicRoute201JSONResponseBodyEventType.
-const (
-	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionCreated          CreateEventTopicRoute201JSONResponseBodyEventType = "connection.created"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionDeleted          CreateEventTopicRoute201JSONResponseBodyEventType = "connection.deleted"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionError            CreateEventTopicRoute201JSONResponseBodyEventType = "connection.error"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionRefreshed        CreateEventTopicRoute201JSONResponseBodyEventType = "connection.refreshed"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionUpdated          CreateEventTopicRoute201JSONResponseBodyEventType = "connection.updated"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeDestinationWebhookDisabled CreateEventTopicRoute201JSONResponseBodyEventType = "destination.webhook.disabled"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationCreated        CreateEventTopicRoute201JSONResponseBodyEventType = "installation.created"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationDeleted        CreateEventTopicRoute201JSONResponseBodyEventType = "installation.deleted"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationUpdated        CreateEventTopicRoute201JSONResponseBodyEventType = "installation.updated"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeReadBackfillDone           CreateEventTopicRoute201JSONResponseBodyEventType = "read.backfill.done"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeReadSchedulePaused         CreateEventTopicRoute201JSONResponseBodyEventType = "read.schedule.paused"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeReadTriggeredDone          CreateEventTopicRoute201JSONResponseBodyEventType = "read.triggered.done"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeReadTriggeredError         CreateEventTopicRoute201JSONResponseBodyEventType = "read.triggered.error"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeSubscribeCreateError       CreateEventTopicRoute201JSONResponseBodyEventType = "subscribe.create.error"
-	CreateEventTopicRoute201JSONResponseBodyEventTypeWriteAsyncDone             CreateEventTopicRoute201JSONResponseBodyEventType = "write.async.done"
-)
-
-// Valid indicates whether the value is a known member of the CreateEventTopicRoute201JSONResponseBodyEventType enum.
-func (e CreateEventTopicRoute201JSONResponseBodyEventType) Valid() bool {
-	switch e {
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionCreated:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionDeleted:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionError:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionRefreshed:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionUpdated:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeDestinationWebhookDisabled:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationCreated:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationDeleted:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationUpdated:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeReadBackfillDone:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeReadSchedulePaused:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeReadTriggeredDone:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeReadTriggeredError:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeSubscribeCreateError:
-		return true
-	case CreateEventTopicRoute201JSONResponseBodyEventTypeWriteAsyncDone:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType.
-const (
-	Boolean      GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "boolean"
-	Date         GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "date"
-	Datetime     GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "datetime"
-	Float        GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "float"
-	Int          GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "int"
-	MultiSelect  GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "multiSelect"
-	Other        GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "other"
-	Reference    GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "reference"
-	SingleSelect GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "singleSelect"
-	String       GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType = "string"
-)
-
-// Valid indicates whether the value is a known member of the GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType enum.
-func (e GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType) Valid() bool {
-	switch e {
-	case Boolean:
-		return true
-	case Date:
-		return true
-	case Datetime:
-		return true
-	case Float:
-		return true
-	case Int:
-		return true
-	case MultiSelect:
-		return true
-	case Other:
-		return true
-	case Reference:
-		return true
-	case SingleSelect:
-		return true
-	case String:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListProviders200JSONResponseBodyApiKeyOptsAttachmentType.
-const (
-	ListProviders200JSONResponseBodyApiKeyOptsAttachmentTypeHeader ListProviders200JSONResponseBodyApiKeyOptsAttachmentType = "header"
-	ListProviders200JSONResponseBodyApiKeyOptsAttachmentTypeQuery  ListProviders200JSONResponseBodyApiKeyOptsAttachmentType = "query"
-)
-
-// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyApiKeyOptsAttachmentType enum.
-func (e ListProviders200JSONResponseBodyApiKeyOptsAttachmentType) Valid() bool {
-	switch e {
-	case ListProviders200JSONResponseBodyApiKeyOptsAttachmentTypeHeader:
-		return true
-	case ListProviders200JSONResponseBodyApiKeyOptsAttachmentTypeQuery:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListProviders200JSONResponseBodyAuthType.
-const (
-	ListProviders200JSONResponseBodyAuthTypeApiKey ListProviders200JSONResponseBodyAuthType = "apiKey"
-	ListProviders200JSONResponseBodyAuthTypeBasic  ListProviders200JSONResponseBodyAuthType = "basic"
-	ListProviders200JSONResponseBodyAuthTypeCustom ListProviders200JSONResponseBodyAuthType = "custom"
-	ListProviders200JSONResponseBodyAuthTypeJwt    ListProviders200JSONResponseBodyAuthType = "jwt"
-	ListProviders200JSONResponseBodyAuthTypeNone   ListProviders200JSONResponseBodyAuthType = "none"
-	ListProviders200JSONResponseBodyAuthTypeOauth2 ListProviders200JSONResponseBodyAuthType = "oauth2"
-)
-
-// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyAuthType enum.
-func (e ListProviders200JSONResponseBodyAuthType) Valid() bool {
-	switch e {
-	case ListProviders200JSONResponseBodyAuthTypeApiKey:
-		return true
-	case ListProviders200JSONResponseBodyAuthTypeBasic:
-		return true
-	case ListProviders200JSONResponseBodyAuthTypeCustom:
-		return true
-	case ListProviders200JSONResponseBodyAuthTypeJwt:
-		return true
-	case ListProviders200JSONResponseBodyAuthTypeNone:
-		return true
-	case ListProviders200JSONResponseBodyAuthTypeOauth2:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed.
-const (
-	ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedPasswordField ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed = "password"
-	ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedUsernameField ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed = "username"
-)
-
-// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed enum.
-func (e ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed) Valid() bool {
-	switch e {
-	case ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedPasswordField:
-		return true
-	case ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedUsernameField:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListProviders200JSONResponseBodyCustomOptsInputsFieldType.
-const (
-	ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword ListProviders200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypePassword"
-	ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect   ListProviders200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeSelect"
-	ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText     ListProviders200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeText"
-)
-
-// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyCustomOptsInputsFieldType enum.
-func (e ListProviders200JSONResponseBodyCustomOptsInputsFieldType) Valid() bool {
-	switch e {
-	case ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword:
-		return true
-	case ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect:
-		return true
-	case ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType.
-const (
-	ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypePassword"
-	ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect   ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeSelect"
-	ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText     ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeText"
-)
-
-// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType enum.
-func (e ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType) Valid() bool {
-	switch e {
-	case ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword:
-		return true
-	case ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect:
-		return true
-	case ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType.
-const (
-	ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentTypeAccessTokenHeaderAttachment ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType = "accessTokenHeaderAttachment"
-)
-
-// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType enum.
-func (e ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType) Valid() bool {
-	switch e {
-	case ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentTypeAccessTokenHeaderAttachment:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListProviders200JSONResponseBodyOauth2OptsGrantType.
-const (
-	ListProviders200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCode     ListProviders200JSONResponseBodyOauth2OptsGrantType = "authorizationCode"
-	ListProviders200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCodePKCE ListProviders200JSONResponseBodyOauth2OptsGrantType = "authorizationCodePKCE"
-	ListProviders200JSONResponseBodyOauth2OptsGrantTypeClientCredentials     ListProviders200JSONResponseBodyOauth2OptsGrantType = "clientCredentials"
-	ListProviders200JSONResponseBodyOauth2OptsGrantTypePassword              ListProviders200JSONResponseBodyOauth2OptsGrantType = "password"
-)
-
-// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyOauth2OptsGrantType enum.
-func (e ListProviders200JSONResponseBodyOauth2OptsGrantType) Valid() bool {
-	switch e {
-	case ListProviders200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCode:
-		return true
-	case ListProviders200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCodePKCE:
-		return true
-	case ListProviders200JSONResponseBodyOauth2OptsGrantTypeClientCredentials:
-		return true
-	case ListProviders200JSONResponseBodyOauth2OptsGrantTypePassword:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProvider200JSONResponseBodyApiKeyOptsAttachmentType.
-const (
-	GetProvider200JSONResponseBodyApiKeyOptsAttachmentTypeHeader GetProvider200JSONResponseBodyApiKeyOptsAttachmentType = "header"
-	GetProvider200JSONResponseBodyApiKeyOptsAttachmentTypeQuery  GetProvider200JSONResponseBodyApiKeyOptsAttachmentType = "query"
-)
-
-// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyApiKeyOptsAttachmentType enum.
-func (e GetProvider200JSONResponseBodyApiKeyOptsAttachmentType) Valid() bool {
-	switch e {
-	case GetProvider200JSONResponseBodyApiKeyOptsAttachmentTypeHeader:
-		return true
-	case GetProvider200JSONResponseBodyApiKeyOptsAttachmentTypeQuery:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProvider200JSONResponseBodyAuthType.
-const (
-	GetProvider200JSONResponseBodyAuthTypeApiKey GetProvider200JSONResponseBodyAuthType = "apiKey"
-	GetProvider200JSONResponseBodyAuthTypeBasic  GetProvider200JSONResponseBodyAuthType = "basic"
-	GetProvider200JSONResponseBodyAuthTypeCustom GetProvider200JSONResponseBodyAuthType = "custom"
-	GetProvider200JSONResponseBodyAuthTypeJwt    GetProvider200JSONResponseBodyAuthType = "jwt"
-	GetProvider200JSONResponseBodyAuthTypeNone   GetProvider200JSONResponseBodyAuthType = "none"
-	GetProvider200JSONResponseBodyAuthTypeOauth2 GetProvider200JSONResponseBodyAuthType = "oauth2"
-)
-
-// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyAuthType enum.
-func (e GetProvider200JSONResponseBodyAuthType) Valid() bool {
-	switch e {
-	case GetProvider200JSONResponseBodyAuthTypeApiKey:
-		return true
-	case GetProvider200JSONResponseBodyAuthTypeBasic:
-		return true
-	case GetProvider200JSONResponseBodyAuthTypeCustom:
-		return true
-	case GetProvider200JSONResponseBodyAuthTypeJwt:
-		return true
-	case GetProvider200JSONResponseBodyAuthTypeNone:
-		return true
-	case GetProvider200JSONResponseBodyAuthTypeOauth2:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed.
-const (
-	GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedPasswordField GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed = "password"
-	GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedUsernameField GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed = "username"
-)
-
-// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed enum.
-func (e GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed) Valid() bool {
-	switch e {
-	case GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedPasswordField:
-		return true
-	case GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedUsernameField:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProvider200JSONResponseBodyCustomOptsInputsFieldType.
-const (
-	GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword GetProvider200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypePassword"
-	GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect   GetProvider200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeSelect"
-	GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText     GetProvider200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeText"
-)
-
-// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyCustomOptsInputsFieldType enum.
-func (e GetProvider200JSONResponseBodyCustomOptsInputsFieldType) Valid() bool {
-	switch e {
-	case GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword:
-		return true
-	case GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect:
-		return true
-	case GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType.
-const (
-	GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypePassword"
-	GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect   GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeSelect"
-	GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText     GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeText"
-)
-
-// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType enum.
-func (e GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType) Valid() bool {
-	switch e {
-	case GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword:
-		return true
-	case GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect:
-		return true
-	case GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType.
-const (
-	GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentTypeAccessTokenHeaderAttachment GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType = "accessTokenHeaderAttachment"
-)
-
-// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType enum.
-func (e GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType) Valid() bool {
-	switch e {
-	case GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentTypeAccessTokenHeaderAttachment:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for GetProvider200JSONResponseBodyOauth2OptsGrantType.
-const (
-	GetProvider200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCode     GetProvider200JSONResponseBodyOauth2OptsGrantType = "authorizationCode"
-	GetProvider200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCodePKCE GetProvider200JSONResponseBodyOauth2OptsGrantType = "authorizationCodePKCE"
-	GetProvider200JSONResponseBodyOauth2OptsGrantTypeClientCredentials     GetProvider200JSONResponseBodyOauth2OptsGrantType = "clientCredentials"
-	GetProvider200JSONResponseBodyOauth2OptsGrantTypePassword              GetProvider200JSONResponseBodyOauth2OptsGrantType = "password"
-)
-
-// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyOauth2OptsGrantType enum.
-func (e GetProvider200JSONResponseBodyOauth2OptsGrantType) Valid() bool {
-	switch e {
-	case GetProvider200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCode:
-		return true
-	case GetProvider200JSONResponseBodyOauth2OptsGrantTypeAuthorizationCodePKCE:
-		return true
-	case GetProvider200JSONResponseBodyOauth2OptsGrantTypeClientCredentials:
-		return true
-	case GetProvider200JSONResponseBodyOauth2OptsGrantTypePassword:
-		return true
-	default:
-		return false
-	}
+// AccessTokenOptsAttachmentType How the access token should be attached to requests.
+type AccessTokenOptsAttachmentType string
+
+// AccessTokenOptsHeader Configuration for access token in header. Must be provided if type is in-header.
+type AccessTokenOptsHeader struct {
+	// Name The name of the header to be used for the access token.
+	Name string `json:"name"`
+
+	// ValuePrefix The prefix to be added to the access token value when it is sent in the header.
+	ValuePrefix string `json:"valuePrefix,omitempty"`
 }
 
 // ApiKey defines model for ApiKey.
@@ -5591,7 +1015,52 @@ type ApiKey struct {
 	ProjectId string `json:"projectId"`
 
 	// Scopes The scopes for the API key.
-	Scopes []string `json:"scopes"`
+	Scopes ApiKeyScopes `json:"scopes"`
+}
+
+// ApiKeyAsBasicOpts when this object is present, it means that this provider uses Basic Auth to actually collect an API key
+type ApiKeyAsBasicOpts struct {
+	// FieldUsed whether the API key should be used as the username or password.
+	FieldUsed ApiKeyAsBasicOptsFieldUsed `json:"fieldUsed,omitempty"`
+
+	// KeyFormat How to transform the API key in to a basic auth user:pass string. The %s is replaced with the API key value.
+	KeyFormat string `json:"keyFormat,omitempty"`
+}
+
+// ApiKeyAsBasicOptsFieldUsed whether the API key should be used as the username or password.
+type ApiKeyAsBasicOptsFieldUsed string
+
+// ApiKeyOpts Configuration for API key. Must be provided if authType is apiKey.
+type ApiKeyOpts struct {
+	// AttachmentType How the API key should be attached to requests.
+	AttachmentType ApiKeyOptsAttachmentType `json:"attachmentType" validate:"required"`
+
+	// DocsURL URL with more information about how to get or use an API key.
+	DocsURL string `json:"docsURL,omitempty"`
+
+	// Header Configuration for API key in header. Must be provided if type is in-header.
+	Header *ApiKeyOptsHeader `json:"header,omitempty"`
+
+	// Query Configuration for API key in query parameter. Must be provided if type is in-query.
+	Query *ApiKeyOptsQuery `json:"query,omitempty"`
+}
+
+// ApiKeyOptsAttachmentType How the API key should be attached to requests.
+type ApiKeyOptsAttachmentType string
+
+// ApiKeyOptsHeader Configuration for API key in header. Must be provided if type is in-header.
+type ApiKeyOptsHeader struct {
+	// Name The name of the header to be used for the API key.
+	Name string `json:"name"`
+
+	// ValuePrefix The prefix to be added to the API key value when it is sent in the header.
+	ValuePrefix string `json:"valuePrefix,omitempty"`
+}
+
+// ApiKeyOptsQuery Configuration for API key in query parameter. Must be provided if type is in-query.
+type ApiKeyOptsQuery struct {
+	// Name The name of the query parameter to be used for the API key.
+	Name string `json:"name"`
 }
 
 // ApiKeyRequest defines model for ApiKeyRequest.
@@ -5600,11 +1069,28 @@ type ApiKeyRequest struct {
 	Label string `json:"label"`
 
 	// Scopes The scopes for the API key.
-	Scopes *[]string `json:"scopes,omitempty"`
+	Scopes *ApiKeyScopes `json:"scopes,omitempty"`
 }
 
 // ApiKeyScopes The scopes for the API key.
 type ApiKeyScopes = []string
+
+// ApiProblem A Problem Details object (RFC 9457).
+//
+// Additional properties specific to the problem type may be present.
+type ApiProblem = Problem
+
+// AssociationChangeEvent defines model for AssociationChangeEvent.
+type AssociationChangeEvent struct {
+	// Enabled If always, the integration will subscribe to association change events.
+	Enabled *AssociationChangeEventEnabled `json:"enabled,omitempty"`
+
+	// IncludeFullRecords If true, the integration will include full records in the event payload.
+	IncludeFullRecords *bool `json:"includeFullRecords,omitempty"`
+}
+
+// AssociationChangeEventEnabled If always, the integration will subscribe to association change events.
+type AssociationChangeEventEnabled string
 
 // AssociationDefinition Relationship information for a field to another object
 type AssociationDefinition struct {
@@ -5615,13 +1101,7 @@ type AssociationDefinition struct {
 	Cardinality *string `json:"cardinality,omitempty"`
 
 	// Labels UI labels for an association
-	Labels *struct {
-		// Plural Plural display label
-		Plural *string `json:"plural,omitempty"`
-
-		// Singular Singular display label
-		Singular *string `json:"singular,omitempty"`
-	} `json:"labels,omitempty"`
+	Labels *AssociationLabels `json:"labels,omitempty"`
 
 	// OnDelete Behavior upon foreign object deletion
 	OnDelete *string `json:"onDelete,omitempty"`
@@ -5648,6 +1128,34 @@ type AssociationLabels struct {
 	Singular *string `json:"singular,omitempty"`
 }
 
+// AuthHealthCheck A URL to check the health of a provider's credentials. It's used to see if the credentials are valid and if the provider is reachable.
+type AuthHealthCheck struct {
+	// Method The HTTP method to use for the health check. If not set, defaults to GET.
+	Method string `json:"method,omitempty"`
+
+	// SuccessStatusCodes The HTTP status codes that indicate a successful health check. If not set, defaults to 200 and 204.
+	SuccessStatusCodes []int `json:"successStatusCodes,omitempty"`
+
+	// Url a no-op URL to check the health of the credentials. The URL MUST not mutate any state. If the provider doesn't have such an endpoint, then don't provide credentialsHealthCheck.
+	Url string `json:"url"`
+}
+
+// AuthType The type of authentication required by the provider.
+type AuthType string
+
+// Backfill defines model for Backfill.
+type Backfill struct {
+	DefaultPeriod DefaultPeriod `json:"defaultPeriod"`
+}
+
+// BackfillConfig defines model for BackfillConfig.
+type BackfillConfig struct {
+	DefaultPeriod DefaultPeriodConfig `json:"defaultPeriod"`
+
+	// FieldFilters Filters to apply only during backfill. Multiple conditions are joined by AND. Use this when you want different filter behavior for backfill vs. incremental reads.
+	FieldFilters []ReadFilter `json:"fieldFilters,omitempty"`
+}
+
 // BackfillProgress defines model for BackfillProgress.
 type BackfillProgress struct {
 	// CreateTime When the backfill operation started.
@@ -5670,6 +1178,136 @@ type BackfillProgress struct {
 
 	// UpdateTime When progress was last updated.
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
+}
+
+// BaseConfigContent defines model for BaseConfigContent.
+type BaseConfigContent struct {
+	// Provider The SaaS API that we are integrating with.
+	Provider *string          `json:"provider,omitempty"`
+	Proxy    *BaseProxyConfig `json:"proxy,omitempty"`
+	Read     *BaseReadConfig  `json:"read,omitempty"`
+	Write    *BaseWriteConfig `json:"write,omitempty"`
+}
+
+// BaseProxyConfig defines model for BaseProxyConfig.
+type BaseProxyConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// BaseReadConfig defines model for BaseReadConfig.
+type BaseReadConfig struct {
+	// Objects This is a map of object names to their configuration.
+	Objects *map[string]BaseReadConfigObject `json:"objects,omitempty"`
+}
+
+// BaseReadConfigObject defines model for BaseReadConfigObject.
+type BaseReadConfigObject struct {
+	Backfill *BackfillConfig `json:"backfill,omitempty"`
+
+	// Destination The name of the destination that the result should be sent to.
+	Destination string `json:"destination,omitempty"`
+
+	// Disabled If this flag is set to true, scheduled reads associated with this object will be paused, and on-demand reads will not be allowed.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
+	DynamicMappingsInput *DynamicMappingsInput `json:"dynamicMappingsInput,omitempty"`
+
+	// FieldFilters Filters to apply when reading records during incremental reads and backfill. Multiple conditions are joined by AND. Each field can only have one condition.
+	FieldFilters []ReadFilter `json:"fieldFilters,omitempty"`
+
+	// ObjectName The name of the object to read from.
+	ObjectName *string `json:"objectName,omitempty" validate:"required"`
+
+	// Schedule The schedule for reading the object, in cron syntax.
+	Schedule string `json:"schedule,omitempty"`
+
+	// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.)
+	SelectedFieldMappings *map[string]string `json:"selectedFieldMappings,omitempty"`
+
+	// SelectedFields This is a map of field names to booleans indicating whether they should be read. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
+	SelectedFields *map[string]bool `json:"selectedFields,omitempty"`
+
+	// SelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
+	SelectedFieldsAuto *SelectedFieldsAutoConfig `json:"selectedFieldsAuto,omitempty"`
+
+	// SelectedValueMappings This is a map of field names to their value mappings.
+	SelectedValueMappings map[string]SelectedValueMappings `json:"selectedValueMappings,omitempty"`
+}
+
+// BaseSubscribeConfig defines model for BaseSubscribeConfig.
+type BaseSubscribeConfig struct {
+	Objects *map[string]BaseSubscribeConfigObject `json:"objects,omitempty"`
+}
+
+// BaseSubscribeConfigObject defines model for BaseSubscribeConfigObject.
+type BaseSubscribeConfigObject struct {
+	CreateEvent *ConfigCreateEvent `json:"createEvent,omitempty"`
+	DeleteEvent *ConfigDeleteEvent `json:"deleteEvent,omitempty"`
+
+	// Destination The name of the destination that the result should be sent to.
+	Destination string `json:"destination"`
+
+	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
+	InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
+
+	// ObjectName The name of the object to subscribe to.
+	ObjectName  string             `json:"objectName" validate:"required"`
+	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
+	UpdateEvent *ConfigUpdateEvent `json:"updateEvent,omitempty"`
+}
+
+// BaseWriteConfig defines model for BaseWriteConfig.
+type BaseWriteConfig struct {
+	// Objects This is a map of object names to their configuration.
+	Objects *map[string]BaseWriteConfigObject `json:"objects,omitempty"`
+}
+
+// BaseWriteConfigObject defines model for BaseWriteConfigObject.
+type BaseWriteConfigObject struct {
+	DeletionSettings *DeletionSettings `json:"deletionSettings,omitempty"`
+
+	// ObjectName The name of the object to write to.
+	ObjectName string `json:"objectName" validate:"required"`
+
+	// SelectedFieldSettings This is a map of field names to their settings.
+	SelectedFieldSettings map[string]FieldSetting `json:"selectedFieldSettings,omitempty"`
+
+	// SelectedValueDefaults This is a map of field names to default values. These values will be used when writing to the object.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	SelectedValueDefaults map[string]ValueDefault `json:"selectedValueDefaults,omitempty"`
+}
+
+// BasicAuthOpts Configuration for Basic Auth. Optional.
+type BasicAuthOpts struct {
+	// ApiKeyAsBasic If true, the provider uses an API key which then gets encoded as a basic auth user:pass string.
+	ApiKeyAsBasic bool `json:"apiKeyAsBasic,omitempty"`
+
+	// ApiKeyAsBasicOpts when this object is present, it means that this provider uses Basic Auth to actually collect an API key
+	ApiKeyAsBasicOpts *ApiKeyAsBasicOpts `json:"apiKeyAsBasicOpts,omitempty"`
+
+	// DocsURL URL with more information about how to get or use an API key.
+	DocsURL string `json:"docsURL,omitempty"`
+}
+
+// BatchWriteSupport defines model for BatchWriteSupport.
+type BatchWriteSupport struct {
+	Create BatchWriteSupportConfig `json:"create"`
+	Delete BatchWriteSupportConfig `json:"delete"`
+	Update BatchWriteSupportConfig `json:"update"`
+	Upsert BatchWriteSupportConfig `json:"upsert"`
+}
+
+// BatchWriteSupportConfig defines model for BatchWriteSupportConfig.
+type BatchWriteSupportConfig struct {
+	// DefaultRecordLimit The default number of records supported in a batch
+	DefaultRecordLimit *int `json:"defaultRecordLimit,omitempty"`
+
+	// ObjectRecordLimits Defines object-level overrides for batch record limits. Keys represent object names, and values specify the maximum number of records per batch for those objects.
+	ObjectRecordLimits *map[string]int `json:"objectRecordLimits,omitempty"`
+
+	// Supported Whether this type of batch write operation is supported
+	Supported bool `json:"supported"`
 }
 
 // BillingAccount defines model for BillingAccount.
@@ -5714,40 +1352,9 @@ type Builder struct {
 
 // BuilderInfo defines model for BuilderInfo.
 type BuilderInfo struct {
-	Builder struct {
-		// CreateTime The time that the builder joined Ampersand.
-		CreateTime time.Time `json:"createTime"`
-		FirstName  *string   `json:"firstName,omitempty"`
-		FullName   *string   `json:"fullName,omitempty"`
-
-		// Id The builder ID.
-		Id string `json:"id"`
-
-		// IdpProvider The identity provider
-		IdpProvider string `json:"idpProvider"`
-
-		// IdpRef ID used by the identity provider
-		IdpRef       string  `json:"idpRef"`
-		LastName     *string `json:"lastName,omitempty"`
-		PrimaryEmail *string `json:"primaryEmail,omitempty"`
-	} `json:"builder"`
+	Builder Builder `json:"builder"`
 	OrgRole *struct {
-		Org struct {
-			// CreateTime The time at which the organization was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// DefaultTeamId The ID of the Everyone team for the org.
-			DefaultTeamId string `json:"defaultTeamId"`
-
-			// Id The organization ID.
-			Id string `json:"id"`
-
-			// Label The organization label.
-			Label string `json:"label"`
-
-			// UpdateTime The time the organization was updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"org"`
+		Org Org `json:"org"`
 
 		// PrincipalId The ID of the team or builder.
 		PrincipalId string `json:"principalId"`
@@ -5766,40 +1373,7 @@ type BuilderInfo struct {
 
 		// PrincipalType The type of the principal.
 		PrincipalType BuilderInfoProjectRolesPrincipalType `json:"principalType"`
-		Project       struct {
-			// AppName The display name of the application, shown to end users during the connection flow.
-			AppName string `json:"appName"`
-
-			// CreateTime The time the project was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// Entitlements Plan-based feature flags for the project. These are managed by Ampersand and cannot be set via the API.
-			Entitlements *struct {
-				// BrandingRemoval Controls whether Ampersand branding is removed from the embeddable UI components.
-				BrandingRemoval struct {
-					// Value True if Ampersand branding has been removed for this project.
-					Value bool `json:"value"`
-				} `json:"brandingRemoval,omitempty"`
-
-				// LogRetentionDays The number of days that logs are retained for this project.
-				LogRetentionDays struct {
-					// Value The log retention period for this project, in days.
-					Value int `json:"value"`
-				} `json:"logRetentionDays,omitempty"`
-			} `json:"entitlements,omitempty"`
-
-			// Id The unique identifier for the project.
-			Id string `json:"id"`
-
-			// Name The unique name for the project.
-			Name string `json:"name"`
-
-			// OrgId The ID of the organization that this project belongs to.
-			OrgId string `json:"orgId"`
-
-			// UpdateTime The time the project was updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"project"`
+		Project       Project                              `json:"project"`
 
 		// Role The role of the builder in the project.
 		Role string `json:"role"`
@@ -5811,6 +1385,17 @@ type BuilderInfoOrgRolePrincipalType string
 
 // BuilderInfoProjectRolesPrincipalType The type of the principal.
 type BuilderInfoProjectRolesPrincipalType string
+
+// BulkWriteSupport defines model for BulkWriteSupport.
+type BulkWriteSupport struct {
+	Delete bool `json:"delete"`
+	Insert bool `json:"insert"`
+	Update bool `json:"update"`
+	Upsert bool `json:"upsert"`
+}
+
+// CatalogType defines model for CatalogType.
+type CatalogType map[string]ProviderInfo
 
 // ClaimedDomainResponse defines model for ClaimedDomainResponse.
 type ClaimedDomainResponse struct {
@@ -5829,166 +1414,7 @@ type ClaimedDomainResponse struct {
 
 // Config defines model for Config.
 type Config struct {
-	Content struct {
-		// Provider The SaaS API that we are integrating with.
-		Provider string `json:"provider"`
-		Proxy    *struct {
-			Enabled *bool `json:"enabled,omitempty"`
-		} `json:"proxy,omitempty"`
-		Read *struct {
-			Objects map[string]struct {
-				Backfill *struct {
-					DefaultPeriod struct {
-						// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-						Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-						// FullHistory If true, backfill all history. Required if days is not set.
-						FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-					} `json:"defaultPeriod"`
-
-					// FieldFilters Filters to apply only during backfill. Multiple conditions are joined by AND. Use this when you want different filter behavior for backfill vs. incremental reads.
-					FieldFilters []struct {
-						// FieldName The name of the field to filter on.
-						FieldName string `json:"fieldName"`
-
-						// Operator The comparison operator.
-						Operator ConfigContentReadObjectsBackfillFieldFiltersOperator `json:"operator"`
-
-						// Value The value to filter on. Allowed types are string, boolean, and number.
-						Value interface{} `json:"value,omitempty"`
-					} `json:"fieldFilters,omitempty"`
-				} `json:"backfill,omitempty"`
-
-				// Destination The name of the destination that the result should be sent to.
-				Destination string `json:"destination,omitempty"`
-
-				// Disabled If this flag is set to true, scheduled reads associated with this object will be paused, and on-demand reads will not be allowed.
-				Disabled *bool `json:"disabled,omitempty"`
-
-				// DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
-				DynamicMappingsInput *[]struct {
-					// FieldName The name of the field in SaaS provider, if present, then we will not prompt the user to map the field.
-					FieldName *string `json:"fieldName,omitempty"`
-
-					// MapToDisplayName Optional display name of the field to show the user in the mapping UI.
-					MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-
-					// MapToName The name of the field in your application.
-					MapToName string `json:"mapToName"`
-
-					// MappedValues If you would like the user to map a set of possible values, this is the list of possible values of the field in your application.
-					MappedValues *[]struct {
-						MappedDisplayValue string `json:"mappedDisplayValue"`
-						MappedValue        string `json:"mappedValue"`
-					} `json:"mappedValues,omitempty"`
-
-					// Prompt Optional prompt to show the user in the mapping UI.
-					Prompt *string `json:"prompt,omitempty"`
-				} `json:"dynamicMappingsInput,omitempty"`
-
-				// FieldFilters Filters to apply when reading records during incremental reads and backfill. Multiple conditions are joined by AND. Each field can only have one condition.
-				FieldFilters []struct {
-					// FieldName The name of the field to filter on.
-					FieldName string `json:"fieldName"`
-
-					// Operator The comparison operator.
-					Operator ConfigContentReadObjectsFieldFiltersOperator `json:"operator"`
-
-					// Value The value to filter on. Allowed types are string, boolean, and number.
-					Value interface{} `json:"value,omitempty"`
-				} `json:"fieldFilters,omitempty"`
-
-				// ObjectName The name of the object to read from.
-				ObjectName string `json:"objectName" validate:"required"`
-
-				// Schedule The schedule for reading the object, in cron syntax.
-				Schedule string `json:"schedule,omitempty"`
-
-				// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.)
-				SelectedFieldMappings map[string]string `json:"selectedFieldMappings"`
-
-				// SelectedFields This is a map of field names to booleans indicating whether they should be read. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
-				SelectedFields map[string]bool `json:"selectedFields"`
-
-				// SelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
-				SelectedFieldsAuto *ConfigContentReadObjectsSelectedFieldsAuto `json:"selectedFieldsAuto,omitempty"`
-
-				// SelectedValueMappings This is a map of field names to their value mappings.
-				SelectedValueMappings map[string]map[string]string `json:"selectedValueMappings,omitempty"`
-			} `json:"objects"`
-		} `json:"read,omitempty"`
-		Subscribe *struct {
-			Objects map[string]struct {
-				CreateEvent *struct {
-					// Enabled Conditions to enable create events.
-					Enabled ConfigContentSubscribeObjectsCreateEventEnabled `json:"enabled" validate:"oneof=always never"`
-				} `json:"createEvent,omitempty"`
-				DeleteEvent *struct {
-					// Enabled Conditions to enable delete events.
-					Enabled ConfigContentSubscribeObjectsDeleteEventEnabled `json:"enabled" validate:"oneof=always never"`
-				} `json:"deleteEvent,omitempty"`
-
-				// Destination The name of the destination that the result should be sent to.
-				Destination string `json:"destination"`
-
-				// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-				InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
-
-				// ObjectName The name of the object to subscribe to.
-				ObjectName  string    `json:"objectName" validate:"required"`
-				OtherEvents *[]string `json:"otherEvents,omitempty"`
-				UpdateEvent *struct {
-					// Enabled Conditions to enable update events.
-					Enabled ConfigContentSubscribeObjectsUpdateEventEnabled `json:"enabled" validate:"oneof=always never"`
-
-					// RequiredWatchFields The fields that should be watched.
-					RequiredWatchFields *[]string `json:"requiredWatchFields,omitempty"`
-
-					// WatchFieldsAuto Whether to watch fields all fields automatically.
-					WatchFieldsAuto *ConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
-				} `json:"updateEvent,omitempty"`
-			} `json:"objects"`
-		} `json:"subscribe,omitempty"`
-		Write *struct {
-			Objects *map[string]struct {
-				DeletionSettings *struct {
-					// Enabled Whether deletion is enabled for this object
-					Enabled bool `json:"enabled"`
-				} `json:"deletionSettings,omitempty"`
-
-				// ObjectName The name of the object to write to.
-				ObjectName string `json:"objectName" validate:"required"`
-
-				// SelectedFieldSettings This is a map of field names to their settings.
-				SelectedFieldSettings map[string]struct {
-					// Default Only use one of stringValue, integerValue, booleanValue.
-					Default *struct {
-						// BooleanValue The default boolean value to apply to a field
-						BooleanValue *bool `json:"booleanValue,omitempty"`
-
-						// IntegerValue The default integer value to apply to a field
-						IntegerValue *int `json:"integerValue,omitempty"`
-
-						// StringValue The default string value to apply to a field
-						StringValue *string `json:"stringValue,omitempty"`
-					} `json:"default,omitempty"`
-
-					// WriteOnCreate Whether the default value should be applied when creating a record.
-					WriteOnCreate ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate `json:"writeOnCreate,omitempty"`
-
-					// WriteOnUpdate Whether the default value should be applied when updating a record.
-					// - always: Always write to the field on update
-					// - never: Never write to the field on update
-					// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
-					WriteOnUpdate ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate `json:"writeOnUpdate,omitempty"`
-				} `json:"selectedFieldSettings,omitempty"`
-
-				// SelectedValueDefaults This is a map of field names to default values. These values will be used when writing to the object.
-				// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-				SelectedValueDefaults map[string]any `json:"selectedValueDefaults,omitempty"`
-			} `json:"objects,omitempty"`
-		} `json:"write,omitempty"`
-	} `json:"content"`
+	Content ConfigContent `json:"content"`
 
 	// CreateTime The time the config was created.
 	CreateTime time.Time `json:"createTime"`
@@ -6003,35 +1429,54 @@ type Config struct {
 	RevisionId string `json:"revisionId"`
 }
 
-// ConfigContentReadObjectsBackfillFieldFiltersOperator The comparison operator.
-type ConfigContentReadObjectsBackfillFieldFiltersOperator string
+// ConfigContent defines model for ConfigContent.
+type ConfigContent struct {
+	// Provider The SaaS API that we are integrating with.
+	Provider  string           `json:"provider"`
+	Proxy     *BaseProxyConfig `json:"proxy,omitempty"`
+	Read      *ReadConfig      `json:"read,omitempty"`
+	Subscribe *SubscribeConfig `json:"subscribe,omitempty"`
+	Write     *WriteConfig     `json:"write,omitempty"`
+}
 
-// ConfigContentReadObjectsFieldFiltersOperator The comparison operator.
-type ConfigContentReadObjectsFieldFiltersOperator string
+// ConfigCreateEvent defines model for ConfigCreateEvent.
+type ConfigCreateEvent struct {
+	// Enabled Conditions to enable create events.
+	Enabled ConfigCreateEventEnabled `json:"enabled" validate:"oneof=always never"`
+}
 
-// ConfigContentReadObjectsSelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
-type ConfigContentReadObjectsSelectedFieldsAuto string
+// ConfigCreateEventEnabled Conditions to enable create events.
+type ConfigCreateEventEnabled string
 
-// ConfigContentSubscribeObjectsCreateEventEnabled Conditions to enable create events.
-type ConfigContentSubscribeObjectsCreateEventEnabled string
+// ConfigDeleteEvent defines model for ConfigDeleteEvent.
+type ConfigDeleteEvent struct {
+	// Enabled Conditions to enable delete events.
+	Enabled ConfigDeleteEventEnabled `json:"enabled" validate:"oneof=always never"`
+}
 
-// ConfigContentSubscribeObjectsDeleteEventEnabled Conditions to enable delete events.
-type ConfigContentSubscribeObjectsDeleteEventEnabled string
+// ConfigDeleteEventEnabled Conditions to enable delete events.
+type ConfigDeleteEventEnabled string
 
-// ConfigContentSubscribeObjectsUpdateEventEnabled Conditions to enable update events.
-type ConfigContentSubscribeObjectsUpdateEventEnabled string
+// ConfigOtherEvents defines model for ConfigOtherEvents.
+type ConfigOtherEvents = []string
 
-// ConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto Whether to watch fields all fields automatically.
-type ConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
+// ConfigUpdateEvent defines model for ConfigUpdateEvent.
+type ConfigUpdateEvent struct {
+	// Enabled Conditions to enable update events.
+	Enabled ConfigUpdateEventEnabled `json:"enabled" validate:"oneof=always never"`
 
-// ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate Whether the default value should be applied when creating a record.
-type ConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
+	// RequiredWatchFields The fields that should be watched.
+	RequiredWatchFields *[]string `json:"requiredWatchFields,omitempty"`
 
-// ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate Whether the default value should be applied when updating a record.
-// - always: Always write to the field on update
-// - never: Never write to the field on update
-// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
-type ConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
+	// WatchFieldsAuto Whether to watch fields all fields automatically.
+	WatchFieldsAuto *ConfigUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
+}
+
+// ConfigUpdateEventEnabled Conditions to enable update events.
+type ConfigUpdateEventEnabled string
+
+// ConfigUpdateEventWatchFieldsAuto Whether to watch fields all fields automatically.
+type ConfigUpdateEventWatchFieldsAuto string
 
 // Connection defines model for Connection.
 type Connection struct {
@@ -6040,115 +1485,26 @@ type Connection struct {
 
 	// AuthScheme The authentication scheme used for this connection.
 	AuthScheme ConnectionAuthScheme `json:"authScheme"`
-	Consumer   struct {
-		// ConsumerName The name of the consumer.
-		ConsumerName string `json:"consumerName"`
-
-		// ConsumerRef The consumer reference.
-		ConsumerRef string `json:"consumerRef"`
-
-		// CreateTime The time the consumer was created.
-		CreateTime time.Time `json:"createTime"`
-
-		// ProjectId The Ampersand project ID.
-		ProjectId string `json:"projectId"`
-
-		// UpdateTime The time the consumer was last updated.
-		UpdateTime *time.Time `json:"updateTime,omitempty"`
-	} `json:"consumer"`
+	Consumer   Consumer             `json:"consumer"`
 
 	// CreateTime The time the connection was created.
 	CreateTime time.Time `json:"createTime"`
-	Group      struct {
-		// CreateTime The time the group was created.
-		CreateTime time.Time `json:"createTime"`
-
-		// GroupName The name of the user group that has access to this installation.
-		GroupName string `json:"groupName"`
-
-		// GroupRef The ID of the user group that has access to this installation.
-		GroupRef string `json:"groupRef"`
-
-		// ProjectId The Ampersand project ID.
-		ProjectId string `json:"projectId"`
-
-		// UpdateTime The time the group was last updated.
-		UpdateTime *time.Time `json:"updateTime,omitempty"`
-	} `json:"group"`
+	Group      Group     `json:"group"`
 
 	// Id The connection ID.
-	Id                      string `json:"id"`
-	Oauth2AuthorizationCode *struct {
-		// AccessToken The access token for the connection.
-		AccessToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"accessToken,omitempty"`
-
-		// RefreshToken The refresh token to use for the connection.
-		RefreshToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"refreshToken,omitempty"`
-
-		// Scopes The scopes for the tokens.
-		Scopes *[]string `json:"scopes,omitempty"`
-	} `json:"oauth2AuthorizationCode,omitempty"`
+	Id                      string                             `json:"id"`
+	Oauth2AuthorizationCode *Oauth2AuthorizationCodeTokensOnly `json:"oauth2AuthorizationCode,omitempty"`
 
 	// ProjectId The Ampersand project ID.
 	ProjectId string `json:"projectId"`
 
 	// Provider The SaaS provider that this Connection is for.
-	Provider    string `json:"provider"`
-	ProviderApp *struct {
-		// ClientId The OAuth client ID for this app.
-		ClientId string `json:"clientId"`
-
-		// CreateTime The time the provider app was created.
-		CreateTime time.Time `json:"createTime"`
-
-		// ExternalRef The ID used by the provider to identify the app (optional).
-		ExternalRef *string `json:"externalRef,omitempty"`
-
-		// Id The provider app ID.
-		Id string `json:"id"`
-
-		// Metadata Provider-specific configuration that extends the standard OAuth flow.
-		Metadata *struct {
-			// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
-			AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
-
-			// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
-			ProviderParams *map[string]string `json:"providerParams,omitempty"`
-		} `json:"metadata,omitempty"`
-
-		// ProjectId The Ampersand project ID.
-		ProjectId string `json:"projectId"`
-
-		// Provider The SaaS provider that this app connects to.
-		Provider string `json:"provider"`
-
-		// Scopes The OAuth scopes for this app.
-		Scopes *[]string `json:"scopes,omitempty"`
-
-		// UpdateTime The time the provider app was updated.
-		UpdateTime *time.Time `json:"updateTime,omitempty"`
-	} `json:"providerApp,omitempty"`
+	Provider    string       `json:"provider"`
+	ProviderApp *ProviderApp `json:"providerApp,omitempty"`
 
 	// ProviderConsumerRef If available, the ID that Salesforce/Hubspot uses to identify this user (e.g. Salesforce has IDs in the form of https://login.salesforce.com/id/00D4x0000019CQTEA2/0054x000000orJ4AA)
-	ProviderConsumerRef *string `json:"providerConsumerRef,omitempty"`
-	ProviderMetadata    *map[string]struct {
-		// DisplayName The human-readable name for the field
-		DisplayName *string `json:"displayName,omitempty"`
-
-		// Source The source of the metadata field
-		Source ConnectionProviderMetadataSource `json:"source"`
-
-		// Value The value of the metadata field
-		Value string `json:"value"`
-	} `json:"providerMetadata,omitempty"`
+	ProviderConsumerRef *string           `json:"providerConsumerRef,omitempty"`
+	ProviderMetadata    *ProviderMetadata `json:"providerMetadata,omitempty"`
 
 	// ProviderWorkspaceRef If available, the identifier for the provider workspace (e.g. the Salesforce subdomain)
 	ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
@@ -6165,9 +1521,6 @@ type Connection struct {
 
 // ConnectionAuthScheme The authentication scheme used for this connection.
 type ConnectionAuthScheme string
-
-// ConnectionProviderMetadataSource The source of the metadata field
-type ConnectionProviderMetadataSource string
 
 // ConnectionStatus The status of the connection.
 // - `created`: The connection has just been created or the access token was just refreshed.
@@ -6200,25 +1553,8 @@ type ConnectionRequest struct {
 	GroupName *string `json:"groupName,omitempty"`
 
 	// GroupRef The ID of the user group that has access to this installation.
-	GroupRef                *string `json:"groupRef,omitempty"`
-	Oauth2AuthorizationCode *struct {
-		// AccessToken The access token for the connection.
-		AccessToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"accessToken,omitempty"`
-
-		// RefreshToken The refresh token to use for the connection.
-		RefreshToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"refreshToken,omitempty"`
-
-		// Scopes The scopes for the tokens.
-		Scopes *[]string `json:"scopes,omitempty"`
-	} `json:"oauth2AuthorizationCode,omitempty"`
+	GroupRef                *string                  `json:"groupRef,omitempty"`
+	Oauth2AuthorizationCode *Oauth2AuthorizationCode `json:"oauth2AuthorizationCode,omitempty"`
 	Oauth2ClientCredentials *struct {
 		// ClientId The client ID to use for the connection.
 		ClientId string `json:"clientId"`
@@ -6247,24 +1583,12 @@ type ConnectionRequest struct {
 	} `json:"oauth2PasswordCredentials,omitempty"`
 
 	// Provider The provider name (e.g. "salesforce", "hubspot")
-	Provider         *string `json:"provider,omitempty"`
-	ProviderMetadata *map[string]struct {
-		// DisplayName The human-readable name for the field
-		DisplayName *string `json:"displayName,omitempty"`
-
-		// Source The source of the metadata field
-		Source ConnectionRequestProviderMetadataSource `json:"source"`
-
-		// Value The value of the metadata field
-		Value string `json:"value"`
-	} `json:"providerMetadata,omitempty"`
+	Provider         *string           `json:"provider,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"providerMetadata,omitempty"`
 
 	// ProviderWorkspaceRef The ID of the provider workspace that this connection belongs to.
 	ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
 }
-
-// ConnectionRequestProviderMetadataSource The source of the metadata field
-type ConnectionRequestProviderMetadataSource string
 
 // Consumer defines model for Consumer.
 type Consumer struct {
@@ -6283,6 +1607,15 @@ type Consumer struct {
 	// UpdateTime The time the consumer was last updated.
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
+
+// CreateEvent defines model for CreateEvent.
+type CreateEvent struct {
+	// Enabled If always, the integration will subscribe to create events by default.
+	Enabled *CreateEventEnabled `json:"enabled,omitempty"`
+}
+
+// CreateEventEnabled If always, the integration will subscribe to create events by default.
+type CreateEventEnabled string
 
 // CreateJWTKeyRequest defines model for CreateJWTKeyRequest.
 type CreateJWTKeyRequest struct {
@@ -6326,26 +1659,12 @@ type CustomAuthConnectRequest struct {
 	Provider *string `json:"provider,omitempty"`
 
 	// ProviderAppId ID of the provider app. If omitted, the default provider app set up on the Dashboard is assumed.
-	ProviderAppId *string `json:"providerAppId,omitempty"`
-
-	// ProviderMetadata Additional provider-specific metadata collected from the user.
-	ProviderMetadata *map[string]struct {
-		// DisplayName The human-readable name for the field
-		DisplayName *string `json:"displayName,omitempty"`
-
-		// Source The source of the metadata field
-		Source CustomAuthConnectRequestProviderMetadataSource `json:"source"`
-
-		// Value The value of the metadata field
-		Value string `json:"value"`
-	} `json:"providerMetadata,omitempty"`
+	ProviderAppId    *string           `json:"providerAppId,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"providerMetadata,omitempty"`
 
 	// SessionId Identifies an in-progress flow to resume after a redirect. Returned in a prior redirect response. When present, provider and customAuth are not required.
 	SessionId *string `json:"sessionId,omitempty"`
 }
-
-// CustomAuthConnectRequestProviderMetadataSource The source of the metadata field
-type CustomAuthConnectRequestProviderMetadataSource string
 
 // CustomAuthConnectResponse Response from /custom-auth/connect. Exactly one of redirect or connection is set. A redirect means the client should open the URL and call again with sessionId + callbackParams; a connection means the flow is complete.
 type CustomAuthConnectResponse struct {
@@ -6355,158 +1674,127 @@ type CustomAuthConnectResponse struct {
 // CustomAuthConnectResponse0 defines model for .
 type CustomAuthConnectResponse0 struct {
 	// Redirect Instructs the client to open a URL (e.g. in a popup) to continue a custom auth flow, then resume by calling /custom-auth/connect with the sessionId.
-	Redirect struct {
-		// SessionId The flow identifier to pass back to /custom-auth/connect once the provider redirects to the callback.
-		SessionId string `json:"sessionId"`
-
-		// Url The URL the client should open to continue the flow.
-		Url string `json:"url"`
-	} `json:"redirect"`
+	Redirect RedirectResponse `json:"redirect"`
 }
 
 // CustomAuthConnectResponse1 defines model for .
 type CustomAuthConnectResponse1 struct {
-	Connection struct {
-		// ApiKey The API key used while making the connection.
-		ApiKey *string `json:"apiKey,omitempty"`
-
-		// AuthScheme The authentication scheme used for this connection.
-		AuthScheme CustomAuthConnectResponse1ConnectionAuthScheme `json:"authScheme"`
-		Consumer   struct {
-			// ConsumerName The name of the consumer.
-			ConsumerName string `json:"consumerName"`
-
-			// ConsumerRef The consumer reference.
-			ConsumerRef string `json:"consumerRef"`
-
-			// CreateTime The time the consumer was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// UpdateTime The time the consumer was last updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"consumer"`
-
-		// CreateTime The time the connection was created.
-		CreateTime time.Time `json:"createTime"`
-		Group      struct {
-			// CreateTime The time the group was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// GroupName The name of the user group that has access to this installation.
-			GroupName string `json:"groupName"`
-
-			// GroupRef The ID of the user group that has access to this installation.
-			GroupRef string `json:"groupRef"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// UpdateTime The time the group was last updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"group"`
-
-		// Id The connection ID.
-		Id                      string `json:"id"`
-		Oauth2AuthorizationCode *struct {
-			// AccessToken The access token for the connection.
-			AccessToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"accessToken,omitempty"`
-
-			// RefreshToken The refresh token to use for the connection.
-			RefreshToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"refreshToken,omitempty"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-		} `json:"oauth2AuthorizationCode,omitempty"`
-
-		// ProjectId The Ampersand project ID.
-		ProjectId string `json:"projectId"`
-
-		// Provider The SaaS provider that this Connection is for.
-		Provider    string `json:"provider"`
-		ProviderApp *struct {
-			// ClientId The OAuth client ID for this app.
-			ClientId string `json:"clientId"`
-
-			// CreateTime The time the provider app was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// ExternalRef The ID used by the provider to identify the app (optional).
-			ExternalRef *string `json:"externalRef,omitempty"`
-
-			// Id The provider app ID.
-			Id string `json:"id"`
-
-			// Metadata Provider-specific configuration that extends the standard OAuth flow.
-			Metadata *struct {
-				// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
-				AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
-
-				// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
-				ProviderParams *map[string]string `json:"providerParams,omitempty"`
-			} `json:"metadata,omitempty"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// Provider The SaaS provider that this app connects to.
-			Provider string `json:"provider"`
-
-			// Scopes The OAuth scopes for this app.
-			Scopes *[]string `json:"scopes,omitempty"`
-
-			// UpdateTime The time the provider app was updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"providerApp,omitempty"`
-
-		// ProviderConsumerRef If available, the ID that Salesforce/Hubspot uses to identify this user (e.g. Salesforce has IDs in the form of https://login.salesforce.com/id/00D4x0000019CQTEA2/0054x000000orJ4AA)
-		ProviderConsumerRef *string `json:"providerConsumerRef,omitempty"`
-		ProviderMetadata    *map[string]struct {
-			// DisplayName The human-readable name for the field
-			DisplayName *string `json:"displayName,omitempty"`
-
-			// Source The source of the metadata field
-			Source CustomAuthConnectResponse1ConnectionProviderMetadataSource `json:"source"`
-
-			// Value The value of the metadata field
-			Value string `json:"value"`
-		} `json:"providerMetadata,omitempty"`
-
-		// ProviderWorkspaceRef If available, the identifier for the provider workspace (e.g. the Salesforce subdomain)
-		ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
-
-		// Status The status of the connection.
-		// - `created`: The connection has just been created or the access token was just refreshed.
-		// - `working`: The connection has successfully been used to make a request.
-		// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
-		Status CustomAuthConnectResponse1ConnectionStatus `json:"status"`
-
-		// UpdateTime The time the connection was last updated.
-		UpdateTime *time.Time `json:"updateTime,omitempty"`
-	} `json:"connection"`
+	Connection Connection `json:"connection"`
 }
 
-// CustomAuthConnectResponse1ConnectionAuthScheme The authentication scheme used for this connection.
-type CustomAuthConnectResponse1ConnectionAuthScheme string
+// CustomAuthHeader A custom header to be used for authentication. Automatically added by the backend.
+type CustomAuthHeader struct {
+	// Name The name of the header.
+	Name string `json:"name"`
 
-// CustomAuthConnectResponse1ConnectionProviderMetadataSource The source of the metadata field
-type CustomAuthConnectResponse1ConnectionProviderMetadataSource string
+	// ValueTemplate The value of the header, represented as a Golang text/template expression. Only the backend will interpret this.
+	ValueTemplate string `json:"valueTemplate" skipSubstitutions:"true"`
+}
 
-// CustomAuthConnectResponse1ConnectionStatus The status of the connection.
-// - `created`: The connection has just been created or the access token was just refreshed.
-// - `working`: The connection has successfully been used to make a request.
-// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
-type CustomAuthConnectResponse1ConnectionStatus string
+// CustomAuthInput A custom input field for authentication. This is used by the frontend to dynamically render input fields for custom auth. The backend will not interpret this. It will however receive the value of this field before making a request (in the connection secrets).
+type CustomAuthInput struct {
+	// DisplayName The human-readable name for the custom auth input field.
+	DisplayName string `json:"displayName"`
+
+	// DocsURL URL with details about this authentication mechanism and how to use it. Might be specific to this field, or a general URL for the provider. Optional.
+	DocsURL string `json:"docsURL,omitempty"`
+
+	// FieldType How the frontend should render this input. "fieldTypeText" is an unmasked field (not sensitive), "fieldTypePassword" is a masked field (sensitive), and "fieldTypeSelect" is a dropdown populated from options. Defaults to "fieldTypePassword" when omitted.
+	FieldType CustomAuthInputFieldType `json:"fieldType,omitempty"`
+
+	// Name The internal identifier for the custom auth input field.
+	Name string `json:"name"`
+
+	// Options The dropdown options, used only when fieldType is "select".
+	Options []CustomAuthInputOption `json:"options,omitempty"`
+
+	// Prompt Some helpful text or context to be displayed to the user when asking for this input.
+	Prompt string `json:"prompt,omitempty"`
+}
+
+// CustomAuthInputFieldType How the frontend should render this input. "fieldTypeText" is an unmasked field (not sensitive), "fieldTypePassword" is a masked field (sensitive), and "fieldTypeSelect" is a dropdown populated from options. Defaults to "fieldTypePassword" when omitted.
+type CustomAuthInputFieldType string
+
+// CustomAuthInputOption A selectable option for a custom auth input whose fieldType is "select".
+type CustomAuthInputOption struct {
+	// Label The human-readable label shown for this option.
+	Label string `json:"label"`
+
+	// Value The value stored when this option is selected.
+	Value string `json:"value"`
+}
+
+// CustomAuthOpts Configuration for custom auth. Optional.
+type CustomAuthOpts struct {
+	// Headers A list of custom headers to be used for authentication. The backend will add these headers.
+	Headers []CustomAuthHeader `json:"headers,omitempty"`
+
+	// Inputs A list of custom input fields for authentication. The frontend will render these input fields and the backend will receive the values of these fields before making a request.
+	Inputs []CustomAuthInput `json:"inputs,omitempty"`
+
+	// MultiStep Whether this provider uses a multi-step custom auth flow (browser redirects and/or server-side credential-exchange calls) driven by the /custom-auth/connect endpoint, rather than static header/query-param injection. The step definitions and handlers live in the connectors library, not the catalog; this flag is the signal that lets clients tell "multi-step custom" apart from plain "custom" at a glance.
+	MultiStep bool `json:"multiStep,omitempty"`
+
+	// ProviderInputs Input fields the builder configures on their provider app (e.g. client secrets, subscription keys) rather than the consumer. Routed to storage by fieldType. Optional.
+	ProviderInputs []CustomAuthInput `json:"providerInputs,omitempty"`
+
+	// QueryParams A list of custom query parameters to be used for authentication. The backend will add these query parameters.
+	QueryParams []CustomAuthQueryParam `json:"queryParams,omitempty"`
+}
+
+// CustomAuthQueryParam A custom query parameter to be used for authentication. Automatically added by the backend.
+type CustomAuthQueryParam struct {
+	// Name The name of the query parameter.
+	Name string `json:"name"`
+
+	// ValueTemplate The value of the query parameter, represented as a Golang text/template expression. Only the backend will interpret this.
+	ValueTemplate string `json:"valueTemplate" skipSubstitutions:"true"`
+}
+
+// DefaultPeriod defines model for DefaultPeriod.
+type DefaultPeriod struct {
+	// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
+	Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
+
+	// FullHistory If true, backfill all history. Required if days is not set.
+	FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
+}
+
+// DefaultPeriodConfig defines model for DefaultPeriodConfig.
+type DefaultPeriodConfig struct {
+	// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
+	Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
+
+	// FullHistory If true, backfill all history. Required if days is not set.
+	FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
+}
+
+// DeleteEvent defines model for DeleteEvent.
+type DeleteEvent struct {
+	// Enabled If always, the integration will subscribe to delete events by default.
+	Enabled *DeleteEventEnabled `json:"enabled,omitempty"`
+}
+
+// DeleteEventEnabled If always, the integration will subscribe to delete events by default.
+type DeleteEventEnabled string
+
+// DeletionSettings defines model for DeletionSettings.
+type DeletionSettings struct {
+	// Enabled Whether deletion is enabled for this object
+	Enabled bool `json:"enabled"`
+}
+
+// Delivery defines model for Delivery.
+type Delivery struct {
+	// Mode The data delivery mode for this object. If not specified, defaults to automatic.
+	Mode *DeliveryMode `json:"mode,omitempty"`
+
+	// PageSize The number of records to receive per data delivery.
+	PageSize *int `json:"pageSize,omitempty"`
+}
+
+// DeliveryMode The data delivery mode for this object. If not specified, defaults to automatic.
+type DeliveryMode string
 
 // Destination defines model for Destination.
 type Destination struct {
@@ -6520,7 +1808,7 @@ type Destination struct {
 		Bucket *string `json:"bucket,omitempty"`
 
 		// Headers Additional headers to add when Ampersand sends a webhook message
-		Headers *map[string]string `json:"headers,omitempty"`
+		Headers *WebhookHeaders `json:"headers,omitempty"`
 
 		// KeyTemplate JMESPath template for generating S3 object keys
 		KeyTemplate *string `json:"keyTemplate,omitempty"`
@@ -6563,7 +1851,7 @@ type DestinationWithSecrets struct {
 		Bucket *string `json:"bucket,omitempty"`
 
 		// Headers Additional headers to add when Ampersand sends a webhook message
-		Headers *map[string]string `json:"headers,omitempty"`
+		Headers *WebhookHeaders `json:"headers,omitempty"`
 
 		// KeyTemplate JMESPath template for generating S3 object keys
 		KeyTemplate *string `json:"keyTemplate,omitempty"`
@@ -6600,40 +1888,55 @@ type DestinationWithSecrets struct {
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
 
+// DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
+type DynamicMappingsInput = []DynamicMappingsInputEntry
+
+// DynamicMappingsInputEntry defines model for DynamicMappingsInputEntry.
+type DynamicMappingsInputEntry struct {
+	// FieldName The name of the field in SaaS provider, if present, then we will not prompt the user to map the field.
+	FieldName *string `json:"fieldName,omitempty"`
+
+	// MapToDisplayName Optional display name of the field to show the user in the mapping UI.
+	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
+
+	// MapToName The name of the field in your application.
+	MapToName string `json:"mapToName"`
+
+	// MappedValues If you would like the user to map a set of possible values, this is the list of possible values of the field in your application.
+	MappedValues *[]DynamicMappingsInputMappedValue `json:"mappedValues,omitempty"`
+
+	// Prompt Optional prompt to show the user in the mapping UI.
+	Prompt *string `json:"prompt,omitempty"`
+}
+
+// DynamicMappingsInputMappedValue defines model for DynamicMappingsInputMappedValue.
+type DynamicMappingsInputMappedValue struct {
+	MappedDisplayValue string `json:"mappedDisplayValue"`
+	MappedValue        string `json:"mappedValue"`
+}
+
+// FieldChangedEvent Configuration for detecting when fields are changed.
+type FieldChangedEvent struct {
+	// Enabled If always, the integration will monitor for field changes by default.
+	Enabled FieldChangedEventEnabled `json:"enabled"`
+}
+
+// FieldChangedEventEnabled If always, the integration will monitor for field changes by default.
+type FieldChangedEventEnabled string
+
+// FieldCreatedEvent Configuration for detecting when new fields are created.
+type FieldCreatedEvent struct {
+	// Enabled If always, the integration will monitor for new fields by default.
+	Enabled FieldCreatedEventEnabled `json:"enabled"`
+}
+
+// FieldCreatedEventEnabled If always, the integration will monitor for new fields by default.
+type FieldCreatedEventEnabled string
+
 // FieldDefinition Field definition for creating or updating custom fields
 type FieldDefinition struct {
 	// Association Relationship information for a field to another object
-	Association *struct {
-		// AssociationType High-level association variety (e.g., 'foreignKey', 'lookup', 'ref')
-		AssociationType string `json:"associationType"`
-
-		// Cardinality Association cardinality from the referencing field's perspective
-		Cardinality *string `json:"cardinality,omitempty"`
-
-		// Labels UI labels for an association
-		Labels *struct {
-			// Plural Plural display label
-			Plural *string `json:"plural,omitempty"`
-
-			// Singular Singular display label
-			Singular *string `json:"singular,omitempty"`
-		} `json:"labels,omitempty"`
-
-		// OnDelete Behavior upon foreign object deletion
-		OnDelete *string `json:"onDelete,omitempty"`
-
-		// Required If true, a referenced record must exist
-		Required *bool `json:"required,omitempty"`
-
-		// ReverseLookupFieldName Optional inverse relationship/property name exposed on the target object
-		ReverseLookupFieldName *string `json:"reverseLookupFieldName,omitempty"`
-
-		// TargetField Name of the referenced field on the target object
-		TargetField *string `json:"targetField,omitempty"`
-
-		// TargetObject Name of the referenced/parent object
-		TargetObject string `json:"targetObject"`
-	} `json:"association,omitempty"`
+	Association *AssociationDefinition `json:"association,omitempty"`
 
 	// Description Optional description of the field
 	Description *string `json:"description,omitempty"`
@@ -6648,49 +1951,97 @@ type FieldDefinition struct {
 	Indexed *bool `json:"indexed,omitempty"`
 
 	// NumericOptions Additional options for numeric fields
-	NumericOptions *struct {
-		// DefaultValue Default value for the field
-		DefaultValue *float32 `json:"defaultValue,omitempty"`
-
-		// Max Maximum value for numeric fields
-		Max *float32 `json:"max,omitempty"`
-
-		// Min Minimum value for numeric fields
-		Min *float32 `json:"min,omitempty"`
-
-		// Precision Total number of digits (for decimal types)
-		Precision *int `json:"precision,omitempty"`
-
-		// Scale Number of digits to the right of the decimal point (for decimal types)
-		Scale *int `json:"scale,omitempty"`
-	} `json:"numericOptions,omitempty"`
+	NumericOptions *NumericFieldOptions `json:"numericOptions,omitempty"`
 
 	// Required Indicates if the field is required
 	Required *bool `json:"required,omitempty"`
 
 	// StringOptions Additional options for string fields
-	StringOptions *struct {
-		// DefaultValue Default value for the field
-		DefaultValue *string `json:"defaultValue,omitempty"`
-
-		// Length Maximum length of the string field
-		Length *int `json:"length,omitempty"`
-
-		// Pattern Regex pattern that the string field value must match
-		Pattern *string `json:"pattern,omitempty"`
-
-		// Values List of allowed values for enum fields
-		Values *[]string `json:"values,omitempty"`
-
-		// ValuesRestricted Indicates if the field value must be limited to what's in Values
-		ValuesRestricted *bool `json:"valuesRestricted,omitempty"`
-	} `json:"stringOptions,omitempty"`
+	StringOptions *StringFieldOptions `json:"stringOptions,omitempty"`
 
 	// Unique Indicates if the field must be unique across all records
 	Unique *bool `json:"unique,omitempty"`
 
 	// ValueType The data type of the field. Valid values are string, boolean, date, datetime, singleSelect, multiSelect, int, float, reference
 	ValueType string `json:"valueType"`
+}
+
+// FieldDeletedEvent Configuration for detecting when fields are deleted.
+type FieldDeletedEvent struct {
+	// Enabled If always, the integration will monitor for deleted fields by default.
+	Enabled FieldDeletedEventEnabled `json:"enabled"`
+}
+
+// FieldDeletedEventEnabled If always, the integration will monitor for deleted fields by default.
+type FieldDeletedEventEnabled string
+
+// FieldMetadata Metadata about a field. Please note that different providers have different levels of support for field metadata. Please reach out to support@withampersand.com if need expanded support for a particular provider.
+type FieldMetadata struct {
+	// DisplayName The display name of the field from the provider API.
+	DisplayName string `json:"displayName"`
+
+	// FieldName The name of the field from the provider API.
+	FieldName string `json:"fieldName"`
+
+	// IsCustom Whether the field is custom field.
+	IsCustom *bool `json:"isCustom,omitempty"`
+
+	// IsRequired Whether the field is required when creating a new record.
+	IsRequired *bool `json:"isRequired,omitempty"`
+
+	// ProviderType Raw field type from the provider API.
+	ProviderType string `json:"providerType,omitempty"`
+
+	// ReadOnly Whether the field is read-only.
+	ReadOnly *bool `json:"readOnly,omitempty"`
+
+	// ReferenceTo The list of object types this field references. Only applicable if the providerType is a lookup/reference field.
+	ReferenceTo []string `json:"referenceTo,omitempty"`
+
+	// ValueType A normalized field type
+	ValueType FieldMetadataValueType `json:"valueType,omitempty"`
+
+	// Values If the valueType is singleSelect or multiSelect, this is a list of possible values
+	Values []FieldValue `json:"values,omitempty"`
+}
+
+// FieldMetadataValueType A normalized field type
+type FieldMetadataValueType string
+
+// FieldSetting defines model for FieldSetting.
+type FieldSetting struct {
+	// Default Only use one of stringValue, integerValue, booleanValue.
+	Default *FieldSettingDefault `json:"default,omitempty"`
+
+	// WriteOnCreate Whether the default value should be applied when creating a record.
+	WriteOnCreate FieldSettingWriteOnCreate `json:"writeOnCreate,omitempty"`
+
+	// WriteOnUpdate Whether the default value should be applied when updating a record.
+	// - always: Always write to the field on update
+	// - never: Never write to the field on update
+	// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
+	WriteOnUpdate FieldSettingWriteOnUpdate `json:"writeOnUpdate,omitempty"`
+}
+
+// FieldSettingWriteOnCreate Whether the default value should be applied when creating a record.
+type FieldSettingWriteOnCreate string
+
+// FieldSettingWriteOnUpdate Whether the default value should be applied when updating a record.
+// - always: Always write to the field on update
+// - never: Never write to the field on update
+// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
+type FieldSettingWriteOnUpdate string
+
+// FieldSettingDefault Only use one of stringValue, integerValue, booleanValue.
+type FieldSettingDefault struct {
+	// BooleanValue The default boolean value to apply to a field
+	BooleanValue *bool `json:"booleanValue,omitempty"`
+
+	// IntegerValue The default integer value to apply to a field
+	IntegerValue *int `json:"integerValue,omitempty"`
+
+	// StringValue The default string value to apply to a field
+	StringValue *string `json:"stringValue,omitempty"`
 }
 
 // FieldUpsertResult Result of an upsert operation for a single field
@@ -6706,6 +2057,15 @@ type FieldUpsertResult struct {
 
 	// Warnings Warnings that occurred during the upsert operation
 	Warnings *[]string `json:"warnings,omitempty"`
+}
+
+// FieldValue Represents a field value
+type FieldValue struct {
+	// DisplayValue The human-readable display value
+	DisplayValue string `json:"displayValue"`
+
+	// Value The internal value used by the system
+	Value string `json:"value"`
 }
 
 // GenerateConnectionRequest defines model for GenerateConnectionRequest.
@@ -6733,25 +2093,8 @@ type GenerateConnectionRequest struct {
 	GroupName *string `json:"groupName,omitempty"`
 
 	// GroupRef The ID of the user group that has access to this installation.
-	GroupRef                string `json:"groupRef"`
-	Oauth2AuthorizationCode *struct {
-		// AccessToken The access token for the connection.
-		AccessToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"accessToken,omitempty"`
-
-		// RefreshToken The refresh token to use for the connection.
-		RefreshToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"refreshToken,omitempty"`
-
-		// Scopes The scopes for the tokens.
-		Scopes *[]string `json:"scopes,omitempty"`
-	} `json:"oauth2AuthorizationCode,omitempty"`
+	GroupRef                string                   `json:"groupRef"`
+	Oauth2AuthorizationCode *Oauth2AuthorizationCode `json:"oauth2AuthorizationCode,omitempty"`
 	Oauth2ClientCredentials *struct {
 		// ClientId The client ID to use for the connection.
 		ClientId string `json:"clientId"`
@@ -6780,24 +2123,12 @@ type GenerateConnectionRequest struct {
 	} `json:"oauth2PasswordCredentials,omitempty"`
 
 	// Provider The provider name (e.g. "salesforce", "hubspot")
-	Provider         string `json:"provider"`
-	ProviderMetadata *map[string]struct {
-		// DisplayName The human-readable name for the field
-		DisplayName *string `json:"displayName,omitempty"`
-
-		// Source The source of the metadata field
-		Source GenerateConnectionRequestProviderMetadataSource `json:"source"`
-
-		// Value The value of the metadata field
-		Value string `json:"value"`
-	} `json:"providerMetadata,omitempty"`
+	Provider         string            `json:"provider"`
+	ProviderMetadata *ProviderMetadata `json:"providerMetadata,omitempty"`
 
 	// ProviderWorkspaceRef The ID of the provider workspace that this connection belongs to.
 	ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
 }
-
-// GenerateConnectionRequestProviderMetadataSource The source of the metadata field
-type GenerateConnectionRequestProviderMetadataSource string
 
 // Group defines model for Group.
 type Group struct {
@@ -6817,100 +2148,91 @@ type Group struct {
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
 
+// HydratedIntegration defines model for HydratedIntegration.
+type HydratedIntegration struct {
+	DisplayName string                    `json:"displayName,omitempty"`
+	Module      string                    `json:"module,omitempty"`
+	Name        string                    `json:"name"`
+	Provider    string                    `json:"provider"`
+	Proxy       *HydratedIntegrationProxy `json:"proxy,omitempty"`
+	Read        *HydratedIntegrationRead  `json:"read,omitempty"`
+	Write       *HydratedIntegrationWrite `json:"write,omitempty"`
+}
+
+// HydratedIntegrationField defines model for HydratedIntegrationField.
+type HydratedIntegrationField struct {
+	union json.RawMessage
+}
+
+// HydratedIntegrationFieldExistent defines model for HydratedIntegrationFieldExistent.
+type HydratedIntegrationFieldExistent struct {
+	DisplayName string `json:"displayName"`
+	FieldName   string `json:"fieldName"`
+
+	// MapToDisplayName The display name to map to in the destination.
+	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
+
+	// MapToName The field name to map to in the destination.
+	MapToName string `json:"mapToName,omitempty"`
+}
+
+// HydratedIntegrationObject defines model for HydratedIntegrationObject.
+type HydratedIntegrationObject struct {
+	// AllFields This is a list of all fields on the object for a particular SaaS instance, including their display names. Prefer using allFieldsMetadata instead.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	AllFields *[]HydratedIntegrationField `json:"allFields,omitempty"`
+
+	// AllFieldsMetadata This is a map of all fields on the object including their metadata (such as display name and type), the keys of the map are the field names.
+	AllFieldsMetadata *map[string]FieldMetadata `json:"allFieldsMetadata,omitempty"`
+	Backfill          *Backfill                 `json:"backfill,omitempty"`
+	Destination       string                    `json:"destination"`
+	DisplayName       string                    `json:"displayName"`
+
+	// Error Error message if there was an issue hydrating this object.
+	Error string `json:"error,omitempty"`
+
+	// MapToDisplayName A display name to map to.
+	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
+
+	// MapToName An object name to map to.
+	MapToName          string                      `json:"mapToName,omitempty"`
+	ObjectName         string                      `json:"objectName"`
+	OptionalFields     *[]HydratedIntegrationField `json:"optionalFields,omitempty"`
+	OptionalFieldsAuto *OptionalFieldsAutoOption   `json:"optionalFieldsAuto,omitempty"`
+	RequiredFields     *[]HydratedIntegrationField `json:"requiredFields,omitempty"`
+	Schedule           string                      `json:"schedule"`
+}
+
+// HydratedIntegrationProxy defines model for HydratedIntegrationProxy.
+type HydratedIntegrationProxy struct {
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// UseModule Default is false. If this is set to true, the base URL for the proxy action will be the module's base URL. Otherwise, it is assumed that the base URL is the provider's root base URL.
+	UseModule *bool `json:"useModule,omitempty"`
+}
+
+// HydratedIntegrationRead defines model for HydratedIntegrationRead.
+type HydratedIntegrationRead struct {
+	Objects *[]HydratedIntegrationObject `json:"objects,omitempty"`
+}
+
+// HydratedIntegrationWrite defines model for HydratedIntegrationWrite.
+type HydratedIntegrationWrite struct {
+	Objects *[]HydratedIntegrationWriteObject `json:"objects,omitempty"`
+}
+
+// HydratedIntegrationWriteObject defines model for HydratedIntegrationWriteObject.
+type HydratedIntegrationWriteObject struct {
+	DisplayName string `json:"displayName"`
+	ObjectName  string `json:"objectName"`
+
+	// ValueDefaults Configuration to set default write values for object fields.
+	ValueDefaults *ValueDefaults `json:"valueDefaults,omitempty"`
+}
+
 // HydratedRevision defines model for HydratedRevision.
 type HydratedRevision struct {
-	Content struct {
-		DisplayName string `json:"displayName,omitempty"`
-		Module      string `json:"module,omitempty"`
-		Name        string `json:"name"`
-		Provider    string `json:"provider"`
-		Proxy       *struct {
-			Enabled *bool `json:"enabled,omitempty"`
-
-			// UseModule Default is false. If this is set to true, the base URL for the proxy action will be the module's base URL. Otherwise, it is assumed that the base URL is the provider's root base URL.
-			UseModule *bool `json:"useModule,omitempty"`
-		} `json:"proxy,omitempty"`
-		Read *struct {
-			Objects *[]struct {
-				// AllFields This is a list of all fields on the object for a particular SaaS instance, including their display names. Prefer using allFieldsMetadata instead.
-				// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-				AllFields *[]HydratedRevision_Content_Read_Objects_AllFields_Item `json:"allFields,omitempty"`
-
-				// AllFieldsMetadata This is a map of all fields on the object including their metadata (such as display name and type), the keys of the map are the field names.
-				AllFieldsMetadata *map[string]struct {
-					// DisplayName The display name of the field from the provider API.
-					DisplayName string `json:"displayName"`
-
-					// FieldName The name of the field from the provider API.
-					FieldName string `json:"fieldName"`
-
-					// IsCustom Whether the field is custom field.
-					IsCustom *bool `json:"isCustom,omitempty"`
-
-					// IsRequired Whether the field is required when creating a new record.
-					IsRequired *bool `json:"isRequired,omitempty"`
-
-					// ProviderType Raw field type from the provider API.
-					ProviderType string `json:"providerType,omitempty"`
-
-					// ReadOnly Whether the field is read-only.
-					ReadOnly *bool `json:"readOnly,omitempty"`
-
-					// ReferenceTo The list of object types this field references. Only applicable if the providerType is a lookup/reference field.
-					ReferenceTo []string `json:"referenceTo,omitempty"`
-
-					// ValueType A normalized field type
-					ValueType HydratedRevisionContentReadObjectsAllFieldsMetadataValueType `json:"valueType,omitempty"`
-
-					// Values If the valueType is singleSelect or multiSelect, this is a list of possible values
-					Values []struct {
-						// DisplayValue The human-readable display value
-						DisplayValue string `json:"displayValue"`
-
-						// Value The internal value used by the system
-						Value string `json:"value"`
-					} `json:"values,omitempty"`
-				} `json:"allFieldsMetadata,omitempty"`
-				Backfill *struct {
-					DefaultPeriod struct {
-						// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-						Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-						// FullHistory If true, backfill all history. Required if days is not set.
-						FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-					} `json:"defaultPeriod"`
-				} `json:"backfill,omitempty"`
-				Destination string `json:"destination"`
-				DisplayName string `json:"displayName"`
-
-				// Error Error message if there was an issue hydrating this object.
-				Error string `json:"error,omitempty"`
-
-				// MapToDisplayName A display name to map to.
-				MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-				// MapToName An object name to map to.
-				MapToName          string                                                       `json:"mapToName,omitempty"`
-				ObjectName         string                                                       `json:"objectName"`
-				OptionalFields     *[]HydratedRevision_Content_Read_Objects_OptionalFields_Item `json:"optionalFields,omitempty"`
-				OptionalFieldsAuto *HydratedRevisionContentReadObjectsOptionalFieldsAuto        `json:"optionalFieldsAuto,omitempty"`
-				RequiredFields     *[]HydratedRevision_Content_Read_Objects_RequiredFields_Item `json:"requiredFields,omitempty"`
-				Schedule           string                                                       `json:"schedule"`
-			} `json:"objects,omitempty"`
-		} `json:"read,omitempty"`
-		Write *struct {
-			Objects *[]struct {
-				DisplayName string `json:"displayName"`
-				ObjectName  string `json:"objectName"`
-
-				// ValueDefaults Configuration to set default write values for object fields.
-				ValueDefaults *struct {
-					// AllowAnyFields If true, users can set default values for any field.
-					AllowAnyFields *bool `json:"allowAnyFields,omitempty"`
-				} `json:"valueDefaults,omitempty"`
-			} `json:"objects,omitempty"`
-		} `json:"write,omitempty"`
-	} `json:"content"`
+	Content HydratedIntegration `json:"content"`
 
 	// CreateTime The time the revision was created.
 	CreateTime time.Time `json:"createTime"`
@@ -6922,413 +2244,23 @@ type HydratedRevision struct {
 	SpecVersion string `json:"specVersion"`
 }
 
-// HydratedRevisionContentReadObjectsAllFields0 defines model for .
-type HydratedRevisionContentReadObjectsAllFields0 struct {
-	DisplayName string `json:"displayName"`
-	FieldName   string `json:"fieldName"`
+// InputValidationIssue defines model for InputValidationIssue.
+type InputValidationIssue = ApiProblem
 
-	// MapToDisplayName The display name to map to in the destination.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to in the destination.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// HydratedRevisionContentReadObjectsAllFields1 defines model for .
-type HydratedRevisionContentReadObjectsAllFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// HydratedRevision_Content_Read_Objects_AllFields_Item defines model for HydratedRevision.Content.Read.Objects.AllFields.Item.
-type HydratedRevision_Content_Read_Objects_AllFields_Item struct {
-	union json.RawMessage
-}
-
-// HydratedRevisionContentReadObjectsAllFieldsMetadataValueType A normalized field type
-type HydratedRevisionContentReadObjectsAllFieldsMetadataValueType string
-
-// HydratedRevisionContentReadObjectsOptionalFields0 defines model for .
-type HydratedRevisionContentReadObjectsOptionalFields0 struct {
-	DisplayName string `json:"displayName"`
-	FieldName   string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to in the destination.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to in the destination.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// HydratedRevisionContentReadObjectsOptionalFields1 defines model for .
-type HydratedRevisionContentReadObjectsOptionalFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// HydratedRevision_Content_Read_Objects_OptionalFields_Item defines model for HydratedRevision.Content.Read.Objects.OptionalFields.Item.
-type HydratedRevision_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
-
-// HydratedRevisionContentReadObjectsOptionalFieldsAuto defines model for HydratedRevision.Content.Read.Objects.OptionalFieldsAuto.
-type HydratedRevisionContentReadObjectsOptionalFieldsAuto string
-
-// HydratedRevisionContentReadObjectsRequiredFields0 defines model for .
-type HydratedRevisionContentReadObjectsRequiredFields0 struct {
-	DisplayName string `json:"displayName"`
-	FieldName   string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to in the destination.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to in the destination.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// HydratedRevisionContentReadObjectsRequiredFields1 defines model for .
-type HydratedRevisionContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// HydratedRevision_Content_Read_Objects_RequiredFields_Item defines model for HydratedRevision.Content.Read.Objects.RequiredFields.Item.
-type HydratedRevision_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
-}
+// InputValidationProblem defines model for InputValidationProblem.
+type InputValidationProblem = ApiProblem
 
 // Installation defines model for Installation.
 type Installation struct {
-	Config struct {
-		Content struct {
-			// Provider The SaaS API that we are integrating with.
-			Provider string `json:"provider"`
-			Proxy    *struct {
-				Enabled *bool `json:"enabled,omitempty"`
-			} `json:"proxy,omitempty"`
-			Read *struct {
-				Objects map[string]struct {
-					Backfill *struct {
-						DefaultPeriod struct {
-							// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-							Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-							// FullHistory If true, backfill all history. Required if days is not set.
-							FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-						} `json:"defaultPeriod"`
-
-						// FieldFilters Filters to apply only during backfill. Multiple conditions are joined by AND. Use this when you want different filter behavior for backfill vs. incremental reads.
-						FieldFilters []struct {
-							// FieldName The name of the field to filter on.
-							FieldName string `json:"fieldName"`
-
-							// Operator The comparison operator.
-							Operator InstallationConfigContentReadObjectsBackfillFieldFiltersOperator `json:"operator"`
-
-							// Value The value to filter on. Allowed types are string, boolean, and number.
-							Value interface{} `json:"value,omitempty"`
-						} `json:"fieldFilters,omitempty"`
-					} `json:"backfill,omitempty"`
-
-					// Destination The name of the destination that the result should be sent to.
-					Destination string `json:"destination,omitempty"`
-
-					// Disabled If this flag is set to true, scheduled reads associated with this object will be paused, and on-demand reads will not be allowed.
-					Disabled *bool `json:"disabled,omitempty"`
-
-					// DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
-					DynamicMappingsInput *[]struct {
-						// FieldName The name of the field in SaaS provider, if present, then we will not prompt the user to map the field.
-						FieldName *string `json:"fieldName,omitempty"`
-
-						// MapToDisplayName Optional display name of the field to show the user in the mapping UI.
-						MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-
-						// MapToName The name of the field in your application.
-						MapToName string `json:"mapToName"`
-
-						// MappedValues If you would like the user to map a set of possible values, this is the list of possible values of the field in your application.
-						MappedValues *[]struct {
-							MappedDisplayValue string `json:"mappedDisplayValue"`
-							MappedValue        string `json:"mappedValue"`
-						} `json:"mappedValues,omitempty"`
-
-						// Prompt Optional prompt to show the user in the mapping UI.
-						Prompt *string `json:"prompt,omitempty"`
-					} `json:"dynamicMappingsInput,omitempty"`
-
-					// FieldFilters Filters to apply when reading records during incremental reads and backfill. Multiple conditions are joined by AND. Each field can only have one condition.
-					FieldFilters []struct {
-						// FieldName The name of the field to filter on.
-						FieldName string `json:"fieldName"`
-
-						// Operator The comparison operator.
-						Operator InstallationConfigContentReadObjectsFieldFiltersOperator `json:"operator"`
-
-						// Value The value to filter on. Allowed types are string, boolean, and number.
-						Value interface{} `json:"value,omitempty"`
-					} `json:"fieldFilters,omitempty"`
-
-					// ObjectName The name of the object to read from.
-					ObjectName string `json:"objectName" validate:"required"`
-
-					// Schedule The schedule for reading the object, in cron syntax.
-					Schedule string `json:"schedule,omitempty"`
-
-					// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.)
-					SelectedFieldMappings map[string]string `json:"selectedFieldMappings"`
-
-					// SelectedFields This is a map of field names to booleans indicating whether they should be read. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
-					SelectedFields map[string]bool `json:"selectedFields"`
-
-					// SelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
-					SelectedFieldsAuto *InstallationConfigContentReadObjectsSelectedFieldsAuto `json:"selectedFieldsAuto,omitempty"`
-
-					// SelectedValueMappings This is a map of field names to their value mappings.
-					SelectedValueMappings map[string]map[string]string `json:"selectedValueMappings,omitempty"`
-				} `json:"objects"`
-			} `json:"read,omitempty"`
-			Subscribe *struct {
-				Objects map[string]struct {
-					CreateEvent *struct {
-						// Enabled Conditions to enable create events.
-						Enabled InstallationConfigContentSubscribeObjectsCreateEventEnabled `json:"enabled" validate:"oneof=always never"`
-					} `json:"createEvent,omitempty"`
-					DeleteEvent *struct {
-						// Enabled Conditions to enable delete events.
-						Enabled InstallationConfigContentSubscribeObjectsDeleteEventEnabled `json:"enabled" validate:"oneof=always never"`
-					} `json:"deleteEvent,omitempty"`
-
-					// Destination The name of the destination that the result should be sent to.
-					Destination string `json:"destination"`
-
-					// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-					InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
-
-					// ObjectName The name of the object to subscribe to.
-					ObjectName  string    `json:"objectName" validate:"required"`
-					OtherEvents *[]string `json:"otherEvents,omitempty"`
-					UpdateEvent *struct {
-						// Enabled Conditions to enable update events.
-						Enabled InstallationConfigContentSubscribeObjectsUpdateEventEnabled `json:"enabled" validate:"oneof=always never"`
-
-						// RequiredWatchFields The fields that should be watched.
-						RequiredWatchFields *[]string `json:"requiredWatchFields,omitempty"`
-
-						// WatchFieldsAuto Whether to watch fields all fields automatically.
-						WatchFieldsAuto *InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
-					} `json:"updateEvent,omitempty"`
-				} `json:"objects"`
-			} `json:"subscribe,omitempty"`
-			Write *struct {
-				Objects *map[string]struct {
-					DeletionSettings *struct {
-						// Enabled Whether deletion is enabled for this object
-						Enabled bool `json:"enabled"`
-					} `json:"deletionSettings,omitempty"`
-
-					// ObjectName The name of the object to write to.
-					ObjectName string `json:"objectName" validate:"required"`
-
-					// SelectedFieldSettings This is a map of field names to their settings.
-					SelectedFieldSettings map[string]struct {
-						// Default Only use one of stringValue, integerValue, booleanValue.
-						Default *struct {
-							// BooleanValue The default boolean value to apply to a field
-							BooleanValue *bool `json:"booleanValue,omitempty"`
-
-							// IntegerValue The default integer value to apply to a field
-							IntegerValue *int `json:"integerValue,omitempty"`
-
-							// StringValue The default string value to apply to a field
-							StringValue *string `json:"stringValue,omitempty"`
-						} `json:"default,omitempty"`
-
-						// WriteOnCreate Whether the default value should be applied when creating a record.
-						WriteOnCreate InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate `json:"writeOnCreate,omitempty"`
-
-						// WriteOnUpdate Whether the default value should be applied when updating a record.
-						// - always: Always write to the field on update
-						// - never: Never write to the field on update
-						// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
-						WriteOnUpdate InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate `json:"writeOnUpdate,omitempty"`
-					} `json:"selectedFieldSettings,omitempty"`
-
-					// SelectedValueDefaults This is a map of field names to default values. These values will be used when writing to the object.
-					// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-					SelectedValueDefaults map[string]any `json:"selectedValueDefaults,omitempty"`
-				} `json:"objects,omitempty"`
-			} `json:"write,omitempty"`
-		} `json:"content"`
-
-		// CreateTime The time the config was created.
-		CreateTime time.Time `json:"createTime"`
-
-		// CreatedBy The person who created the config, in the format of "consumer:{consumer-id}" or "builder:{builder-id}".
-		CreatedBy string `json:"createdBy"`
-
-		// Id The config ID.
-		Id string `json:"id"`
-
-		// RevisionId The ID of the revision that was current when this config was created or last updated.
-		RevisionId string `json:"revisionId"`
-	} `json:"config"`
-	Connection struct {
-		// ApiKey The API key used while making the connection.
-		ApiKey *string `json:"apiKey,omitempty"`
-
-		// AuthScheme The authentication scheme used for this connection.
-		AuthScheme InstallationConnectionAuthScheme `json:"authScheme"`
-		Consumer   struct {
-			// ConsumerName The name of the consumer.
-			ConsumerName string `json:"consumerName"`
-
-			// ConsumerRef The consumer reference.
-			ConsumerRef string `json:"consumerRef"`
-
-			// CreateTime The time the consumer was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// UpdateTime The time the consumer was last updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"consumer"`
-
-		// CreateTime The time the connection was created.
-		CreateTime time.Time `json:"createTime"`
-		Group      struct {
-			// CreateTime The time the group was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// GroupName The name of the user group that has access to this installation.
-			GroupName string `json:"groupName"`
-
-			// GroupRef The ID of the user group that has access to this installation.
-			GroupRef string `json:"groupRef"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// UpdateTime The time the group was last updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"group"`
-
-		// Id The connection ID.
-		Id                      string `json:"id"`
-		Oauth2AuthorizationCode *struct {
-			// AccessToken The access token for the connection.
-			AccessToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"accessToken,omitempty"`
-
-			// RefreshToken The refresh token to use for the connection.
-			RefreshToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"refreshToken,omitempty"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-		} `json:"oauth2AuthorizationCode,omitempty"`
-
-		// ProjectId The Ampersand project ID.
-		ProjectId string `json:"projectId"`
-
-		// Provider The SaaS provider that this Connection is for.
-		Provider    string `json:"provider"`
-		ProviderApp *struct {
-			// ClientId The OAuth client ID for this app.
-			ClientId string `json:"clientId"`
-
-			// CreateTime The time the provider app was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// ExternalRef The ID used by the provider to identify the app (optional).
-			ExternalRef *string `json:"externalRef,omitempty"`
-
-			// Id The provider app ID.
-			Id string `json:"id"`
-
-			// Metadata Provider-specific configuration that extends the standard OAuth flow.
-			Metadata *struct {
-				// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
-				AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
-
-				// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
-				ProviderParams *map[string]string `json:"providerParams,omitempty"`
-			} `json:"metadata,omitempty"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// Provider The SaaS provider that this app connects to.
-			Provider string `json:"provider"`
-
-			// Scopes The OAuth scopes for this app.
-			Scopes *[]string `json:"scopes,omitempty"`
-
-			// UpdateTime The time the provider app was updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"providerApp,omitempty"`
-
-		// ProviderConsumerRef If available, the ID that Salesforce/Hubspot uses to identify this user (e.g. Salesforce has IDs in the form of https://login.salesforce.com/id/00D4x0000019CQTEA2/0054x000000orJ4AA)
-		ProviderConsumerRef *string `json:"providerConsumerRef,omitempty"`
-		ProviderMetadata    *map[string]struct {
-			// DisplayName The human-readable name for the field
-			DisplayName *string `json:"displayName,omitempty"`
-
-			// Source The source of the metadata field
-			Source InstallationConnectionProviderMetadataSource `json:"source"`
-
-			// Value The value of the metadata field
-			Value string `json:"value"`
-		} `json:"providerMetadata,omitempty"`
-
-		// ProviderWorkspaceRef If available, the identifier for the provider workspace (e.g. the Salesforce subdomain)
-		ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
-
-		// Status The status of the connection.
-		// - `created`: The connection has just been created or the access token was just refreshed.
-		// - `working`: The connection has successfully been used to make a request.
-		// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
-		Status InstallationConnectionStatus `json:"status"`
-
-		// UpdateTime The time the connection was last updated.
-		UpdateTime *time.Time `json:"updateTime,omitempty"`
-	} `json:"connection"`
+	Config     Config     `json:"config"`
+	Connection Connection `json:"connection"`
 
 	// CreateTime The time the installation was created.
 	CreateTime time.Time `json:"createTime"`
 
 	// CreatedBy The person who did the installation, in the format of "consumer:{consumer-id}".
 	CreatedBy string `json:"createdBy"`
-	Group     *struct {
-		// CreateTime The time the group was created.
-		CreateTime time.Time `json:"createTime"`
-
-		// GroupName The name of the user group that has access to this installation.
-		GroupName string `json:"groupName"`
-
-		// GroupRef The ID of the user group that has access to this installation.
-		GroupRef string `json:"groupRef"`
-
-		// ProjectId The Ampersand project ID.
-		ProjectId string `json:"projectId"`
-
-		// UpdateTime The time the group was last updated.
-		UpdateTime *time.Time `json:"updateTime,omitempty"`
-	} `json:"group,omitempty"`
+	Group     *Group `json:"group,omitempty"`
 
 	// HealthStatus The health status of the installation.
 	HealthStatus InstallationHealthStatus `json:"healthStatus"`
@@ -7349,48 +2281,6 @@ type Installation struct {
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
 
-// InstallationConfigContentReadObjectsBackfillFieldFiltersOperator The comparison operator.
-type InstallationConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// InstallationConfigContentReadObjectsFieldFiltersOperator The comparison operator.
-type InstallationConfigContentReadObjectsFieldFiltersOperator string
-
-// InstallationConfigContentReadObjectsSelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
-type InstallationConfigContentReadObjectsSelectedFieldsAuto string
-
-// InstallationConfigContentSubscribeObjectsCreateEventEnabled Conditions to enable create events.
-type InstallationConfigContentSubscribeObjectsCreateEventEnabled string
-
-// InstallationConfigContentSubscribeObjectsDeleteEventEnabled Conditions to enable delete events.
-type InstallationConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// InstallationConfigContentSubscribeObjectsUpdateEventEnabled Conditions to enable update events.
-type InstallationConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto Whether to watch fields all fields automatically.
-type InstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate Whether the default value should be applied when creating a record.
-type InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate Whether the default value should be applied when updating a record.
-// - always: Always write to the field on update
-// - never: Never write to the field on update
-// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
-type InstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// InstallationConnectionAuthScheme The authentication scheme used for this connection.
-type InstallationConnectionAuthScheme string
-
-// InstallationConnectionProviderMetadataSource The source of the metadata field
-type InstallationConnectionProviderMetadataSource string
-
-// InstallationConnectionStatus The status of the connection.
-// - `created`: The connection has just been created or the access token was just refreshed.
-// - `working`: The connection has successfully been used to make a request.
-// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
-type InstallationConnectionStatus string
-
 // InstallationHealthStatus The health status of the installation.
 type InstallationHealthStatus string
 
@@ -7403,141 +2293,8 @@ type Integration struct {
 	CreateTime time.Time `json:"createTime"`
 
 	// Id The integration ID.
-	Id             string `json:"id"`
-	LatestRevision struct {
-		Content struct {
-			DisplayName string `json:"displayName,omitempty"`
-			Module      string `json:"module,omitempty"`
-			Name        string `json:"name"`
-			Provider    string `json:"provider"`
-			Proxy       *struct {
-				Enabled *bool `json:"enabled,omitempty"`
-
-				// UseModule Default is false. If this is set to true, the base URL for the proxy action will be the module's base URL. Otherwise, it is assumed that the base URL is the provider's root base URL.
-				UseModule *bool `json:"useModule,omitempty"`
-			} `json:"proxy,omitempty"`
-			Read *struct {
-				Objects *[]struct {
-					Backfill *struct {
-						DefaultPeriod struct {
-							// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-							Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-							// FullHistory If true, backfill all history. Required if days is not set.
-							FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-						} `json:"defaultPeriod"`
-					} `json:"backfill,omitempty"`
-					Delivery *struct {
-						// Mode The data delivery mode for this object. If not specified, defaults to automatic.
-						Mode *IntegrationLatestRevisionContentReadObjectsDeliveryMode `json:"mode,omitempty"`
-
-						// PageSize The number of records to receive per data delivery.
-						PageSize *int `json:"pageSize,omitempty"`
-					} `json:"delivery,omitempty"`
-					Destination string `json:"destination"`
-
-					// Enabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
-					Enabled IntegrationLatestRevisionContentReadObjectsEnabled `json:"enabled,omitempty"`
-
-					// MapToDisplayName A display name to map to.
-					MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-					// MapToName An object name to map to.
-					MapToName          string                                                                 `json:"mapToName,omitempty"`
-					ObjectName         string                                                                 `json:"objectName"`
-					OptionalFields     *[]Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item `json:"optionalFields,omitempty"`
-					OptionalFieldsAuto *IntegrationLatestRevisionContentReadObjectsOptionalFieldsAuto         `json:"optionalFieldsAuto,omitempty"`
-					RequiredFields     *[]Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item `json:"requiredFields,omitempty"`
-					Schedule           string                                                                 `json:"schedule"`
-				} `json:"objects,omitempty"`
-			} `json:"read,omitempty"`
-			Subscribe *struct {
-				Objects *[]struct {
-					AssociationChangeEvent *struct {
-						// Enabled If always, the integration will subscribe to association change events.
-						Enabled *IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled `json:"enabled,omitempty"`
-
-						// IncludeFullRecords If true, the integration will include full records in the event payload.
-						IncludeFullRecords *bool `json:"includeFullRecords,omitempty"`
-					} `json:"associationChangeEvent,omitempty"`
-					CreateEvent *struct {
-						// Enabled If always, the integration will subscribe to create events by default.
-						Enabled *IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabled `json:"enabled,omitempty"`
-					} `json:"createEvent,omitempty"`
-					DeleteEvent *struct {
-						// Enabled If always, the integration will subscribe to delete events by default.
-						Enabled *IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabled `json:"enabled,omitempty"`
-					} `json:"deleteEvent,omitempty"`
-					Destination string `json:"destination"`
-
-					// InheritFieldsAndMapping If true, the integration will inherit the fields and mapping from the read object.
-					InheritFieldsAndMapping bool      `json:"inheritFieldsAndMapping,omitempty"`
-					ObjectName              string    `json:"objectName"`
-					OtherEvents             *[]string `json:"otherEvents,omitempty"`
-					UpdateEvent             *struct {
-						// Enabled If always, the integration will subscribe to update events by default.
-						Enabled             *IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabled `json:"enabled,omitempty"`
-						RequiredWatchFields *[]string                                                           `json:"requiredWatchFields,omitempty"`
-
-						// WatchFieldsAuto If `all`, the integration will watch all fields for updates. If `selected`, the integration will watch only the fields that are selected by the user. If `inheritFieldsAndMapping` is true for Subscribe action, the integration will watch the selected fields from read action that are selected by the user.
-						WatchFieldsAuto *IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
-					} `json:"updateEvent,omitempty"`
-				} `json:"objects,omitempty"`
-			} `json:"subscribe,omitempty"`
-
-			// WatchSchema Configuration for monitoring provider schema changes.
-			WatchSchema *struct {
-				// AllObjects Schema change event configuration for all objects in the integration.
-				AllObjects struct {
-					// FieldChanged Configuration for detecting when fields are changed.
-					FieldChanged *struct {
-						// Enabled If always, the integration will monitor for field changes by default.
-						Enabled IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled `json:"enabled"`
-					} `json:"fieldChanged,omitempty"`
-
-					// FieldCreated Configuration for detecting when new fields are created.
-					FieldCreated *struct {
-						// Enabled If always, the integration will monitor for new fields by default.
-						Enabled IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled `json:"enabled"`
-					} `json:"fieldCreated,omitempty"`
-
-					// FieldDeleted Configuration for detecting when fields are deleted.
-					FieldDeleted *struct {
-						// Enabled If always, the integration will monitor for deleted fields by default.
-						Enabled IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled `json:"enabled"`
-					} `json:"fieldDeleted,omitempty"`
-				} `json:"allObjects"`
-
-				// Destination The destination to send schema change notifications to.
-				Destination string `json:"destination"`
-
-				// Schedule Cron schedule for checking schema changes. Minimum frequency is once per hour. Defaults to once a day.
-				Schedule string `json:"schedule,omitempty"`
-			} `json:"watchSchema,omitempty"`
-			Write *struct {
-				Objects *[]struct {
-					// InheritMapping If true, the write object will inherit the mapping from the read object. If false, the write object will have no mapping.
-					InheritMapping *bool  `json:"inheritMapping,omitempty"`
-					ObjectName     string `json:"objectName"`
-
-					// ValueDefaults Configuration to set default write values for object fields.
-					ValueDefaults *struct {
-						// AllowAnyFields If true, users can set default values for any field.
-						AllowAnyFields *bool `json:"allowAnyFields,omitempty"`
-					} `json:"valueDefaults,omitempty"`
-				} `json:"objects,omitempty"`
-			} `json:"write,omitempty"`
-		} `json:"content"`
-
-		// CreateTime The time the revision was created.
-		CreateTime time.Time `json:"createTime"`
-
-		// Id The revision ID.
-		Id string `json:"id"`
-
-		// SpecVersion The spec version string.
-		SpecVersion string `json:"specVersion"`
-	} `json:"latestRevision"`
+	Id             string   `json:"id"`
+	LatestRevision Revision `json:"latestRevision"`
 
 	// Name The integration name.
 	Name string `json:"name"`
@@ -7552,14 +2309,28 @@ type Integration struct {
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
 
-// IntegrationLatestRevisionContentReadObjectsDeliveryMode The data delivery mode for this object. If not specified, defaults to automatic.
-type IntegrationLatestRevisionContentReadObjectsDeliveryMode string
+// Integration2 defines model for Integration-2.
+type Integration2 struct {
+	DisplayName string                `json:"displayName,omitempty"`
+	Module      string                `json:"module,omitempty"`
+	Name        string                `json:"name"`
+	Provider    string                `json:"provider"`
+	Proxy       *IntegrationProxy     `json:"proxy,omitempty"`
+	Read        *IntegrationRead      `json:"read,omitempty"`
+	Subscribe   *IntegrationSubscribe `json:"subscribe,omitempty"`
 
-// IntegrationLatestRevisionContentReadObjectsEnabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
-type IntegrationLatestRevisionContentReadObjectsEnabled string
+	// WatchSchema Configuration for monitoring provider schema changes.
+	WatchSchema *WatchSchema      `json:"watchSchema,omitempty"`
+	Write       *IntegrationWrite `json:"write,omitempty"`
+}
 
-// IntegrationLatestRevisionContentReadObjectsOptionalFields0 defines model for .
-type IntegrationLatestRevisionContentReadObjectsOptionalFields0 struct {
+// IntegrationField defines model for IntegrationField.
+type IntegrationField struct {
+	union json.RawMessage
+}
+
+// IntegrationFieldExistent defines model for IntegrationFieldExistent.
+type IntegrationFieldExistent struct {
 	FieldName string `json:"fieldName"`
 
 	// MapToDisplayName The display name to map to.
@@ -7569,69 +2340,84 @@ type IntegrationLatestRevisionContentReadObjectsOptionalFields0 struct {
 	MapToName string `json:"mapToName,omitempty"`
 }
 
-// IntegrationLatestRevisionContentReadObjectsOptionalFields1 defines model for .
-type IntegrationLatestRevisionContentReadObjectsOptionalFields1 struct {
+// IntegrationFieldMapping defines model for IntegrationFieldMapping.
+type IntegrationFieldMapping struct {
 	Default          *string `json:"default,omitempty"`
 	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
 	MapToName        string  `json:"mapToName"`
 	Prompt           *string `json:"prompt,omitempty"`
 }
 
-// Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item defines model for Integration.LatestRevision.Content.Read.Objects.OptionalFields.Item.
-type Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
+// IntegrationObject defines model for IntegrationObject.
+type IntegrationObject struct {
+	Backfill    *Backfill `json:"backfill,omitempty"`
+	Delivery    *Delivery `json:"delivery,omitempty"`
+	Destination string    `json:"destination"`
 
-// IntegrationLatestRevisionContentReadObjectsOptionalFieldsAuto defines model for Integration.LatestRevision.Content.Read.Objects.OptionalFieldsAuto.
-type IntegrationLatestRevisionContentReadObjectsOptionalFieldsAuto string
+	// Enabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
+	Enabled IntegrationObjectEnabled `json:"enabled,omitempty"`
 
-// IntegrationLatestRevisionContentReadObjectsRequiredFields0 defines model for .
-type IntegrationLatestRevisionContentReadObjectsRequiredFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
+	// MapToDisplayName A display name to map to.
 	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
 
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
+	// MapToName An object name to map to.
+	MapToName          string                    `json:"mapToName,omitempty"`
+	ObjectName         string                    `json:"objectName"`
+	OptionalFields     *[]IntegrationField       `json:"optionalFields,omitempty"`
+	OptionalFieldsAuto *OptionalFieldsAutoOption `json:"optionalFieldsAuto,omitempty"`
+	RequiredFields     *[]IntegrationField       `json:"requiredFields,omitempty"`
+	Schedule           string                    `json:"schedule"`
 }
 
-// IntegrationLatestRevisionContentReadObjectsRequiredFields1 defines model for .
-type IntegrationLatestRevisionContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
+// IntegrationObjectEnabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
+type IntegrationObjectEnabled string
+
+// IntegrationProxy defines model for IntegrationProxy.
+type IntegrationProxy struct {
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// UseModule Default is false. If this is set to true, the base URL for the proxy action will be the module's base URL. Otherwise, it is assumed that the base URL is the provider's root base URL.
+	UseModule *bool `json:"useModule,omitempty"`
 }
 
-// Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item defines model for Integration.LatestRevision.Content.Read.Objects.RequiredFields.Item.
-type Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
+// IntegrationRead defines model for IntegrationRead.
+type IntegrationRead struct {
+	Objects *[]IntegrationObject `json:"objects,omitempty"`
 }
 
-// IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled If always, the integration will subscribe to association change events.
-type IntegrationLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled string
+// IntegrationSubscribe defines model for IntegrationSubscribe.
+type IntegrationSubscribe struct {
+	Objects *[]IntegrationSubscribeObject `json:"objects,omitempty"`
+}
 
-// IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabled If always, the integration will subscribe to create events by default.
-type IntegrationLatestRevisionContentSubscribeObjectsCreateEventEnabled string
+// IntegrationSubscribeObject defines model for IntegrationSubscribeObject.
+type IntegrationSubscribeObject struct {
+	AssociationChangeEvent *AssociationChangeEvent `json:"associationChangeEvent,omitempty"`
+	CreateEvent            *CreateEvent            `json:"createEvent,omitempty"`
+	DeleteEvent            *DeleteEvent            `json:"deleteEvent,omitempty"`
+	Destination            string                  `json:"destination"`
 
-// IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabled If always, the integration will subscribe to delete events by default.
-type IntegrationLatestRevisionContentSubscribeObjectsDeleteEventEnabled string
+	// InheritFieldsAndMapping If true, the integration will inherit the fields and mapping from the read object.
+	InheritFieldsAndMapping bool         `json:"inheritFieldsAndMapping,omitempty"`
+	ObjectName              string       `json:"objectName"`
+	OtherEvents             *OtherEvents `json:"otherEvents,omitempty"`
+	UpdateEvent             *UpdateEvent `json:"updateEvent,omitempty"`
+}
 
-// IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabled If always, the integration will subscribe to update events by default.
-type IntegrationLatestRevisionContentSubscribeObjectsUpdateEventEnabled string
+// IntegrationWrite defines model for IntegrationWrite.
+type IntegrationWrite struct {
+	Objects *[]IntegrationWriteObject `json:"objects,omitempty"`
+}
 
-// IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto If `all`, the integration will watch all fields for updates. If `selected`, the integration will watch only the fields that are selected by the user. If `inheritFieldsAndMapping` is true for Subscribe action, the integration will watch the selected fields from read action that are selected by the user.
-type IntegrationLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto string
+// IntegrationWriteObject defines model for IntegrationWriteObject.
+type IntegrationWriteObject struct {
+	// InheritMapping If true, the write object will inherit the mapping from the read object. If false, the write object will have no mapping.
+	InheritMapping *bool  `json:"inheritMapping,omitempty"`
+	ObjectName     string `json:"objectName"`
 
-// IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled If always, the integration will monitor for field changes by default.
-type IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled string
-
-// IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled If always, the integration will monitor for new fields by default.
-type IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled string
-
-// IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled If always, the integration will monitor for deleted fields by default.
-type IntegrationLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled string
+	// ValueDefaults Configuration to set default write values for object fields.
+	ValueDefaults *ValueDefaults `json:"valueDefaults,omitempty"`
+}
 
 // Invite defines model for Invite.
 type Invite struct {
@@ -7723,6 +2509,9 @@ type JWTKeyResponse struct {
 	Kid openapi_types.UUID `json:"kid"`
 }
 
+// Labels defines model for Labels.
+type Labels map[string]string
+
 // Log defines model for Log.
 type Log struct {
 	// Message The log message object.
@@ -7751,13 +2540,91 @@ type Log_Message struct {
 	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
+// Media defines model for Media.
+type Media struct {
+	// DarkMode Media to be used in dark mode.
+	DarkMode *MediaTypeDarkMode `json:"darkMode,omitempty"`
+
+	// Regular Media for light/regular mode.
+	Regular *MediaTypeRegular `json:"regular,omitempty"`
+}
+
+// MediaTypeDarkMode Media to be used in dark mode.
+type MediaTypeDarkMode struct {
+	// IconURL URL to the icon for the provider that is to be used in dark mode.
+	IconURL string `json:"iconURL,omitempty"`
+
+	// LogoURL URL to the logo for the provider that is to be used in dark mode.
+	LogoURL string `json:"logoURL,omitempty"`
+}
+
+// MediaTypeRegular Media for light/regular mode.
+type MediaTypeRegular struct {
+	// IconURL URL to the icon for the provider.
+	IconURL string `json:"iconURL,omitempty"`
+
+	// LogoURL URL to the logo for the provider.
+	LogoURL string `json:"logoURL,omitempty"`
+}
+
+// MetadataItemInput defines model for MetadataItemInput.
+type MetadataItemInput struct {
+	// DefaultValue Default value for this metadata item
+	DefaultValue string `json:"defaultValue,omitempty"`
+
+	// DisplayName The human-readable name for the field
+	DisplayName string `json:"displayName,omitempty"`
+
+	// DocsURL URL with more information about how to locate this value
+	DocsURL string `json:"docsURL,omitempty"`
+
+	// ModuleDependencies Specifies which modules REQUIRE (depend on) this metadata item. This field lists the modules that depend on/require the metadata item. Example: If "workspace" metadata has moduleDependencies: {crm: {}}, it means the CRM module requires the workspace metadata to function. Each module that needs this metadata item MUST be specified in this field. Even if it is all modules. The empty ModuleDependency {} is for future-proofing in case we need to add additional configuration options.
+	ModuleDependencies *ModuleDependencies `json:"moduleDependencies,omitempty"`
+
+	// Name The internal identifier for the metadata field
+	Name string `json:"name"`
+
+	// Prompt Human-readable description that can contain instructions on how to collect metadata
+	Prompt string `json:"prompt,omitempty"`
+}
+
+// MetadataItemPostAuthentication defines model for MetadataItemPostAuthentication.
+type MetadataItemPostAuthentication struct {
+	// ModuleDependencies Specifies which modules REQUIRE (depend on) this metadata item. This field lists the modules that depend on/require the metadata item. Example: If "workspace" metadata has moduleDependencies: {crm: {}}, it means the CRM module requires the workspace metadata to function. Each module that needs this metadata item MUST be specified in this field. Even if it is all modules. The empty ModuleDependency {} is for future-proofing in case we need to add additional configuration options.
+	ModuleDependencies *ModuleDependencies `json:"moduleDependencies,omitempty"`
+
+	// Name The internal identifier for the metadata field
+	Name string `json:"name"`
+}
+
+// ModuleDependencies Specifies which modules REQUIRE (depend on) this metadata item. This field lists the modules that depend on/require the metadata item. Example: If "workspace" metadata has moduleDependencies: {crm: {}}, it means the CRM module requires the workspace metadata to function. Each module that needs this metadata item MUST be specified in this field. Even if it is all modules. The empty ModuleDependency {} is for future-proofing in case we need to add additional configuration options.
+type ModuleDependencies map[string]ModuleDependency
+
+// ModuleDependency Dependency for a single module.
+type ModuleDependency = map[string]interface{}
+
+// ModuleInfo defines model for ModuleInfo.
+type ModuleInfo struct {
+	BaseURL     string `json:"baseURL"`
+	DisplayName string `json:"displayName"`
+
+	// SubscribeRequirements Declares which auxiliary steps a provider requires to support subscriptions, beyond the per-object subscribe call itself.
+	SubscribeRequirements *SubscribeRequirements `json:"subscribeRequirements,omitempty"`
+
+	// Support The supported features for the provider.
+	Support Support `json:"support" validate:"required"`
+}
+
+// Modules The registry of provider modules.
+type Modules map[string]ModuleInfo
+
 // NotificationEventTopicRoute defines model for NotificationEventTopicRoute.
 type NotificationEventTopicRoute struct {
 	// CreateTime The time when the event-topic route was created.
 	CreateTime time.Time `json:"createTime"`
 
 	// EventType The type of notification event.
-	EventType NotificationEventTopicRouteEventType `json:"eventType"`
+	EventType NotificationEventType `json:"eventType"`
 
 	// Id The event-topic route ID.
 	Id string `json:"id"`
@@ -7771,9 +2638,6 @@ type NotificationEventTopicRoute struct {
 	// UpdateTime The time when the event-topic route was last updated.
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
-
-// NotificationEventTopicRouteEventType The type of notification event.
-type NotificationEventTopicRouteEventType string
 
 // NotificationEventType The type of notification event.
 type NotificationEventType string
@@ -7836,46 +2700,54 @@ type Oauth2AuthorizationCodeTokensOnly struct {
 	Scopes *[]string `json:"scopes,omitempty"`
 }
 
+// Oauth2Opts Configuration for OAuth2.0. Must be provided if authType is oauth2.
+type Oauth2Opts struct {
+	// AccessTokenOpts Configuration that defines how an OAuth 2.0 access token is attached to
+	// outbound API requests. When provided, this configuration overrides the
+	// default access-token handling behavior for the connector.
+	AccessTokenOpts *AccessTokenOpts `json:"accessTokenOpts,omitempty"`
+
+	// Audience A list of URLs that represent the audience for the token, which is needed for some client credential grant flows.
+	Audience []string `json:"audience,omitempty"`
+
+	// AuthURL The authorization URL.
+	AuthURL       string            `json:"authURL,omitempty"`
+	AuthURLParams map[string]string `json:"authURLParams,omitempty"`
+
+	// DocsURL URL with more information about where to retrieve Client ID and Client Secret, etc.
+	DocsURL string `json:"docsURL,omitempty"`
+
+	// ExplicitScopesRequired Whether scopes are required to be known ahead of the OAuth flow.
+	ExplicitScopesRequired bool `json:"explicitScopesRequired"`
+
+	// ExplicitWorkspaceRequired Whether the workspace is required to be known ahead of the OAuth flow.
+	ExplicitWorkspaceRequired bool                `json:"explicitWorkspaceRequired"`
+	GrantType                 Oauth2OptsGrantType `json:"grantType"`
+
+	// KeepAliveIntervalHours How many hours between proactive token keep-alive refreshes for this provider.
+	// Token-manager adds a random stagger offset on top. If absent, defaults to 24.
+	KeepAliveIntervalHours int `json:"keepAliveIntervalHours,omitempty"`
+
+	// ScopeMappings Maps input scopes to their full OAuth scope values with template variable support. Scopes not in this map are passed through unchanged. Needed for some providers.
+	ScopeMappings map[string]string `json:"scopeMappings,omitempty"`
+
+	// TokenMetadataFields Fields to be used to extract token metadata from the token response.
+	TokenMetadataFields TokenMetadataFields `json:"tokenMetadataFields"`
+
+	// TokenURL The token URL.
+	TokenURL string `json:"tokenURL" validate:"required"`
+}
+
+// Oauth2OptsGrantType defines model for Oauth2Opts.GrantType.
+type Oauth2OptsGrantType string
+
 // ObjectMetadata defines model for ObjectMetadata.
 type ObjectMetadata struct {
 	// DisplayName Human-readable name of the object
 	DisplayName *string `json:"displayName,omitempty"`
 
 	// Fields Map of field metadata keyed by field name
-	Fields map[string]struct {
-		// DisplayName The display name of the field from the provider API.
-		DisplayName string `json:"displayName"`
-
-		// FieldName The name of the field from the provider API.
-		FieldName string `json:"fieldName"`
-
-		// IsCustom Whether the field is custom field.
-		IsCustom *bool `json:"isCustom,omitempty"`
-
-		// IsRequired Whether the field is required when creating a new record.
-		IsRequired *bool `json:"isRequired,omitempty"`
-
-		// ProviderType Raw field type from the provider API.
-		ProviderType string `json:"providerType,omitempty"`
-
-		// ReadOnly Whether the field is read-only.
-		ReadOnly *bool `json:"readOnly,omitempty"`
-
-		// ReferenceTo The list of object types this field references. Only applicable if the providerType is a lookup/reference field.
-		ReferenceTo []string `json:"referenceTo,omitempty"`
-
-		// ValueType A normalized field type
-		ValueType ObjectMetadataFieldsValueType `json:"valueType,omitempty"`
-
-		// Values If the valueType is singleSelect or multiSelect, this is a list of possible values
-		Values []struct {
-			// DisplayValue The human-readable display value
-			DisplayValue string `json:"displayValue"`
-
-			// Value The internal value used by the system
-			Value string `json:"value"`
-		} `json:"values,omitempty"`
-	} `json:"fields"`
+	Fields map[string]FieldMetadata `json:"fields"`
 
 	// MappedObjectName The mapped name of the object as defined in your integration config, if a mapping was applied. Only present when using the installation-scoped metadata endpoint.
 	MappedObjectName *string `json:"mappedObjectName,omitempty"`
@@ -7883,9 +2755,6 @@ type ObjectMetadata struct {
 	// Name The provider name of the object
 	Name string `json:"name"`
 }
-
-// ObjectMetadataFieldsValueType A normalized field type
-type ObjectMetadataFieldsValueType string
 
 // Operation defines model for Operation.
 type Operation struct {
@@ -7944,6 +2813,9 @@ type Operation struct {
 	Status string `json:"status"`
 }
 
+// OptionalFieldsAutoOption defines model for OptionalFieldsAutoOption.
+type OptionalFieldsAutoOption string
+
 // Org defines model for Org.
 type Org struct {
 	// CreateTime The time at which the organization was created.
@@ -7961,6 +2833,9 @@ type Org struct {
 	// UpdateTime The time the organization was updated.
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
+
+// OtherEvents defines model for OtherEvents.
+type OtherEvents = []string
 
 // PaginationInfo defines model for PaginationInfo.
 type PaginationInfo struct {
@@ -7981,7 +2856,7 @@ type PatchApiKeyRequest struct {
 		Label *string `json:"label,omitempty"`
 
 		// Scopes The scopes for the API key.
-		Scopes *[]string `json:"scopes,omitempty"`
+		Scopes *ApiKeyScopes `json:"scopes,omitempty"`
 	} `json:"apiKey"`
 
 	// UpdateMask Array of field paths specifying which fields to update. Allowed values include:
@@ -8012,6 +2887,29 @@ type PatchJWTKeyRequest_JwtKey struct {
 
 // PatchJWTKeyRequestUpdateMask defines model for PatchJWTKeyRequest.UpdateMask.
 type PatchJWTKeyRequestUpdateMask string
+
+// Problem A Problem Details object (RFC 9457).
+//
+// Additional properties specific to the problem type may be present.
+type Problem struct {
+	// Detail A human-readable explanation specific to this occurrence of the problem
+	Detail *string `json:"detail,omitempty"`
+
+	// Href An absolute URI that, when dereferenced, provides human-readable documentation for the problem type (e.g. using HTML).
+	Href *string `json:"href,omitempty"`
+
+	// Instance An absolute URI that identifies the specific occurrence of the problem. It may or may not yield further information if dereferenced.
+	Instance *string `json:"instance,omitempty"`
+
+	// Status The HTTP status code generated by the origin server for this occurrence of the problem.
+	Status *int32 `json:"status,omitempty"`
+
+	// Title A short summary of the problem type. Written in English and readable for engineers (usually not suited for non technical stakeholders and not localized).
+	Title *string `json:"title,omitempty"`
+
+	// Type An absolute URI that identifies the problem type
+	Type *string `json:"type,omitempty"`
+}
 
 // Project defines model for Project.
 type Project struct {
@@ -8064,13 +2962,7 @@ type ProviderApp struct {
 	Id string `json:"id"`
 
 	// Metadata Provider-specific configuration that extends the standard OAuth flow.
-	Metadata *struct {
-		// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
-		AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
-
-		// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
-		ProviderParams *map[string]string `json:"providerParams,omitempty"`
-	} `json:"metadata,omitempty"`
+	Metadata *ProviderAppMetadata `json:"metadata,omitempty"`
 
 	// ProjectId The Ampersand project ID.
 	ProjectId string `json:"projectId"`
@@ -8094,20 +2986,75 @@ type ProviderAppMetadata struct {
 	ProviderParams *map[string]string `json:"providerParams,omitempty"`
 }
 
-// ProviderMetadata defines model for ProviderMetadata.
-type ProviderMetadata map[string]struct {
-	// DisplayName The human-readable name for the field
-	DisplayName *string `json:"displayName,omitempty"`
+// ProviderAppMetadata2 Describes the provider-app-level fields that the Ampersand dashboard should collect from the builder when creating a ProviderApp for this provider. These descriptors tell the dashboard which form fields to render; the submitted values are stored in ProviderApp.metadata.
+type ProviderAppMetadata2 struct {
+	// AuthQueryParams Descriptors for fields stored in ProviderApp.metadata.authQueryParams (e.g., optional_scope for HubSpot).
+	AuthQueryParams []MetadataItemInput `json:"authQueryParams,omitempty"`
 
-	// Source The source of the metadata field
-	Source ProviderMetadataSource `json:"source"`
-
-	// Value The value of the metadata field
-	Value string `json:"value"`
+	// ProviderParams Descriptors for fields stored in ProviderApp.metadata.providerParams (e.g., packageInstallURL for Salesforce, gcpProjectId for Gmail).
+	ProviderParams []MetadataItemInput `json:"providerParams,omitempty"`
 }
 
-// ProviderMetadataSource The source of the metadata field
-type ProviderMetadataSource string
+// ProviderInfo defines model for ProviderInfo.
+type ProviderInfo struct {
+	// ApiKeyOpts Configuration for API key. Must be provided if authType is apiKey.
+	ApiKeyOpts *ApiKeyOpts `json:"apiKeyOpts,omitempty"`
+
+	// AuthHealthCheck A URL to check the health of a provider's credentials. It's used to see if the credentials are valid and if the provider is reachable.
+	AuthHealthCheck *AuthHealthCheck `json:"authHealthCheck,omitempty"`
+
+	// AuthType The type of authentication required by the provider.
+	AuthType AuthType `json:"authType" validate:"required"`
+
+	// BaseURL The base URL for making API requests.
+	BaseURL string `json:"baseURL" validate:"required"`
+
+	// BasicOpts Configuration for Basic Auth. Optional.
+	BasicOpts *BasicAuthOpts `json:"basicOpts,omitempty"`
+
+	// CustomOpts Configuration for custom auth. Optional.
+	CustomOpts    *CustomAuthOpts `json:"customOpts,omitempty"`
+	DefaultModule string          `json:"defaultModule"`
+
+	// DisplayName The display name of the provider, if omitted, defaults to provider name.
+	DisplayName string  `json:"displayName,omitempty"`
+	Labels      *Labels `json:"labels,omitempty"`
+	Media       *Media  `json:"media,omitempty"`
+
+	// Metadata Provider metadata that needs to be given by the user or fetched by the connector post authentication for the connector to work.
+	Metadata *ProviderMetadata2 `json:"metadata,omitempty"`
+
+	// Modules The registry of provider modules.
+	Modules *Modules `json:"modules,omitempty"`
+	Name    string   `json:"name"`
+
+	// Oauth2Opts Configuration for OAuth2.0. Must be provided if authType is oauth2.
+	Oauth2Opts *Oauth2Opts `json:"oauth2Opts,omitempty"`
+
+	// PostAuthInfoNeeded If true, we require additional information after auth to start making requests.
+	PostAuthInfoNeeded bool `json:"postAuthInfoNeeded,omitempty"`
+
+	// ProviderAppMetadata Describes the provider-app-level fields that the Ampersand dashboard should collect from the builder when creating a ProviderApp for this provider. These descriptors tell the dashboard which form fields to render; the submitted values are stored in ProviderApp.metadata.
+	ProviderAppMetadata *ProviderAppMetadata2 `json:"providerAppMetadata,omitempty"`
+
+	// SubscribeRequirements Declares which auxiliary steps a provider requires to support subscriptions, beyond the per-object subscribe call itself.
+	SubscribeRequirements *SubscribeRequirements `json:"subscribeRequirements,omitempty"`
+
+	// Support The supported features for the provider.
+	Support Support `json:"support" validate:"required"`
+}
+
+// ProviderMetadata defines model for ProviderMetadata.
+type ProviderMetadata map[string]ProviderMetadataInfo
+
+// ProviderMetadata2 Provider metadata that needs to be given by the user or fetched by the connector post authentication for the connector to work.
+type ProviderMetadata2 struct {
+	// Input Metadata provided as manual input
+	Input []MetadataItemInput `json:"input,omitempty"`
+
+	// PostAuthentication Metadata fetched by the connector post authentication
+	PostAuthentication []MetadataItemPostAuthentication `json:"postAuthentication,omitempty"`
+}
 
 // ProviderMetadataInfo defines model for ProviderMetadataInfo.
 type ProviderMetadataInfo struct {
@@ -8124,6 +3071,64 @@ type ProviderMetadataInfo struct {
 // ProviderMetadataInfoSource The source of the metadata field
 type ProviderMetadataInfoSource string
 
+// ReadConfig defines model for ReadConfig.
+type ReadConfig struct {
+	Objects map[string]ReadConfigObject `json:"objects"`
+}
+
+// ReadConfigObject defines model for ReadConfigObject.
+type ReadConfigObject struct {
+	Backfill *BackfillConfig `json:"backfill,omitempty"`
+
+	// Destination The name of the destination that the result should be sent to.
+	Destination string `json:"destination,omitempty"`
+
+	// Disabled If this flag is set to true, scheduled reads associated with this object will be paused, and on-demand reads will not be allowed.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
+	DynamicMappingsInput *DynamicMappingsInput `json:"dynamicMappingsInput,omitempty"`
+
+	// FieldFilters Filters to apply when reading records during incremental reads and backfill. Multiple conditions are joined by AND. Each field can only have one condition.
+	FieldFilters []ReadFilter `json:"fieldFilters,omitempty"`
+
+	// ObjectName The name of the object to read from.
+	ObjectName string `json:"objectName" validate:"required"`
+
+	// Schedule The schedule for reading the object, in cron syntax.
+	Schedule string `json:"schedule,omitempty"`
+
+	// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.)
+	SelectedFieldMappings map[string]string `json:"selectedFieldMappings"`
+
+	// SelectedFields This is a map of field names to booleans indicating whether they should be read. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
+	SelectedFields map[string]bool `json:"selectedFields"`
+
+	// SelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
+	SelectedFieldsAuto *SelectedFieldsAutoConfig `json:"selectedFieldsAuto,omitempty"`
+
+	// SelectedValueMappings This is a map of field names to their value mappings.
+	SelectedValueMappings map[string]SelectedValueMappings `json:"selectedValueMappings,omitempty"`
+}
+
+// ReadFilter defines model for ReadFilter.
+type ReadFilter struct {
+	// FieldName The name of the field to filter on.
+	FieldName string `json:"fieldName"`
+
+	// Operator The comparison operator.
+	Operator ReadFilterOperator `json:"operator"`
+
+	// Value The value to filter on. Allowed types are string, boolean, and number.
+	Value *ReadFilterValue `json:"value,omitempty"`
+}
+
+// ReadFilterOperator The comparison operator.
+type ReadFilterOperator string
+
+// ReadFilterValue The value to filter on. Allowed types are string, boolean, and number.
+type ReadFilterValue = interface{}
+
 // RedirectResponse Instructs the client to open a URL (e.g. in a popup) to continue a custom auth flow, then resume by calling /custom-auth/connect with the sessionId.
 type RedirectResponse struct {
 	// SessionId The flow identifier to pass back to /custom-auth/connect once the provider redirects to the callback.
@@ -8135,129 +3140,7 @@ type RedirectResponse struct {
 
 // Revision defines model for Revision.
 type Revision struct {
-	Content struct {
-		DisplayName string `json:"displayName,omitempty"`
-		Module      string `json:"module,omitempty"`
-		Name        string `json:"name"`
-		Provider    string `json:"provider"`
-		Proxy       *struct {
-			Enabled *bool `json:"enabled,omitempty"`
-
-			// UseModule Default is false. If this is set to true, the base URL for the proxy action will be the module's base URL. Otherwise, it is assumed that the base URL is the provider's root base URL.
-			UseModule *bool `json:"useModule,omitempty"`
-		} `json:"proxy,omitempty"`
-		Read *struct {
-			Objects *[]struct {
-				Backfill *struct {
-					DefaultPeriod struct {
-						// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-						Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-						// FullHistory If true, backfill all history. Required if days is not set.
-						FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-					} `json:"defaultPeriod"`
-				} `json:"backfill,omitempty"`
-				Delivery *struct {
-					// Mode The data delivery mode for this object. If not specified, defaults to automatic.
-					Mode *RevisionContentReadObjectsDeliveryMode `json:"mode,omitempty"`
-
-					// PageSize The number of records to receive per data delivery.
-					PageSize *int `json:"pageSize,omitempty"`
-				} `json:"delivery,omitempty"`
-				Destination string `json:"destination"`
-
-				// Enabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
-				Enabled RevisionContentReadObjectsEnabled `json:"enabled,omitempty"`
-
-				// MapToDisplayName A display name to map to.
-				MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-				// MapToName An object name to map to.
-				MapToName          string                                               `json:"mapToName,omitempty"`
-				ObjectName         string                                               `json:"objectName"`
-				OptionalFields     *[]Revision_Content_Read_Objects_OptionalFields_Item `json:"optionalFields,omitempty"`
-				OptionalFieldsAuto *RevisionContentReadObjectsOptionalFieldsAuto        `json:"optionalFieldsAuto,omitempty"`
-				RequiredFields     *[]Revision_Content_Read_Objects_RequiredFields_Item `json:"requiredFields,omitempty"`
-				Schedule           string                                               `json:"schedule"`
-			} `json:"objects,omitempty"`
-		} `json:"read,omitempty"`
-		Subscribe *struct {
-			Objects *[]struct {
-				AssociationChangeEvent *struct {
-					// Enabled If always, the integration will subscribe to association change events.
-					Enabled *RevisionContentSubscribeObjectsAssociationChangeEventEnabled `json:"enabled,omitempty"`
-
-					// IncludeFullRecords If true, the integration will include full records in the event payload.
-					IncludeFullRecords *bool `json:"includeFullRecords,omitempty"`
-				} `json:"associationChangeEvent,omitempty"`
-				CreateEvent *struct {
-					// Enabled If always, the integration will subscribe to create events by default.
-					Enabled *RevisionContentSubscribeObjectsCreateEventEnabled `json:"enabled,omitempty"`
-				} `json:"createEvent,omitempty"`
-				DeleteEvent *struct {
-					// Enabled If always, the integration will subscribe to delete events by default.
-					Enabled *RevisionContentSubscribeObjectsDeleteEventEnabled `json:"enabled,omitempty"`
-				} `json:"deleteEvent,omitempty"`
-				Destination string `json:"destination"`
-
-				// InheritFieldsAndMapping If true, the integration will inherit the fields and mapping from the read object.
-				InheritFieldsAndMapping bool      `json:"inheritFieldsAndMapping,omitempty"`
-				ObjectName              string    `json:"objectName"`
-				OtherEvents             *[]string `json:"otherEvents,omitempty"`
-				UpdateEvent             *struct {
-					// Enabled If always, the integration will subscribe to update events by default.
-					Enabled             *RevisionContentSubscribeObjectsUpdateEventEnabled `json:"enabled,omitempty"`
-					RequiredWatchFields *[]string                                          `json:"requiredWatchFields,omitempty"`
-
-					// WatchFieldsAuto If `all`, the integration will watch all fields for updates. If `selected`, the integration will watch only the fields that are selected by the user. If `inheritFieldsAndMapping` is true for Subscribe action, the integration will watch the selected fields from read action that are selected by the user.
-					WatchFieldsAuto *RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
-				} `json:"updateEvent,omitempty"`
-			} `json:"objects,omitempty"`
-		} `json:"subscribe,omitempty"`
-
-		// WatchSchema Configuration for monitoring provider schema changes.
-		WatchSchema *struct {
-			// AllObjects Schema change event configuration for all objects in the integration.
-			AllObjects struct {
-				// FieldChanged Configuration for detecting when fields are changed.
-				FieldChanged *struct {
-					// Enabled If always, the integration will monitor for field changes by default.
-					Enabled RevisionContentWatchSchemaAllObjectsFieldChangedEnabled `json:"enabled"`
-				} `json:"fieldChanged,omitempty"`
-
-				// FieldCreated Configuration for detecting when new fields are created.
-				FieldCreated *struct {
-					// Enabled If always, the integration will monitor for new fields by default.
-					Enabled RevisionContentWatchSchemaAllObjectsFieldCreatedEnabled `json:"enabled"`
-				} `json:"fieldCreated,omitempty"`
-
-				// FieldDeleted Configuration for detecting when fields are deleted.
-				FieldDeleted *struct {
-					// Enabled If always, the integration will monitor for deleted fields by default.
-					Enabled RevisionContentWatchSchemaAllObjectsFieldDeletedEnabled `json:"enabled"`
-				} `json:"fieldDeleted,omitempty"`
-			} `json:"allObjects"`
-
-			// Destination The destination to send schema change notifications to.
-			Destination string `json:"destination"`
-
-			// Schedule Cron schedule for checking schema changes. Minimum frequency is once per hour. Defaults to once a day.
-			Schedule string `json:"schedule,omitempty"`
-		} `json:"watchSchema,omitempty"`
-		Write *struct {
-			Objects *[]struct {
-				// InheritMapping If true, the write object will inherit the mapping from the read object. If false, the write object will have no mapping.
-				InheritMapping *bool  `json:"inheritMapping,omitempty"`
-				ObjectName     string `json:"objectName"`
-
-				// ValueDefaults Configuration to set default write values for object fields.
-				ValueDefaults *struct {
-					// AllowAnyFields If true, users can set default values for any field.
-					AllowAnyFields *bool `json:"allowAnyFields,omitempty"`
-				} `json:"valueDefaults,omitempty"`
-			} `json:"objects,omitempty"`
-		} `json:"write,omitempty"`
-	} `json:"content"`
+	Content Integration2 `json:"content"`
 
 	// CreateTime The time the revision was created.
 	CreateTime time.Time `json:"createTime"`
@@ -8269,86 +3152,21 @@ type Revision struct {
 	SpecVersion string `json:"specVersion"`
 }
 
-// RevisionContentReadObjectsDeliveryMode The data delivery mode for this object. If not specified, defaults to automatic.
-type RevisionContentReadObjectsDeliveryMode string
-
-// RevisionContentReadObjectsEnabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
-type RevisionContentReadObjectsEnabled string
-
-// RevisionContentReadObjectsOptionalFields0 defines model for .
-type RevisionContentReadObjectsOptionalFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
+// SearchOperators defines model for SearchOperators.
+type SearchOperators struct {
+	Equals bool `json:"equals"`
 }
 
-// RevisionContentReadObjectsOptionalFields1 defines model for .
-type RevisionContentReadObjectsOptionalFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
+// SearchSupport defines model for SearchSupport.
+type SearchSupport struct {
+	Operators SearchOperators `json:"operators"`
 }
 
-// Revision_Content_Read_Objects_OptionalFields_Item defines model for Revision.Content.Read.Objects.OptionalFields.Item.
-type Revision_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
+// SelectedFieldsAutoConfig If selectedFieldsAuto is set to all, all fields will be read.
+type SelectedFieldsAutoConfig string
 
-// RevisionContentReadObjectsOptionalFieldsAuto defines model for Revision.Content.Read.Objects.OptionalFieldsAuto.
-type RevisionContentReadObjectsOptionalFieldsAuto string
-
-// RevisionContentReadObjectsRequiredFields0 defines model for .
-type RevisionContentReadObjectsRequiredFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// RevisionContentReadObjectsRequiredFields1 defines model for .
-type RevisionContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// Revision_Content_Read_Objects_RequiredFields_Item defines model for Revision.Content.Read.Objects.RequiredFields.Item.
-type Revision_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
-}
-
-// RevisionContentSubscribeObjectsAssociationChangeEventEnabled If always, the integration will subscribe to association change events.
-type RevisionContentSubscribeObjectsAssociationChangeEventEnabled string
-
-// RevisionContentSubscribeObjectsCreateEventEnabled If always, the integration will subscribe to create events by default.
-type RevisionContentSubscribeObjectsCreateEventEnabled string
-
-// RevisionContentSubscribeObjectsDeleteEventEnabled If always, the integration will subscribe to delete events by default.
-type RevisionContentSubscribeObjectsDeleteEventEnabled string
-
-// RevisionContentSubscribeObjectsUpdateEventEnabled If always, the integration will subscribe to update events by default.
-type RevisionContentSubscribeObjectsUpdateEventEnabled string
-
-// RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto If `all`, the integration will watch all fields for updates. If `selected`, the integration will watch only the fields that are selected by the user. If `inheritFieldsAndMapping` is true for Subscribe action, the integration will watch the selected fields from read action that are selected by the user.
-type RevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// RevisionContentWatchSchemaAllObjectsFieldChangedEnabled If always, the integration will monitor for field changes by default.
-type RevisionContentWatchSchemaAllObjectsFieldChangedEnabled string
-
-// RevisionContentWatchSchemaAllObjectsFieldCreatedEnabled If always, the integration will monitor for new fields by default.
-type RevisionContentWatchSchemaAllObjectsFieldCreatedEnabled string
-
-// RevisionContentWatchSchemaAllObjectsFieldDeletedEnabled If always, the integration will monitor for deleted fields by default.
-type RevisionContentWatchSchemaAllObjectsFieldDeletedEnabled string
+// SelectedValueMappings This is a map of values to their mappings. The key is the value delivered to the webhook, the value is the value coming from the provider API.
+type SelectedValueMappings map[string]string
 
 // SignedUrl defines model for SignedUrl.
 type SignedUrl struct {
@@ -8378,6 +3196,89 @@ type StringFieldOptions struct {
 
 	// ValuesRestricted Indicates if the field value must be limited to what's in Values
 	ValuesRestricted *bool `json:"valuesRestricted,omitempty"`
+}
+
+// SubscribeConfig defines model for SubscribeConfig.
+type SubscribeConfig struct {
+	Objects map[string]SubscribeConfigObject `json:"objects"`
+}
+
+// SubscribeConfigObject defines model for SubscribeConfigObject.
+type SubscribeConfigObject struct {
+	CreateEvent *ConfigCreateEvent `json:"createEvent,omitempty"`
+	DeleteEvent *ConfigDeleteEvent `json:"deleteEvent,omitempty"`
+
+	// Destination The name of the destination that the result should be sent to.
+	Destination string `json:"destination"`
+
+	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
+	InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
+
+	// ObjectName The name of the object to subscribe to.
+	ObjectName  string             `json:"objectName" validate:"required"`
+	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
+	UpdateEvent *ConfigUpdateEvent `json:"updateEvent,omitempty"`
+}
+
+// SubscribeRequirements Declares which auxiliary steps a provider requires to support subscriptions, beyond the per-object subscribe call itself.
+type SubscribeRequirements struct {
+	// Maintenance Whether the subscription requires periodic maintenance. Some providers expire subscriptions/watches after a fixed TTL, so the subscription must be renewed on a schedule to remain active.
+	Maintenance *bool `json:"maintenance,omitempty"`
+
+	// PostProcess Whether subscribing requires a third-party setup step that the connector instance itself cannot perform. Examples: Salesforce requires AWS EventBridge configuration; Gmail requires a Google Pub/Sub topic to be configured. Any configuration that must happen outside the connector falls into post-process.
+	PostProcess *bool `json:"postProcess,omitempty"`
+
+	// Registration Whether the provider requires a one-time registration step that is shared across all subscribed objects. The subscribe method is object-scoped, so if a separate API call is needed beyond per-object configuration (e.g., registering a single webhook/endpoint that all object subscriptions hang off of), registration is required.
+	Registration *bool `json:"registration,omitempty"`
+
+	// SubscribeByAPI Whether the provider supports programmatic subscription via API. If false, provider may still support webhooks via manual configuration in UI.
+	SubscribeByAPI *bool `json:"subscribeByAPI,omitempty"`
+}
+
+// SubscribeSupport defines model for SubscribeSupport.
+type SubscribeSupport struct {
+	Create      *bool `json:"create,omitempty"`
+	Delete      *bool `json:"delete,omitempty"`
+	PassThrough *bool `json:"passThrough,omitempty"`
+	Update      *bool `json:"update,omitempty"`
+}
+
+// Support The supported features for the provider.
+type Support struct {
+	BatchWrite       *BatchWriteSupport `json:"batchWrite,omitempty"`
+	BulkWrite        BulkWriteSupport   `json:"bulkWrite" validate:"required"`
+	Delete           bool               `json:"delete"`
+	Proxy            bool               `json:"proxy"`
+	Read             bool               `json:"read"`
+	Search           SearchSupport      `json:"search"`
+	Subscribe        bool               `json:"subscribe"`
+	SubscribeSupport *SubscribeSupport  `json:"subscribeSupport,omitempty"`
+	Write            bool               `json:"write"`
+}
+
+// TokenMetadataFields Fields to be used to extract token metadata from the token response.
+type TokenMetadataFields struct {
+	ConsumerRefField string `json:"consumerRefField,omitempty"`
+
+	// OtherFields Additional fields to extract and transform from the token response
+	OtherFields       *TokenMetadataFieldsOtherFields `json:"otherFields,omitempty"`
+	ScopesField       string                          `json:"scopesField,omitempty"`
+	WorkspaceRefField string                          `json:"workspaceRefField,omitempty"`
+}
+
+// TokenMetadataFieldsOtherFields Additional fields to extract and transform from the token response
+type TokenMetadataFieldsOtherFields = []struct {
+	// Capture A regex expression to capture the value that we need from the path. There must be only one capture group named 'result' in the expression. If not provided, will cause an error.
+	Capture string `json:"capture,omitempty"`
+
+	// DisplayName The human-readable name of the field
+	DisplayName string `json:"displayName"`
+
+	// Name The internal name of the field
+	Name string `json:"name"`
+
+	// Path The path to the field in the token response (accepts dot notation for nested fields)
+	Path string `json:"path"`
 }
 
 // Topic defines model for Topic.
@@ -8418,102 +3319,40 @@ type TopicDestinationRoute struct {
 
 // UpdateConnectionRequest Specify which fields to update in `updateMask` and provide corresponding values in `connection`. Fields in `connection` not listed in `updateMask` are ignored.
 type UpdateConnectionRequest struct {
-	Connection struct {
-		// ApiKey The API key to use for the connection.
-		ApiKey    *string `json:"apiKey,omitempty"`
-		BasicAuth *struct {
-			// Password The password to use for the connection.
-			Password string `json:"password"`
-
-			// Username The username to use for the connection.
-			Username string `json:"username"`
-		} `json:"basicAuth,omitempty"`
-
-		// ConsumerName The name of the consumer that has access to this installation.
-		ConsumerName *string `json:"consumerName,omitempty"`
-
-		// ConsumerRef The consumer reference.
-		ConsumerRef *string `json:"consumerRef,omitempty"`
-
-		// CustomAuth Values used for custom auth input variables. Most values are strings (API keys, tokens, etc.), but structured values like arrays are also accepted — for example, googleWorkspaceDelegation sends a `scopes` array alongside the service account key.
-		CustomAuth *map[string]interface{} `json:"customAuth,omitempty"`
-
-		// GroupName The name of the user group that has access to this installation.
-		GroupName *string `json:"groupName,omitempty"`
-
-		// GroupRef The ID of the user group that has access to this installation.
-		GroupRef                *string `json:"groupRef,omitempty"`
-		Oauth2AuthorizationCode *struct {
-			// AccessToken The access token for the connection.
-			AccessToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"accessToken,omitempty"`
-
-			// RefreshToken The refresh token to use for the connection.
-			RefreshToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"refreshToken,omitempty"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-		} `json:"oauth2AuthorizationCode,omitempty"`
-		Oauth2ClientCredentials *struct {
-			// ClientId The client ID to use for the connection.
-			ClientId string `json:"clientId"`
-
-			// ClientSecret The client secret to use for the connection.
-			ClientSecret string `json:"clientSecret"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-		} `json:"oauth2ClientCredentials,omitempty"`
-		Oauth2PasswordCredentials *struct {
-			// ClientId The client ID to use for the connection.
-			ClientId string `json:"clientId"`
-
-			// ClientSecret The client secret to use for the connection.
-			ClientSecret string `json:"clientSecret"`
-
-			// Password The password to use for the connection.
-			Password string `json:"password"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-
-			// Username The username to use for the connection.
-			Username string `json:"username"`
-		} `json:"oauth2PasswordCredentials,omitempty"`
-
-		// Provider The provider name (e.g. "salesforce", "hubspot")
-		Provider         *string `json:"provider,omitempty"`
-		ProviderMetadata *map[string]struct {
-			// DisplayName The human-readable name for the field
-			DisplayName *string `json:"displayName,omitempty"`
-
-			// Source The source of the metadata field
-			Source UpdateConnectionRequestConnectionProviderMetadataSource `json:"source"`
-
-			// Value The value of the metadata field
-			Value string `json:"value"`
-		} `json:"providerMetadata,omitempty"`
-
-		// ProviderWorkspaceRef The ID of the provider workspace that this connection belongs to.
-		ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
-	} `json:"connection"`
+	Connection ConnectionRequest `json:"connection"`
 
 	// UpdateMask Fields to update. Each entry must have a corresponding value in `connection`. Credential fields (`apiKey`, `basicAuth`, `oauth2ClientCredentials`, `oauth2PasswordCredentials`) must match the connection's existing auth scheme.
 	UpdateMask []UpdateConnectionRequestUpdateMask `json:"updateMask"`
 }
 
-// UpdateConnectionRequestConnectionProviderMetadataSource The source of the metadata field
-type UpdateConnectionRequestConnectionProviderMetadataSource string
-
 // UpdateConnectionRequestUpdateMask defines model for UpdateConnectionRequest.UpdateMask.
 type UpdateConnectionRequestUpdateMask string
+
+// UpdateEvent defines model for UpdateEvent.
+type UpdateEvent struct {
+	// Enabled If always, the integration will subscribe to update events by default.
+	Enabled             *UpdateEventEnabled `json:"enabled,omitempty"`
+	RequiredWatchFields *[]string           `json:"requiredWatchFields,omitempty"`
+
+	// WatchFieldsAuto If `all`, the integration will watch all fields for updates. If `selected`, the integration will watch only the fields that are selected by the user. If `inheritFieldsAndMapping` is true for Subscribe action, the integration will watch the selected fields from read action that are selected by the user.
+	WatchFieldsAuto *UpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
+}
+
+// UpdateEventEnabled If always, the integration will subscribe to update events by default.
+type UpdateEventEnabled string
+
+// UpdateEventWatchFieldsAuto If `all`, the integration will watch all fields for updates. If `selected`, the integration will watch only the fields that are selected by the user. If `inheritFieldsAndMapping` is true for Subscribe action, the integration will watch the selected fields from read action that are selected by the user.
+type UpdateEventWatchFieldsAuto string
+
+// UpdateInstallationConfigContent defines model for UpdateInstallationConfigContent.
+type UpdateInstallationConfigContent struct {
+	// Provider The SaaS API that we are integrating with.
+	Provider  *string              `json:"provider,omitempty"`
+	Proxy     *BaseProxyConfig     `json:"proxy,omitempty"`
+	Read      *BaseReadConfig      `json:"read,omitempty"`
+	Subscribe *BaseSubscribeConfig `json:"subscribe,omitempty"`
+	Write     *BaseWriteConfig     `json:"write,omitempty"`
+}
 
 // UpdateMask Array of field paths specifying which fields to update.
 // Uses dot notation for nested fields (e.g., "config.revision", "metadata.tags").
@@ -8530,97 +3369,7 @@ type UpdateMask = []string
 // UpsertMetadataRequest Request payload for upserting metadata (fields only)
 type UpsertMetadataRequest struct {
 	// Fields Maps object names to field definitions
-	Fields map[string][]struct {
-		// Association Relationship information for a field to another object
-		Association *struct {
-			// AssociationType High-level association variety (e.g., 'foreignKey', 'lookup', 'ref')
-			AssociationType string `json:"associationType"`
-
-			// Cardinality Association cardinality from the referencing field's perspective
-			Cardinality *string `json:"cardinality,omitempty"`
-
-			// Labels UI labels for an association
-			Labels *struct {
-				// Plural Plural display label
-				Plural *string `json:"plural,omitempty"`
-
-				// Singular Singular display label
-				Singular *string `json:"singular,omitempty"`
-			} `json:"labels,omitempty"`
-
-			// OnDelete Behavior upon foreign object deletion
-			OnDelete *string `json:"onDelete,omitempty"`
-
-			// Required If true, a referenced record must exist
-			Required *bool `json:"required,omitempty"`
-
-			// ReverseLookupFieldName Optional inverse relationship/property name exposed on the target object
-			ReverseLookupFieldName *string `json:"reverseLookupFieldName,omitempty"`
-
-			// TargetField Name of the referenced field on the target object
-			TargetField *string `json:"targetField,omitempty"`
-
-			// TargetObject Name of the referenced/parent object
-			TargetObject string `json:"targetObject"`
-		} `json:"association,omitempty"`
-
-		// Description Optional description of the field
-		Description *string `json:"description,omitempty"`
-
-		// DisplayName The human-readable name of the field
-		DisplayName string `json:"displayName"`
-
-		// FieldName The identifier of the field
-		FieldName string `json:"fieldName"`
-
-		// Indexed Indicates if the field should be indexed for faster search
-		Indexed *bool `json:"indexed,omitempty"`
-
-		// NumericOptions Additional options for numeric fields
-		NumericOptions *struct {
-			// DefaultValue Default value for the field
-			DefaultValue *float32 `json:"defaultValue,omitempty"`
-
-			// Max Maximum value for numeric fields
-			Max *float32 `json:"max,omitempty"`
-
-			// Min Minimum value for numeric fields
-			Min *float32 `json:"min,omitempty"`
-
-			// Precision Total number of digits (for decimal types)
-			Precision *int `json:"precision,omitempty"`
-
-			// Scale Number of digits to the right of the decimal point (for decimal types)
-			Scale *int `json:"scale,omitempty"`
-		} `json:"numericOptions,omitempty"`
-
-		// Required Indicates if the field is required
-		Required *bool `json:"required,omitempty"`
-
-		// StringOptions Additional options for string fields
-		StringOptions *struct {
-			// DefaultValue Default value for the field
-			DefaultValue *string `json:"defaultValue,omitempty"`
-
-			// Length Maximum length of the string field
-			Length *int `json:"length,omitempty"`
-
-			// Pattern Regex pattern that the string field value must match
-			Pattern *string `json:"pattern,omitempty"`
-
-			// Values List of allowed values for enum fields
-			Values *[]string `json:"values,omitempty"`
-
-			// ValuesRestricted Indicates if the field value must be limited to what's in Values
-			ValuesRestricted *bool `json:"valuesRestricted,omitempty"`
-		} `json:"stringOptions,omitempty"`
-
-		// Unique Indicates if the field must be unique across all records
-		Unique *bool `json:"unique,omitempty"`
-
-		// ValueType The data type of the field. Valid values are string, boolean, date, datetime, singleSelect, multiSelect, int, float, reference
-		ValueType string `json:"valueType"`
-	} `json:"fields"`
+	Fields map[string][]FieldDefinition `json:"fields"`
 
 	// GroupRef The ID that your app uses to identify the group of users for this request.
 	GroupRef string `json:"groupRef"`
@@ -8629,26 +3378,127 @@ type UpsertMetadataRequest struct {
 // UpsertMetadataResponse Response containing results for all created/updated fields
 type UpsertMetadataResponse struct {
 	// Fields Maps object name -> field name -> upsert result
-	Fields map[string]map[string]struct {
-		// Action Action taken (create, update, none)
-		Action string `json:"action"`
-
-		// FieldName Name of the field
-		FieldName string `json:"fieldName"`
-
-		// Metadata Provider-specific metadata about the field
-		Metadata *map[string]interface{} `json:"metadata,omitempty"`
-
-		// Warnings Warnings that occurred during the upsert operation
-		Warnings *[]string `json:"warnings,omitempty"`
-	} `json:"fields"`
+	Fields map[string]map[string]FieldUpsertResult `json:"fields"`
 
 	// Success Indicates if the upsert operation was successful
 	Success bool `json:"success"`
 }
 
+// ValueDefault defines model for ValueDefault.
+type ValueDefault = any
+
+// ValueDefaultBoolean defines model for ValueDefaultBoolean.
+type ValueDefaultBoolean struct {
+	// ApplyOnUpdate Whether the default value should be applied when updating a record.
+	// If set to `always`, the default value will be applied when updating a record.
+	// If set to `never`, the default value will not be applied when updating a record,
+	// only when creating a record.
+	// If unspecified, then `always` is assumed.
+	ApplyOnUpdate *ValueDefaultBooleanApplyOnUpdate `json:"applyOnUpdate,omitempty"`
+
+	// Value The value to be used as a default.
+	Value bool `json:"value"`
+}
+
+// ValueDefaultBooleanApplyOnUpdate Whether the default value should be applied when updating a record.
+// If set to `always`, the default value will be applied when updating a record.
+// If set to `never`, the default value will not be applied when updating a record,
+// only when creating a record.
+// If unspecified, then `always` is assumed.
+type ValueDefaultBooleanApplyOnUpdate string
+
+// ValueDefaultInteger defines model for ValueDefaultInteger.
+type ValueDefaultInteger struct {
+	// ApplyOnUpdate Whether the default value should be applied when updating a record.
+	// If set to `always`, the default value will be applied when updating a record.
+	// If set to `never`, the default value will not be applied when updating a record,
+	// only when creating a record.
+	// If unspecified, then `always` is assumed.
+	ApplyOnUpdate *ValueDefaultIntegerApplyOnUpdate `json:"applyOnUpdate,omitempty"`
+
+	// Value The value to be used as a default.
+	Value int `json:"value"`
+}
+
+// ValueDefaultIntegerApplyOnUpdate Whether the default value should be applied when updating a record.
+// If set to `always`, the default value will be applied when updating a record.
+// If set to `never`, the default value will not be applied when updating a record,
+// only when creating a record.
+// If unspecified, then `always` is assumed.
+type ValueDefaultIntegerApplyOnUpdate string
+
+// ValueDefaultString defines model for ValueDefaultString.
+type ValueDefaultString struct {
+	// ApplyOnUpdate Whether the default value should be applied when updating a record.
+	// If set to `always`, the default value will be applied when updating a record.
+	// If set to `never`, the default value will not be applied when updating a record,
+	// only when creating a record.
+	// If unspecified, then `always` is assumed.
+	ApplyOnUpdate *ValueDefaultStringApplyOnUpdate `json:"applyOnUpdate,omitempty"`
+
+	// Value The value to be used as a default.
+	Value string `json:"value"`
+}
+
+// ValueDefaultStringApplyOnUpdate Whether the default value should be applied when updating a record.
+// If set to `always`, the default value will be applied when updating a record.
+// If set to `never`, the default value will not be applied when updating a record,
+// only when creating a record.
+// If unspecified, then `always` is assumed.
+type ValueDefaultStringApplyOnUpdate string
+
+// ValueDefaults Configuration to set default write values for object fields.
+type ValueDefaults struct {
+	// AllowAnyFields If true, users can set default values for any field.
+	AllowAnyFields *bool `json:"allowAnyFields,omitempty"`
+}
+
+// WatchSchema Configuration for monitoring provider schema changes.
+type WatchSchema struct {
+	// AllObjects Schema change event configuration for all objects in the integration.
+	AllObjects WatchSchemaAllObjects `json:"allObjects"`
+
+	// Destination The destination to send schema change notifications to.
+	Destination string `json:"destination"`
+
+	// Schedule Cron schedule for checking schema changes. Minimum frequency is once per hour. Defaults to once a day.
+	Schedule string `json:"schedule,omitempty"`
+}
+
+// WatchSchemaAllObjects Schema change event configuration for all objects in the integration.
+type WatchSchemaAllObjects struct {
+	// FieldChanged Configuration for detecting when fields are changed.
+	FieldChanged *FieldChangedEvent `json:"fieldChanged,omitempty"`
+
+	// FieldCreated Configuration for detecting when new fields are created.
+	FieldCreated *FieldCreatedEvent `json:"fieldCreated,omitempty"`
+
+	// FieldDeleted Configuration for detecting when fields are deleted.
+	FieldDeleted *FieldDeletedEvent `json:"fieldDeleted,omitempty"`
+}
+
 // WebhookHeaders Additional headers to add when Ampersand sends a webhook message
 type WebhookHeaders map[string]string
+
+// WriteConfig defines model for WriteConfig.
+type WriteConfig struct {
+	Objects *map[string]WriteConfigObject `json:"objects,omitempty"`
+}
+
+// WriteConfigObject defines model for WriteConfigObject.
+type WriteConfigObject struct {
+	DeletionSettings *DeletionSettings `json:"deletionSettings,omitempty"`
+
+	// ObjectName The name of the object to write to.
+	ObjectName string `json:"objectName" validate:"required"`
+
+	// SelectedFieldSettings This is a map of field names to their settings.
+	SelectedFieldSettings map[string]FieldSetting `json:"selectedFieldSettings,omitempty"`
+
+	// SelectedValueDefaults This is a map of field names to default values. These values will be used when writing to the object.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
+	SelectedValueDefaults map[string]ValueDefault `json:"selectedValueDefaults,omitempty"`
+}
 
 // aPIKeyHeaderContextKey is the context key for APIKeyHeader security scheme
 type aPIKeyHeaderContextKey string
@@ -8683,229 +3533,11 @@ type ClaimDomainJSONBody struct {
 	ParentType string `json:"parentType"`
 }
 
-// CustomAuthConnectJSONBody defines parameters for CustomAuthConnect.
-type CustomAuthConnectJSONBody struct {
-	// CallbackParams The query/body params the provider sent to the callback, forwarded to resume the flow.
-	CallbackParams *map[string]string `json:"callbackParams,omitempty"`
-
-	// ConsumerName The display name for the consumer. Defaults to consumerRef if not provided. Supplied on the first call; ignored on resume calls.
-	ConsumerName *string `json:"consumerName,omitempty"`
-
-	// ConsumerRef The ID that your app uses to identify the user whose SaaS credential will be used. Supplied on the first call; ignored on resume calls (the parked flow's identity is used).
-	ConsumerRef *string `json:"consumerRef,omitempty"`
-
-	// CustomAuth The consumer-supplied custom auth inputs (keyed by CustomAuthInput.name). Supplied on the first call (when sessionId is not present).
-	CustomAuth *map[string]interface{} `json:"customAuth,omitempty"`
-
-	// GroupName The display name for the group. Defaults to groupRef if not provided. Supplied on the first call; ignored on resume calls.
-	GroupName *string `json:"groupName,omitempty"`
-
-	// GroupRef Your application's identifier for the organization or workspace that this connection belongs to. Supplied on the first call; ignored on resume calls (the parked flow's identity is used).
-	GroupRef *string `json:"groupRef,omitempty"`
-
-	// ProjectIdOrName The Ampersand project ID or project name. Required on the first call.
-	ProjectIdOrName string `json:"projectIdOrName"`
-
-	// Provider The provider that this app connects to. Required on the first call (when sessionId is not present); ignored on resume calls. Conditional requirement is enforced at the application layer.
-	Provider *string `json:"provider,omitempty"`
-
-	// ProviderAppId ID of the provider app. If omitted, the default provider app set up on the Dashboard is assumed.
-	ProviderAppId *string `json:"providerAppId,omitempty"`
-
-	// ProviderMetadata Additional provider-specific metadata collected from the user.
-	ProviderMetadata *map[string]struct {
-		// DisplayName The human-readable name for the field
-		DisplayName *string `json:"displayName,omitempty"`
-
-		// Source The source of the metadata field
-		Source CustomAuthConnectJSONBodyProviderMetadataSource `json:"source"`
-
-		// Value The value of the metadata field
-		Value string `json:"value"`
-	} `json:"providerMetadata,omitempty"`
-
-	// SessionId Identifies an in-progress flow to resume after a redirect. Returned in a prior redirect response. When present, provider and customAuth are not required.
-	SessionId *string `json:"sessionId,omitempty"`
-}
-
-// CustomAuthConnectJSONBodyProviderMetadataSource defines parameters for CustomAuthConnect.
-type CustomAuthConnectJSONBodyProviderMetadataSource string
-
-// CustomAuthConnect200JSONResponseBody0 defines parameters for CustomAuthConnect.
-type CustomAuthConnect200JSONResponseBody0 struct {
-	// Redirect Instructs the client to open a URL (e.g. in a popup) to continue a custom auth flow, then resume by calling /custom-auth/connect with the sessionId.
-	Redirect struct {
-		// SessionId The flow identifier to pass back to /custom-auth/connect once the provider redirects to the callback.
-		SessionId string `json:"sessionId"`
-
-		// Url The URL the client should open to continue the flow.
-		Url string `json:"url"`
-	} `json:"redirect"`
-}
-
-// CustomAuthConnect200JSONResponseBody1 defines parameters for CustomAuthConnect.
-type CustomAuthConnect200JSONResponseBody1 struct {
-	Connection struct {
-		// ApiKey The API key used while making the connection.
-		ApiKey *string `json:"apiKey,omitempty"`
-
-		// AuthScheme The authentication scheme used for this connection.
-		AuthScheme CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme `json:"authScheme"`
-		Consumer   struct {
-			// ConsumerName The name of the consumer.
-			ConsumerName string `json:"consumerName"`
-
-			// ConsumerRef The consumer reference.
-			ConsumerRef string `json:"consumerRef"`
-
-			// CreateTime The time the consumer was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// UpdateTime The time the consumer was last updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"consumer"`
-
-		// CreateTime The time the connection was created.
-		CreateTime time.Time `json:"createTime"`
-		Group      struct {
-			// CreateTime The time the group was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// GroupName The name of the user group that has access to this installation.
-			GroupName string `json:"groupName"`
-
-			// GroupRef The ID of the user group that has access to this installation.
-			GroupRef string `json:"groupRef"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// UpdateTime The time the group was last updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"group"`
-
-		// Id The connection ID.
-		Id                      string `json:"id"`
-		Oauth2AuthorizationCode *struct {
-			// AccessToken The access token for the connection.
-			AccessToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"accessToken,omitempty"`
-
-			// RefreshToken The refresh token to use for the connection.
-			RefreshToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"refreshToken,omitempty"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-		} `json:"oauth2AuthorizationCode,omitempty"`
-
-		// ProjectId The Ampersand project ID.
-		ProjectId string `json:"projectId"`
-
-		// Provider The SaaS provider that this Connection is for.
-		Provider    string `json:"provider"`
-		ProviderApp *struct {
-			// ClientId The OAuth client ID for this app.
-			ClientId string `json:"clientId"`
-
-			// CreateTime The time the provider app was created.
-			CreateTime time.Time `json:"createTime"`
-
-			// ExternalRef The ID used by the provider to identify the app (optional).
-			ExternalRef *string `json:"externalRef,omitempty"`
-
-			// Id The provider app ID.
-			Id string `json:"id"`
-
-			// Metadata Provider-specific configuration that extends the standard OAuth flow.
-			Metadata *struct {
-				// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
-				AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
-
-				// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
-				ProviderParams *map[string]string `json:"providerParams,omitempty"`
-			} `json:"metadata,omitempty"`
-
-			// ProjectId The Ampersand project ID.
-			ProjectId string `json:"projectId"`
-
-			// Provider The SaaS provider that this app connects to.
-			Provider string `json:"provider"`
-
-			// Scopes The OAuth scopes for this app.
-			Scopes *[]string `json:"scopes,omitempty"`
-
-			// UpdateTime The time the provider app was updated.
-			UpdateTime *time.Time `json:"updateTime,omitempty"`
-		} `json:"providerApp,omitempty"`
-
-		// ProviderConsumerRef If available, the ID that Salesforce/Hubspot uses to identify this user (e.g. Salesforce has IDs in the form of https://login.salesforce.com/id/00D4x0000019CQTEA2/0054x000000orJ4AA)
-		ProviderConsumerRef *string `json:"providerConsumerRef,omitempty"`
-		ProviderMetadata    *map[string]struct {
-			// DisplayName The human-readable name for the field
-			DisplayName *string `json:"displayName,omitempty"`
-
-			// Source The source of the metadata field
-			Source CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource `json:"source"`
-
-			// Value The value of the metadata field
-			Value string `json:"value"`
-		} `json:"providerMetadata,omitempty"`
-
-		// ProviderWorkspaceRef If available, the identifier for the provider workspace (e.g. the Salesforce subdomain)
-		ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
-
-		// Status The status of the connection.
-		// - `created`: The connection has just been created or the access token was just refreshed.
-		// - `working`: The connection has successfully been used to make a request.
-		// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
-		Status CustomAuthConnect200JSONResponseBody1ConnectionStatus `json:"status"`
-
-		// UpdateTime The time the connection was last updated.
-		UpdateTime *time.Time `json:"updateTime,omitempty"`
-	} `json:"connection"`
-}
-
-// CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme defines parameters for CustomAuthConnect.
-type CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme string
-
-// CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource defines parameters for CustomAuthConnect.
-type CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource string
-
-// CustomAuthConnect200JSONResponseBody1ConnectionStatus defines parameters for CustomAuthConnect.
-type CustomAuthConnect200JSONResponseBody1ConnectionStatus string
-
-// CustomAuthConnect200JSONResponseBody defines parameters for CustomAuthConnect.
-type CustomAuthConnect200JSONResponseBody struct {
-	union json.RawMessage
-}
-
 // AcceptInviteJSONBody defines parameters for AcceptInvite.
 type AcceptInviteJSONBody struct {
 	// InvitedEmail The email address that the invite was sent to
 	InvitedEmail string `json:"invitedEmail"`
 }
-
-// AcceptInvite200JSONResponseBodyOrgRolePrincipalType defines parameters for AcceptInvite.
-type AcceptInvite200JSONResponseBodyOrgRolePrincipalType string
-
-// AcceptInvite200JSONResponseBodyProjectRolesPrincipalType defines parameters for AcceptInvite.
-type AcceptInvite200JSONResponseBodyProjectRolesPrincipalType string
-
-// GetMyInfo200JSONResponseBodyOrgRolePrincipalType defines parameters for GetMyInfo.
-type GetMyInfo200JSONResponseBodyOrgRolePrincipalType string
-
-// GetMyInfo200JSONResponseBodyProjectRolesPrincipalType defines parameters for GetMyInfo.
-type GetMyInfo200JSONResponseBodyProjectRolesPrincipalType string
 
 // OauthConnectJSONBody defines parameters for OauthConnect.
 type OauthConnectJSONBody struct {
@@ -8931,26 +3563,12 @@ type OauthConnectJSONBody struct {
 	Provider string `json:"provider"`
 
 	// ProviderAppId ID of the provider app, returned from the [Create Provider App endpoint](https://docs.withampersand.com/reference/provider-apps/create-provider-app). If omitted, the default provider app that was set up on the Ampersand Dashboard is assumed.
-	ProviderAppId *string `json:"providerAppId,omitempty"`
-
-	// ProviderMetadata Additional provider-specific metadata required by certain providers (e.g., account ID for NetSuite). See provider documentation for which fields are needed.
-	ProviderMetadata *map[string]struct {
-		// DisplayName The human-readable name for the field
-		DisplayName *string `json:"displayName,omitempty"`
-
-		// Source The source of the metadata field
-		Source OauthConnectJSONBodyProviderMetadataSource `json:"source"`
-
-		// Value The value of the metadata field
-		Value string `json:"value"`
-	} `json:"providerMetadata,omitempty"`
+	ProviderAppId    *string           `json:"providerAppId,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"providerMetadata,omitempty"`
 
 	// ProviderWorkspaceRef The identifier for the provider workspace (e.g. the Salesforce subdomain).
 	ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
 }
-
-// OauthConnectJSONBodyProviderMetadataSource defines parameters for OauthConnect.
-type OauthConnectJSONBodyProviderMetadataSource string
 
 // CreateOrgJSONBody defines parameters for CreateOrg.
 type CreateOrgJSONBody struct {
@@ -8970,29 +3588,11 @@ type UpdateOrgJSONBody struct {
 	UpdateMask []string `json:"updateMask"`
 }
 
-// ListOrgInvites200JSONResponseBodyParentType defines parameters for ListOrgInvites.
-type ListOrgInvites200JSONResponseBodyParentType string
-
-// ListOrgInvites200JSONResponseBodyStatus defines parameters for ListOrgInvites.
-type ListOrgInvites200JSONResponseBodyStatus string
-
 // CreateOrgInviteJSONBody defines parameters for CreateOrgInvite.
 type CreateOrgInviteJSONBody struct {
 	// Email The email address of the user to invite.
 	Email string `json:"email"`
 }
-
-// CreateOrgInvite201JSONResponseBodyParentType defines parameters for CreateOrgInvite.
-type CreateOrgInvite201JSONResponseBodyParentType string
-
-// CreateOrgInvite201JSONResponseBodyStatus defines parameters for CreateOrgInvite.
-type CreateOrgInvite201JSONResponseBodyStatus string
-
-// GetOrgInvite200JSONResponseBodyParentType defines parameters for GetOrgInvite.
-type GetOrgInvite200JSONResponseBodyParentType string
-
-// GetOrgInvite200JSONResponseBodyStatus defines parameters for GetOrgInvite.
-type GetOrgInvite200JSONResponseBodyStatus string
 
 // AddUserToOrgJSONBody defines parameters for AddUserToOrg.
 type AddUserToOrgJSONBody struct {
@@ -9044,35 +3644,6 @@ type ListApiKeysParams struct {
 	Active *bool `form:"active,omitempty" json:"active,omitempty"`
 }
 
-// CreateApiKeyJSONBody defines parameters for CreateApiKey.
-type CreateApiKeyJSONBody struct {
-	// Label A short name for the API key.
-	Label string `json:"label"`
-
-	// Scopes The scopes for the API key.
-	Scopes *[]string `json:"scopes,omitempty"`
-}
-
-// UpdateApiKeyJSONBody defines parameters for UpdateApiKey.
-type UpdateApiKeyJSONBody struct {
-	ApiKey struct {
-		// Active Whether the API key is active.
-		Active *bool `json:"active,omitempty"`
-
-		// Label A short name for the API key.
-		Label *string `json:"label,omitempty"`
-
-		// Scopes The scopes for the API key.
-		Scopes *[]string `json:"scopes,omitempty"`
-	} `json:"apiKey"`
-
-	// UpdateMask Array of field paths specifying which fields to update. Allowed values include:
-	// - active
-	// - label
-	// - scopes
-	UpdateMask []string `json:"updateMask"`
-}
-
 // ListConnectionsParams defines parameters for ListConnections.
 type ListConnectionsParams struct {
 	// Provider The provider name (e.g. "salesforce", "hubspot")
@@ -9084,15 +3655,6 @@ type ListConnectionsParams struct {
 	// ConsumerRef The consumer reference.
 	ConsumerRef *string `form:"consumerRef,omitempty" json:"consumerRef,omitempty"`
 }
-
-// ListConnections200JSONResponseBodyAuthScheme defines parameters for ListConnections.
-type ListConnections200JSONResponseBodyAuthScheme string
-
-// ListConnections200JSONResponseBodyProviderMetadataSource defines parameters for ListConnections.
-type ListConnections200JSONResponseBodyProviderMetadataSource string
-
-// ListConnections200JSONResponseBodyStatus defines parameters for ListConnections.
-type ListConnections200JSONResponseBodyStatus string
 
 // GetConnectionParams defines parameters for GetConnection.
 type GetConnectionParams struct {
@@ -9109,223 +3671,6 @@ type GetConnectionParams struct {
 // GetConnectionParamsRefresh defines parameters for GetConnection.
 type GetConnectionParamsRefresh string
 
-// GetConnection200JSONResponseBodyAuthScheme defines parameters for GetConnection.
-type GetConnection200JSONResponseBodyAuthScheme string
-
-// GetConnection200JSONResponseBodyProviderMetadataSource defines parameters for GetConnection.
-type GetConnection200JSONResponseBodyProviderMetadataSource string
-
-// GetConnection200JSONResponseBodyStatus defines parameters for GetConnection.
-type GetConnection200JSONResponseBodyStatus string
-
-// UpdateConnectionJSONBody defines parameters for UpdateConnection.
-type UpdateConnectionJSONBody struct {
-	Connection struct {
-		// ApiKey The API key to use for the connection.
-		ApiKey    *string `json:"apiKey,omitempty"`
-		BasicAuth *struct {
-			// Password The password to use for the connection.
-			Password string `json:"password"`
-
-			// Username The username to use for the connection.
-			Username string `json:"username"`
-		} `json:"basicAuth,omitempty"`
-
-		// ConsumerName The name of the consumer that has access to this installation.
-		ConsumerName *string `json:"consumerName,omitempty"`
-
-		// ConsumerRef The consumer reference.
-		ConsumerRef *string `json:"consumerRef,omitempty"`
-
-		// CustomAuth Values used for custom auth input variables. Most values are strings (API keys, tokens, etc.), but structured values like arrays are also accepted — for example, googleWorkspaceDelegation sends a `scopes` array alongside the service account key.
-		CustomAuth *map[string]interface{} `json:"customAuth,omitempty"`
-
-		// GroupName The name of the user group that has access to this installation.
-		GroupName *string `json:"groupName,omitempty"`
-
-		// GroupRef The ID of the user group that has access to this installation.
-		GroupRef                *string `json:"groupRef,omitempty"`
-		Oauth2AuthorizationCode *struct {
-			// AccessToken The access token for the connection.
-			AccessToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"accessToken,omitempty"`
-
-			// RefreshToken The refresh token to use for the connection.
-			RefreshToken *struct {
-				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-				Token     string     `json:"token"`
-			} `json:"refreshToken,omitempty"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-		} `json:"oauth2AuthorizationCode,omitempty"`
-		Oauth2ClientCredentials *struct {
-			// ClientId The client ID to use for the connection.
-			ClientId string `json:"clientId"`
-
-			// ClientSecret The client secret to use for the connection.
-			ClientSecret string `json:"clientSecret"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-		} `json:"oauth2ClientCredentials,omitempty"`
-		Oauth2PasswordCredentials *struct {
-			// ClientId The client ID to use for the connection.
-			ClientId string `json:"clientId"`
-
-			// ClientSecret The client secret to use for the connection.
-			ClientSecret string `json:"clientSecret"`
-
-			// Password The password to use for the connection.
-			Password string `json:"password"`
-
-			// Scopes The scopes for the tokens.
-			Scopes *[]string `json:"scopes,omitempty"`
-
-			// Username The username to use for the connection.
-			Username string `json:"username"`
-		} `json:"oauth2PasswordCredentials,omitempty"`
-
-		// Provider The provider name (e.g. "salesforce", "hubspot")
-		Provider         *string `json:"provider,omitempty"`
-		ProviderMetadata *map[string]struct {
-			// DisplayName The human-readable name for the field
-			DisplayName *string `json:"displayName,omitempty"`
-
-			// Source The source of the metadata field
-			Source UpdateConnectionJSONBodyConnectionProviderMetadataSource `json:"source"`
-
-			// Value The value of the metadata field
-			Value string `json:"value"`
-		} `json:"providerMetadata,omitempty"`
-
-		// ProviderWorkspaceRef The ID of the provider workspace that this connection belongs to.
-		ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
-	} `json:"connection"`
-
-	// UpdateMask Fields to update. Each entry must have a corresponding value in `connection`. Credential fields (`apiKey`, `basicAuth`, `oauth2ClientCredentials`, `oauth2PasswordCredentials`) must match the connection's existing auth scheme.
-	UpdateMask []UpdateConnectionJSONBodyUpdateMask `json:"updateMask"`
-}
-
-// UpdateConnectionJSONBodyConnectionProviderMetadataSource defines parameters for UpdateConnection.
-type UpdateConnectionJSONBodyConnectionProviderMetadataSource string
-
-// UpdateConnectionJSONBodyUpdateMask defines parameters for UpdateConnection.
-type UpdateConnectionJSONBodyUpdateMask string
-
-// UpdateConnection200JSONResponseBodyAuthScheme defines parameters for UpdateConnection.
-type UpdateConnection200JSONResponseBodyAuthScheme string
-
-// UpdateConnection200JSONResponseBodyProviderMetadataSource defines parameters for UpdateConnection.
-type UpdateConnection200JSONResponseBodyProviderMetadataSource string
-
-// UpdateConnection200JSONResponseBodyStatus defines parameters for UpdateConnection.
-type UpdateConnection200JSONResponseBodyStatus string
-
-// GenerateConnectionJSONBody defines parameters for GenerateConnection.
-type GenerateConnectionJSONBody struct {
-	// ApiKey The API key to use for the connection.
-	ApiKey    *string `json:"apiKey,omitempty"`
-	BasicAuth *struct {
-		// Password The password to use for the connection.
-		Password string `json:"password"`
-
-		// Username The username to use for the connection.
-		Username string `json:"username"`
-	} `json:"basicAuth,omitempty"`
-
-	// ConsumerName The name of the consumer that has access to this installation.
-	ConsumerName *string `json:"consumerName,omitempty"`
-
-	// ConsumerRef The consumer reference.
-	ConsumerRef string `json:"consumerRef"`
-
-	// CustomAuth Values used for custom auth input variables. Most values are strings (API keys, tokens, etc.), but structured values like arrays are also accepted — for example, googleWorkspaceDelegation sends a `scopes` array alongside the service account key.
-	CustomAuth *map[string]interface{} `json:"customAuth,omitempty"`
-
-	// GroupName The name of the user group that has access to this installation.
-	GroupName *string `json:"groupName,omitempty"`
-
-	// GroupRef The ID of the user group that has access to this installation.
-	GroupRef                string `json:"groupRef"`
-	Oauth2AuthorizationCode *struct {
-		// AccessToken The access token for the connection.
-		AccessToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"accessToken,omitempty"`
-
-		// RefreshToken The refresh token to use for the connection.
-		RefreshToken *struct {
-			ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-			IssuedAt  *time.Time `json:"issuedAt,omitempty"`
-			Token     string     `json:"token"`
-		} `json:"refreshToken,omitempty"`
-
-		// Scopes The scopes for the tokens.
-		Scopes *[]string `json:"scopes,omitempty"`
-	} `json:"oauth2AuthorizationCode,omitempty"`
-	Oauth2ClientCredentials *struct {
-		// ClientId The client ID to use for the connection.
-		ClientId string `json:"clientId"`
-
-		// ClientSecret The client secret to use for the connection.
-		ClientSecret string `json:"clientSecret"`
-
-		// Scopes The scopes for the tokens.
-		Scopes *[]string `json:"scopes,omitempty"`
-	} `json:"oauth2ClientCredentials,omitempty"`
-	Oauth2PasswordCredentials *struct {
-		// ClientId The client ID to use for the connection.
-		ClientId string `json:"clientId"`
-
-		// ClientSecret The client secret to use for the connection.
-		ClientSecret string `json:"clientSecret"`
-
-		// Password The password to use for the connection.
-		Password string `json:"password"`
-
-		// Scopes The scopes for the tokens.
-		Scopes *[]string `json:"scopes,omitempty"`
-
-		// Username The username to use for the connection.
-		Username string `json:"username"`
-	} `json:"oauth2PasswordCredentials,omitempty"`
-
-	// Provider The provider name (e.g. "salesforce", "hubspot")
-	Provider         string `json:"provider"`
-	ProviderMetadata *map[string]struct {
-		// DisplayName The human-readable name for the field
-		DisplayName *string `json:"displayName,omitempty"`
-
-		// Source The source of the metadata field
-		Source GenerateConnectionJSONBodyProviderMetadataSource `json:"source"`
-
-		// Value The value of the metadata field
-		Value string `json:"value"`
-	} `json:"providerMetadata,omitempty"`
-
-	// ProviderWorkspaceRef The ID of the provider workspace that this connection belongs to.
-	ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
-}
-
-// GenerateConnectionJSONBodyProviderMetadataSource defines parameters for GenerateConnection.
-type GenerateConnectionJSONBodyProviderMetadataSource string
-
-// GenerateConnection201JSONResponseBodyAuthScheme defines parameters for GenerateConnection.
-type GenerateConnection201JSONResponseBodyAuthScheme string
-
-// GenerateConnection201JSONResponseBodyProviderMetadataSource defines parameters for GenerateConnection.
-type GenerateConnection201JSONResponseBodyProviderMetadataSource string
-
-// GenerateConnection201JSONResponseBodyStatus defines parameters for GenerateConnection.
-type GenerateConnection201JSONResponseBodyStatus string
-
 // CreateDestinationJSONBody defines parameters for CreateDestination.
 type CreateDestinationJSONBody struct {
 	Metadata struct {
@@ -9336,7 +3681,7 @@ type CreateDestinationJSONBody struct {
 		EndpointUrl string `json:"endpointUrl,omitempty"`
 
 		// Headers Additional headers to add when Ampersand sends a webhook message
-		Headers *map[string]string `json:"headers,omitempty"`
+		Headers *WebhookHeaders `json:"headers,omitempty"`
 
 		// KeyTemplate The template for the S3 object key to use when writing objects (a JMESPath template). If omitted, the key defaults to the message timestamp followed by the message ID.
 		KeyTemplate string `json:"keyTemplate,omitempty"`
@@ -9399,7 +3744,7 @@ type UpdateDestinationJSONBody struct {
 			EndpointUrl *string `json:"endpointUrl,omitempty"`
 
 			// Headers Additional headers to add when Ampersand sends a webhook message
-			Headers *map[string]string `json:"headers,omitempty"`
+			Headers *WebhookHeaders `json:"headers,omitempty"`
 
 			// KeyTemplate The template for the S3 object key to use when writing objects (a JMESPath template). If omitted, the key defaults to the message timestamp followed by the message ID.
 			KeyTemplate *string `json:"keyTemplate,omitempty"`
@@ -9459,255 +3804,10 @@ type ListInstallationsForProjectParams struct {
 	GroupRef *string `form:"groupRef,omitempty" json:"groupRef,omitempty"`
 }
 
-// ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConnectionAuthScheme string
-
-// ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConnectionProviderMetadataSource string
-
-// ListInstallationsForProject200JSONResponseBodyConnectionStatus defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyConnectionStatus string
-
-// ListInstallationsForProject200JSONResponseBodyHealthStatus defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyHealthStatus string
-
-// ListInstallationsForProject200JSONResponseBodyLastOperationStatus defines parameters for ListInstallationsForProject.
-type ListInstallationsForProject200JSONResponseBodyLastOperationStatus string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
-}
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled string
-
-// ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled defines parameters for ListIntegrations.
-type ListIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled string
-
 // CreateIntegrationJSONBody defines parameters for CreateIntegration.
 type CreateIntegrationJSONBody struct {
 	LatestRevision struct {
-		Content struct {
-			DisplayName string `json:"displayName,omitempty"`
-			Module      string `json:"module,omitempty"`
-			Name        string `json:"name"`
-			Provider    string `json:"provider"`
-			Proxy       *struct {
-				Enabled *bool `json:"enabled,omitempty"`
-
-				// UseModule Default is false. If this is set to true, the base URL for the proxy action will be the module's base URL. Otherwise, it is assumed that the base URL is the provider's root base URL.
-				UseModule *bool `json:"useModule,omitempty"`
-			} `json:"proxy,omitempty"`
-			Read *struct {
-				Objects *[]struct {
-					Backfill *struct {
-						DefaultPeriod struct {
-							// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-							Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-							// FullHistory If true, backfill all history. Required if days is not set.
-							FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-						} `json:"defaultPeriod"`
-					} `json:"backfill,omitempty"`
-					Delivery *struct {
-						// Mode The data delivery mode for this object. If not specified, defaults to automatic.
-						Mode *CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode `json:"mode,omitempty"`
-
-						// PageSize The number of records to receive per data delivery.
-						PageSize *int `json:"pageSize,omitempty"`
-					} `json:"delivery,omitempty"`
-					Destination string `json:"destination"`
-
-					// Enabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
-					Enabled CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabled `json:"enabled,omitempty"`
-
-					// MapToDisplayName A display name to map to.
-					MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-					// MapToName An object name to map to.
-					MapToName          string                                                                               `json:"mapToName,omitempty"`
-					ObjectName         string                                                                               `json:"objectName"`
-					OptionalFields     *[]CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item `json:"optionalFields,omitempty"`
-					OptionalFieldsAuto *CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAuto         `json:"optionalFieldsAuto,omitempty"`
-					RequiredFields     *[]CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item `json:"requiredFields,omitempty"`
-					Schedule           string                                                                               `json:"schedule"`
-				} `json:"objects,omitempty"`
-			} `json:"read,omitempty"`
-			Subscribe *struct {
-				Objects *[]struct {
-					AssociationChangeEvent *struct {
-						// Enabled If always, the integration will subscribe to association change events.
-						Enabled *CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled `json:"enabled,omitempty"`
-
-						// IncludeFullRecords If true, the integration will include full records in the event payload.
-						IncludeFullRecords *bool `json:"includeFullRecords,omitempty"`
-					} `json:"associationChangeEvent,omitempty"`
-					CreateEvent *struct {
-						// Enabled If always, the integration will subscribe to create events by default.
-						Enabled *CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled `json:"enabled,omitempty"`
-					} `json:"createEvent,omitempty"`
-					DeleteEvent *struct {
-						// Enabled If always, the integration will subscribe to delete events by default.
-						Enabled *CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled `json:"enabled,omitempty"`
-					} `json:"deleteEvent,omitempty"`
-					Destination string `json:"destination"`
-
-					// InheritFieldsAndMapping If true, the integration will inherit the fields and mapping from the read object.
-					InheritFieldsAndMapping bool      `json:"inheritFieldsAndMapping,omitempty"`
-					ObjectName              string    `json:"objectName"`
-					OtherEvents             *[]string `json:"otherEvents,omitempty"`
-					UpdateEvent             *struct {
-						// Enabled If always, the integration will subscribe to update events by default.
-						Enabled             *CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled `json:"enabled,omitempty"`
-						RequiredWatchFields *[]string                                                                         `json:"requiredWatchFields,omitempty"`
-
-						// WatchFieldsAuto If `all`, the integration will watch all fields for updates. If `selected`, the integration will watch only the fields that are selected by the user. If `inheritFieldsAndMapping` is true for Subscribe action, the integration will watch the selected fields from read action that are selected by the user.
-						WatchFieldsAuto *CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
-					} `json:"updateEvent,omitempty"`
-				} `json:"objects,omitempty"`
-			} `json:"subscribe,omitempty"`
-
-			// WatchSchema Configuration for monitoring provider schema changes.
-			WatchSchema *struct {
-				// AllObjects Schema change event configuration for all objects in the integration.
-				AllObjects struct {
-					// FieldChanged Configuration for detecting when fields are changed.
-					FieldChanged *struct {
-						// Enabled If always, the integration will monitor for field changes by default.
-						Enabled CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled `json:"enabled"`
-					} `json:"fieldChanged,omitempty"`
-
-					// FieldCreated Configuration for detecting when new fields are created.
-					FieldCreated *struct {
-						// Enabled If always, the integration will monitor for new fields by default.
-						Enabled CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled `json:"enabled"`
-					} `json:"fieldCreated,omitempty"`
-
-					// FieldDeleted Configuration for detecting when fields are deleted.
-					FieldDeleted *struct {
-						// Enabled If always, the integration will monitor for deleted fields by default.
-						Enabled CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled `json:"enabled"`
-					} `json:"fieldDeleted,omitempty"`
-				} `json:"allObjects"`
-
-				// Destination The destination to send schema change notifications to.
-				Destination string `json:"destination"`
-
-				// Schedule Cron schedule for checking schema changes. Minimum frequency is once per hour. Defaults to once a day.
-				Schedule string `json:"schedule,omitempty"`
-			} `json:"watchSchema,omitempty"`
-			Write *struct {
-				Objects *[]struct {
-					// InheritMapping If true, the write object will inherit the mapping from the read object. If false, the write object will have no mapping.
-					InheritMapping *bool  `json:"inheritMapping,omitempty"`
-					ObjectName     string `json:"objectName"`
-
-					// ValueDefaults Configuration to set default write values for object fields.
-					ValueDefaults *struct {
-						// AllowAnyFields If true, users can set default values for any field.
-						AllowAnyFields *bool `json:"allowAnyFields,omitempty"`
-					} `json:"valueDefaults,omitempty"`
-				} `json:"objects,omitempty"`
-			} `json:"write,omitempty"`
-		} `json:"content"`
+		Content Integration2 `json:"content"`
 
 		// SpecVersion The spec version string.
 		SpecVersion string `json:"specVersion"`
@@ -9720,381 +3820,17 @@ type CreateIntegrationJSONBody struct {
 	Provider string `json:"provider"`
 }
 
-// CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentReadObjectsDeliveryMode string
-
-// CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentReadObjectsEnabled string
-
-// CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0 defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1 defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item defines parameters for CreateIntegration.
-type CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
-
-// CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAuto defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFieldsAuto string
-
-// CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0 defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1 defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item defines parameters for CreateIntegration.
-type CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
-}
-
-// CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled string
-
-// CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled string
-
-// CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled string
-
-// CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled string
-
-// CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled string
-
-// CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled string
-
-// CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled defines parameters for CreateIntegration.
-type CreateIntegrationJSONBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
-}
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled string
-
-// GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled defines parameters for GetIntegration.
-type GetIntegration200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled string
-
 // ListInstallationsParams defines parameters for ListInstallations.
 type ListInstallationsParams struct {
 	// GroupRef The ID that your app uses to identify a group of users (e.g. an org ID, workspace ID, or team ID). When provided, only returns installations belonging to this group.
 	GroupRef *string `form:"groupRef,omitempty" json:"groupRef,omitempty"`
 }
 
-// ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator string
-
-// ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto string
-
-// ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled string
-
-// ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// ListInstallations200JSONResponseBodyConnectionAuthScheme defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConnectionAuthScheme string
-
-// ListInstallations200JSONResponseBodyConnectionProviderMetadataSource defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConnectionProviderMetadataSource string
-
-// ListInstallations200JSONResponseBodyConnectionStatus defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyConnectionStatus string
-
-// ListInstallations200JSONResponseBodyHealthStatus defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyHealthStatus string
-
-// ListInstallations200JSONResponseBodyLastOperationStatus defines parameters for ListInstallations.
-type ListInstallations200JSONResponseBodyLastOperationStatus string
-
 // CreateInstallationJSONBody defines parameters for CreateInstallation.
 type CreateInstallationJSONBody struct {
 	// Config The config of the installation.
 	Config struct {
-		// Content The content of the config.
-		Content struct {
-			// Provider The SaaS API that we are integrating with.
-			Provider string `json:"provider"`
-			Proxy    *struct {
-				Enabled *bool `json:"enabled,omitempty"`
-			} `json:"proxy,omitempty"`
-			Read *struct {
-				Objects map[string]struct {
-					Backfill *struct {
-						DefaultPeriod struct {
-							// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-							Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-							// FullHistory If true, backfill all history. Required if days is not set.
-							FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-						} `json:"defaultPeriod"`
-
-						// FieldFilters Filters to apply only during backfill. Multiple conditions are joined by AND. Use this when you want different filter behavior for backfill vs. incremental reads.
-						FieldFilters []struct {
-							// FieldName The name of the field to filter on.
-							FieldName string `json:"fieldName"`
-
-							// Operator The comparison operator.
-							Operator CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperator `json:"operator"`
-
-							// Value The value to filter on. Allowed types are string, boolean, and number.
-							Value interface{} `json:"value,omitempty"`
-						} `json:"fieldFilters,omitempty"`
-					} `json:"backfill,omitempty"`
-
-					// Destination The name of the destination that the result should be sent to.
-					Destination string `json:"destination,omitempty"`
-
-					// Disabled If this flag is set to true, scheduled reads associated with this object will be paused, and on-demand reads will not be allowed.
-					Disabled *bool `json:"disabled,omitempty"`
-
-					// DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
-					DynamicMappingsInput *[]struct {
-						// FieldName The name of the field in SaaS provider, if present, then we will not prompt the user to map the field.
-						FieldName *string `json:"fieldName,omitempty"`
-
-						// MapToDisplayName Optional display name of the field to show the user in the mapping UI.
-						MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-
-						// MapToName The name of the field in your application.
-						MapToName string `json:"mapToName"`
-
-						// MappedValues If you would like the user to map a set of possible values, this is the list of possible values of the field in your application.
-						MappedValues *[]struct {
-							MappedDisplayValue string `json:"mappedDisplayValue"`
-							MappedValue        string `json:"mappedValue"`
-						} `json:"mappedValues,omitempty"`
-
-						// Prompt Optional prompt to show the user in the mapping UI.
-						Prompt *string `json:"prompt,omitempty"`
-					} `json:"dynamicMappingsInput,omitempty"`
-
-					// FieldFilters Filters to apply when reading records during incremental reads and backfill. Multiple conditions are joined by AND. Each field can only have one condition.
-					FieldFilters []struct {
-						// FieldName The name of the field to filter on.
-						FieldName string `json:"fieldName"`
-
-						// Operator The comparison operator.
-						Operator CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperator `json:"operator"`
-
-						// Value The value to filter on. Allowed types are string, boolean, and number.
-						Value interface{} `json:"value,omitempty"`
-					} `json:"fieldFilters,omitempty"`
-
-					// ObjectName The name of the object to read from.
-					ObjectName string `json:"objectName" validate:"required"`
-
-					// Schedule The schedule for reading the object, in cron syntax.
-					Schedule string `json:"schedule,omitempty"`
-
-					// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.)
-					SelectedFieldMappings map[string]string `json:"selectedFieldMappings"`
-
-					// SelectedFields This is a map of field names to booleans indicating whether they should be read. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
-					SelectedFields map[string]bool `json:"selectedFields"`
-
-					// SelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
-					SelectedFieldsAuto *CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAuto `json:"selectedFieldsAuto,omitempty"`
-
-					// SelectedValueMappings This is a map of field names to their value mappings.
-					SelectedValueMappings map[string]map[string]string `json:"selectedValueMappings,omitempty"`
-				} `json:"objects"`
-			} `json:"read,omitempty"`
-			Subscribe *struct {
-				Objects map[string]struct {
-					CreateEvent *struct {
-						// Enabled Conditions to enable create events.
-						Enabled CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled `json:"enabled" validate:"oneof=always never"`
-					} `json:"createEvent,omitempty"`
-					DeleteEvent *struct {
-						// Enabled Conditions to enable delete events.
-						Enabled CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled `json:"enabled" validate:"oneof=always never"`
-					} `json:"deleteEvent,omitempty"`
-
-					// Destination The name of the destination that the result should be sent to.
-					Destination string `json:"destination"`
-
-					// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-					InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
-
-					// ObjectName The name of the object to subscribe to.
-					ObjectName  string    `json:"objectName" validate:"required"`
-					OtherEvents *[]string `json:"otherEvents,omitempty"`
-					UpdateEvent *struct {
-						// Enabled Conditions to enable update events.
-						Enabled CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled `json:"enabled" validate:"oneof=always never"`
-
-						// RequiredWatchFields The fields that should be watched.
-						RequiredWatchFields *[]string `json:"requiredWatchFields,omitempty"`
-
-						// WatchFieldsAuto Whether to watch fields all fields automatically.
-						WatchFieldsAuto *CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
-					} `json:"updateEvent,omitempty"`
-				} `json:"objects"`
-			} `json:"subscribe,omitempty"`
-			Write *struct {
-				Objects *map[string]struct {
-					DeletionSettings *struct {
-						// Enabled Whether deletion is enabled for this object
-						Enabled bool `json:"enabled"`
-					} `json:"deletionSettings,omitempty"`
-
-					// ObjectName The name of the object to write to.
-					ObjectName string `json:"objectName" validate:"required"`
-
-					// SelectedFieldSettings This is a map of field names to their settings.
-					SelectedFieldSettings map[string]struct {
-						// Default Only use one of stringValue, integerValue, booleanValue.
-						Default *struct {
-							// BooleanValue The default boolean value to apply to a field
-							BooleanValue *bool `json:"booleanValue,omitempty"`
-
-							// IntegerValue The default integer value to apply to a field
-							IntegerValue *int `json:"integerValue,omitempty"`
-
-							// StringValue The default string value to apply to a field
-							StringValue *string `json:"stringValue,omitempty"`
-						} `json:"default,omitempty"`
-
-						// WriteOnCreate Whether the default value should be applied when creating a record.
-						WriteOnCreate CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate `json:"writeOnCreate,omitempty"`
-
-						// WriteOnUpdate Whether the default value should be applied when updating a record.
-						// - always: Always write to the field on update
-						// - never: Never write to the field on update
-						// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
-						WriteOnUpdate CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate `json:"writeOnUpdate,omitempty"`
-					} `json:"selectedFieldSettings,omitempty"`
-
-					// SelectedValueDefaults This is a map of field names to default values. These values will be used when writing to the object.
-					// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-					SelectedValueDefaults map[string]any `json:"selectedValueDefaults,omitempty"`
-				} `json:"objects,omitempty"`
-			} `json:"write,omitempty"`
-		} `json:"content"`
+		Content ConfigContent `json:"content"`
 
 		// CreatedBy The person who created the config, in the format of "consumer:{consumer-id}", "builder:{builder-id}", or "api:{api-caller}".
 		CreatedBy *string `json:"createdBy,omitempty"`
@@ -10117,117 +3853,6 @@ type CreateInstallationParams struct {
 	SkipSampling *bool `form:"skipSampling,omitempty" json:"skipSampling,omitempty"`
 }
 
-// CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperator defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentReadObjectsFieldFiltersOperator string
-
-// CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAuto defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentReadObjectsSelectedFieldsAuto string
-
-// CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentSubscribeObjectsCreateEventEnabled string
-
-// CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for CreateInstallation.
-type CreateInstallationJSONBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator string
-
-// CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto string
-
-// CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled string
-
-// CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// CreateInstallation201JSONResponseBodyConnectionAuthScheme defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConnectionAuthScheme string
-
-// CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConnectionProviderMetadataSource string
-
-// CreateInstallation201JSONResponseBodyConnectionStatus defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyConnectionStatus string
-
-// CreateInstallation201JSONResponseBodyHealthStatus defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyHealthStatus string
-
-// CreateInstallation201JSONResponseBodyLastOperationStatus defines parameters for CreateInstallation.
-type CreateInstallation201JSONResponseBodyLastOperationStatus string
-
-// GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator string
-
-// GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto string
-
-// GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled string
-
-// GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// GetInstallation200JSONResponseBodyConnectionAuthScheme defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConnectionAuthScheme string
-
-// GetInstallation200JSONResponseBodyConnectionProviderMetadataSource defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConnectionProviderMetadataSource string
-
-// GetInstallation200JSONResponseBodyConnectionStatus defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyConnectionStatus string
-
-// GetInstallation200JSONResponseBodyHealthStatus defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyHealthStatus string
-
-// GetInstallation200JSONResponseBodyLastOperationStatus defines parameters for GetInstallation.
-type GetInstallation200JSONResponseBodyLastOperationStatus string
-
 // UpdateInstallationJSONBody defines parameters for UpdateInstallation.
 type UpdateInstallationJSONBody struct {
 	// Installation The installation fields to update. Only fields whose paths are listed in `updateMask` will be
@@ -10235,169 +3860,7 @@ type UpdateInstallationJSONBody struct {
 	Installation struct {
 		// Config The config of the installation.
 		Config *struct {
-			// Content The content of the config.
-			Content *struct {
-				// Provider The SaaS API that we are integrating with.
-				Provider *string `json:"provider,omitempty"`
-				Proxy    *struct {
-					Enabled *bool `json:"enabled,omitempty"`
-				} `json:"proxy,omitempty"`
-				Read *struct {
-					// Objects This is a map of object names to their configuration.
-					Objects *map[string]struct {
-						Backfill *struct {
-							DefaultPeriod struct {
-								// Days Number of days in past to backfill from. 0 is no backfill. e.g) if 10, then backfill last 10 days of data. Required if fullHistory is not set.
-								Days *int `json:"days,omitempty" validate:"required_without=FullHistory,omitempty,min=0"`
-
-								// FullHistory If true, backfill all history. Required if days is not set.
-								FullHistory *bool `json:"fullHistory,omitempty" validate:"required_without=Days"`
-							} `json:"defaultPeriod"`
-
-							// FieldFilters Filters to apply only during backfill. Multiple conditions are joined by AND. Use this when you want different filter behavior for backfill vs. incremental reads.
-							FieldFilters []struct {
-								// FieldName The name of the field to filter on.
-								FieldName string `json:"fieldName"`
-
-								// Operator The comparison operator.
-								Operator UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperator `json:"operator"`
-
-								// Value The value to filter on. Allowed types are string, boolean, and number.
-								Value interface{} `json:"value,omitempty"`
-							} `json:"fieldFilters,omitempty"`
-						} `json:"backfill,omitempty"`
-
-						// Destination The name of the destination that the result should be sent to.
-						Destination string `json:"destination,omitempty"`
-
-						// Disabled If this flag is set to true, scheduled reads associated with this object will be paused, and on-demand reads will not be allowed.
-						Disabled *bool `json:"disabled,omitempty"`
-
-						// DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
-						DynamicMappingsInput *[]struct {
-							// FieldName The name of the field in SaaS provider, if present, then we will not prompt the user to map the field.
-							FieldName *string `json:"fieldName,omitempty"`
-
-							// MapToDisplayName Optional display name of the field to show the user in the mapping UI.
-							MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-
-							// MapToName The name of the field in your application.
-							MapToName string `json:"mapToName"`
-
-							// MappedValues If you would like the user to map a set of possible values, this is the list of possible values of the field in your application.
-							MappedValues *[]struct {
-								MappedDisplayValue string `json:"mappedDisplayValue"`
-								MappedValue        string `json:"mappedValue"`
-							} `json:"mappedValues,omitempty"`
-
-							// Prompt Optional prompt to show the user in the mapping UI.
-							Prompt *string `json:"prompt,omitempty"`
-						} `json:"dynamicMappingsInput,omitempty"`
-
-						// FieldFilters Filters to apply when reading records during incremental reads and backfill. Multiple conditions are joined by AND. Each field can only have one condition.
-						FieldFilters []struct {
-							// FieldName The name of the field to filter on.
-							FieldName string `json:"fieldName"`
-
-							// Operator The comparison operator.
-							Operator UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperator `json:"operator"`
-
-							// Value The value to filter on. Allowed types are string, boolean, and number.
-							Value interface{} `json:"value,omitempty"`
-						} `json:"fieldFilters,omitempty"`
-
-						// ObjectName The name of the object to read from.
-						ObjectName *string `json:"objectName,omitempty" validate:"required"`
-
-						// Schedule The schedule for reading the object, in cron syntax.
-						Schedule string `json:"schedule,omitempty"`
-
-						// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.)
-						SelectedFieldMappings *map[string]string `json:"selectedFieldMappings,omitempty"`
-
-						// SelectedFields This is a map of field names to booleans indicating whether they should be read. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
-						SelectedFields *map[string]bool `json:"selectedFields,omitempty"`
-
-						// SelectedFieldsAuto If selectedFieldsAuto is set to all, all fields will be read.
-						SelectedFieldsAuto *UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAuto `json:"selectedFieldsAuto,omitempty"`
-
-						// SelectedValueMappings This is a map of field names to their value mappings.
-						SelectedValueMappings map[string]map[string]string `json:"selectedValueMappings,omitempty"`
-					} `json:"objects,omitempty"`
-				} `json:"read,omitempty"`
-				Subscribe *struct {
-					Objects *map[string]struct {
-						CreateEvent *struct {
-							// Enabled Conditions to enable create events.
-							Enabled UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled `json:"enabled" validate:"oneof=always never"`
-						} `json:"createEvent,omitempty"`
-						DeleteEvent *struct {
-							// Enabled Conditions to enable delete events.
-							Enabled UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled `json:"enabled" validate:"oneof=always never"`
-						} `json:"deleteEvent,omitempty"`
-
-						// Destination The name of the destination that the result should be sent to.
-						Destination string `json:"destination"`
-
-						// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-						InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
-
-						// ObjectName The name of the object to subscribe to.
-						ObjectName  string    `json:"objectName" validate:"required"`
-						OtherEvents *[]string `json:"otherEvents,omitempty"`
-						UpdateEvent *struct {
-							// Enabled Conditions to enable update events.
-							Enabled UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled `json:"enabled" validate:"oneof=always never"`
-
-							// RequiredWatchFields The fields that should be watched.
-							RequiredWatchFields *[]string `json:"requiredWatchFields,omitempty"`
-
-							// WatchFieldsAuto Whether to watch fields all fields automatically.
-							WatchFieldsAuto *UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto `json:"watchFieldsAuto,omitempty"`
-						} `json:"updateEvent,omitempty"`
-					} `json:"objects,omitempty"`
-				} `json:"subscribe,omitempty"`
-				Write *struct {
-					// Objects This is a map of object names to their configuration.
-					Objects *map[string]struct {
-						DeletionSettings *struct {
-							// Enabled Whether deletion is enabled for this object
-							Enabled bool `json:"enabled"`
-						} `json:"deletionSettings,omitempty"`
-
-						// ObjectName The name of the object to write to.
-						ObjectName string `json:"objectName" validate:"required"`
-
-						// SelectedFieldSettings This is a map of field names to their settings.
-						SelectedFieldSettings map[string]struct {
-							// Default Only use one of stringValue, integerValue, booleanValue.
-							Default *struct {
-								// BooleanValue The default boolean value to apply to a field
-								BooleanValue *bool `json:"booleanValue,omitempty"`
-
-								// IntegerValue The default integer value to apply to a field
-								IntegerValue *int `json:"integerValue,omitempty"`
-
-								// StringValue The default string value to apply to a field
-								StringValue *string `json:"stringValue,omitempty"`
-							} `json:"default,omitempty"`
-
-							// WriteOnCreate Whether the default value should be applied when creating a record.
-							WriteOnCreate UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate `json:"writeOnCreate,omitempty"`
-
-							// WriteOnUpdate Whether the default value should be applied when updating a record.
-							// - always: Always write to the field on update
-							// - never: Never write to the field on update
-							// - ifEmpty: Only write to the field if it's currently empty (unset or empty string).
-							WriteOnUpdate UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate `json:"writeOnUpdate,omitempty"`
-						} `json:"selectedFieldSettings,omitempty"`
-
-						// SelectedValueDefaults This is a map of field names to default values. These values will be used when writing to the object.
-						// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-						SelectedValueDefaults map[string]any `json:"selectedValueDefaults,omitempty"`
-					} `json:"objects,omitempty"`
-				} `json:"write,omitempty"`
-			} `json:"content,omitempty"`
+			Content *UpdateInstallationConfigContent `json:"content,omitempty"`
 
 			// CreatedBy The person who created the config, in the format of "consumer:{consumer-id}" or "builder:{builder-id}".
 			CreatedBy *string `json:"createdBy,omitempty"`
@@ -10431,75 +3894,6 @@ type UpdateInstallationParams struct {
 	SkipSampling *bool `form:"skipSampling,omitempty" json:"skipSampling,omitempty"`
 }
 
-// UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperator defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentReadObjectsFieldFiltersOperator string
-
-// UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAuto defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentReadObjectsSelectedFieldsAuto string
-
-// UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsCreateEventEnabled string
-
-// UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for UpdateInstallation.
-type UpdateInstallationJSONBodyInstallationConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator string
-
-// UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto string
-
-// UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled string
-
-// UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// UpdateInstallation200JSONResponseBodyConnectionAuthScheme defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConnectionAuthScheme string
-
-// UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConnectionProviderMetadataSource string
-
-// UpdateInstallation200JSONResponseBodyConnectionStatus defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyConnectionStatus string
-
-// UpdateInstallation200JSONResponseBodyHealthStatus defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyHealthStatus string
-
-// UpdateInstallation200JSONResponseBodyLastOperationStatus defines parameters for UpdateInstallation.
-type UpdateInstallation200JSONResponseBodyLastOperationStatus string
-
 // ListOperationsParams defines parameters for ListOperations.
 type ListOperationsParams struct {
 	// PageSize The number of operations to return.
@@ -10507,105 +3901,6 @@ type ListOperationsParams struct {
 
 	// PageToken A cursor that can be passed to paginate through multiple pages of operations.
 	PageToken *string `form:"pageToken,omitempty" json:"pageToken,omitempty"`
-}
-
-// UpsertMetadataForInstallationJSONBody defines parameters for UpsertMetadataForInstallation.
-type UpsertMetadataForInstallationJSONBody struct {
-	// Fields Maps object names to field definitions
-	Fields map[string][]struct {
-		// Association Relationship information for a field to another object
-		Association *struct {
-			// AssociationType High-level association variety (e.g., 'foreignKey', 'lookup', 'ref')
-			AssociationType string `json:"associationType"`
-
-			// Cardinality Association cardinality from the referencing field's perspective
-			Cardinality *string `json:"cardinality,omitempty"`
-
-			// Labels UI labels for an association
-			Labels *struct {
-				// Plural Plural display label
-				Plural *string `json:"plural,omitempty"`
-
-				// Singular Singular display label
-				Singular *string `json:"singular,omitempty"`
-			} `json:"labels,omitempty"`
-
-			// OnDelete Behavior upon foreign object deletion
-			OnDelete *string `json:"onDelete,omitempty"`
-
-			// Required If true, a referenced record must exist
-			Required *bool `json:"required,omitempty"`
-
-			// ReverseLookupFieldName Optional inverse relationship/property name exposed on the target object
-			ReverseLookupFieldName *string `json:"reverseLookupFieldName,omitempty"`
-
-			// TargetField Name of the referenced field on the target object
-			TargetField *string `json:"targetField,omitempty"`
-
-			// TargetObject Name of the referenced/parent object
-			TargetObject string `json:"targetObject"`
-		} `json:"association,omitempty"`
-
-		// Description Optional description of the field
-		Description *string `json:"description,omitempty"`
-
-		// DisplayName The human-readable name of the field
-		DisplayName string `json:"displayName"`
-
-		// FieldName The identifier of the field
-		FieldName string `json:"fieldName"`
-
-		// Indexed Indicates if the field should be indexed for faster search
-		Indexed *bool `json:"indexed,omitempty"`
-
-		// NumericOptions Additional options for numeric fields
-		NumericOptions *struct {
-			// DefaultValue Default value for the field
-			DefaultValue *float32 `json:"defaultValue,omitempty"`
-
-			// Max Maximum value for numeric fields
-			Max *float32 `json:"max,omitempty"`
-
-			// Min Minimum value for numeric fields
-			Min *float32 `json:"min,omitempty"`
-
-			// Precision Total number of digits (for decimal types)
-			Precision *int `json:"precision,omitempty"`
-
-			// Scale Number of digits to the right of the decimal point (for decimal types)
-			Scale *int `json:"scale,omitempty"`
-		} `json:"numericOptions,omitempty"`
-
-		// Required Indicates if the field is required
-		Required *bool `json:"required,omitempty"`
-
-		// StringOptions Additional options for string fields
-		StringOptions *struct {
-			// DefaultValue Default value for the field
-			DefaultValue *string `json:"defaultValue,omitempty"`
-
-			// Length Maximum length of the string field
-			Length *int `json:"length,omitempty"`
-
-			// Pattern Regex pattern that the string field value must match
-			Pattern *string `json:"pattern,omitempty"`
-
-			// Values List of allowed values for enum fields
-			Values *[]string `json:"values,omitempty"`
-
-			// ValuesRestricted Indicates if the field value must be limited to what's in Values
-			ValuesRestricted *bool `json:"valuesRestricted,omitempty"`
-		} `json:"stringOptions,omitempty"`
-
-		// Unique Indicates if the field must be unique across all records
-		Unique *bool `json:"unique,omitempty"`
-
-		// ValueType The data type of the field. Valid values are string, boolean, date, datetime, singleSelect, multiSelect, int, float, reference
-		ValueType string `json:"valueType"`
-	} `json:"fields"`
-
-	// GroupRef The ID that your app uses to identify the group of users for this request.
-	GroupRef string `json:"groupRef"`
 }
 
 // PatchObjectConfigContentJSONBody defines parameters for PatchObjectConfigContent.
@@ -10619,21 +3914,7 @@ type PatchObjectConfigContentJSONBody0 struct {
 	Action PatchObjectConfigContentJSONBody0Action `json:"action"`
 
 	// Changes Array of JSON Patch operations to apply.
-	Changes []struct {
-		// Op The operation to perform.
-		// - "add": Adds a new field or replaces an existing one at the specified path
-		// - "remove": Removes the field at the specified path
-		// - "replace": Replaces the value at the specified path
-		Op PatchObjectConfigContentJSONBody0ChangesOp `json:"op"`
-
-		// Path JSON Pointer path to the field to operate on (RFC 6901).
-		// All paths must start with "/" (e.g., "/schedule", "/selectedFields/phone").
-		Path string `json:"path"`
-
-		// Value The value to set for add/replace operations.
-		// Not used for remove operations.
-		Value interface{} `json:"value,omitempty"`
-	} `json:"changes"`
+	Changes []JSONPatchOperation `json:"changes"`
 
 	// GroupRef The ID of the user group that has access to this installation.
 	// Either groupRef or installationId must be provided.
@@ -10643,30 +3924,13 @@ type PatchObjectConfigContentJSONBody0 struct {
 // PatchObjectConfigContentJSONBody0Action defines parameters for PatchObjectConfigContent.
 type PatchObjectConfigContentJSONBody0Action string
 
-// PatchObjectConfigContentJSONBody0ChangesOp defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContentJSONBody0ChangesOp string
-
 // PatchObjectConfigContentJSONBody1 defines parameters for PatchObjectConfigContent.
 type PatchObjectConfigContentJSONBody1 struct {
 	// Action The action type for the object config (read, subscribe, or write).
 	Action PatchObjectConfigContentJSONBody1Action `json:"action"`
 
 	// Changes Array of JSON Patch operations to apply.
-	Changes []struct {
-		// Op The operation to perform.
-		// - "add": Adds a new field or replaces an existing one at the specified path
-		// - "remove": Removes the field at the specified path
-		// - "replace": Replaces the value at the specified path
-		Op PatchObjectConfigContentJSONBody1ChangesOp `json:"op"`
-
-		// Path JSON Pointer path to the field to operate on (RFC 6901).
-		// All paths must start with "/" (e.g., "/schedule", "/selectedFields/phone").
-		Path string `json:"path"`
-
-		// Value The value to set for add/replace operations.
-		// Not used for remove operations.
-		Value interface{} `json:"value,omitempty"`
-	} `json:"changes"`
+	Changes []JSONPatchOperation `json:"changes"`
 
 	// InstallationId The installation ID.
 	// Either groupRef or installationId must be provided.
@@ -10676,51 +3940,6 @@ type PatchObjectConfigContentJSONBody1 struct {
 // PatchObjectConfigContentJSONBody1Action defines parameters for PatchObjectConfigContent.
 type PatchObjectConfigContentJSONBody1Action string
 
-// PatchObjectConfigContentJSONBody1ChangesOp defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContentJSONBody1ChangesOp string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsBackfillFieldFiltersOperator string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsFieldFiltersOperator string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentReadObjectsSelectedFieldsAuto string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsCreateEventEnabled string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsDeleteEventEnabled string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventEnabled string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnCreate string
-
-// PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConfigContentWriteObjectsSelectedFieldSettingsWriteOnUpdate string
-
-// PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConnectionAuthScheme string
-
-// PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConnectionProviderMetadataSource string
-
-// PatchObjectConfigContent200JSONResponseBodyConnectionStatus defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyConnectionStatus string
-
-// PatchObjectConfigContent200JSONResponseBodyHealthStatus defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyHealthStatus string
-
-// PatchObjectConfigContent200JSONResponseBodyLastOperationStatus defines parameters for PatchObjectConfigContent.
-type PatchObjectConfigContent200JSONResponseBodyLastOperationStatus string
-
 // GetObjectMetadataForInstallationParams defines parameters for GetObjectMetadataForInstallation.
 type GetObjectMetadataForInstallationParams struct {
 	// GroupRef The ID of the user group that has access to this installation.
@@ -10729,9 +3948,6 @@ type GetObjectMetadataForInstallationParams struct {
 	// ExcludeReadOnly Excludes fields where `ReadOnly` is `true` from the response.
 	ExcludeReadOnly *bool `form:"excludeReadOnly,omitempty" json:"excludeReadOnly,omitempty"`
 }
-
-// GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType defines parameters for GetObjectMetadataForInstallation.
-type GetObjectMetadataForInstallation200JSONResponseBodyFieldsValueType string
 
 // CreateRevisionJSONBody defines parameters for CreateRevision.
 type CreateRevisionJSONBody struct {
@@ -10754,87 +3970,6 @@ type GetHydratedRevisionParams struct {
 	ConnectionId string `form:"connectionId" json:"connectionId"`
 }
 
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0 defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0 struct {
-	DisplayName string `json:"displayName"`
-	FieldName   string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to in the destination.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to in the destination.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1 defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item struct {
-	union json.RawMessage
-}
-
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFieldsMetadataValueType string
-
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0 defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0 struct {
-	DisplayName string `json:"displayName"`
-	FieldName   string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to in the destination.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to in the destination.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1 defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
-
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAuto defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFieldsAuto string
-
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0 defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0 struct {
-	DisplayName string `json:"displayName"`
-	FieldName   string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to in the destination.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to in the destination.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1 defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item defines parameters for GetHydratedRevision.
-type GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
-}
-
 // BatchUpsertIntegrationsJSONBody defines parameters for BatchUpsertIntegrations.
 type BatchUpsertIntegrationsJSONBody struct {
 	// SourceYaml A YAML string that defines the integrations.
@@ -10850,138 +3985,11 @@ type BatchUpsertIntegrationsParams struct {
 	Destructive *bool `form:"destructive,omitempty" json:"destructive,omitempty"`
 }
 
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsDeliveryMode string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsEnabled string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item struct {
-	union json.RawMessage
-}
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFieldsAuto string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 struct {
-	FieldName string `json:"fieldName"`
-
-	// MapToDisplayName The display name to map to.
-	MapToDisplayName string `json:"mapToDisplayName,omitempty"`
-
-	// MapToName The field name to map to.
-	MapToName string `json:"mapToName,omitempty"`
-}
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 struct {
-	Default          *string `json:"default,omitempty"`
-	MapToDisplayName *string `json:"mapToDisplayName,omitempty"`
-	MapToName        string  `json:"mapToName"`
-	Prompt           *string `json:"prompt,omitempty"`
-}
-
-// BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item struct {
-	union json.RawMessage
-}
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsAssociationChangeEventEnabled string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsCreateEventEnabled string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsDeleteEventEnabled string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventEnabled string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentSubscribeObjectsUpdateEventWatchFieldsAuto string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldChangedEnabled string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldCreatedEnabled string
-
-// BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled defines parameters for BatchUpsertIntegrations.
-type BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentWatchSchemaAllObjectsFieldDeletedEnabled string
-
 // ListJWTKeysParams defines parameters for ListJWTKeys.
 type ListJWTKeysParams struct {
 	// Active Filter to only return active JWT keys
 	Active *bool `form:"active,omitempty" json:"active,omitempty"`
 }
-
-// ListJWTKeys200JSONResponseBodyAlgorithm defines parameters for ListJWTKeys.
-type ListJWTKeys200JSONResponseBodyAlgorithm string
-
-// CreateJWTKeyJSONBody defines parameters for CreateJWTKey.
-type CreateJWTKeyJSONBody struct {
-	// Algorithm The cryptographic JWT signing algorithm (currently only RS256 is supported)
-	Algorithm CreateJWTKeyJSONBodyAlgorithm `json:"algorithm"`
-
-	// Label Human-readable label for the JWT key
-	Label string `json:"label"`
-
-	// PublicKeyPem RSA public key in PEM format for JWT signature verification
-	PublicKeyPem string `json:"publicKeyPem"`
-}
-
-// CreateJWTKeyJSONBodyAlgorithm defines parameters for CreateJWTKey.
-type CreateJWTKeyJSONBodyAlgorithm string
-
-// GetJWTKey200JSONResponseBodyAlgorithm defines parameters for GetJWTKey.
-type GetJWTKey200JSONResponseBodyAlgorithm string
-
-// UpdateJWTKeyJSONBody defines parameters for UpdateJWTKey.
-type UpdateJWTKeyJSONBody struct {
-	// JwtKey Object containing the fields to update with their new values
-	JwtKey UpdateJWTKeyJSONBody_JwtKey `json:"jwtKey"`
-
-	// UpdateMask List of field paths to update (currently supports 'active' and 'name')
-	UpdateMask []UpdateJWTKeyJSONBodyUpdateMask `json:"updateMask"`
-}
-
-// UpdateJWTKeyJSONBody_JwtKey defines parameters for UpdateJWTKey.
-type UpdateJWTKeyJSONBody_JwtKey struct {
-	// Active New active status for the JWT key
-	Active *bool `json:"active,omitempty"`
-
-	// Label New label for the JWT key
-	Label                *string                `json:"label,omitempty"`
-	AdditionalProperties map[string]interface{} `json:"-"`
-}
-
-// UpdateJWTKeyJSONBodyUpdateMask defines parameters for UpdateJWTKey.
-type UpdateJWTKeyJSONBodyUpdateMask string
-
-// UpdateJWTKey200JSONResponseBodyAlgorithm defines parameters for UpdateJWTKey.
-type UpdateJWTKey200JSONResponseBodyAlgorithm string
 
 // ListEventTopicRoutesParams defines parameters for ListEventTopicRoutes.
 type ListEventTopicRoutesParams struct {
@@ -10989,44 +3997,16 @@ type ListEventTopicRoutesParams struct {
 	TopicId *string `form:"topicId,omitempty" json:"topicId,omitempty"`
 
 	// EventType Filter by notification event type.
-	EventType *ListEventTopicRoutesParamsEventType `form:"eventType,omitempty" json:"eventType,omitempty"`
+	EventType *NotificationEventType `form:"eventType,omitempty" json:"eventType,omitempty"`
 }
-
-// ListEventTopicRoutesParamsEventType defines parameters for ListEventTopicRoutes.
-type ListEventTopicRoutesParamsEventType string
-
-// ListEventTopicRoutes200JSONResponseBodyEventType defines parameters for ListEventTopicRoutes.
-type ListEventTopicRoutes200JSONResponseBodyEventType string
 
 // CreateEventTopicRouteJSONBody defines parameters for CreateEventTopicRoute.
 type CreateEventTopicRouteJSONBody struct {
 	// EventType The type of notification event.
-	EventType CreateEventTopicRouteJSONBodyEventType `json:"eventType"`
+	EventType NotificationEventType `json:"eventType"`
 
 	// TopicId The ID of the topic to route events to.
 	TopicId string `json:"topicId"`
-}
-
-// CreateEventTopicRouteJSONBodyEventType defines parameters for CreateEventTopicRoute.
-type CreateEventTopicRouteJSONBodyEventType string
-
-// CreateEventTopicRoute201JSONResponseBodyEventType defines parameters for CreateEventTopicRoute.
-type CreateEventTopicRoute201JSONResponseBodyEventType string
-
-// ListOperationLogs200JSONResponseBody_Message defines parameters for ListOperationLogs.
-type ListOperationLogs200JSONResponseBody_Message struct {
-	// Details The details of the log.
-	Details *map[string]string `json:"details,omitempty"`
-
-	// Error The error message, if there has been an error.
-	Error *string `json:"error,omitempty"`
-
-	// Msg The use-readable message.
-	Msg string `json:"msg"`
-
-	// OperationId The operation ID.
-	OperationId          *string                `json:"operation_id,omitempty"`
-	AdditionalProperties map[string]interface{} `json:"-"`
 }
 
 // CreateProviderAppJSONBody defines parameters for CreateProviderApp.
@@ -11041,13 +4021,7 @@ type CreateProviderAppJSONBody struct {
 	ExternalRef *string `json:"externalRef,omitempty"`
 
 	// Metadata Provider-specific configuration that extends the standard OAuth flow.
-	Metadata *struct {
-		// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
-		AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
-
-		// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
-		ProviderParams *map[string]string `json:"providerParams,omitempty"`
-	} `json:"metadata,omitempty"`
+	Metadata *ProviderAppMetadata `json:"metadata,omitempty"`
 
 	// Provider The SaaS provider that this app connects to.
 	Provider string `json:"provider"`
@@ -11070,13 +4044,7 @@ type UpdateProviderAppJSONBody struct {
 		ExternalRef *string `json:"externalRef,omitempty"`
 
 		// Metadata Provider-specific configuration that extends the standard OAuth flow.
-		Metadata *struct {
-			// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
-			AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
-
-			// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
-			ProviderParams *map[string]string `json:"providerParams,omitempty"`
-		} `json:"metadata,omitempty"`
+		Metadata *ProviderAppMetadata `json:"metadata,omitempty"`
 
 		// Provider The SaaS provider that this app connects to.
 		Provider *string `json:"provider,omitempty"`
@@ -11095,105 +4063,6 @@ type UpdateProviderAppJSONBody struct {
 	UpdateMask []string `json:"updateMask"`
 }
 
-// UpsertMetadataForConnectionJSONBody defines parameters for UpsertMetadataForConnection.
-type UpsertMetadataForConnectionJSONBody struct {
-	// Fields Maps object names to field definitions
-	Fields map[string][]struct {
-		// Association Relationship information for a field to another object
-		Association *struct {
-			// AssociationType High-level association variety (e.g., 'foreignKey', 'lookup', 'ref')
-			AssociationType string `json:"associationType"`
-
-			// Cardinality Association cardinality from the referencing field's perspective
-			Cardinality *string `json:"cardinality,omitempty"`
-
-			// Labels UI labels for an association
-			Labels *struct {
-				// Plural Plural display label
-				Plural *string `json:"plural,omitempty"`
-
-				// Singular Singular display label
-				Singular *string `json:"singular,omitempty"`
-			} `json:"labels,omitempty"`
-
-			// OnDelete Behavior upon foreign object deletion
-			OnDelete *string `json:"onDelete,omitempty"`
-
-			// Required If true, a referenced record must exist
-			Required *bool `json:"required,omitempty"`
-
-			// ReverseLookupFieldName Optional inverse relationship/property name exposed on the target object
-			ReverseLookupFieldName *string `json:"reverseLookupFieldName,omitempty"`
-
-			// TargetField Name of the referenced field on the target object
-			TargetField *string `json:"targetField,omitempty"`
-
-			// TargetObject Name of the referenced/parent object
-			TargetObject string `json:"targetObject"`
-		} `json:"association,omitempty"`
-
-		// Description Optional description of the field
-		Description *string `json:"description,omitempty"`
-
-		// DisplayName The human-readable name of the field
-		DisplayName string `json:"displayName"`
-
-		// FieldName The identifier of the field
-		FieldName string `json:"fieldName"`
-
-		// Indexed Indicates if the field should be indexed for faster search
-		Indexed *bool `json:"indexed,omitempty"`
-
-		// NumericOptions Additional options for numeric fields
-		NumericOptions *struct {
-			// DefaultValue Default value for the field
-			DefaultValue *float32 `json:"defaultValue,omitempty"`
-
-			// Max Maximum value for numeric fields
-			Max *float32 `json:"max,omitempty"`
-
-			// Min Minimum value for numeric fields
-			Min *float32 `json:"min,omitempty"`
-
-			// Precision Total number of digits (for decimal types)
-			Precision *int `json:"precision,omitempty"`
-
-			// Scale Number of digits to the right of the decimal point (for decimal types)
-			Scale *int `json:"scale,omitempty"`
-		} `json:"numericOptions,omitempty"`
-
-		// Required Indicates if the field is required
-		Required *bool `json:"required,omitempty"`
-
-		// StringOptions Additional options for string fields
-		StringOptions *struct {
-			// DefaultValue Default value for the field
-			DefaultValue *string `json:"defaultValue,omitempty"`
-
-			// Length Maximum length of the string field
-			Length *int `json:"length,omitempty"`
-
-			// Pattern Regex pattern that the string field value must match
-			Pattern *string `json:"pattern,omitempty"`
-
-			// Values List of allowed values for enum fields
-			Values *[]string `json:"values,omitempty"`
-
-			// ValuesRestricted Indicates if the field value must be limited to what's in Values
-			ValuesRestricted *bool `json:"valuesRestricted,omitempty"`
-		} `json:"stringOptions,omitempty"`
-
-		// Unique Indicates if the field must be unique across all records
-		Unique *bool `json:"unique,omitempty"`
-
-		// ValueType The data type of the field. Valid values are string, boolean, date, datetime, singleSelect, multiSelect, int, float, reference
-		ValueType string `json:"valueType"`
-	} `json:"fields"`
-
-	// GroupRef The ID that your app uses to identify the group of users for this request.
-	GroupRef string `json:"groupRef"`
-}
-
 // GetObjectMetadataForConnectionParams defines parameters for GetObjectMetadataForConnection.
 type GetObjectMetadataForConnectionParams struct {
 	// GroupRef The ID of the user group whose connection should be used to fetch the metadata.
@@ -11202,9 +4071,6 @@ type GetObjectMetadataForConnectionParams struct {
 	// ExcludeReadOnly Excludes fields where `ReadOnly` is `true` from the response.
 	ExcludeReadOnly *bool `form:"excludeReadOnly,omitempty" json:"excludeReadOnly,omitempty"`
 }
-
-// GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType defines parameters for GetObjectMetadataForConnection.
-type GetObjectMetadataForConnection200JSONResponseBodyFieldsValueType string
 
 // ListTopicDestinationRoutesParams defines parameters for ListTopicDestinationRoutes.
 type ListTopicDestinationRoutesParams struct {
@@ -11236,48 +4102,6 @@ type UpdateTopicJSONBody struct {
 	Name string `json:"name"`
 }
 
-// ListProviders200JSONResponseBodyApiKeyOptsAttachmentType defines parameters for ListProviders.
-type ListProviders200JSONResponseBodyApiKeyOptsAttachmentType string
-
-// ListProviders200JSONResponseBodyAuthType defines parameters for ListProviders.
-type ListProviders200JSONResponseBodyAuthType string
-
-// ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed defines parameters for ListProviders.
-type ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed string
-
-// ListProviders200JSONResponseBodyCustomOptsInputsFieldType defines parameters for ListProviders.
-type ListProviders200JSONResponseBodyCustomOptsInputsFieldType string
-
-// ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType defines parameters for ListProviders.
-type ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType string
-
-// ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType defines parameters for ListProviders.
-type ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType string
-
-// ListProviders200JSONResponseBodyOauth2OptsGrantType defines parameters for ListProviders.
-type ListProviders200JSONResponseBodyOauth2OptsGrantType string
-
-// GetProvider200JSONResponseBodyApiKeyOptsAttachmentType defines parameters for GetProvider.
-type GetProvider200JSONResponseBodyApiKeyOptsAttachmentType string
-
-// GetProvider200JSONResponseBodyAuthType defines parameters for GetProvider.
-type GetProvider200JSONResponseBodyAuthType string
-
-// GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed defines parameters for GetProvider.
-type GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed string
-
-// GetProvider200JSONResponseBodyCustomOptsInputsFieldType defines parameters for GetProvider.
-type GetProvider200JSONResponseBodyCustomOptsInputsFieldType string
-
-// GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType defines parameters for GetProvider.
-type GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType string
-
-// GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType defines parameters for GetProvider.
-type GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType string
-
-// GetProvider200JSONResponseBodyOauth2OptsGrantType defines parameters for GetProvider.
-type GetProvider200JSONResponseBodyOauth2OptsGrantType string
-
 // CreateBillingAccountSessionJSONRequestBody defines body for CreateBillingAccountSession for application/json ContentType.
 type CreateBillingAccountSessionJSONRequestBody CreateBillingAccountSessionJSONBody
 
@@ -11285,7 +4109,7 @@ type CreateBillingAccountSessionJSONRequestBody CreateBillingAccountSessionJSONB
 type ClaimDomainJSONRequestBody ClaimDomainJSONBody
 
 // CustomAuthConnectJSONRequestBody defines body for CustomAuthConnect for application/json ContentType.
-type CustomAuthConnectJSONRequestBody CustomAuthConnectJSONBody
+type CustomAuthConnectJSONRequestBody = CustomAuthConnectRequest
 
 // AcceptInviteJSONRequestBody defines body for AcceptInvite for application/json ContentType.
 type AcceptInviteJSONRequestBody AcceptInviteJSONBody
@@ -11312,16 +4136,16 @@ type CreateProjectJSONRequestBody CreateProjectJSONBody
 type UpdateProjectJSONRequestBody UpdateProjectJSONBody
 
 // CreateApiKeyJSONRequestBody defines body for CreateApiKey for application/json ContentType.
-type CreateApiKeyJSONRequestBody CreateApiKeyJSONBody
+type CreateApiKeyJSONRequestBody = ApiKeyRequest
 
 // UpdateApiKeyJSONRequestBody defines body for UpdateApiKey for application/json ContentType.
-type UpdateApiKeyJSONRequestBody UpdateApiKeyJSONBody
+type UpdateApiKeyJSONRequestBody = PatchApiKeyRequest
 
 // UpdateConnectionJSONRequestBody defines body for UpdateConnection for application/json ContentType.
-type UpdateConnectionJSONRequestBody UpdateConnectionJSONBody
+type UpdateConnectionJSONRequestBody = UpdateConnectionRequest
 
 // GenerateConnectionJSONRequestBody defines body for GenerateConnection for application/json ContentType.
-type GenerateConnectionJSONRequestBody GenerateConnectionJSONBody
+type GenerateConnectionJSONRequestBody = GenerateConnectionRequest
 
 // CreateDestinationJSONRequestBody defines body for CreateDestination for application/json ContentType.
 type CreateDestinationJSONRequestBody CreateDestinationJSONBody
@@ -11339,7 +4163,7 @@ type CreateInstallationJSONRequestBody CreateInstallationJSONBody
 type UpdateInstallationJSONRequestBody UpdateInstallationJSONBody
 
 // UpsertMetadataForInstallationJSONRequestBody defines body for UpsertMetadataForInstallation for application/json ContentType.
-type UpsertMetadataForInstallationJSONRequestBody UpsertMetadataForInstallationJSONBody
+type UpsertMetadataForInstallationJSONRequestBody = UpsertMetadataRequest
 
 // PatchObjectConfigContentJSONRequestBody defines body for PatchObjectConfigContent for application/json ContentType.
 type PatchObjectConfigContentJSONRequestBody PatchObjectConfigContentJSONBody
@@ -11351,10 +4175,10 @@ type CreateRevisionJSONRequestBody CreateRevisionJSONBody
 type BatchUpsertIntegrationsJSONRequestBody BatchUpsertIntegrationsJSONBody
 
 // CreateJWTKeyJSONRequestBody defines body for CreateJWTKey for application/json ContentType.
-type CreateJWTKeyJSONRequestBody CreateJWTKeyJSONBody
+type CreateJWTKeyJSONRequestBody = CreateJWTKeyRequest
 
 // UpdateJWTKeyJSONRequestBody defines body for UpdateJWTKey for application/json ContentType.
-type UpdateJWTKeyJSONRequestBody UpdateJWTKeyJSONBody
+type UpdateJWTKeyJSONRequestBody = PatchJWTKeyRequest
 
 // CreateEventTopicRouteJSONRequestBody defines body for CreateEventTopicRoute for application/json ContentType.
 type CreateEventTopicRouteJSONRequestBody CreateEventTopicRouteJSONBody
@@ -11366,7 +4190,7 @@ type CreateProviderAppJSONRequestBody CreateProviderAppJSONBody
 type UpdateProviderAppJSONRequestBody UpdateProviderAppJSONBody
 
 // UpsertMetadataForConnectionJSONRequestBody defines body for UpsertMetadataForConnection for application/json ContentType.
-type UpsertMetadataForConnectionJSONRequestBody UpsertMetadataForConnectionJSONBody
+type UpsertMetadataForConnectionJSONRequestBody = UpsertMetadataRequest
 
 // CreateTopicDestinationRouteJSONRequestBody defines body for CreateTopicDestinationRoute for application/json ContentType.
 type CreateTopicDestinationRouteJSONRequestBody CreateTopicDestinationRouteJSONBody
@@ -11571,200 +4395,6 @@ func (a PatchJWTKeyRequest_JwtKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
-// Getter for additional properties for UpdateJWTKeyJSONBody_JwtKey. Returns the specified
-// element and whether it was found
-func (a UpdateJWTKeyJSONBody_JwtKey) Get(fieldName string) (value interface{}, found bool) {
-	if a.AdditionalProperties != nil {
-		value, found = a.AdditionalProperties[fieldName]
-	}
-	return
-}
-
-// Setter for additional properties for UpdateJWTKeyJSONBody_JwtKey
-func (a *UpdateJWTKeyJSONBody_JwtKey) Set(fieldName string, value interface{}) {
-	if a.AdditionalProperties == nil {
-		a.AdditionalProperties = make(map[string]interface{})
-	}
-	a.AdditionalProperties[fieldName] = value
-}
-
-// Override default JSON handling for UpdateJWTKeyJSONBody_JwtKey to handle AdditionalProperties
-func (a *UpdateJWTKeyJSONBody_JwtKey) UnmarshalJSON(b []byte) error {
-	object := make(map[string]json.RawMessage)
-	err := json.Unmarshal(b, &object)
-	if err != nil {
-		return err
-	}
-
-	if raw, found := object["active"]; found {
-		err = json.Unmarshal(raw, &a.Active)
-		if err != nil {
-			return fmt.Errorf("error reading 'active': %w", err)
-		}
-		delete(object, "active")
-	}
-
-	if raw, found := object["label"]; found {
-		err = json.Unmarshal(raw, &a.Label)
-		if err != nil {
-			return fmt.Errorf("error reading 'label': %w", err)
-		}
-		delete(object, "label")
-	}
-
-	if len(object) != 0 {
-		a.AdditionalProperties = make(map[string]interface{})
-		for fieldName, fieldBuf := range object {
-			var fieldVal interface{}
-			err := json.Unmarshal(fieldBuf, &fieldVal)
-			if err != nil {
-				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
-			}
-			a.AdditionalProperties[fieldName] = fieldVal
-		}
-	}
-	return nil
-}
-
-// Override default JSON handling for UpdateJWTKeyJSONBody_JwtKey to handle AdditionalProperties
-func (a UpdateJWTKeyJSONBody_JwtKey) MarshalJSON() ([]byte, error) {
-	var err error
-	object := make(map[string]json.RawMessage)
-
-	if a.Active != nil {
-		object["active"], err = json.Marshal(a.Active)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'active': %w", err)
-		}
-	}
-
-	if a.Label != nil {
-		object["label"], err = json.Marshal(a.Label)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'label': %w", err)
-		}
-	}
-
-	for fieldName, field := range a.AdditionalProperties {
-		object[fieldName], err = json.Marshal(field)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
-		}
-	}
-	return json.Marshal(object)
-}
-
-// Getter for additional properties for ListOperationLogs200JSONResponseBody_Message. Returns the specified
-// element and whether it was found
-func (a ListOperationLogs200JSONResponseBody_Message) Get(fieldName string) (value interface{}, found bool) {
-	if a.AdditionalProperties != nil {
-		value, found = a.AdditionalProperties[fieldName]
-	}
-	return
-}
-
-// Setter for additional properties for ListOperationLogs200JSONResponseBody_Message
-func (a *ListOperationLogs200JSONResponseBody_Message) Set(fieldName string, value interface{}) {
-	if a.AdditionalProperties == nil {
-		a.AdditionalProperties = make(map[string]interface{})
-	}
-	a.AdditionalProperties[fieldName] = value
-}
-
-// Override default JSON handling for ListOperationLogs200JSONResponseBody_Message to handle AdditionalProperties
-func (a *ListOperationLogs200JSONResponseBody_Message) UnmarshalJSON(b []byte) error {
-	object := make(map[string]json.RawMessage)
-	err := json.Unmarshal(b, &object)
-	if err != nil {
-		return err
-	}
-
-	if raw, found := object["details"]; found {
-		err = json.Unmarshal(raw, &a.Details)
-		if err != nil {
-			return fmt.Errorf("error reading 'details': %w", err)
-		}
-		delete(object, "details")
-	}
-
-	if raw, found := object["error"]; found {
-		err = json.Unmarshal(raw, &a.Error)
-		if err != nil {
-			return fmt.Errorf("error reading 'error': %w", err)
-		}
-		delete(object, "error")
-	}
-
-	if raw, found := object["msg"]; found {
-		err = json.Unmarshal(raw, &a.Msg)
-		if err != nil {
-			return fmt.Errorf("error reading 'msg': %w", err)
-		}
-		delete(object, "msg")
-	}
-
-	if raw, found := object["operation_id"]; found {
-		err = json.Unmarshal(raw, &a.OperationId)
-		if err != nil {
-			return fmt.Errorf("error reading 'operation_id': %w", err)
-		}
-		delete(object, "operation_id")
-	}
-
-	if len(object) != 0 {
-		a.AdditionalProperties = make(map[string]interface{})
-		for fieldName, fieldBuf := range object {
-			var fieldVal interface{}
-			err := json.Unmarshal(fieldBuf, &fieldVal)
-			if err != nil {
-				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
-			}
-			a.AdditionalProperties[fieldName] = fieldVal
-		}
-	}
-	return nil
-}
-
-// Override default JSON handling for ListOperationLogs200JSONResponseBody_Message to handle AdditionalProperties
-func (a ListOperationLogs200JSONResponseBody_Message) MarshalJSON() ([]byte, error) {
-	var err error
-	object := make(map[string]json.RawMessage)
-
-	if a.Details != nil {
-		object["details"], err = json.Marshal(a.Details)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'details': %w", err)
-		}
-	}
-
-	if a.Error != nil {
-		object["error"], err = json.Marshal(a.Error)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'error': %w", err)
-		}
-	}
-
-	object["msg"], err = json.Marshal(a.Msg)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling 'msg': %w", err)
-	}
-
-	if a.OperationId != nil {
-		object["operation_id"], err = json.Marshal(a.OperationId)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling 'operation_id': %w", err)
-		}
-	}
-
-	for fieldName, field := range a.AdditionalProperties {
-		object[fieldName], err = json.Marshal(field)
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
-		}
-	}
-	return json.Marshal(object)
-}
-
 // AsCustomAuthConnectResponse0 returns the union data inside the CustomAuthConnectResponse as a CustomAuthConnectResponse0
 func (t CustomAuthConnectResponse) AsCustomAuthConnectResponse0() (CustomAuthConnectResponse0, error) {
 	var body CustomAuthConnectResponse0
@@ -11827,22 +4457,22 @@ func (t *CustomAuthConnectResponse) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsHydratedRevisionContentReadObjectsAllFields0 returns the union data inside the HydratedRevision_Content_Read_Objects_AllFields_Item as a HydratedRevisionContentReadObjectsAllFields0
-func (t HydratedRevision_Content_Read_Objects_AllFields_Item) AsHydratedRevisionContentReadObjectsAllFields0() (HydratedRevisionContentReadObjectsAllFields0, error) {
-	var body HydratedRevisionContentReadObjectsAllFields0
+// AsHydratedIntegrationFieldExistent returns the union data inside the HydratedIntegrationField as a HydratedIntegrationFieldExistent
+func (t HydratedIntegrationField) AsHydratedIntegrationFieldExistent() (HydratedIntegrationFieldExistent, error) {
+	var body HydratedIntegrationFieldExistent
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromHydratedRevisionContentReadObjectsAllFields0 overwrites any union data inside the HydratedRevision_Content_Read_Objects_AllFields_Item as the provided HydratedRevisionContentReadObjectsAllFields0
-func (t *HydratedRevision_Content_Read_Objects_AllFields_Item) FromHydratedRevisionContentReadObjectsAllFields0(v HydratedRevisionContentReadObjectsAllFields0) error {
+// FromHydratedIntegrationFieldExistent overwrites any union data inside the HydratedIntegrationField as the provided HydratedIntegrationFieldExistent
+func (t *HydratedIntegrationField) FromHydratedIntegrationFieldExistent(v HydratedIntegrationFieldExistent) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeHydratedRevisionContentReadObjectsAllFields0 performs a merge with any union data inside the HydratedRevision_Content_Read_Objects_AllFields_Item, using the provided HydratedRevisionContentReadObjectsAllFields0
-func (t *HydratedRevision_Content_Read_Objects_AllFields_Item) MergeHydratedRevisionContentReadObjectsAllFields0(v HydratedRevisionContentReadObjectsAllFields0) error {
+// MergeHydratedIntegrationFieldExistent performs a merge with any union data inside the HydratedIntegrationField, using the provided HydratedIntegrationFieldExistent
+func (t *HydratedIntegrationField) MergeHydratedIntegrationFieldExistent(v HydratedIntegrationFieldExistent) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -11853,22 +4483,22 @@ func (t *HydratedRevision_Content_Read_Objects_AllFields_Item) MergeHydratedRevi
 	return err
 }
 
-// AsHydratedRevisionContentReadObjectsAllFields1 returns the union data inside the HydratedRevision_Content_Read_Objects_AllFields_Item as a HydratedRevisionContentReadObjectsAllFields1
-func (t HydratedRevision_Content_Read_Objects_AllFields_Item) AsHydratedRevisionContentReadObjectsAllFields1() (HydratedRevisionContentReadObjectsAllFields1, error) {
-	var body HydratedRevisionContentReadObjectsAllFields1
+// AsIntegrationFieldMapping returns the union data inside the HydratedIntegrationField as a IntegrationFieldMapping
+func (t HydratedIntegrationField) AsIntegrationFieldMapping() (IntegrationFieldMapping, error) {
+	var body IntegrationFieldMapping
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromHydratedRevisionContentReadObjectsAllFields1 overwrites any union data inside the HydratedRevision_Content_Read_Objects_AllFields_Item as the provided HydratedRevisionContentReadObjectsAllFields1
-func (t *HydratedRevision_Content_Read_Objects_AllFields_Item) FromHydratedRevisionContentReadObjectsAllFields1(v HydratedRevisionContentReadObjectsAllFields1) error {
+// FromIntegrationFieldMapping overwrites any union data inside the HydratedIntegrationField as the provided IntegrationFieldMapping
+func (t *HydratedIntegrationField) FromIntegrationFieldMapping(v IntegrationFieldMapping) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeHydratedRevisionContentReadObjectsAllFields1 performs a merge with any union data inside the HydratedRevision_Content_Read_Objects_AllFields_Item, using the provided HydratedRevisionContentReadObjectsAllFields1
-func (t *HydratedRevision_Content_Read_Objects_AllFields_Item) MergeHydratedRevisionContentReadObjectsAllFields1(v HydratedRevisionContentReadObjectsAllFields1) error {
+// MergeIntegrationFieldMapping performs a merge with any union data inside the HydratedIntegrationField, using the provided IntegrationFieldMapping
+func (t *HydratedIntegrationField) MergeIntegrationFieldMapping(v IntegrationFieldMapping) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -11879,32 +4509,32 @@ func (t *HydratedRevision_Content_Read_Objects_AllFields_Item) MergeHydratedRevi
 	return err
 }
 
-func (t HydratedRevision_Content_Read_Objects_AllFields_Item) MarshalJSON() ([]byte, error) {
+func (t HydratedIntegrationField) MarshalJSON() ([]byte, error) {
 	b, err := t.union.MarshalJSON()
 	return b, err
 }
 
-func (t *HydratedRevision_Content_Read_Objects_AllFields_Item) UnmarshalJSON(b []byte) error {
+func (t *HydratedIntegrationField) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
 
-// AsHydratedRevisionContentReadObjectsOptionalFields0 returns the union data inside the HydratedRevision_Content_Read_Objects_OptionalFields_Item as a HydratedRevisionContentReadObjectsOptionalFields0
-func (t HydratedRevision_Content_Read_Objects_OptionalFields_Item) AsHydratedRevisionContentReadObjectsOptionalFields0() (HydratedRevisionContentReadObjectsOptionalFields0, error) {
-	var body HydratedRevisionContentReadObjectsOptionalFields0
+// AsIntegrationFieldExistent returns the union data inside the IntegrationField as a IntegrationFieldExistent
+func (t IntegrationField) AsIntegrationFieldExistent() (IntegrationFieldExistent, error) {
+	var body IntegrationFieldExistent
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromHydratedRevisionContentReadObjectsOptionalFields0 overwrites any union data inside the HydratedRevision_Content_Read_Objects_OptionalFields_Item as the provided HydratedRevisionContentReadObjectsOptionalFields0
-func (t *HydratedRevision_Content_Read_Objects_OptionalFields_Item) FromHydratedRevisionContentReadObjectsOptionalFields0(v HydratedRevisionContentReadObjectsOptionalFields0) error {
+// FromIntegrationFieldExistent overwrites any union data inside the IntegrationField as the provided IntegrationFieldExistent
+func (t *IntegrationField) FromIntegrationFieldExistent(v IntegrationFieldExistent) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeHydratedRevisionContentReadObjectsOptionalFields0 performs a merge with any union data inside the HydratedRevision_Content_Read_Objects_OptionalFields_Item, using the provided HydratedRevisionContentReadObjectsOptionalFields0
-func (t *HydratedRevision_Content_Read_Objects_OptionalFields_Item) MergeHydratedRevisionContentReadObjectsOptionalFields0(v HydratedRevisionContentReadObjectsOptionalFields0) error {
+// MergeIntegrationFieldExistent performs a merge with any union data inside the IntegrationField, using the provided IntegrationFieldExistent
+func (t *IntegrationField) MergeIntegrationFieldExistent(v IntegrationFieldExistent) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -11915,22 +4545,22 @@ func (t *HydratedRevision_Content_Read_Objects_OptionalFields_Item) MergeHydrate
 	return err
 }
 
-// AsHydratedRevisionContentReadObjectsOptionalFields1 returns the union data inside the HydratedRevision_Content_Read_Objects_OptionalFields_Item as a HydratedRevisionContentReadObjectsOptionalFields1
-func (t HydratedRevision_Content_Read_Objects_OptionalFields_Item) AsHydratedRevisionContentReadObjectsOptionalFields1() (HydratedRevisionContentReadObjectsOptionalFields1, error) {
-	var body HydratedRevisionContentReadObjectsOptionalFields1
+// AsIntegrationFieldMapping returns the union data inside the IntegrationField as a IntegrationFieldMapping
+func (t IntegrationField) AsIntegrationFieldMapping() (IntegrationFieldMapping, error) {
+	var body IntegrationFieldMapping
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromHydratedRevisionContentReadObjectsOptionalFields1 overwrites any union data inside the HydratedRevision_Content_Read_Objects_OptionalFields_Item as the provided HydratedRevisionContentReadObjectsOptionalFields1
-func (t *HydratedRevision_Content_Read_Objects_OptionalFields_Item) FromHydratedRevisionContentReadObjectsOptionalFields1(v HydratedRevisionContentReadObjectsOptionalFields1) error {
+// FromIntegrationFieldMapping overwrites any union data inside the IntegrationField as the provided IntegrationFieldMapping
+func (t *IntegrationField) FromIntegrationFieldMapping(v IntegrationFieldMapping) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeHydratedRevisionContentReadObjectsOptionalFields1 performs a merge with any union data inside the HydratedRevision_Content_Read_Objects_OptionalFields_Item, using the provided HydratedRevisionContentReadObjectsOptionalFields1
-func (t *HydratedRevision_Content_Read_Objects_OptionalFields_Item) MergeHydratedRevisionContentReadObjectsOptionalFields1(v HydratedRevisionContentReadObjectsOptionalFields1) error {
+// MergeIntegrationFieldMapping performs a merge with any union data inside the IntegrationField, using the provided IntegrationFieldMapping
+func (t *IntegrationField) MergeIntegrationFieldMapping(v IntegrationFieldMapping) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -11941,756 +4571,12 @@ func (t *HydratedRevision_Content_Read_Objects_OptionalFields_Item) MergeHydrate
 	return err
 }
 
-func (t HydratedRevision_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
+func (t IntegrationField) MarshalJSON() ([]byte, error) {
 	b, err := t.union.MarshalJSON()
 	return b, err
 }
 
-func (t *HydratedRevision_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsHydratedRevisionContentReadObjectsRequiredFields0 returns the union data inside the HydratedRevision_Content_Read_Objects_RequiredFields_Item as a HydratedRevisionContentReadObjectsRequiredFields0
-func (t HydratedRevision_Content_Read_Objects_RequiredFields_Item) AsHydratedRevisionContentReadObjectsRequiredFields0() (HydratedRevisionContentReadObjectsRequiredFields0, error) {
-	var body HydratedRevisionContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromHydratedRevisionContentReadObjectsRequiredFields0 overwrites any union data inside the HydratedRevision_Content_Read_Objects_RequiredFields_Item as the provided HydratedRevisionContentReadObjectsRequiredFields0
-func (t *HydratedRevision_Content_Read_Objects_RequiredFields_Item) FromHydratedRevisionContentReadObjectsRequiredFields0(v HydratedRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeHydratedRevisionContentReadObjectsRequiredFields0 performs a merge with any union data inside the HydratedRevision_Content_Read_Objects_RequiredFields_Item, using the provided HydratedRevisionContentReadObjectsRequiredFields0
-func (t *HydratedRevision_Content_Read_Objects_RequiredFields_Item) MergeHydratedRevisionContentReadObjectsRequiredFields0(v HydratedRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsHydratedRevisionContentReadObjectsRequiredFields1 returns the union data inside the HydratedRevision_Content_Read_Objects_RequiredFields_Item as a HydratedRevisionContentReadObjectsRequiredFields1
-func (t HydratedRevision_Content_Read_Objects_RequiredFields_Item) AsHydratedRevisionContentReadObjectsRequiredFields1() (HydratedRevisionContentReadObjectsRequiredFields1, error) {
-	var body HydratedRevisionContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromHydratedRevisionContentReadObjectsRequiredFields1 overwrites any union data inside the HydratedRevision_Content_Read_Objects_RequiredFields_Item as the provided HydratedRevisionContentReadObjectsRequiredFields1
-func (t *HydratedRevision_Content_Read_Objects_RequiredFields_Item) FromHydratedRevisionContentReadObjectsRequiredFields1(v HydratedRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeHydratedRevisionContentReadObjectsRequiredFields1 performs a merge with any union data inside the HydratedRevision_Content_Read_Objects_RequiredFields_Item, using the provided HydratedRevisionContentReadObjectsRequiredFields1
-func (t *HydratedRevision_Content_Read_Objects_RequiredFields_Item) MergeHydratedRevisionContentReadObjectsRequiredFields1(v HydratedRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t HydratedRevision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *HydratedRevision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsIntegrationLatestRevisionContentReadObjectsOptionalFields0 returns the union data inside the Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item as a IntegrationLatestRevisionContentReadObjectsOptionalFields0
-func (t Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsIntegrationLatestRevisionContentReadObjectsOptionalFields0() (IntegrationLatestRevisionContentReadObjectsOptionalFields0, error) {
-	var body IntegrationLatestRevisionContentReadObjectsOptionalFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromIntegrationLatestRevisionContentReadObjectsOptionalFields0 overwrites any union data inside the Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided IntegrationLatestRevisionContentReadObjectsOptionalFields0
-func (t *Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromIntegrationLatestRevisionContentReadObjectsOptionalFields0(v IntegrationLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeIntegrationLatestRevisionContentReadObjectsOptionalFields0 performs a merge with any union data inside the Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided IntegrationLatestRevisionContentReadObjectsOptionalFields0
-func (t *Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeIntegrationLatestRevisionContentReadObjectsOptionalFields0(v IntegrationLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsIntegrationLatestRevisionContentReadObjectsOptionalFields1 returns the union data inside the Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item as a IntegrationLatestRevisionContentReadObjectsOptionalFields1
-func (t Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsIntegrationLatestRevisionContentReadObjectsOptionalFields1() (IntegrationLatestRevisionContentReadObjectsOptionalFields1, error) {
-	var body IntegrationLatestRevisionContentReadObjectsOptionalFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromIntegrationLatestRevisionContentReadObjectsOptionalFields1 overwrites any union data inside the Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided IntegrationLatestRevisionContentReadObjectsOptionalFields1
-func (t *Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromIntegrationLatestRevisionContentReadObjectsOptionalFields1(v IntegrationLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeIntegrationLatestRevisionContentReadObjectsOptionalFields1 performs a merge with any union data inside the Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided IntegrationLatestRevisionContentReadObjectsOptionalFields1
-func (t *Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeIntegrationLatestRevisionContentReadObjectsOptionalFields1(v IntegrationLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *Integration_LatestRevision_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsIntegrationLatestRevisionContentReadObjectsRequiredFields0 returns the union data inside the Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item as a IntegrationLatestRevisionContentReadObjectsRequiredFields0
-func (t Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsIntegrationLatestRevisionContentReadObjectsRequiredFields0() (IntegrationLatestRevisionContentReadObjectsRequiredFields0, error) {
-	var body IntegrationLatestRevisionContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromIntegrationLatestRevisionContentReadObjectsRequiredFields0 overwrites any union data inside the Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided IntegrationLatestRevisionContentReadObjectsRequiredFields0
-func (t *Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromIntegrationLatestRevisionContentReadObjectsRequiredFields0(v IntegrationLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeIntegrationLatestRevisionContentReadObjectsRequiredFields0 performs a merge with any union data inside the Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided IntegrationLatestRevisionContentReadObjectsRequiredFields0
-func (t *Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeIntegrationLatestRevisionContentReadObjectsRequiredFields0(v IntegrationLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsIntegrationLatestRevisionContentReadObjectsRequiredFields1 returns the union data inside the Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item as a IntegrationLatestRevisionContentReadObjectsRequiredFields1
-func (t Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsIntegrationLatestRevisionContentReadObjectsRequiredFields1() (IntegrationLatestRevisionContentReadObjectsRequiredFields1, error) {
-	var body IntegrationLatestRevisionContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromIntegrationLatestRevisionContentReadObjectsRequiredFields1 overwrites any union data inside the Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided IntegrationLatestRevisionContentReadObjectsRequiredFields1
-func (t *Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromIntegrationLatestRevisionContentReadObjectsRequiredFields1(v IntegrationLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeIntegrationLatestRevisionContentReadObjectsRequiredFields1 performs a merge with any union data inside the Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided IntegrationLatestRevisionContentReadObjectsRequiredFields1
-func (t *Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeIntegrationLatestRevisionContentReadObjectsRequiredFields1(v IntegrationLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *Integration_LatestRevision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsRevisionContentReadObjectsOptionalFields0 returns the union data inside the Revision_Content_Read_Objects_OptionalFields_Item as a RevisionContentReadObjectsOptionalFields0
-func (t Revision_Content_Read_Objects_OptionalFields_Item) AsRevisionContentReadObjectsOptionalFields0() (RevisionContentReadObjectsOptionalFields0, error) {
-	var body RevisionContentReadObjectsOptionalFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRevisionContentReadObjectsOptionalFields0 overwrites any union data inside the Revision_Content_Read_Objects_OptionalFields_Item as the provided RevisionContentReadObjectsOptionalFields0
-func (t *Revision_Content_Read_Objects_OptionalFields_Item) FromRevisionContentReadObjectsOptionalFields0(v RevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRevisionContentReadObjectsOptionalFields0 performs a merge with any union data inside the Revision_Content_Read_Objects_OptionalFields_Item, using the provided RevisionContentReadObjectsOptionalFields0
-func (t *Revision_Content_Read_Objects_OptionalFields_Item) MergeRevisionContentReadObjectsOptionalFields0(v RevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsRevisionContentReadObjectsOptionalFields1 returns the union data inside the Revision_Content_Read_Objects_OptionalFields_Item as a RevisionContentReadObjectsOptionalFields1
-func (t Revision_Content_Read_Objects_OptionalFields_Item) AsRevisionContentReadObjectsOptionalFields1() (RevisionContentReadObjectsOptionalFields1, error) {
-	var body RevisionContentReadObjectsOptionalFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRevisionContentReadObjectsOptionalFields1 overwrites any union data inside the Revision_Content_Read_Objects_OptionalFields_Item as the provided RevisionContentReadObjectsOptionalFields1
-func (t *Revision_Content_Read_Objects_OptionalFields_Item) FromRevisionContentReadObjectsOptionalFields1(v RevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRevisionContentReadObjectsOptionalFields1 performs a merge with any union data inside the Revision_Content_Read_Objects_OptionalFields_Item, using the provided RevisionContentReadObjectsOptionalFields1
-func (t *Revision_Content_Read_Objects_OptionalFields_Item) MergeRevisionContentReadObjectsOptionalFields1(v RevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t Revision_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *Revision_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsRevisionContentReadObjectsRequiredFields0 returns the union data inside the Revision_Content_Read_Objects_RequiredFields_Item as a RevisionContentReadObjectsRequiredFields0
-func (t Revision_Content_Read_Objects_RequiredFields_Item) AsRevisionContentReadObjectsRequiredFields0() (RevisionContentReadObjectsRequiredFields0, error) {
-	var body RevisionContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRevisionContentReadObjectsRequiredFields0 overwrites any union data inside the Revision_Content_Read_Objects_RequiredFields_Item as the provided RevisionContentReadObjectsRequiredFields0
-func (t *Revision_Content_Read_Objects_RequiredFields_Item) FromRevisionContentReadObjectsRequiredFields0(v RevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRevisionContentReadObjectsRequiredFields0 performs a merge with any union data inside the Revision_Content_Read_Objects_RequiredFields_Item, using the provided RevisionContentReadObjectsRequiredFields0
-func (t *Revision_Content_Read_Objects_RequiredFields_Item) MergeRevisionContentReadObjectsRequiredFields0(v RevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsRevisionContentReadObjectsRequiredFields1 returns the union data inside the Revision_Content_Read_Objects_RequiredFields_Item as a RevisionContentReadObjectsRequiredFields1
-func (t Revision_Content_Read_Objects_RequiredFields_Item) AsRevisionContentReadObjectsRequiredFields1() (RevisionContentReadObjectsRequiredFields1, error) {
-	var body RevisionContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRevisionContentReadObjectsRequiredFields1 overwrites any union data inside the Revision_Content_Read_Objects_RequiredFields_Item as the provided RevisionContentReadObjectsRequiredFields1
-func (t *Revision_Content_Read_Objects_RequiredFields_Item) FromRevisionContentReadObjectsRequiredFields1(v RevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRevisionContentReadObjectsRequiredFields1 performs a merge with any union data inside the Revision_Content_Read_Objects_RequiredFields_Item, using the provided RevisionContentReadObjectsRequiredFields1
-func (t *Revision_Content_Read_Objects_RequiredFields_Item) MergeRevisionContentReadObjectsRequiredFields1(v RevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t Revision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *Revision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsCustomAuthConnect200JSONResponseBody0 returns the union data inside the CustomAuthConnect200JSONResponseBody as a CustomAuthConnect200JSONResponseBody0
-func (t CustomAuthConnect200JSONResponseBody) AsCustomAuthConnect200JSONResponseBody0() (CustomAuthConnect200JSONResponseBody0, error) {
-	var body CustomAuthConnect200JSONResponseBody0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromCustomAuthConnect200JSONResponseBody0 overwrites any union data inside the CustomAuthConnect200JSONResponseBody as the provided CustomAuthConnect200JSONResponseBody0
-func (t *CustomAuthConnect200JSONResponseBody) FromCustomAuthConnect200JSONResponseBody0(v CustomAuthConnect200JSONResponseBody0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeCustomAuthConnect200JSONResponseBody0 performs a merge with any union data inside the CustomAuthConnect200JSONResponseBody, using the provided CustomAuthConnect200JSONResponseBody0
-func (t *CustomAuthConnect200JSONResponseBody) MergeCustomAuthConnect200JSONResponseBody0(v CustomAuthConnect200JSONResponseBody0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsCustomAuthConnect200JSONResponseBody1 returns the union data inside the CustomAuthConnect200JSONResponseBody as a CustomAuthConnect200JSONResponseBody1
-func (t CustomAuthConnect200JSONResponseBody) AsCustomAuthConnect200JSONResponseBody1() (CustomAuthConnect200JSONResponseBody1, error) {
-	var body CustomAuthConnect200JSONResponseBody1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromCustomAuthConnect200JSONResponseBody1 overwrites any union data inside the CustomAuthConnect200JSONResponseBody as the provided CustomAuthConnect200JSONResponseBody1
-func (t *CustomAuthConnect200JSONResponseBody) FromCustomAuthConnect200JSONResponseBody1(v CustomAuthConnect200JSONResponseBody1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeCustomAuthConnect200JSONResponseBody1 performs a merge with any union data inside the CustomAuthConnect200JSONResponseBody, using the provided CustomAuthConnect200JSONResponseBody1
-func (t *CustomAuthConnect200JSONResponseBody) MergeCustomAuthConnect200JSONResponseBody1(v CustomAuthConnect200JSONResponseBody1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t CustomAuthConnect200JSONResponseBody) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *CustomAuthConnect200JSONResponseBody) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 returns the union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0() (ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0, error) {
-	var body ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 overwrites any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 performs a merge with any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 returns the union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1() (ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1, error) {
-	var body ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 overwrites any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 performs a merge with any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 returns the union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0() (ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0, error) {
-	var body ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 overwrites any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 performs a merge with any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 returns the union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1() (ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1, error) {
-	var body ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 overwrites any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 performs a merge with any union data inside the ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1(v ListIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *ListIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0 returns the union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0() (CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0, error) {
-	var body CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0 overwrites any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0 performs a merge with any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1 returns the union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1() (CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1, error) {
-	var body CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1 overwrites any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1 performs a merge with any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0 returns the union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0() (CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0, error) {
-	var body CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0 overwrites any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0 performs a merge with any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1 returns the union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1() (CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1, error) {
-	var body CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1 overwrites any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1 performs a merge with any union data inside the CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeCreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1(v CreateIntegrationJSONBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *CreateIntegrationJSONBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 returns the union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0() (GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0, error) {
-	var body GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 overwrites any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 performs a merge with any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 returns the union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1() (GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1, error) {
-	var body GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 overwrites any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 performs a merge with any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 returns the union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0() (GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0, error) {
-	var body GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 overwrites any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 performs a merge with any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 returns the union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1() (GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1, error) {
-	var body GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 overwrites any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 performs a merge with any union data inside the GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeGetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1(v GetIntegration200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *GetIntegration200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
+func (t *IntegrationField) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -12753,316 +4639,6 @@ func (t PatchObjectConfigContentJSONBody) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PatchObjectConfigContentJSONBody) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0 returns the union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item as a GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) AsGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0() (GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0, error) {
-	var body GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0 overwrites any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item as the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) FromGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0(v GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0 performs a merge with any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item, using the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0(v GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1 returns the union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item as a GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) AsGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1() (GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1, error) {
-	var body GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1 overwrites any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item as the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) FromGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1(v GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1 performs a merge with any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item, using the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1(v GetHydratedRevision200JSONResponseBodyContentReadObjectsAllFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_AllFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0 returns the union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item as a GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) AsGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0() (GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0, error) {
-	var body GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0 overwrites any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item as the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) FromGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0(v GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0 performs a merge with any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item, using the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0(v GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1 returns the union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item as a GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) AsGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1() (GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1, error) {
-	var body GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1 overwrites any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item as the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) FromGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1(v GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1 performs a merge with any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item, using the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1(v GetHydratedRevision200JSONResponseBodyContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0 returns the union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item as a GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) AsGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0() (GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0, error) {
-	var body GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0 overwrites any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item as the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) FromGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0(v GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0 performs a merge with any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item, using the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0(v GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1 returns the union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item as a GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) AsGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1() (GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1, error) {
-	var body GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1 overwrites any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item as the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) FromGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1(v GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1 performs a merge with any union data inside the GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item, using the provided GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) MergeGetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1(v GetHydratedRevision200JSONResponseBodyContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *GetHydratedRevision200JSONResponseBody_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 returns the union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0() (BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0, error) {
-	var body BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 overwrites any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0 performs a merge with any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 returns the union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as a BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1() (BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1, error) {
-	var body BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 overwrites any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item as the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1 performs a merge with any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item, using the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsOptionalFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_OptionalFields_Item) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}
-
-// AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 returns the union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0() (BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0, error) {
-	var body BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 overwrites any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0 performs a merge with any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields0) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 returns the union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as a BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) AsBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1() (BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1, error) {
-	var body BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 overwrites any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item as the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) FromBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1 performs a merge with any union data inside the BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item, using the provided BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MergeBatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1(v BatchUpsertIntegrations200JSONResponseBodyLatestRevisionContentReadObjectsRequiredFields1) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *BatchUpsertIntegrations200JSONResponseBody_LatestRevision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

@@ -1,14 +1,18 @@
 # Generate Go types from the Ampersand OpenAPI spec (api/api.yaml).
 #
-# The api.yaml spec uses cross-file $refs, so we generate from the fully
-# dereferenced JSON that the openapi repo publishes at api/generated/api.json.
+# The api.yaml spec uses cross-file $refs, so we generate from the bundled JSON
+# that the openapi repo publishes at api/generated/api.bundled.json. Bundling
+# merges external-file $refs into one document while preserving internal $refs,
+# so nested properties (e.g. Installation.connection) reuse named component
+# types (Connection) instead of being emitted as anonymous inline structs (as
+# they were when generating from the fully dereferenced api.json).
 
 ifneq ($(MAKECMDGOALS),gen/main)
 ifndef OPENAPI_COMMIT_ID
 OPENAPI_COMMIT_ID := $(shell read -p "Enter OPENAPI_COMMIT_ID (commit hash, default 'main'): " id < /dev/tty; echo $${id:-main})
 endif
 endif
-API_JSON = https://raw.githubusercontent.com/amp-labs/openapi/$(OPENAPI_COMMIT_ID)/api/generated/api.json
+API_JSON = https://raw.githubusercontent.com/amp-labs/openapi/$(OPENAPI_COMMIT_ID)/api/generated/api.bundled.json
 
 .PHONY: ensure-oapi-codegen
 ensure-oapi-codegen:
@@ -32,8 +36,8 @@ gen/api:
 	oapi-codegen --config=oapi.config.yaml --o=api.gen.go $(API_JSON)
 
 # Assumes that openapi is checked out in the same parent directory (amp-labs)
-# as this repo, and that its api/generated/api.json is up to date
+# as this repo, and that its api/generated/api.bundled.json is up to date
 # (run `pnpm run gen:json` in the openapi repo to refresh it).
 .PHONY: gen/local
 gen/local: ensure-oapi-codegen
-	oapi-codegen --config=oapi.config.yaml --o=api.gen.go ../../openapi/api/generated/api.json
+	oapi-codegen --config=oapi.config.yaml --o=api.gen.go ../../openapi/api/generated/api.bundled.json

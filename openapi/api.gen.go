@@ -914,6 +914,7 @@ const (
 	NotificationEventTopicRouteEventTypeConnectionDeleted          NotificationEventTopicRouteEventType = "connection.deleted"
 	NotificationEventTopicRouteEventTypeConnectionError            NotificationEventTopicRouteEventType = "connection.error"
 	NotificationEventTopicRouteEventTypeConnectionRefreshed        NotificationEventTopicRouteEventType = "connection.refreshed"
+	NotificationEventTopicRouteEventTypeConnectionUpdated          NotificationEventTopicRouteEventType = "connection.updated"
 	NotificationEventTopicRouteEventTypeDestinationWebhookDisabled NotificationEventTopicRouteEventType = "destination.webhook.disabled"
 	NotificationEventTopicRouteEventTypeInstallationCreated        NotificationEventTopicRouteEventType = "installation.created"
 	NotificationEventTopicRouteEventTypeInstallationDeleted        NotificationEventTopicRouteEventType = "installation.deleted"
@@ -936,6 +937,8 @@ func (e NotificationEventTopicRouteEventType) Valid() bool {
 	case NotificationEventTopicRouteEventTypeConnectionError:
 		return true
 	case NotificationEventTopicRouteEventTypeConnectionRefreshed:
+		return true
+	case NotificationEventTopicRouteEventTypeConnectionUpdated:
 		return true
 	case NotificationEventTopicRouteEventTypeDestinationWebhookDisabled:
 		return true
@@ -968,6 +971,7 @@ const (
 	NotificationEventTypeConnectionDeleted          NotificationEventType = "connection.deleted"
 	NotificationEventTypeConnectionError            NotificationEventType = "connection.error"
 	NotificationEventTypeConnectionRefreshed        NotificationEventType = "connection.refreshed"
+	NotificationEventTypeConnectionUpdated          NotificationEventType = "connection.updated"
 	NotificationEventTypeDestinationWebhookDisabled NotificationEventType = "destination.webhook.disabled"
 	NotificationEventTypeInstallationCreated        NotificationEventType = "installation.created"
 	NotificationEventTypeInstallationDeleted        NotificationEventType = "installation.deleted"
@@ -990,6 +994,8 @@ func (e NotificationEventType) Valid() bool {
 	case NotificationEventTypeConnectionError:
 		return true
 	case NotificationEventTypeConnectionRefreshed:
+		return true
+	case NotificationEventTypeConnectionUpdated:
 		return true
 	case NotificationEventTypeDestinationWebhookDisabled:
 		return true
@@ -4820,6 +4826,7 @@ const (
 	ListEventTopicRoutesParamsEventTypeConnectionDeleted          ListEventTopicRoutesParamsEventType = "connection.deleted"
 	ListEventTopicRoutesParamsEventTypeConnectionError            ListEventTopicRoutesParamsEventType = "connection.error"
 	ListEventTopicRoutesParamsEventTypeConnectionRefreshed        ListEventTopicRoutesParamsEventType = "connection.refreshed"
+	ListEventTopicRoutesParamsEventTypeConnectionUpdated          ListEventTopicRoutesParamsEventType = "connection.updated"
 	ListEventTopicRoutesParamsEventTypeDestinationWebhookDisabled ListEventTopicRoutesParamsEventType = "destination.webhook.disabled"
 	ListEventTopicRoutesParamsEventTypeInstallationCreated        ListEventTopicRoutesParamsEventType = "installation.created"
 	ListEventTopicRoutesParamsEventTypeInstallationDeleted        ListEventTopicRoutesParamsEventType = "installation.deleted"
@@ -4842,6 +4849,8 @@ func (e ListEventTopicRoutesParamsEventType) Valid() bool {
 	case ListEventTopicRoutesParamsEventTypeConnectionError:
 		return true
 	case ListEventTopicRoutesParamsEventTypeConnectionRefreshed:
+		return true
+	case ListEventTopicRoutesParamsEventTypeConnectionUpdated:
 		return true
 	case ListEventTopicRoutesParamsEventTypeDestinationWebhookDisabled:
 		return true
@@ -4874,6 +4883,7 @@ const (
 	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionDeleted          ListEventTopicRoutes200JSONResponseBodyEventType = "connection.deleted"
 	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionError            ListEventTopicRoutes200JSONResponseBodyEventType = "connection.error"
 	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionRefreshed        ListEventTopicRoutes200JSONResponseBodyEventType = "connection.refreshed"
+	ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionUpdated          ListEventTopicRoutes200JSONResponseBodyEventType = "connection.updated"
 	ListEventTopicRoutes200JSONResponseBodyEventTypeDestinationWebhookDisabled ListEventTopicRoutes200JSONResponseBodyEventType = "destination.webhook.disabled"
 	ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationCreated        ListEventTopicRoutes200JSONResponseBodyEventType = "installation.created"
 	ListEventTopicRoutes200JSONResponseBodyEventTypeInstallationDeleted        ListEventTopicRoutes200JSONResponseBodyEventType = "installation.deleted"
@@ -4896,6 +4906,8 @@ func (e ListEventTopicRoutes200JSONResponseBodyEventType) Valid() bool {
 	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionError:
 		return true
 	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionRefreshed:
+		return true
+	case ListEventTopicRoutes200JSONResponseBodyEventTypeConnectionUpdated:
 		return true
 	case ListEventTopicRoutes200JSONResponseBodyEventTypeDestinationWebhookDisabled:
 		return true
@@ -4928,6 +4940,7 @@ const (
 	CreateEventTopicRouteJSONBodyEventTypeConnectionDeleted          CreateEventTopicRouteJSONBodyEventType = "connection.deleted"
 	CreateEventTopicRouteJSONBodyEventTypeConnectionError            CreateEventTopicRouteJSONBodyEventType = "connection.error"
 	CreateEventTopicRouteJSONBodyEventTypeConnectionRefreshed        CreateEventTopicRouteJSONBodyEventType = "connection.refreshed"
+	CreateEventTopicRouteJSONBodyEventTypeConnectionUpdated          CreateEventTopicRouteJSONBodyEventType = "connection.updated"
 	CreateEventTopicRouteJSONBodyEventTypeDestinationWebhookDisabled CreateEventTopicRouteJSONBodyEventType = "destination.webhook.disabled"
 	CreateEventTopicRouteJSONBodyEventTypeInstallationCreated        CreateEventTopicRouteJSONBodyEventType = "installation.created"
 	CreateEventTopicRouteJSONBodyEventTypeInstallationDeleted        CreateEventTopicRouteJSONBodyEventType = "installation.deleted"
@@ -4950,6 +4963,8 @@ func (e CreateEventTopicRouteJSONBodyEventType) Valid() bool {
 	case CreateEventTopicRouteJSONBodyEventTypeConnectionError:
 		return true
 	case CreateEventTopicRouteJSONBodyEventTypeConnectionRefreshed:
+		return true
+	case CreateEventTopicRouteJSONBodyEventTypeConnectionUpdated:
 		return true
 	case CreateEventTopicRouteJSONBodyEventTypeDestinationWebhookDisabled:
 		return true
@@ -4982,6 +4997,7 @@ const (
 	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionDeleted          CreateEventTopicRoute201JSONResponseBodyEventType = "connection.deleted"
 	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionError            CreateEventTopicRoute201JSONResponseBodyEventType = "connection.error"
 	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionRefreshed        CreateEventTopicRoute201JSONResponseBodyEventType = "connection.refreshed"
+	CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionUpdated          CreateEventTopicRoute201JSONResponseBodyEventType = "connection.updated"
 	CreateEventTopicRoute201JSONResponseBodyEventTypeDestinationWebhookDisabled CreateEventTopicRoute201JSONResponseBodyEventType = "destination.webhook.disabled"
 	CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationCreated        CreateEventTopicRoute201JSONResponseBodyEventType = "installation.created"
 	CreateEventTopicRoute201JSONResponseBodyEventTypeInstallationDeleted        CreateEventTopicRoute201JSONResponseBodyEventType = "installation.deleted"
@@ -5004,6 +5020,8 @@ func (e CreateEventTopicRoute201JSONResponseBodyEventType) Valid() bool {
 	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionError:
 		return true
 	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionRefreshed:
+		return true
+	case CreateEventTopicRoute201JSONResponseBodyEventTypeConnectionUpdated:
 		return true
 	case CreateEventTopicRoute201JSONResponseBodyEventTypeDestinationWebhookDisabled:
 		return true

@@ -317,6 +317,102 @@ func (e CreateJWTKeyRequestAlgorithm) Valid() bool {
 	}
 }
 
+// Defines values for CustomAuthConnectRequestProviderMetadataSource.
+const (
+	CustomAuthConnectRequestProviderMetadataSourceInput    CustomAuthConnectRequestProviderMetadataSource = "input"
+	CustomAuthConnectRequestProviderMetadataSourceProvider CustomAuthConnectRequestProviderMetadataSource = "provider"
+	CustomAuthConnectRequestProviderMetadataSourceToken    CustomAuthConnectRequestProviderMetadataSource = "token"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnectRequestProviderMetadataSource enum.
+func (e CustomAuthConnectRequestProviderMetadataSource) Valid() bool {
+	switch e {
+	case CustomAuthConnectRequestProviderMetadataSourceInput:
+		return true
+	case CustomAuthConnectRequestProviderMetadataSourceProvider:
+		return true
+	case CustomAuthConnectRequestProviderMetadataSourceToken:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomAuthConnectResponse1ConnectionAuthScheme.
+const (
+	CustomAuthConnectResponse1ConnectionAuthSchemeApiKey                      CustomAuthConnectResponse1ConnectionAuthScheme = "apiKey"
+	CustomAuthConnectResponse1ConnectionAuthSchemeBasic                       CustomAuthConnectResponse1ConnectionAuthScheme = "basic"
+	CustomAuthConnectResponse1ConnectionAuthSchemeNone                        CustomAuthConnectResponse1ConnectionAuthScheme = "none"
+	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCode     CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/authorizationCode"
+	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCodePKCE CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/authorizationCodePKCE"
+	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2clientCredentials     CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/clientCredentials"
+	CustomAuthConnectResponse1ConnectionAuthSchemeOauth2password              CustomAuthConnectResponse1ConnectionAuthScheme = "oauth2/password"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnectResponse1ConnectionAuthScheme enum.
+func (e CustomAuthConnectResponse1ConnectionAuthScheme) Valid() bool {
+	switch e {
+	case CustomAuthConnectResponse1ConnectionAuthSchemeApiKey:
+		return true
+	case CustomAuthConnectResponse1ConnectionAuthSchemeBasic:
+		return true
+	case CustomAuthConnectResponse1ConnectionAuthSchemeNone:
+		return true
+	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCode:
+		return true
+	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2authorizationCodePKCE:
+		return true
+	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2clientCredentials:
+		return true
+	case CustomAuthConnectResponse1ConnectionAuthSchemeOauth2password:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomAuthConnectResponse1ConnectionProviderMetadataSource.
+const (
+	CustomAuthConnectResponse1ConnectionProviderMetadataSourceInput    CustomAuthConnectResponse1ConnectionProviderMetadataSource = "input"
+	CustomAuthConnectResponse1ConnectionProviderMetadataSourceProvider CustomAuthConnectResponse1ConnectionProviderMetadataSource = "provider"
+	CustomAuthConnectResponse1ConnectionProviderMetadataSourceToken    CustomAuthConnectResponse1ConnectionProviderMetadataSource = "token"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnectResponse1ConnectionProviderMetadataSource enum.
+func (e CustomAuthConnectResponse1ConnectionProviderMetadataSource) Valid() bool {
+	switch e {
+	case CustomAuthConnectResponse1ConnectionProviderMetadataSourceInput:
+		return true
+	case CustomAuthConnectResponse1ConnectionProviderMetadataSourceProvider:
+		return true
+	case CustomAuthConnectResponse1ConnectionProviderMetadataSourceToken:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomAuthConnectResponse1ConnectionStatus.
+const (
+	CustomAuthConnectResponse1ConnectionStatusBadCredentials CustomAuthConnectResponse1ConnectionStatus = "bad_credentials"
+	CustomAuthConnectResponse1ConnectionStatusCreated        CustomAuthConnectResponse1ConnectionStatus = "created"
+	CustomAuthConnectResponse1ConnectionStatusWorking        CustomAuthConnectResponse1ConnectionStatus = "working"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnectResponse1ConnectionStatus enum.
+func (e CustomAuthConnectResponse1ConnectionStatus) Valid() bool {
+	switch e {
+	case CustomAuthConnectResponse1ConnectionStatusBadCredentials:
+		return true
+	case CustomAuthConnectResponse1ConnectionStatusCreated:
+		return true
+	case CustomAuthConnectResponse1ConnectionStatusWorking:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GenerateConnectionRequestProviderMetadataSource.
 const (
 	GenerateConnectionRequestProviderMetadataSourceInput    GenerateConnectionRequestProviderMetadataSource = "input"
@@ -1340,6 +1436,102 @@ func (e UpdateConnectionRequestUpdateMask) Valid() bool {
 	case UpdateConnectionRequestUpdateMaskProviderMetadata:
 		return true
 	case UpdateConnectionRequestUpdateMaskProviderWorkspaceRef:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomAuthConnectJSONBodyProviderMetadataSource.
+const (
+	CustomAuthConnectJSONBodyProviderMetadataSourceInput    CustomAuthConnectJSONBodyProviderMetadataSource = "input"
+	CustomAuthConnectJSONBodyProviderMetadataSourceProvider CustomAuthConnectJSONBodyProviderMetadataSource = "provider"
+	CustomAuthConnectJSONBodyProviderMetadataSourceToken    CustomAuthConnectJSONBodyProviderMetadataSource = "token"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnectJSONBodyProviderMetadataSource enum.
+func (e CustomAuthConnectJSONBodyProviderMetadataSource) Valid() bool {
+	switch e {
+	case CustomAuthConnectJSONBodyProviderMetadataSourceInput:
+		return true
+	case CustomAuthConnectJSONBodyProviderMetadataSourceProvider:
+		return true
+	case CustomAuthConnectJSONBodyProviderMetadataSourceToken:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme.
+const (
+	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeApiKey                      CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "apiKey"
+	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeBasic                       CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "basic"
+	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeNone                        CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "none"
+	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCode     CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/authorizationCode"
+	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCodePKCE CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/authorizationCodePKCE"
+	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2clientCredentials     CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/clientCredentials"
+	CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2password              CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme = "oauth2/password"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme enum.
+func (e CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme) Valid() bool {
+	switch e {
+	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeApiKey:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeBasic:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeNone:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCode:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2authorizationCodePKCE:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2clientCredentials:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionAuthSchemeOauth2password:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource.
+const (
+	CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceInput    CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource = "input"
+	CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceProvider CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource = "provider"
+	CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceToken    CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource = "token"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource enum.
+func (e CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource) Valid() bool {
+	switch e {
+	case CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceInput:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceProvider:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSourceToken:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CustomAuthConnect200JSONResponseBody1ConnectionStatus.
+const (
+	CustomAuthConnect200JSONResponseBody1ConnectionStatusBadCredentials CustomAuthConnect200JSONResponseBody1ConnectionStatus = "bad_credentials"
+	CustomAuthConnect200JSONResponseBody1ConnectionStatusCreated        CustomAuthConnect200JSONResponseBody1ConnectionStatus = "created"
+	CustomAuthConnect200JSONResponseBody1ConnectionStatusWorking        CustomAuthConnect200JSONResponseBody1ConnectionStatus = "working"
+)
+
+// Valid indicates whether the value is a known member of the CustomAuthConnect200JSONResponseBody1ConnectionStatus enum.
+func (e CustomAuthConnect200JSONResponseBody1ConnectionStatus) Valid() bool {
+	switch e {
+	case CustomAuthConnect200JSONResponseBody1ConnectionStatusBadCredentials:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionStatusCreated:
+		return true
+	case CustomAuthConnect200JSONResponseBody1ConnectionStatusWorking:
 		return true
 	default:
 		return false
@@ -5156,6 +5348,48 @@ func (e ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed) Val
 	}
 }
 
+// Defines values for ListProviders200JSONResponseBodyCustomOptsInputsFieldType.
+const (
+	ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword ListProviders200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypePassword"
+	ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect   ListProviders200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeSelect"
+	ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText     ListProviders200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeText"
+)
+
+// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyCustomOptsInputsFieldType enum.
+func (e ListProviders200JSONResponseBodyCustomOptsInputsFieldType) Valid() bool {
+	switch e {
+	case ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword:
+		return true
+	case ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect:
+		return true
+	case ListProviders200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType.
+const (
+	ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypePassword"
+	ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect   ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeSelect"
+	ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText     ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeText"
+)
+
+// Valid indicates whether the value is a known member of the ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType enum.
+func (e ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType) Valid() bool {
+	switch e {
+	case ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword:
+		return true
+	case ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect:
+		return true
+	case ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType.
 const (
 	ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentTypeAccessTokenHeaderAttachment ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType = "accessTokenHeaderAttachment"
@@ -5255,6 +5489,48 @@ func (e GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed) Valid
 	case GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedPasswordField:
 		return true
 	case GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsedUsernameField:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProvider200JSONResponseBodyCustomOptsInputsFieldType.
+const (
+	GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword GetProvider200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypePassword"
+	GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect   GetProvider200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeSelect"
+	GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText     GetProvider200JSONResponseBodyCustomOptsInputsFieldType = "fieldTypeText"
+)
+
+// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyCustomOptsInputsFieldType enum.
+func (e GetProvider200JSONResponseBodyCustomOptsInputsFieldType) Valid() bool {
+	switch e {
+	case GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypePassword:
+		return true
+	case GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeSelect:
+		return true
+	case GetProvider200JSONResponseBodyCustomOptsInputsFieldTypeFieldTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType.
+const (
+	GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypePassword"
+	GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect   GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeSelect"
+	GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText     GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType = "fieldTypeText"
+)
+
+// Valid indicates whether the value is a known member of the GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType enum.
+func (e GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType) Valid() bool {
+	switch e {
+	case GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypePassword:
+		return true
+	case GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeSelect:
+		return true
+	case GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldTypeFieldTypeText:
 		return true
 	default:
 		return false
@@ -6022,6 +6298,215 @@ type CreateJWTKeyRequest struct {
 
 // CreateJWTKeyRequestAlgorithm The cryptographic JWT signing algorithm (currently only RS256 is supported)
 type CreateJWTKeyRequestAlgorithm string
+
+// CustomAuthConnectRequest Request body for the /custom-auth/connect endpoint. The first call supplies the flow inputs; subsequent calls supply sessionId and callbackParams to resume after a redirect.
+type CustomAuthConnectRequest struct {
+	// CallbackParams The query/body params the provider sent to the callback, forwarded to resume the flow.
+	CallbackParams *map[string]string `json:"callbackParams,omitempty"`
+
+	// ConsumerName The display name for the consumer. Defaults to consumerRef if not provided. Supplied on the first call; ignored on resume calls.
+	ConsumerName *string `json:"consumerName,omitempty"`
+
+	// ConsumerRef The ID that your app uses to identify the user whose SaaS credential will be used. Supplied on the first call; ignored on resume calls (the parked flow's identity is used).
+	ConsumerRef *string `json:"consumerRef,omitempty"`
+
+	// CustomAuth The consumer-supplied custom auth inputs (keyed by CustomAuthInput.name). Supplied on the first call (when sessionId is not present).
+	CustomAuth *map[string]interface{} `json:"customAuth,omitempty"`
+
+	// GroupName The display name for the group. Defaults to groupRef if not provided. Supplied on the first call; ignored on resume calls.
+	GroupName *string `json:"groupName,omitempty"`
+
+	// GroupRef Your application's identifier for the organization or workspace that this connection belongs to. Supplied on the first call; ignored on resume calls (the parked flow's identity is used).
+	GroupRef *string `json:"groupRef,omitempty"`
+
+	// ProjectIdOrName The Ampersand project ID or project name. Required on the first call.
+	ProjectIdOrName string `json:"projectIdOrName"`
+
+	// Provider The provider that this app connects to. Required on the first call (when sessionId is not present); ignored on resume calls. Conditional requirement is enforced at the application layer.
+	Provider *string `json:"provider,omitempty"`
+
+	// ProviderAppId ID of the provider app. If omitted, the default provider app set up on the Dashboard is assumed.
+	ProviderAppId *string `json:"providerAppId,omitempty"`
+
+	// ProviderMetadata Additional provider-specific metadata collected from the user.
+	ProviderMetadata *map[string]struct {
+		// DisplayName The human-readable name for the field
+		DisplayName *string `json:"displayName,omitempty"`
+
+		// Source The source of the metadata field
+		Source CustomAuthConnectRequestProviderMetadataSource `json:"source"`
+
+		// Value The value of the metadata field
+		Value string `json:"value"`
+	} `json:"providerMetadata,omitempty"`
+
+	// SessionId Identifies an in-progress flow to resume after a redirect. Returned in a prior redirect response. When present, provider and customAuth are not required.
+	SessionId *string `json:"sessionId,omitempty"`
+}
+
+// CustomAuthConnectRequestProviderMetadataSource The source of the metadata field
+type CustomAuthConnectRequestProviderMetadataSource string
+
+// CustomAuthConnectResponse Response from /custom-auth/connect. Exactly one of redirect or connection is set. A redirect means the client should open the URL and call again with sessionId + callbackParams; a connection means the flow is complete.
+type CustomAuthConnectResponse struct {
+	union json.RawMessage
+}
+
+// CustomAuthConnectResponse0 defines model for .
+type CustomAuthConnectResponse0 struct {
+	// Redirect Instructs the client to open a URL (e.g. in a popup) to continue a custom auth flow, then resume by calling /custom-auth/connect with the sessionId.
+	Redirect struct {
+		// SessionId The flow identifier to pass back to /custom-auth/connect once the provider redirects to the callback.
+		SessionId string `json:"sessionId"`
+
+		// Url The URL the client should open to continue the flow.
+		Url string `json:"url"`
+	} `json:"redirect"`
+}
+
+// CustomAuthConnectResponse1 defines model for .
+type CustomAuthConnectResponse1 struct {
+	Connection struct {
+		// ApiKey The API key used while making the connection.
+		ApiKey *string `json:"apiKey,omitempty"`
+
+		// AuthScheme The authentication scheme used for this connection.
+		AuthScheme CustomAuthConnectResponse1ConnectionAuthScheme `json:"authScheme"`
+		Consumer   struct {
+			// ConsumerName The name of the consumer.
+			ConsumerName string `json:"consumerName"`
+
+			// ConsumerRef The consumer reference.
+			ConsumerRef string `json:"consumerRef"`
+
+			// CreateTime The time the consumer was created.
+			CreateTime time.Time `json:"createTime"`
+
+			// ProjectId The Ampersand project ID.
+			ProjectId string `json:"projectId"`
+
+			// UpdateTime The time the consumer was last updated.
+			UpdateTime *time.Time `json:"updateTime,omitempty"`
+		} `json:"consumer"`
+
+		// CreateTime The time the connection was created.
+		CreateTime time.Time `json:"createTime"`
+		Group      struct {
+			// CreateTime The time the group was created.
+			CreateTime time.Time `json:"createTime"`
+
+			// GroupName The name of the user group that has access to this installation.
+			GroupName string `json:"groupName"`
+
+			// GroupRef The ID of the user group that has access to this installation.
+			GroupRef string `json:"groupRef"`
+
+			// ProjectId The Ampersand project ID.
+			ProjectId string `json:"projectId"`
+
+			// UpdateTime The time the group was last updated.
+			UpdateTime *time.Time `json:"updateTime,omitempty"`
+		} `json:"group"`
+
+		// Id The connection ID.
+		Id                      string `json:"id"`
+		Oauth2AuthorizationCode *struct {
+			// AccessToken The access token for the connection.
+			AccessToken *struct {
+				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
+				Token     string     `json:"token"`
+			} `json:"accessToken,omitempty"`
+
+			// RefreshToken The refresh token to use for the connection.
+			RefreshToken *struct {
+				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
+				Token     string     `json:"token"`
+			} `json:"refreshToken,omitempty"`
+
+			// Scopes The scopes for the tokens.
+			Scopes *[]string `json:"scopes,omitempty"`
+		} `json:"oauth2AuthorizationCode,omitempty"`
+
+		// ProjectId The Ampersand project ID.
+		ProjectId string `json:"projectId"`
+
+		// Provider The SaaS provider that this Connection is for.
+		Provider    string `json:"provider"`
+		ProviderApp *struct {
+			// ClientId The OAuth client ID for this app.
+			ClientId string `json:"clientId"`
+
+			// CreateTime The time the provider app was created.
+			CreateTime time.Time `json:"createTime"`
+
+			// ExternalRef The ID used by the provider to identify the app (optional).
+			ExternalRef *string `json:"externalRef,omitempty"`
+
+			// Id The provider app ID.
+			Id string `json:"id"`
+
+			// Metadata Provider-specific configuration that extends the standard OAuth flow.
+			Metadata *struct {
+				// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
+				AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
+
+				// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
+				ProviderParams *map[string]string `json:"providerParams,omitempty"`
+			} `json:"metadata,omitempty"`
+
+			// ProjectId The Ampersand project ID.
+			ProjectId string `json:"projectId"`
+
+			// Provider The SaaS provider that this app connects to.
+			Provider string `json:"provider"`
+
+			// Scopes The OAuth scopes for this app.
+			Scopes *[]string `json:"scopes,omitempty"`
+
+			// UpdateTime The time the provider app was updated.
+			UpdateTime *time.Time `json:"updateTime,omitempty"`
+		} `json:"providerApp,omitempty"`
+
+		// ProviderConsumerRef If available, the ID that Salesforce/Hubspot uses to identify this user (e.g. Salesforce has IDs in the form of https://login.salesforce.com/id/00D4x0000019CQTEA2/0054x000000orJ4AA)
+		ProviderConsumerRef *string `json:"providerConsumerRef,omitempty"`
+		ProviderMetadata    *map[string]struct {
+			// DisplayName The human-readable name for the field
+			DisplayName *string `json:"displayName,omitempty"`
+
+			// Source The source of the metadata field
+			Source CustomAuthConnectResponse1ConnectionProviderMetadataSource `json:"source"`
+
+			// Value The value of the metadata field
+			Value string `json:"value"`
+		} `json:"providerMetadata,omitempty"`
+
+		// ProviderWorkspaceRef If available, the identifier for the provider workspace (e.g. the Salesforce subdomain)
+		ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
+
+		// Status The status of the connection.
+		// - `created`: The connection has just been created or the access token was just refreshed.
+		// - `working`: The connection has successfully been used to make a request.
+		// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
+		Status CustomAuthConnectResponse1ConnectionStatus `json:"status"`
+
+		// UpdateTime The time the connection was last updated.
+		UpdateTime *time.Time `json:"updateTime,omitempty"`
+	} `json:"connection"`
+}
+
+// CustomAuthConnectResponse1ConnectionAuthScheme The authentication scheme used for this connection.
+type CustomAuthConnectResponse1ConnectionAuthScheme string
+
+// CustomAuthConnectResponse1ConnectionProviderMetadataSource The source of the metadata field
+type CustomAuthConnectResponse1ConnectionProviderMetadataSource string
+
+// CustomAuthConnectResponse1ConnectionStatus The status of the connection.
+// - `created`: The connection has just been created or the access token was just refreshed.
+// - `working`: The connection has successfully been used to make a request.
+// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
+type CustomAuthConnectResponse1ConnectionStatus string
 
 // Destination defines model for Destination.
 type Destination struct {
@@ -7639,6 +8124,15 @@ type ProviderMetadataInfo struct {
 // ProviderMetadataInfoSource The source of the metadata field
 type ProviderMetadataInfoSource string
 
+// RedirectResponse Instructs the client to open a URL (e.g. in a popup) to continue a custom auth flow, then resume by calling /custom-auth/connect with the sessionId.
+type RedirectResponse struct {
+	// SessionId The flow identifier to pass back to /custom-auth/connect once the provider redirects to the callback.
+	SessionId string `json:"sessionId"`
+
+	// Url The URL the client should open to continue the flow.
+	Url string `json:"url"`
+}
+
 // Revision defines model for Revision.
 type Revision struct {
 	Content struct {
@@ -8187,6 +8681,212 @@ type ClaimDomainJSONBody struct {
 
 	// ParentType Type of the parent entity
 	ParentType string `json:"parentType"`
+}
+
+// CustomAuthConnectJSONBody defines parameters for CustomAuthConnect.
+type CustomAuthConnectJSONBody struct {
+	// CallbackParams The query/body params the provider sent to the callback, forwarded to resume the flow.
+	CallbackParams *map[string]string `json:"callbackParams,omitempty"`
+
+	// ConsumerName The display name for the consumer. Defaults to consumerRef if not provided. Supplied on the first call; ignored on resume calls.
+	ConsumerName *string `json:"consumerName,omitempty"`
+
+	// ConsumerRef The ID that your app uses to identify the user whose SaaS credential will be used. Supplied on the first call; ignored on resume calls (the parked flow's identity is used).
+	ConsumerRef *string `json:"consumerRef,omitempty"`
+
+	// CustomAuth The consumer-supplied custom auth inputs (keyed by CustomAuthInput.name). Supplied on the first call (when sessionId is not present).
+	CustomAuth *map[string]interface{} `json:"customAuth,omitempty"`
+
+	// GroupName The display name for the group. Defaults to groupRef if not provided. Supplied on the first call; ignored on resume calls.
+	GroupName *string `json:"groupName,omitempty"`
+
+	// GroupRef Your application's identifier for the organization or workspace that this connection belongs to. Supplied on the first call; ignored on resume calls (the parked flow's identity is used).
+	GroupRef *string `json:"groupRef,omitempty"`
+
+	// ProjectIdOrName The Ampersand project ID or project name. Required on the first call.
+	ProjectIdOrName string `json:"projectIdOrName"`
+
+	// Provider The provider that this app connects to. Required on the first call (when sessionId is not present); ignored on resume calls. Conditional requirement is enforced at the application layer.
+	Provider *string `json:"provider,omitempty"`
+
+	// ProviderAppId ID of the provider app. If omitted, the default provider app set up on the Dashboard is assumed.
+	ProviderAppId *string `json:"providerAppId,omitempty"`
+
+	// ProviderMetadata Additional provider-specific metadata collected from the user.
+	ProviderMetadata *map[string]struct {
+		// DisplayName The human-readable name for the field
+		DisplayName *string `json:"displayName,omitempty"`
+
+		// Source The source of the metadata field
+		Source CustomAuthConnectJSONBodyProviderMetadataSource `json:"source"`
+
+		// Value The value of the metadata field
+		Value string `json:"value"`
+	} `json:"providerMetadata,omitempty"`
+
+	// SessionId Identifies an in-progress flow to resume after a redirect. Returned in a prior redirect response. When present, provider and customAuth are not required.
+	SessionId *string `json:"sessionId,omitempty"`
+}
+
+// CustomAuthConnectJSONBodyProviderMetadataSource defines parameters for CustomAuthConnect.
+type CustomAuthConnectJSONBodyProviderMetadataSource string
+
+// CustomAuthConnect200JSONResponseBody0 defines parameters for CustomAuthConnect.
+type CustomAuthConnect200JSONResponseBody0 struct {
+	// Redirect Instructs the client to open a URL (e.g. in a popup) to continue a custom auth flow, then resume by calling /custom-auth/connect with the sessionId.
+	Redirect struct {
+		// SessionId The flow identifier to pass back to /custom-auth/connect once the provider redirects to the callback.
+		SessionId string `json:"sessionId"`
+
+		// Url The URL the client should open to continue the flow.
+		Url string `json:"url"`
+	} `json:"redirect"`
+}
+
+// CustomAuthConnect200JSONResponseBody1 defines parameters for CustomAuthConnect.
+type CustomAuthConnect200JSONResponseBody1 struct {
+	Connection struct {
+		// ApiKey The API key used while making the connection.
+		ApiKey *string `json:"apiKey,omitempty"`
+
+		// AuthScheme The authentication scheme used for this connection.
+		AuthScheme CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme `json:"authScheme"`
+		Consumer   struct {
+			// ConsumerName The name of the consumer.
+			ConsumerName string `json:"consumerName"`
+
+			// ConsumerRef The consumer reference.
+			ConsumerRef string `json:"consumerRef"`
+
+			// CreateTime The time the consumer was created.
+			CreateTime time.Time `json:"createTime"`
+
+			// ProjectId The Ampersand project ID.
+			ProjectId string `json:"projectId"`
+
+			// UpdateTime The time the consumer was last updated.
+			UpdateTime *time.Time `json:"updateTime,omitempty"`
+		} `json:"consumer"`
+
+		// CreateTime The time the connection was created.
+		CreateTime time.Time `json:"createTime"`
+		Group      struct {
+			// CreateTime The time the group was created.
+			CreateTime time.Time `json:"createTime"`
+
+			// GroupName The name of the user group that has access to this installation.
+			GroupName string `json:"groupName"`
+
+			// GroupRef The ID of the user group that has access to this installation.
+			GroupRef string `json:"groupRef"`
+
+			// ProjectId The Ampersand project ID.
+			ProjectId string `json:"projectId"`
+
+			// UpdateTime The time the group was last updated.
+			UpdateTime *time.Time `json:"updateTime,omitempty"`
+		} `json:"group"`
+
+		// Id The connection ID.
+		Id                      string `json:"id"`
+		Oauth2AuthorizationCode *struct {
+			// AccessToken The access token for the connection.
+			AccessToken *struct {
+				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
+				Token     string     `json:"token"`
+			} `json:"accessToken,omitempty"`
+
+			// RefreshToken The refresh token to use for the connection.
+			RefreshToken *struct {
+				ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+				IssuedAt  *time.Time `json:"issuedAt,omitempty"`
+				Token     string     `json:"token"`
+			} `json:"refreshToken,omitempty"`
+
+			// Scopes The scopes for the tokens.
+			Scopes *[]string `json:"scopes,omitempty"`
+		} `json:"oauth2AuthorizationCode,omitempty"`
+
+		// ProjectId The Ampersand project ID.
+		ProjectId string `json:"projectId"`
+
+		// Provider The SaaS provider that this Connection is for.
+		Provider    string `json:"provider"`
+		ProviderApp *struct {
+			// ClientId The OAuth client ID for this app.
+			ClientId string `json:"clientId"`
+
+			// CreateTime The time the provider app was created.
+			CreateTime time.Time `json:"createTime"`
+
+			// ExternalRef The ID used by the provider to identify the app (optional).
+			ExternalRef *string `json:"externalRef,omitempty"`
+
+			// Id The provider app ID.
+			Id string `json:"id"`
+
+			// Metadata Provider-specific configuration that extends the standard OAuth flow.
+			Metadata *struct {
+				// AuthQueryParams Additional query parameters to include in the OAuth authorization URL (e.g., optional_scope for HubSpot).
+				AuthQueryParams *map[string][]string `json:"authQueryParams,omitempty"`
+
+				// ProviderParams Provider-specific string values keyed by names (e.g., packageInstallURL for Salesforce, gcpProjectId and gcpPubSubTopicName for Gmail).
+				ProviderParams *map[string]string `json:"providerParams,omitempty"`
+			} `json:"metadata,omitempty"`
+
+			// ProjectId The Ampersand project ID.
+			ProjectId string `json:"projectId"`
+
+			// Provider The SaaS provider that this app connects to.
+			Provider string `json:"provider"`
+
+			// Scopes The OAuth scopes for this app.
+			Scopes *[]string `json:"scopes,omitempty"`
+
+			// UpdateTime The time the provider app was updated.
+			UpdateTime *time.Time `json:"updateTime,omitempty"`
+		} `json:"providerApp,omitempty"`
+
+		// ProviderConsumerRef If available, the ID that Salesforce/Hubspot uses to identify this user (e.g. Salesforce has IDs in the form of https://login.salesforce.com/id/00D4x0000019CQTEA2/0054x000000orJ4AA)
+		ProviderConsumerRef *string `json:"providerConsumerRef,omitempty"`
+		ProviderMetadata    *map[string]struct {
+			// DisplayName The human-readable name for the field
+			DisplayName *string `json:"displayName,omitempty"`
+
+			// Source The source of the metadata field
+			Source CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource `json:"source"`
+
+			// Value The value of the metadata field
+			Value string `json:"value"`
+		} `json:"providerMetadata,omitempty"`
+
+		// ProviderWorkspaceRef If available, the identifier for the provider workspace (e.g. the Salesforce subdomain)
+		ProviderWorkspaceRef *string `json:"providerWorkspaceRef,omitempty"`
+
+		// Status The status of the connection.
+		// - `created`: The connection has just been created or the access token was just refreshed.
+		// - `working`: The connection has successfully been used to make a request.
+		// - `bad_credentials`: The connection encountered credential-related issues when making a request, or when attempting to refresh the access token.
+		Status CustomAuthConnect200JSONResponseBody1ConnectionStatus `json:"status"`
+
+		// UpdateTime The time the connection was last updated.
+		UpdateTime *time.Time `json:"updateTime,omitempty"`
+	} `json:"connection"`
+}
+
+// CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme defines parameters for CustomAuthConnect.
+type CustomAuthConnect200JSONResponseBody1ConnectionAuthScheme string
+
+// CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource defines parameters for CustomAuthConnect.
+type CustomAuthConnect200JSONResponseBody1ConnectionProviderMetadataSource string
+
+// CustomAuthConnect200JSONResponseBody1ConnectionStatus defines parameters for CustomAuthConnect.
+type CustomAuthConnect200JSONResponseBody1ConnectionStatus string
+
+// CustomAuthConnect200JSONResponseBody defines parameters for CustomAuthConnect.
+type CustomAuthConnect200JSONResponseBody struct {
+	union json.RawMessage
 }
 
 // AcceptInviteJSONBody defines parameters for AcceptInvite.
@@ -10545,6 +11245,12 @@ type ListProviders200JSONResponseBodyAuthType string
 // ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed defines parameters for ListProviders.
 type ListProviders200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed string
 
+// ListProviders200JSONResponseBodyCustomOptsInputsFieldType defines parameters for ListProviders.
+type ListProviders200JSONResponseBodyCustomOptsInputsFieldType string
+
+// ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType defines parameters for ListProviders.
+type ListProviders200JSONResponseBodyCustomOptsProviderInputsFieldType string
+
 // ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType defines parameters for ListProviders.
 type ListProviders200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType string
 
@@ -10560,6 +11266,12 @@ type GetProvider200JSONResponseBodyAuthType string
 // GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed defines parameters for GetProvider.
 type GetProvider200JSONResponseBodyBasicOptsApiKeyAsBasicOptsFieldUsed string
 
+// GetProvider200JSONResponseBodyCustomOptsInputsFieldType defines parameters for GetProvider.
+type GetProvider200JSONResponseBodyCustomOptsInputsFieldType string
+
+// GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType defines parameters for GetProvider.
+type GetProvider200JSONResponseBodyCustomOptsProviderInputsFieldType string
+
 // GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType defines parameters for GetProvider.
 type GetProvider200JSONResponseBodyOauth2OptsAccessTokenOptsAttachmentType string
 
@@ -10571,6 +11283,9 @@ type CreateBillingAccountSessionJSONRequestBody CreateBillingAccountSessionJSONB
 
 // ClaimDomainJSONRequestBody defines body for ClaimDomain for application/json ContentType.
 type ClaimDomainJSONRequestBody ClaimDomainJSONBody
+
+// CustomAuthConnectJSONRequestBody defines body for CustomAuthConnect for application/json ContentType.
+type CustomAuthConnectJSONRequestBody CustomAuthConnectJSONBody
 
 // AcceptInviteJSONRequestBody defines body for AcceptInvite for application/json ContentType.
 type AcceptInviteJSONRequestBody AcceptInviteJSONBody
@@ -11050,6 +11765,68 @@ func (a ListOperationLogs200JSONResponseBody_Message) MarshalJSON() ([]byte, err
 	return json.Marshal(object)
 }
 
+// AsCustomAuthConnectResponse0 returns the union data inside the CustomAuthConnectResponse as a CustomAuthConnectResponse0
+func (t CustomAuthConnectResponse) AsCustomAuthConnectResponse0() (CustomAuthConnectResponse0, error) {
+	var body CustomAuthConnectResponse0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCustomAuthConnectResponse0 overwrites any union data inside the CustomAuthConnectResponse as the provided CustomAuthConnectResponse0
+func (t *CustomAuthConnectResponse) FromCustomAuthConnectResponse0(v CustomAuthConnectResponse0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCustomAuthConnectResponse0 performs a merge with any union data inside the CustomAuthConnectResponse, using the provided CustomAuthConnectResponse0
+func (t *CustomAuthConnectResponse) MergeCustomAuthConnectResponse0(v CustomAuthConnectResponse0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCustomAuthConnectResponse1 returns the union data inside the CustomAuthConnectResponse as a CustomAuthConnectResponse1
+func (t CustomAuthConnectResponse) AsCustomAuthConnectResponse1() (CustomAuthConnectResponse1, error) {
+	var body CustomAuthConnectResponse1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCustomAuthConnectResponse1 overwrites any union data inside the CustomAuthConnectResponse as the provided CustomAuthConnectResponse1
+func (t *CustomAuthConnectResponse) FromCustomAuthConnectResponse1(v CustomAuthConnectResponse1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCustomAuthConnectResponse1 performs a merge with any union data inside the CustomAuthConnectResponse, using the provided CustomAuthConnectResponse1
+func (t *CustomAuthConnectResponse) MergeCustomAuthConnectResponse1(v CustomAuthConnectResponse1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CustomAuthConnectResponse) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CustomAuthConnectResponse) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsHydratedRevisionContentReadObjectsAllFields0 returns the union data inside the HydratedRevision_Content_Read_Objects_AllFields_Item as a HydratedRevisionContentReadObjectsAllFields0
 func (t HydratedRevision_Content_Read_Objects_AllFields_Item) AsHydratedRevisionContentReadObjectsAllFields0() (HydratedRevisionContentReadObjectsAllFields0, error) {
 	var body HydratedRevisionContentReadObjectsAllFields0
@@ -11480,6 +12257,68 @@ func (t Revision_Content_Read_Objects_RequiredFields_Item) MarshalJSON() ([]byte
 }
 
 func (t *Revision_Content_Read_Objects_RequiredFields_Item) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCustomAuthConnect200JSONResponseBody0 returns the union data inside the CustomAuthConnect200JSONResponseBody as a CustomAuthConnect200JSONResponseBody0
+func (t CustomAuthConnect200JSONResponseBody) AsCustomAuthConnect200JSONResponseBody0() (CustomAuthConnect200JSONResponseBody0, error) {
+	var body CustomAuthConnect200JSONResponseBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCustomAuthConnect200JSONResponseBody0 overwrites any union data inside the CustomAuthConnect200JSONResponseBody as the provided CustomAuthConnect200JSONResponseBody0
+func (t *CustomAuthConnect200JSONResponseBody) FromCustomAuthConnect200JSONResponseBody0(v CustomAuthConnect200JSONResponseBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCustomAuthConnect200JSONResponseBody0 performs a merge with any union data inside the CustomAuthConnect200JSONResponseBody, using the provided CustomAuthConnect200JSONResponseBody0
+func (t *CustomAuthConnect200JSONResponseBody) MergeCustomAuthConnect200JSONResponseBody0(v CustomAuthConnect200JSONResponseBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCustomAuthConnect200JSONResponseBody1 returns the union data inside the CustomAuthConnect200JSONResponseBody as a CustomAuthConnect200JSONResponseBody1
+func (t CustomAuthConnect200JSONResponseBody) AsCustomAuthConnect200JSONResponseBody1() (CustomAuthConnect200JSONResponseBody1, error) {
+	var body CustomAuthConnect200JSONResponseBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCustomAuthConnect200JSONResponseBody1 overwrites any union data inside the CustomAuthConnect200JSONResponseBody as the provided CustomAuthConnect200JSONResponseBody1
+func (t *CustomAuthConnect200JSONResponseBody) FromCustomAuthConnect200JSONResponseBody1(v CustomAuthConnect200JSONResponseBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCustomAuthConnect200JSONResponseBody1 performs a merge with any union data inside the CustomAuthConnect200JSONResponseBody, using the provided CustomAuthConnect200JSONResponseBody1
+func (t *CustomAuthConnect200JSONResponseBody) MergeCustomAuthConnect200JSONResponseBody1(v CustomAuthConnect200JSONResponseBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CustomAuthConnect200JSONResponseBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CustomAuthConnect200JSONResponseBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

@@ -1254,7 +1254,10 @@ type BaseSubscribeConfigObject struct {
 	// ObjectName The name of the object to subscribe to.
 	ObjectName  string             `json:"objectName" validate:"required"`
 	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
-	UpdateEvent *ConfigUpdateEvent `json:"updateEvent,omitempty"`
+
+	// SalesforceQuotaOptimization Salesforce only. Reduces Salesforce API quota consumption for update events by filtering irrelevant change events at the source: Ampersand creates a checkbox field on the object and an Apex trigger that sets it when a watched field changes, then only delivers update events where the checkbox is set. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`.
+	SalesforceQuotaOptimization *SalesforceQuotaOptimizationConfig `json:"salesforceQuotaOptimization,omitempty"`
+	UpdateEvent                 *ConfigUpdateEvent                 `json:"updateEvent,omitempty"`
 }
 
 // BaseWriteConfig defines model for BaseWriteConfig.
@@ -3152,6 +3155,12 @@ type Revision struct {
 	SpecVersion string `json:"specVersion"`
 }
 
+// SalesforceQuotaOptimizationConfig Salesforce only. Reduces Salesforce API quota consumption for update events by filtering irrelevant change events at the source: Ampersand creates a checkbox field on the object and an Apex trigger that sets it when a watched field changes, then only delivers update events where the checkbox is set. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`.
+type SalesforceQuotaOptimizationConfig struct {
+	// Enabled Whether quota optimization is enabled for this object.
+	Enabled bool `json:"enabled"`
+}
+
 // SearchOperators defines model for SearchOperators.
 type SearchOperators struct {
 	Equals bool `json:"equals"`
@@ -3217,7 +3226,10 @@ type SubscribeConfigObject struct {
 	// ObjectName The name of the object to subscribe to.
 	ObjectName  string             `json:"objectName" validate:"required"`
 	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
-	UpdateEvent *ConfigUpdateEvent `json:"updateEvent,omitempty"`
+
+	// SalesforceQuotaOptimization Salesforce only. Reduces Salesforce API quota consumption for update events by filtering irrelevant change events at the source: Ampersand creates a checkbox field on the object and an Apex trigger that sets it when a watched field changes, then only delivers update events where the checkbox is set. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`.
+	SalesforceQuotaOptimization *SalesforceQuotaOptimizationConfig `json:"salesforceQuotaOptimization,omitempty"`
+	UpdateEvent                 *ConfigUpdateEvent                 `json:"updateEvent,omitempty"`
 }
 
 // SubscribeRequirements Declares which auxiliary steps a provider requires to support subscriptions, beyond the per-object subscribe call itself.

@@ -915,6 +915,7 @@ func (e GetConnectionParamsRefresh) Valid() bool {
 const (
 	Kinesis CreateDestinationJSONBodyType = "kinesis"
 	S3      CreateDestinationJSONBodyType = "s3"
+	Slack   CreateDestinationJSONBodyType = "slack"
 	Webhook CreateDestinationJSONBodyType = "webhook"
 )
 
@@ -924,6 +925,8 @@ func (e CreateDestinationJSONBodyType) Valid() bool {
 	case Kinesis:
 		return true
 	case S3:
+		return true
+	case Slack:
 		return true
 	case Webhook:
 		return true
@@ -3710,7 +3713,7 @@ type CreateDestinationJSONBody struct {
 		// StreamName The name of the Kinesis stream to send events to.
 		StreamName string `json:"streamName,omitempty"`
 
-		// Url Webhook URL, must start with "https://".
+		// Url Webhook URL, must start with "https://". For `slack` destinations, this is the Slack incoming webhook URL.
 		Url *string `json:"url,omitempty"`
 	} `json:"metadata"`
 
@@ -3729,7 +3732,7 @@ type CreateDestinationJSONBody struct {
 		AwsSessionToken string `json:"awsSessionToken,omitempty"`
 	} `json:"secrets,omitempty"`
 
-	// Type The type of the destination.
+	// Type The type of the destination. For `slack`, set `metadata.url` to a Slack incoming webhook URL.
 	Type CreateDestinationJSONBodyType `json:"type"`
 }
 

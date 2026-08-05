@@ -1258,9 +1258,9 @@ type BaseSubscribeConfigObject struct {
 	ObjectName  string             `json:"objectName" validate:"required"`
 	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
 
-	// SalesforceQuotaOptimization Salesforce only. Reduces Salesforce API quota consumption for update events by filtering irrelevant change events at the source: Ampersand creates a checkbox field on the object and an Apex trigger that sets it when a watched field changes, then only delivers update events where the checkbox is set. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`.
-	SalesforceQuotaOptimization *SalesforceQuotaOptimizationConfig `json:"salesforceQuotaOptimization,omitempty"`
-	UpdateEvent                 *ConfigUpdateEvent                 `json:"updateEvent,omitempty"`
+	// ProviderOptions Subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected.
+	ProviderOptions *SubscribeProviderOptions `json:"providerOptions,omitempty"`
+	UpdateEvent     *ConfigUpdateEvent        `json:"updateEvent,omitempty"`
 }
 
 // BaseWriteConfig defines model for BaseWriteConfig.
@@ -3077,6 +3077,12 @@ type ProviderMetadataInfo struct {
 // ProviderMetadataInfoSource The source of the metadata field
 type ProviderMetadataInfoSource string
 
+// QuotaOptimizationConfig Reduces API quota consumption for update events by filtering irrelevant change events at the source, so only updates that affect watched fields are delivered. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`. Currently supported for Salesforce.
+type QuotaOptimizationConfig struct {
+	// Enabled Whether quota optimization is enabled for this object.
+	Enabled bool `json:"enabled"`
+}
+
 // ReadConfig defines model for ReadConfig.
 type ReadConfig struct {
 	Objects map[string]ReadConfigObject `json:"objects"`
@@ -3158,12 +3164,6 @@ type Revision struct {
 	SpecVersion string `json:"specVersion"`
 }
 
-// SalesforceQuotaOptimizationConfig Salesforce only. Reduces Salesforce API quota consumption for update events by filtering irrelevant change events at the source: Ampersand creates a checkbox field on the object and an Apex trigger that sets it when a watched field changes, then only delivers update events where the checkbox is set. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`.
-type SalesforceQuotaOptimizationConfig struct {
-	// Enabled Whether quota optimization is enabled for this object.
-	Enabled bool `json:"enabled"`
-}
-
 // SearchOperators defines model for SearchOperators.
 type SearchOperators struct {
 	Equals bool `json:"equals"`
@@ -3230,9 +3230,15 @@ type SubscribeConfigObject struct {
 	ObjectName  string             `json:"objectName" validate:"required"`
 	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
 
-	// SalesforceQuotaOptimization Salesforce only. Reduces Salesforce API quota consumption for update events by filtering irrelevant change events at the source: Ampersand creates a checkbox field on the object and an Apex trigger that sets it when a watched field changes, then only delivers update events where the checkbox is set. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`.
-	SalesforceQuotaOptimization *SalesforceQuotaOptimizationConfig `json:"salesforceQuotaOptimization,omitempty"`
-	UpdateEvent                 *ConfigUpdateEvent                 `json:"updateEvent,omitempty"`
+	// ProviderOptions Subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected.
+	ProviderOptions *SubscribeProviderOptions `json:"providerOptions,omitempty"`
+	UpdateEvent     *ConfigUpdateEvent        `json:"updateEvent,omitempty"`
+}
+
+// SubscribeProviderOptions Subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected.
+type SubscribeProviderOptions struct {
+	// QuotaOptimization Reduces API quota consumption for update events by filtering irrelevant change events at the source, so only updates that affect watched fields are delivered. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`. Currently supported for Salesforce.
+	QuotaOptimization *QuotaOptimizationConfig `json:"quotaOptimization,omitempty"`
 }
 
 // SubscribeRequirements Declares which auxiliary steps a provider requires to support subscriptions, beyond the per-object subscribe call itself.

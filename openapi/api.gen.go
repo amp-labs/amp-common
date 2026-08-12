@@ -2360,7 +2360,7 @@ type IntegrationObject struct {
 	Delivery    *Delivery `json:"delivery,omitempty"`
 	Destination string    `json:"destination"`
 
-	// Enabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
+	// Enabled If set to `always`, Ampersand reads this object for every installation even if the customer never selects it (or it isn't present) in the installation config.
 	Enabled IntegrationObjectEnabled `json:"enabled,omitempty"`
 
 	// MapToDisplayName A display name to map to.
@@ -2375,7 +2375,7 @@ type IntegrationObject struct {
 	Schedule           string                    `json:"schedule"`
 }
 
-// IntegrationObjectEnabled If set to `always`, the integration will automatically install upon user connection and skip the user field selection step.
+// IntegrationObjectEnabled If set to `always`, Ampersand reads this object for every installation even if the customer never selects it (or it isn't present) in the installation config.
 type IntegrationObjectEnabled string
 
 // IntegrationProxy defines model for IntegrationProxy.

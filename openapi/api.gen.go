@@ -1849,6 +1849,9 @@ type Destination struct {
 		// AccountIdentifier The Snowflake account identifier for the snowflake destination
 		AccountIdentifier *string `json:"accountIdentifier,omitempty"`
 
+		// BatchSize For warehouse destinations, rows to buffer before flushing a batch (default 1000)
+		BatchSize *int `json:"batchSize,omitempty"`
+
 		// Bucket The name of the S3 bucket
 		Bucket *string `json:"bucket,omitempty"`
 
@@ -1881,6 +1884,9 @@ type Destination struct {
 
 		// KeyTemplate JMESPath template for generating S3 object keys
 		KeyTemplate *string `json:"keyTemplate,omitempty"`
+
+		// MaxWaitSecs For warehouse destinations, max seconds before flushing a batch (default 30)
+		MaxWaitSecs *int `json:"maxWaitSecs,omitempty"`
 
 		// PartitionKeyTemplate Template for generating partition keys
 		PartitionKeyTemplate *string `json:"partitionKeyTemplate,omitempty"`
@@ -1955,6 +1961,9 @@ type DestinationWithSecrets struct {
 		// AccountIdentifier The Snowflake account identifier for the snowflake destination
 		AccountIdentifier *string `json:"accountIdentifier,omitempty"`
 
+		// BatchSize For warehouse destinations, rows to buffer before flushing a batch (default 1000)
+		BatchSize *int `json:"batchSize,omitempty"`
+
 		// Bucket The name of the S3 bucket
 		Bucket *string `json:"bucket,omitempty"`
 
@@ -1987,6 +1996,9 @@ type DestinationWithSecrets struct {
 
 		// KeyTemplate JMESPath template for generating S3 object keys
 		KeyTemplate *string `json:"keyTemplate,omitempty"`
+
+		// MaxWaitSecs For warehouse destinations, max seconds before flushing a batch (default 30)
+		MaxWaitSecs *int `json:"maxWaitSecs,omitempty"`
 
 		// PartitionKeyTemplate Template for generating partition keys
 		PartitionKeyTemplate *string `json:"partitionKeyTemplate,omitempty"`
@@ -3860,6 +3872,9 @@ type CreateDestinationJSONBody struct {
 		// AccountIdentifier The Snowflake account identifier for the `snowflake` destination.
 		AccountIdentifier string `json:"accountIdentifier,omitempty"`
 
+		// BatchSize For warehouse destinations (`clickhouse`, `snowflake`, `bigquery`, `redshift`), the number of rows to buffer before flushing a batch. Defaults to 1000.
+		BatchSize int `json:"batchSize,omitempty"`
+
 		// Bucket The name of the S3 bucket to write objects to.
 		Bucket string `json:"bucket,omitempty"`
 
@@ -3895,6 +3910,9 @@ type CreateDestinationJSONBody struct {
 
 		// KeyTemplate The template for the S3 object key to use when writing objects (a JMESPath template). If omitted, the key defaults to the message timestamp followed by the message ID.
 		KeyTemplate string `json:"keyTemplate,omitempty"`
+
+		// MaxWaitSecs For warehouse destinations, the maximum number of seconds to wait before flushing a batch (whichever comes first with `batchSize`). Defaults to 30.
+		MaxWaitSecs int `json:"maxWaitSecs,omitempty"`
 
 		// PartitionKeyTemplate The template for the partition key to use when sending events to Kinesis (a JMESPath template)
 		PartitionKeyTemplate string `json:"partitionKeyTemplate,omitempty"`
@@ -4007,6 +4025,9 @@ type UpdateDestinationJSONBody struct {
 			// AccountIdentifier The Snowflake account identifier for the `snowflake` destination.
 			AccountIdentifier *string `json:"accountIdentifier,omitempty"`
 
+			// BatchSize For warehouse destinations, rows to buffer before flushing a batch (default 1000).
+			BatchSize *int `json:"batchSize,omitempty"`
+
 			// Bucket The name of the S3 bucket to write objects to.
 			Bucket *string `json:"bucket,omitempty"`
 
@@ -4042,6 +4063,9 @@ type UpdateDestinationJSONBody struct {
 
 			// KeyTemplate The template for the S3 object key to use when writing objects (a JMESPath template). If omitted, the key defaults to the message timestamp followed by the message ID.
 			KeyTemplate *string `json:"keyTemplate,omitempty"`
+
+			// MaxWaitSecs For warehouse destinations, max seconds before flushing a batch (default 30).
+			MaxWaitSecs *int `json:"maxWaitSecs,omitempty"`
 
 			// PartitionKeyTemplate The template for the partition key to use when sending events to Kinesis (a JMESPath template)
 			PartitionKeyTemplate *string `json:"partitionKeyTemplate,omitempty"`
@@ -4161,6 +4185,8 @@ type UpdateDestinationJSONBody struct {
 	// - metadata.detailType
 	// - metadata.topicId
 	// - metadata.routingKey
+	// - metadata.batchSize
+	// - metadata.maxWaitSecs
 	// - secrets.awsKeyId
 	// - secrets.awsSecretKey
 	// - secrets.awsSessionToken

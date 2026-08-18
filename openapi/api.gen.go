@@ -913,20 +913,53 @@ func (e GetConnectionParamsRefresh) Valid() bool {
 
 // Defines values for CreateDestinationJSONBodyType.
 const (
-	Kinesis CreateDestinationJSONBodyType = "kinesis"
-	S3      CreateDestinationJSONBodyType = "s3"
-	Slack   CreateDestinationJSONBodyType = "slack"
-	Webhook CreateDestinationJSONBodyType = "webhook"
+	Azureblob   CreateDestinationJSONBodyType = "azureblob"
+	Bigquery    CreateDestinationJSONBodyType = "bigquery"
+	Clickhouse  CreateDestinationJSONBodyType = "clickhouse"
+	Eventbridge CreateDestinationJSONBodyType = "eventbridge"
+	Gcs         CreateDestinationJSONBodyType = "gcs"
+	Kinesis     CreateDestinationJSONBodyType = "kinesis"
+	Pubsub      CreateDestinationJSONBodyType = "pubsub"
+	Rabbitmq    CreateDestinationJSONBodyType = "rabbitmq"
+	Redshift    CreateDestinationJSONBodyType = "redshift"
+	S3          CreateDestinationJSONBodyType = "s3"
+	Slack       CreateDestinationJSONBodyType = "slack"
+	Snowflake   CreateDestinationJSONBodyType = "snowflake"
+	Sns         CreateDestinationJSONBodyType = "sns"
+	Sqs         CreateDestinationJSONBodyType = "sqs"
+	Webhook     CreateDestinationJSONBodyType = "webhook"
 )
 
 // Valid indicates whether the value is a known member of the CreateDestinationJSONBodyType enum.
 func (e CreateDestinationJSONBodyType) Valid() bool {
 	switch e {
+	case Azureblob:
+		return true
+	case Bigquery:
+		return true
+	case Clickhouse:
+		return true
+	case Eventbridge:
+		return true
+	case Gcs:
+		return true
 	case Kinesis:
+		return true
+	case Pubsub:
+		return true
+	case Rabbitmq:
+		return true
+	case Redshift:
 		return true
 	case S3:
 		return true
 	case Slack:
+		return true
+	case Snowflake:
+		return true
+	case Sns:
+		return true
+	case Sqs:
 		return true
 	case Webhook:
 		return true
@@ -1810,8 +1843,38 @@ type Destination struct {
 	// Id The destination ID.
 	Id       string `json:"id"`
 	Metadata struct {
+		// Account The storage account name for the azureblob destination
+		Account *string `json:"account,omitempty"`
+
+		// AccountIdentifier The Snowflake account identifier for the snowflake destination
+		AccountIdentifier *string `json:"accountIdentifier,omitempty"`
+
 		// Bucket The name of the S3 bucket
 		Bucket *string `json:"bucket,omitempty"`
+
+		// ClusterIdentifier The Redshift provisioned cluster identifier for the redshift destination
+		ClusterIdentifier *string `json:"clusterIdentifier,omitempty"`
+
+		// Container The blob container name for the azureblob destination
+		Container *string `json:"container,omitempty"`
+
+		// Database The database name for the clickhouse destination
+		Database *string `json:"database,omitempty"`
+
+		// DatasetId The BigQuery dataset ID for the bigquery destination
+		DatasetId *string `json:"datasetId,omitempty"`
+
+		// DbName The database name (snowflake, redshift)
+		DbName *string `json:"dbName,omitempty"`
+
+		// DbUser The database user for the redshift destination
+		DbUser *string `json:"dbUser,omitempty"`
+
+		// DetailType The EventBridge detail-type for published events (eventbridge)
+		DetailType *string `json:"detailType,omitempty"`
+
+		// EventBusName The EventBridge event bus name for the eventbridge destination
+		EventBusName *string `json:"eventBusName,omitempty"`
 
 		// Headers Additional headers to add when Ampersand sends a webhook message
 		Headers *WebhookHeaders `json:"headers,omitempty"`
@@ -1822,8 +1885,20 @@ type Destination struct {
 		// PartitionKeyTemplate Template for generating partition keys
 		PartitionKeyTemplate *string `json:"partitionKeyTemplate,omitempty"`
 
+		// ProjectId The Google Cloud project ID (bigquery, pubsub)
+		ProjectId *string `json:"projectId,omitempty"`
+
+		// QueueUrl The SQS queue URL for the sqs destination
+		QueueUrl *string `json:"queueUrl,omitempty"`
+
 		// Region The AWS region for the destination
 		Region *string `json:"region,omitempty"`
+
+		// RoutingKey The routing key for the rabbitmq destination
+		RoutingKey *string `json:"routingKey,omitempty"`
+
+		// SchemaName The schema name (snowflake, redshift)
+		SchemaName *string `json:"schemaName,omitempty"`
 
 		// StorageClass The S3 storage class for written objects (defaults to STANDARD)
 		StorageClass *string `json:"storageClass,omitempty"`
@@ -1831,8 +1906,29 @@ type Destination struct {
 		// StreamName The name of the Kinesis stream
 		StreamName *string `json:"streamName,omitempty"`
 
+		// TableId The BigQuery table ID for the bigquery destination
+		TableId *string `json:"tableId,omitempty"`
+
+		// TableName The destination table name (clickhouse, snowflake, redshift)
+		TableName *string `json:"tableName,omitempty"`
+
+		// TopicArn The SNS topic ARN for the sns destination
+		TopicArn *string `json:"topicArn,omitempty"`
+
+		// TopicId The Pub/Sub topic ID for the pubsub destination
+		TopicId *string `json:"topicId,omitempty"`
+
 		// Url Webhook URL
 		Url *string `json:"url,omitempty"`
+
+		// UserId The user ID for the snowflake destination
+		UserId *string `json:"userId,omitempty"`
+
+		// Username The username for the clickhouse destination
+		Username *string `json:"username,omitempty"`
+
+		// WorkgroupName The Redshift Serverless workgroup name for the redshift destination
+		WorkgroupName *string `json:"workgroupName,omitempty"`
 	} `json:"metadata"`
 
 	// Name User-defined name for the destination.
@@ -1853,8 +1949,38 @@ type DestinationWithSecrets struct {
 	// Id The destination ID.
 	Id       string `json:"id"`
 	Metadata struct {
+		// Account The storage account name for the azureblob destination
+		Account *string `json:"account,omitempty"`
+
+		// AccountIdentifier The Snowflake account identifier for the snowflake destination
+		AccountIdentifier *string `json:"accountIdentifier,omitempty"`
+
 		// Bucket The name of the S3 bucket
 		Bucket *string `json:"bucket,omitempty"`
+
+		// ClusterIdentifier The Redshift provisioned cluster identifier for the redshift destination
+		ClusterIdentifier *string `json:"clusterIdentifier,omitempty"`
+
+		// Container The blob container name for the azureblob destination
+		Container *string `json:"container,omitempty"`
+
+		// Database The database name for the clickhouse destination
+		Database *string `json:"database,omitempty"`
+
+		// DatasetId The BigQuery dataset ID for the bigquery destination
+		DatasetId *string `json:"datasetId,omitempty"`
+
+		// DbName The database name (snowflake, redshift)
+		DbName *string `json:"dbName,omitempty"`
+
+		// DbUser The database user for the redshift destination
+		DbUser *string `json:"dbUser,omitempty"`
+
+		// DetailType The EventBridge detail-type for published events (eventbridge)
+		DetailType *string `json:"detailType,omitempty"`
+
+		// EventBusName The EventBridge event bus name for the eventbridge destination
+		EventBusName *string `json:"eventBusName,omitempty"`
 
 		// Headers Additional headers to add when Ampersand sends a webhook message
 		Headers *WebhookHeaders `json:"headers,omitempty"`
@@ -1865,8 +1991,20 @@ type DestinationWithSecrets struct {
 		// PartitionKeyTemplate Template for generating partition keys
 		PartitionKeyTemplate *string `json:"partitionKeyTemplate,omitempty"`
 
+		// ProjectId The Google Cloud project ID (bigquery, pubsub)
+		ProjectId *string `json:"projectId,omitempty"`
+
+		// QueueUrl The SQS queue URL for the sqs destination
+		QueueUrl *string `json:"queueUrl,omitempty"`
+
 		// Region The AWS region for the destination
 		Region *string `json:"region,omitempty"`
+
+		// RoutingKey The routing key for the rabbitmq destination
+		RoutingKey *string `json:"routingKey,omitempty"`
+
+		// SchemaName The schema name (snowflake, redshift)
+		SchemaName *string `json:"schemaName,omitempty"`
 
 		// StorageClass The S3 storage class for written objects (defaults to STANDARD)
 		StorageClass *string `json:"storageClass,omitempty"`
@@ -1874,8 +2012,29 @@ type DestinationWithSecrets struct {
 		// StreamName The name of the Kinesis stream
 		StreamName *string `json:"streamName,omitempty"`
 
+		// TableId The BigQuery table ID for the bigquery destination
+		TableId *string `json:"tableId,omitempty"`
+
+		// TableName The destination table name (clickhouse, snowflake, redshift)
+		TableName *string `json:"tableName,omitempty"`
+
+		// TopicArn The SNS topic ARN for the sns destination
+		TopicArn *string `json:"topicArn,omitempty"`
+
+		// TopicId The Pub/Sub topic ID for the pubsub destination
+		TopicId *string `json:"topicId,omitempty"`
+
 		// Url Webhook URL
 		Url *string `json:"url,omitempty"`
+
+		// UserId The user ID for the snowflake destination
+		UserId *string `json:"userId,omitempty"`
+
+		// Username The username for the clickhouse destination
+		Username *string `json:"username,omitempty"`
+
+		// WorkgroupName The Redshift Serverless workgroup name for the redshift destination
+		WorkgroupName *string `json:"workgroupName,omitempty"`
 	} `json:"metadata"`
 
 	// Name User-defined name for the destination.
@@ -3695,11 +3854,41 @@ type GetConnectionParamsRefresh string
 // CreateDestinationJSONBody defines parameters for CreateDestination.
 type CreateDestinationJSONBody struct {
 	Metadata struct {
+		// Account The storage account name for the `azureblob` destination.
+		Account string `json:"account,omitempty"`
+
+		// AccountIdentifier The Snowflake account identifier for the `snowflake` destination.
+		AccountIdentifier string `json:"accountIdentifier,omitempty"`
+
 		// Bucket The name of the S3 bucket to write objects to.
 		Bucket string `json:"bucket,omitempty"`
 
+		// ClusterIdentifier The Redshift provisioned cluster identifier for the `redshift` destination.
+		ClusterIdentifier string `json:"clusterIdentifier,omitempty"`
+
+		// Container The blob container name for the `azureblob` destination.
+		Container string `json:"container,omitempty"`
+
+		// Database The database name for the `clickhouse` destination.
+		Database string `json:"database,omitempty"`
+
+		// DatasetId The BigQuery dataset ID for the `bigquery` destination.
+		DatasetId string `json:"datasetId,omitempty"`
+
+		// DbName The database name (`snowflake`, `redshift`).
+		DbName string `json:"dbName,omitempty"`
+
+		// DbUser The database user for the `redshift` destination.
+		DbUser string `json:"dbUser,omitempty"`
+
+		// DetailType The EventBridge detail-type for published events (`eventbridge`).
+		DetailType string `json:"detailType,omitempty"`
+
 		// EndpointUrl The endpoint URL for the Kinesis stream.
 		EndpointUrl string `json:"endpointUrl,omitempty"`
+
+		// EventBusName The EventBridge event bus name for the `eventbridge` destination.
+		EventBusName string `json:"eventBusName,omitempty"`
 
 		// Headers Additional headers to add when Ampersand sends a webhook message
 		Headers *WebhookHeaders `json:"headers,omitempty"`
@@ -3710,8 +3899,20 @@ type CreateDestinationJSONBody struct {
 		// PartitionKeyTemplate The template for the partition key to use when sending events to Kinesis (a JMESPath template)
 		PartitionKeyTemplate string `json:"partitionKeyTemplate,omitempty"`
 
+		// ProjectId The Google Cloud project ID (`bigquery`, `pubsub`).
+		ProjectId string `json:"projectId,omitempty"`
+
+		// QueueUrl The SQS queue URL for the `sqs` destination.
+		QueueUrl string `json:"queueUrl,omitempty"`
+
 		// Region The AWS region where the Kinesis or S3 destination is hosted.
 		Region string `json:"region,omitempty"`
+
+		// RoutingKey The routing key for the `rabbitmq` destination.
+		RoutingKey string `json:"routingKey,omitempty"`
+
+		// SchemaName The schema name (`snowflake`, `redshift`).
+		SchemaName string `json:"schemaName,omitempty"`
 
 		// StorageClass The S3 storage class for written objects. Defaults to STANDARD. Common values include STANDARD, STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER, GLACIER_IR, and DEEP_ARCHIVE.
 		StorageClass string `json:"storageClass,omitempty"`
@@ -3719,8 +3920,29 @@ type CreateDestinationJSONBody struct {
 		// StreamName The name of the Kinesis stream to send events to.
 		StreamName string `json:"streamName,omitempty"`
 
+		// TableId The BigQuery table ID for the `bigquery` destination.
+		TableId string `json:"tableId,omitempty"`
+
+		// TableName The destination table name (`clickhouse`, `snowflake`, `redshift`).
+		TableName string `json:"tableName,omitempty"`
+
+		// TopicArn The SNS topic ARN for the `sns` destination.
+		TopicArn string `json:"topicArn,omitempty"`
+
+		// TopicId The Pub/Sub topic ID for the `pubsub` destination.
+		TopicId string `json:"topicId,omitempty"`
+
 		// Url Webhook URL, must start with "https://". For `slack` destinations, this is the Slack incoming webhook URL.
 		Url *string `json:"url,omitempty"`
+
+		// UserId The user ID for the `snowflake` destination.
+		UserId string `json:"userId,omitempty"`
+
+		// Username The username for the `clickhouse` destination.
+		Username string `json:"username,omitempty"`
+
+		// WorkgroupName The Redshift Serverless workgroup name for the `redshift` destination.
+		WorkgroupName string `json:"workgroupName,omitempty"`
 	} `json:"metadata"`
 
 	// Name Name for the new destination. Must be unique within the project and can only contain letters, numbers and dashes.
@@ -3728,6 +3950,12 @@ type CreateDestinationJSONBody struct {
 
 	// Secrets Secrets for the destination.
 	Secrets *struct {
+		// AccessKey The account access key for the `azureblob` destination.
+		AccessKey string `json:"accessKey,omitempty"`
+
+		// AccessKeyId The AWS access key ID for the `redshift`, `sqs`, `sns`, and `eventbridge` destinations.
+		AccessKeyId string `json:"accessKeyId,omitempty"`
+
 		// AwsKeyId The AWS access key ID for the Kinesis or S3 destination.
 		AwsKeyId string `json:"awsKeyId,omitempty"`
 
@@ -3736,9 +3964,24 @@ type CreateDestinationJSONBody struct {
 
 		// AwsSessionToken The AWS session token for the Kinesis or S3 destination.
 		AwsSessionToken string `json:"awsSessionToken,omitempty"`
+
+		// Credentials The service-account credentials JSON for the `bigquery`, `gcs`, and `pubsub` destinations.
+		Credentials string `json:"credentials,omitempty"`
+
+		// Password The password for the `clickhouse` destination.
+		Password string `json:"password,omitempty"`
+
+		// PrivateKey The PEM-encoded RSA private key for the `snowflake` destination.
+		PrivateKey string `json:"privateKey,omitempty"`
+
+		// SecretAccessKey The AWS secret access key for the `redshift`, `sqs`, `sns`, and `eventbridge` destinations.
+		SecretAccessKey string `json:"secretAccessKey,omitempty"`
+
+		// Uri The connection URI (embeds credentials) for the `rabbitmq` destination.
+		Uri string `json:"uri,omitempty"`
 	} `json:"secrets,omitempty"`
 
-	// Type The type of the destination. For `slack`, set `metadata.url` to a Slack incoming webhook URL.
+	// Type The type of the destination. For `slack`, set `metadata.url` to a Slack incoming webhook URL. The warehouse, object-storage, and message-queue types (`clickhouse`, `snowflake`, `bigquery`, `redshift`, `azureblob`, `gcs`, `sqs`, `sns`, `eventbridge`, `pubsub`, `rabbitmq`) are configured via the `metadata` and `secrets` fields documented below.
 	Type CreateDestinationJSONBodyType `json:"type"`
 }
 
@@ -3758,11 +4001,41 @@ type GetDestinationParams struct {
 type UpdateDestinationJSONBody struct {
 	Destination struct {
 		Metadata *struct {
+			// Account The storage account name for the `azureblob` destination.
+			Account *string `json:"account,omitempty"`
+
+			// AccountIdentifier The Snowflake account identifier for the `snowflake` destination.
+			AccountIdentifier *string `json:"accountIdentifier,omitempty"`
+
 			// Bucket The name of the S3 bucket to write objects to.
 			Bucket *string `json:"bucket,omitempty"`
 
+			// ClusterIdentifier The Redshift provisioned cluster identifier for the `redshift` destination.
+			ClusterIdentifier *string `json:"clusterIdentifier,omitempty"`
+
+			// Container The blob container name for the `azureblob` destination.
+			Container *string `json:"container,omitempty"`
+
+			// Database The database name for the `clickhouse` destination.
+			Database *string `json:"database,omitempty"`
+
+			// DatasetId The BigQuery dataset ID for the `bigquery` destination.
+			DatasetId *string `json:"datasetId,omitempty"`
+
+			// DbName The database name (`snowflake`, `redshift`).
+			DbName *string `json:"dbName,omitempty"`
+
+			// DbUser The database user for the `redshift` destination.
+			DbUser *string `json:"dbUser,omitempty"`
+
+			// DetailType The EventBridge detail-type for published events (`eventbridge`).
+			DetailType *string `json:"detailType,omitempty"`
+
 			// EndpointUrl The endpoint URL for the Kinesis stream.
 			EndpointUrl *string `json:"endpointUrl,omitempty"`
+
+			// EventBusName The EventBridge event bus name for the `eventbridge` destination.
+			EventBusName *string `json:"eventBusName,omitempty"`
 
 			// Headers Additional headers to add when Ampersand sends a webhook message
 			Headers *WebhookHeaders `json:"headers,omitempty"`
@@ -3773,8 +4046,20 @@ type UpdateDestinationJSONBody struct {
 			// PartitionKeyTemplate The template for the partition key to use when sending events to Kinesis (a JMESPath template)
 			PartitionKeyTemplate *string `json:"partitionKeyTemplate,omitempty"`
 
+			// ProjectId The Google Cloud project ID (`bigquery`, `pubsub`).
+			ProjectId *string `json:"projectId,omitempty"`
+
+			// QueueUrl The SQS queue URL for the `sqs` destination.
+			QueueUrl *string `json:"queueUrl,omitempty"`
+
 			// Region The AWS region where the Kinesis or S3 destination is hosted.
 			Region *string `json:"region,omitempty"`
+
+			// RoutingKey The routing key for the `rabbitmq` destination.
+			RoutingKey *string `json:"routingKey,omitempty"`
+
+			// SchemaName The schema name (`snowflake`, `redshift`).
+			SchemaName *string `json:"schemaName,omitempty"`
 
 			// StorageClass The S3 storage class for written objects. Defaults to STANDARD. Common values include STANDARD, STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER, GLACIER_IR, and DEEP_ARCHIVE.
 			StorageClass *string `json:"storageClass,omitempty"`
@@ -3782,8 +4067,29 @@ type UpdateDestinationJSONBody struct {
 			// StreamName The name of the Kinesis stream to send events to.
 			StreamName *string `json:"streamName,omitempty"`
 
+			// TableId The BigQuery table ID for the `bigquery` destination.
+			TableId *string `json:"tableId,omitempty"`
+
+			// TableName The destination table name (`clickhouse`, `snowflake`, `redshift`).
+			TableName *string `json:"tableName,omitempty"`
+
+			// TopicArn The SNS topic ARN for the `sns` destination.
+			TopicArn *string `json:"topicArn,omitempty"`
+
+			// TopicId The Pub/Sub topic ID for the `pubsub` destination.
+			TopicId *string `json:"topicId,omitempty"`
+
 			// Url Webhook URL
 			Url *string `json:"url,omitempty"`
+
+			// UserId The user ID for the `snowflake` destination.
+			UserId *string `json:"userId,omitempty"`
+
+			// Username The username for the `clickhouse` destination.
+			Username *string `json:"username,omitempty"`
+
+			// WorkgroupName The Redshift Serverless workgroup name for the `redshift` destination.
+			WorkgroupName *string `json:"workgroupName,omitempty"`
 		} `json:"metadata,omitempty"`
 
 		// Name User-friendly name for the destination
@@ -3791,6 +4097,12 @@ type UpdateDestinationJSONBody struct {
 
 		// Secrets Secrets for the destination.
 		Secrets *struct {
+			// AccessKey The account access key for the `azureblob` destination.
+			AccessKey *string `json:"accessKey,omitempty"`
+
+			// AccessKeyId The AWS access key ID for the `redshift`, `sqs`, `sns`, and `eventbridge` destinations.
+			AccessKeyId *string `json:"accessKeyId,omitempty"`
+
 			// AwsKeyId The AWS access key ID for the Kinesis or S3 destination.
 			AwsKeyId *string `json:"awsKeyId,omitempty"`
 
@@ -3799,6 +4111,21 @@ type UpdateDestinationJSONBody struct {
 
 			// AwsSessionToken The AWS session token for the Kinesis or S3 destination.
 			AwsSessionToken *string `json:"awsSessionToken,omitempty"`
+
+			// Credentials The service-account credentials JSON for the `bigquery`, `gcs`, and `pubsub` destinations.
+			Credentials *string `json:"credentials,omitempty"`
+
+			// Password The password for the `clickhouse` destination.
+			Password *string `json:"password,omitempty"`
+
+			// PrivateKey The PEM-encoded RSA private key for the `snowflake` destination.
+			PrivateKey *string `json:"privateKey,omitempty"`
+
+			// SecretAccessKey The AWS secret access key for the `redshift`, `sqs`, `sns`, and `eventbridge` destinations.
+			SecretAccessKey *string `json:"secretAccessKey,omitempty"`
+
+			// Uri The connection URI (embeds credentials) for the `rabbitmq` destination.
+			Uri *string `json:"uri,omitempty"`
 		} `json:"secrets,omitempty"`
 	} `json:"destination"`
 
@@ -3813,9 +4140,37 @@ type UpdateDestinationJSONBody struct {
 	// - metadata.bucket
 	// - metadata.keyTemplate
 	// - metadata.storageClass
+	// - metadata.username
+	// - metadata.tableName
+	// - metadata.database
+	// - metadata.accountIdentifier
+	// - metadata.userId
+	// - metadata.dbName
+	// - metadata.schemaName
+	// - metadata.projectId
+	// - metadata.datasetId
+	// - metadata.tableId
+	// - metadata.workgroupName
+	// - metadata.clusterIdentifier
+	// - metadata.dbUser
+	// - metadata.account
+	// - metadata.container
+	// - metadata.queueUrl
+	// - metadata.topicArn
+	// - metadata.eventBusName
+	// - metadata.detailType
+	// - metadata.topicId
+	// - metadata.routingKey
 	// - secrets.awsKeyId
 	// - secrets.awsSecretKey
 	// - secrets.awsSessionToken
+	// - secrets.password
+	// - secrets.privateKey
+	// - secrets.credentials
+	// - secrets.accessKeyId
+	// - secrets.secretAccessKey
+	// - secrets.accessKey
+	// - secrets.uri
 	UpdateMask []string `json:"updateMask"`
 }
 

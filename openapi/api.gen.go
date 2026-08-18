@@ -913,11 +913,9 @@ func (e GetConnectionParamsRefresh) Valid() bool {
 
 // Defines values for CreateDestinationJSONBodyType.
 const (
-	Azureblob   CreateDestinationJSONBodyType = "azureblob"
 	Bigquery    CreateDestinationJSONBodyType = "bigquery"
 	Clickhouse  CreateDestinationJSONBodyType = "clickhouse"
 	Eventbridge CreateDestinationJSONBodyType = "eventbridge"
-	Gcs         CreateDestinationJSONBodyType = "gcs"
 	Kinesis     CreateDestinationJSONBodyType = "kinesis"
 	Pubsub      CreateDestinationJSONBodyType = "pubsub"
 	Rabbitmq    CreateDestinationJSONBodyType = "rabbitmq"
@@ -933,15 +931,11 @@ const (
 // Valid indicates whether the value is a known member of the CreateDestinationJSONBodyType enum.
 func (e CreateDestinationJSONBodyType) Valid() bool {
 	switch e {
-	case Azureblob:
-		return true
 	case Bigquery:
 		return true
 	case Clickhouse:
 		return true
 	case Eventbridge:
-		return true
-	case Gcs:
 		return true
 	case Kinesis:
 		return true
@@ -3999,7 +3993,7 @@ type CreateDestinationJSONBody struct {
 		Uri string `json:"uri,omitempty"`
 	} `json:"secrets,omitempty"`
 
-	// Type The type of the destination. For `slack`, set `metadata.url` to a Slack incoming webhook URL. The warehouse, object-storage, and message-queue types (`clickhouse`, `snowflake`, `bigquery`, `redshift`, `azureblob`, `gcs`, `sqs`, `sns`, `eventbridge`, `pubsub`, `rabbitmq`) are configured via the `metadata` and `secrets` fields documented below.
+	// Type The type of the destination. For `slack`, set `metadata.url` to a Slack incoming webhook URL. The warehouse and message-queue types (`clickhouse`, `snowflake`, `bigquery`, `redshift`, `sqs`, `sns`, `eventbridge`, `pubsub`, `rabbitmq`) are configured via the `metadata` and `secrets` fields documented below.
 	Type CreateDestinationJSONBodyType `json:"type"`
 }
 

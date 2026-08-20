@@ -356,48 +356,6 @@ func (e DeliveryMode) Valid() bool {
 	}
 }
 
-// Defines values for DestinationMetadataSaslMechanism.
-const (
-	DestinationMetadataSaslMechanismPlain       DestinationMetadataSaslMechanism = "plain"
-	DestinationMetadataSaslMechanismScramSha256 DestinationMetadataSaslMechanism = "scram-sha-256"
-	DestinationMetadataSaslMechanismScramSha512 DestinationMetadataSaslMechanism = "scram-sha-512"
-)
-
-// Valid indicates whether the value is a known member of the DestinationMetadataSaslMechanism enum.
-func (e DestinationMetadataSaslMechanism) Valid() bool {
-	switch e {
-	case DestinationMetadataSaslMechanismPlain:
-		return true
-	case DestinationMetadataSaslMechanismScramSha256:
-		return true
-	case DestinationMetadataSaslMechanismScramSha512:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for DestinationWithSecretsMetadataSaslMechanism.
-const (
-	DestinationWithSecretsMetadataSaslMechanismPlain       DestinationWithSecretsMetadataSaslMechanism = "plain"
-	DestinationWithSecretsMetadataSaslMechanismScramSha256 DestinationWithSecretsMetadataSaslMechanism = "scram-sha-256"
-	DestinationWithSecretsMetadataSaslMechanismScramSha512 DestinationWithSecretsMetadataSaslMechanism = "scram-sha-512"
-)
-
-// Valid indicates whether the value is a known member of the DestinationWithSecretsMetadataSaslMechanism enum.
-func (e DestinationWithSecretsMetadataSaslMechanism) Valid() bool {
-	switch e {
-	case DestinationWithSecretsMetadataSaslMechanismPlain:
-		return true
-	case DestinationWithSecretsMetadataSaslMechanismScramSha256:
-		return true
-	case DestinationWithSecretsMetadataSaslMechanismScramSha512:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for FieldChangedEventEnabled.
 const (
 	FieldChangedEventEnabledAlways FieldChangedEventEnabled = "always"
@@ -953,33 +911,11 @@ func (e GetConnectionParamsRefresh) Valid() bool {
 	}
 }
 
-// Defines values for CreateDestinationJSONBodyMetadataSaslMechanism.
-const (
-	CreateDestinationJSONBodyMetadataSaslMechanismPlain       CreateDestinationJSONBodyMetadataSaslMechanism = "plain"
-	CreateDestinationJSONBodyMetadataSaslMechanismScramSha256 CreateDestinationJSONBodyMetadataSaslMechanism = "scram-sha-256"
-	CreateDestinationJSONBodyMetadataSaslMechanismScramSha512 CreateDestinationJSONBodyMetadataSaslMechanism = "scram-sha-512"
-)
-
-// Valid indicates whether the value is a known member of the CreateDestinationJSONBodyMetadataSaslMechanism enum.
-func (e CreateDestinationJSONBodyMetadataSaslMechanism) Valid() bool {
-	switch e {
-	case CreateDestinationJSONBodyMetadataSaslMechanismPlain:
-		return true
-	case CreateDestinationJSONBodyMetadataSaslMechanismScramSha256:
-		return true
-	case CreateDestinationJSONBodyMetadataSaslMechanismScramSha512:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for CreateDestinationJSONBodyType.
 const (
 	Azureservicebus CreateDestinationJSONBodyType = "azureservicebus"
 	Bigquery        CreateDestinationJSONBodyType = "bigquery"
 	Clickhouse      CreateDestinationJSONBodyType = "clickhouse"
-	Kafka           CreateDestinationJSONBodyType = "kafka"
 	Kinesis         CreateDestinationJSONBodyType = "kinesis"
 	Pubsub          CreateDestinationJSONBodyType = "pubsub"
 	Rabbitmq        CreateDestinationJSONBodyType = "rabbitmq"
@@ -1000,8 +936,6 @@ func (e CreateDestinationJSONBodyType) Valid() bool {
 		return true
 	case Clickhouse:
 		return true
-	case Kafka:
-		return true
 	case Kinesis:
 		return true
 	case Pubsub:
@@ -1019,27 +953,6 @@ func (e CreateDestinationJSONBodyType) Valid() bool {
 	case Sqs:
 		return true
 	case Webhook:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UpdateDestinationJSONBodyDestinationMetadataSaslMechanism.
-const (
-	UpdateDestinationJSONBodyDestinationMetadataSaslMechanismPlain       UpdateDestinationJSONBodyDestinationMetadataSaslMechanism = "plain"
-	UpdateDestinationJSONBodyDestinationMetadataSaslMechanismScramSha256 UpdateDestinationJSONBodyDestinationMetadataSaslMechanism = "scram-sha-256"
-	UpdateDestinationJSONBodyDestinationMetadataSaslMechanismScramSha512 UpdateDestinationJSONBodyDestinationMetadataSaslMechanism = "scram-sha-512"
-)
-
-// Valid indicates whether the value is a known member of the UpdateDestinationJSONBodyDestinationMetadataSaslMechanism enum.
-func (e UpdateDestinationJSONBodyDestinationMetadataSaslMechanism) Valid() bool {
-	switch e {
-	case UpdateDestinationJSONBodyDestinationMetadataSaslMechanismPlain:
-		return true
-	case UpdateDestinationJSONBodyDestinationMetadataSaslMechanismScramSha256:
-		return true
-	case UpdateDestinationJSONBodyDestinationMetadataSaslMechanismScramSha512:
 		return true
 	default:
 		return false
@@ -1930,9 +1843,6 @@ type Destination struct {
 		// BatchSize For warehouse destinations, rows to buffer before flushing a batch (default 1000)
 		BatchSize *int `json:"batchSize,omitempty"`
 
-		// Brokers The comma-separated list of Kafka broker addresses for the kafka destination
-		Brokers *string `json:"brokers,omitempty"`
-
 		// Bucket The name of the S3 bucket
 		Bucket *string `json:"bucket,omitempty"`
 
@@ -1981,9 +1891,6 @@ type Destination struct {
 		// Region The AWS region for the destination
 		Region *string `json:"region,omitempty"`
 
-		// SaslMechanism The SASL mechanism used to authenticate to Kafka for the kafka destination
-		SaslMechanism *DestinationMetadataSaslMechanism `json:"saslMechanism,omitempty"`
-
 		// SchemaName The schema name (snowflake, redshift)
 		SchemaName *string `json:"schemaName,omitempty"`
 
@@ -2002,11 +1909,8 @@ type Destination struct {
 		// TableName The destination table name (clickhouse, snowflake, redshift)
 		TableName *string `json:"tableName,omitempty"`
 
-		// Tls Whether to connect over TLS (rabbitmq, kafka)
+		// Tls Whether to connect over TLS (rabbitmq)
 		Tls *bool `json:"tls,omitempty"`
-
-		// Topic The Kafka topic to publish to for the kafka destination
-		Topic *string `json:"topic,omitempty"`
 
 		// TopicId The Pub/Sub topic ID for the pubsub destination
 		TopicId *string `json:"topicId,omitempty"`
@@ -2034,9 +1938,6 @@ type Destination struct {
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
 
-// DestinationMetadataSaslMechanism The SASL mechanism used to authenticate to Kafka for the kafka destination
-type DestinationMetadataSaslMechanism string
-
 // DestinationWithSecrets Destination object with secrets field (returned by getDestination when includeSecrets is true)
 type DestinationWithSecrets struct {
 	// CreateTime The time the destination was created.
@@ -2053,9 +1954,6 @@ type DestinationWithSecrets struct {
 
 		// BatchSize For warehouse destinations, rows to buffer before flushing a batch (default 1000)
 		BatchSize *int `json:"batchSize,omitempty"`
-
-		// Brokers The comma-separated list of Kafka broker addresses for the kafka destination
-		Brokers *string `json:"brokers,omitempty"`
 
 		// Bucket The name of the S3 bucket
 		Bucket *string `json:"bucket,omitempty"`
@@ -2105,9 +2003,6 @@ type DestinationWithSecrets struct {
 		// Region The AWS region for the destination
 		Region *string `json:"region,omitempty"`
 
-		// SaslMechanism The SASL mechanism used to authenticate to Kafka for the kafka destination
-		SaslMechanism *DestinationWithSecretsMetadataSaslMechanism `json:"saslMechanism,omitempty"`
-
 		// SchemaName The schema name (snowflake, redshift)
 		SchemaName *string `json:"schemaName,omitempty"`
 
@@ -2126,11 +2021,8 @@ type DestinationWithSecrets struct {
 		// TableName The destination table name (clickhouse, snowflake, redshift)
 		TableName *string `json:"tableName,omitempty"`
 
-		// Tls Whether to connect over TLS (rabbitmq, kafka)
+		// Tls Whether to connect over TLS (rabbitmq)
 		Tls *bool `json:"tls,omitempty"`
-
-		// Topic The Kafka topic to publish to for the kafka destination
-		Topic *string `json:"topic,omitempty"`
 
 		// TopicId The Pub/Sub topic ID for the pubsub destination
 		TopicId *string `json:"topicId,omitempty"`
@@ -2163,9 +2055,6 @@ type DestinationWithSecrets struct {
 	// UpdateTime The time the destination was updated.
 	UpdateTime *time.Time `json:"updateTime,omitempty"`
 }
-
-// DestinationWithSecretsMetadataSaslMechanism The SASL mechanism used to authenticate to Kafka for the kafka destination
-type DestinationWithSecretsMetadataSaslMechanism string
 
 // DynamicMappingsInput An array containing all available dynamic field and value mappings for this installation, provided by the InstallIntegration component. This array represents the complete set of possible mappings, regardless of which ones are currently selected. The actual selected mappings are stored separately in the selectedFieldMappings property.
 type DynamicMappingsInput = []DynamicMappingsInputEntry
@@ -3977,9 +3866,6 @@ type CreateDestinationJSONBody struct {
 		// BatchSize For warehouse destinations (`clickhouse`, `snowflake`, `bigquery`, `redshift`), the number of rows to buffer before flushing a batch. Defaults to 1000.
 		BatchSize int `json:"batchSize,omitempty"`
 
-		// Brokers The comma-separated list of Kafka broker addresses for the `kafka` destination. Required for `kafka`.
-		Brokers string `json:"brokers,omitempty"`
-
 		// Bucket The name of the S3 bucket to write objects to.
 		Bucket string `json:"bucket,omitempty"`
 
@@ -4019,7 +3905,7 @@ type CreateDestinationJSONBody struct {
 		// Name The queue or topic name for the `azureservicebus` destination. Required for `azureservicebus`.
 		Name string `json:"name,omitempty"`
 
-		// PartitionKeyTemplate The template for the partition key (a JMESPath template). Used by `kinesis`, and optionally by `kafka`.
+		// PartitionKeyTemplate The template for the partition key (a JMESPath template). Used by `kinesis`.
 		PartitionKeyTemplate string `json:"partitionKeyTemplate,omitempty"`
 
 		// ProjectId The Google Cloud project ID (`bigquery`, `pubsub`). Required for `pubsub`.
@@ -4030,9 +3916,6 @@ type CreateDestinationJSONBody struct {
 
 		// Region The AWS region where the Kinesis or S3 destination is hosted.
 		Region string `json:"region,omitempty"`
-
-		// SaslMechanism The SASL mechanism used to authenticate to Kafka for the `kafka` destination. Required for `kafka`.
-		SaslMechanism CreateDestinationJSONBodyMetadataSaslMechanism `json:"saslMechanism,omitempty"`
 
 		// SchemaName The schema name (`snowflake`, `redshift`).
 		SchemaName string `json:"schemaName,omitempty"`
@@ -4052,11 +3935,8 @@ type CreateDestinationJSONBody struct {
 		// TableName The destination table name (`clickhouse`, `snowflake`, `redshift`).
 		TableName string `json:"tableName,omitempty"`
 
-		// Tls Whether to connect over TLS. Optional for the `rabbitmq` and `kafka` destinations.
+		// Tls Whether to connect over TLS. Optional for the `rabbitmq` destination.
 		Tls bool `json:"tls,omitempty"`
-
-		// Topic The Kafka topic to publish to for the `kafka` destination. Required for `kafka`.
-		Topic string `json:"topic,omitempty"`
 
 		// TopicId The Pub/Sub topic ID for the `pubsub` destination. Required for `pubsub`.
 		TopicId string `json:"topicId,omitempty"`
@@ -4100,7 +3980,7 @@ type CreateDestinationJSONBody struct {
 		// Credentials The service-account credentials JSON for the `bigquery`, `gcs`, and `pubsub` destinations. Required for `pubsub`.
 		Credentials string `json:"credentials,omitempty"`
 
-		// Password The password for the `clickhouse`, `rabbitmq`, and `kafka` destinations. Required for `rabbitmq` and `kafka`.
+		// Password The password for the `clickhouse` and `rabbitmq` destinations. Required for `rabbitmq`.
 		Password string `json:"password,omitempty"`
 
 		// PrivateKey The PEM-encoded RSA private key for the `snowflake` destination.
@@ -4109,16 +3989,13 @@ type CreateDestinationJSONBody struct {
 		// SecretAccessKey The AWS secret access key for the `redshift` destination.
 		SecretAccessKey string `json:"secretAccessKey,omitempty"`
 
-		// Username The username for the `rabbitmq` and `kafka` destinations. Required for both.
+		// Username The username for the `rabbitmq` destination. Required for `rabbitmq`.
 		Username string `json:"username,omitempty"`
 	} `json:"secrets,omitempty"`
 
-	// Type The type of the destination. For `slack`, set `metadata.url` to a Slack incoming webhook URL. The warehouse and message-queue types (`clickhouse`, `snowflake`, `bigquery`, `redshift`, `sqs`, `pubsub`, `rabbitmq`, `azureservicebus`, `kafka`) are configured via the `metadata` and `secrets` fields documented below.
+	// Type The type of the destination. For `slack`, set `metadata.url` to a Slack incoming webhook URL. The warehouse and message-queue types (`clickhouse`, `snowflake`, `bigquery`, `redshift`, `sqs`, `pubsub`, `rabbitmq`, `azureservicebus`) are configured via the `metadata` and `secrets` fields documented below.
 	Type CreateDestinationJSONBodyType `json:"type"`
 }
-
-// CreateDestinationJSONBodyMetadataSaslMechanism defines parameters for CreateDestination.
-type CreateDestinationJSONBodyMetadataSaslMechanism string
 
 // CreateDestinationJSONBodyType defines parameters for CreateDestination.
 type CreateDestinationJSONBodyType string
@@ -4144,9 +4021,6 @@ type UpdateDestinationJSONBody struct {
 
 			// BatchSize For warehouse destinations, rows to buffer before flushing a batch (default 1000).
 			BatchSize *int `json:"batchSize,omitempty"`
-
-			// Brokers The comma-separated list of Kafka broker addresses for the `kafka` destination. Required for `kafka`.
-			Brokers *string `json:"brokers,omitempty"`
 
 			// Bucket The name of the S3 bucket to write objects to.
 			Bucket *string `json:"bucket,omitempty"`
@@ -4187,7 +4061,7 @@ type UpdateDestinationJSONBody struct {
 			// Name The queue or topic name for the `azureservicebus` destination. Required for `azureservicebus`.
 			Name *string `json:"name,omitempty"`
 
-			// PartitionKeyTemplate The template for the partition key (a JMESPath template). Used by `kinesis`, and optionally by `kafka`.
+			// PartitionKeyTemplate The template for the partition key (a JMESPath template). Used by `kinesis`.
 			PartitionKeyTemplate *string `json:"partitionKeyTemplate,omitempty"`
 
 			// ProjectId The Google Cloud project ID (`bigquery`, `pubsub`). Required for `pubsub`.
@@ -4198,9 +4072,6 @@ type UpdateDestinationJSONBody struct {
 
 			// Region The AWS region where the Kinesis or S3 destination is hosted.
 			Region *string `json:"region,omitempty"`
-
-			// SaslMechanism The SASL mechanism used to authenticate to Kafka for the `kafka` destination. Required for `kafka`.
-			SaslMechanism *UpdateDestinationJSONBodyDestinationMetadataSaslMechanism `json:"saslMechanism,omitempty"`
 
 			// SchemaName The schema name (`snowflake`, `redshift`).
 			SchemaName *string `json:"schemaName,omitempty"`
@@ -4220,11 +4091,8 @@ type UpdateDestinationJSONBody struct {
 			// TableName The destination table name (`clickhouse`, `snowflake`, `redshift`).
 			TableName *string `json:"tableName,omitempty"`
 
-			// Tls Whether to connect over TLS. Optional for the `rabbitmq` and `kafka` destinations.
+			// Tls Whether to connect over TLS. Optional for the `rabbitmq` destination.
 			Tls *bool `json:"tls,omitempty"`
-
-			// Topic The Kafka topic to publish to for the `kafka` destination. Required for `kafka`.
-			Topic *string `json:"topic,omitempty"`
 
 			// TopicId The Pub/Sub topic ID for the `pubsub` destination. Required for `pubsub`.
 			TopicId *string `json:"topicId,omitempty"`
@@ -4268,7 +4136,7 @@ type UpdateDestinationJSONBody struct {
 			// Credentials The service-account credentials JSON for the `bigquery`, `gcs`, and `pubsub` destinations. Required for `pubsub`.
 			Credentials *string `json:"credentials,omitempty"`
 
-			// Password The password for the `clickhouse`, `rabbitmq`, and `kafka` destinations. Required for `rabbitmq` and `kafka`.
+			// Password The password for the `clickhouse` and `rabbitmq` destinations. Required for `rabbitmq`.
 			Password *string `json:"password,omitempty"`
 
 			// PrivateKey The PEM-encoded RSA private key for the `snowflake` destination.
@@ -4277,7 +4145,7 @@ type UpdateDestinationJSONBody struct {
 			// SecretAccessKey The AWS secret access key for the `redshift` destination.
 			SecretAccessKey *string `json:"secretAccessKey,omitempty"`
 
-			// Username The username for the `rabbitmq` and `kafka` destinations. Required for both.
+			// Username The username for the `rabbitmq` destination. Required for `rabbitmq`.
 			Username *string `json:"username,omitempty"`
 		} `json:"secrets,omitempty"`
 	} `json:"destination"`
@@ -4314,9 +4182,6 @@ type UpdateDestinationJSONBody struct {
 	// - metadata.exchange
 	// - metadata.tls
 	// - metadata.name
-	// - metadata.brokers
-	// - metadata.topic
-	// - metadata.saslMechanism
 	// - metadata.batchSize
 	// - metadata.maxWaitSecs
 	// - secrets.awsKeyId
@@ -4332,9 +4197,6 @@ type UpdateDestinationJSONBody struct {
 	// - secrets.connectionString
 	UpdateMask []string `json:"updateMask"`
 }
-
-// UpdateDestinationJSONBodyDestinationMetadataSaslMechanism defines parameters for UpdateDestination.
-type UpdateDestinationJSONBodyDestinationMetadataSaslMechanism string
 
 // ListInstallationsForProjectParams defines parameters for ListInstallationsForProject.
 type ListInstallationsForProjectParams struct {

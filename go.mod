@@ -17,7 +17,7 @@ require (
 	github.com/klauspost/compress v1.19.2
 	github.com/manifoldco/promptui v0.9.0
 	github.com/neilotoole/slogt v1.1.0
-	github.com/oapi-codegen/runtime v1.6.0
+	github.com/oapi-codegen/runtime v1.7.0
 	github.com/pierrec/lz4/v4 v4.1.29
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529

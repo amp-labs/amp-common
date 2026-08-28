@@ -628,7 +628,9 @@ const (
 	ReadTriggeredError         NotificationEventType = "read.triggered.error"
 	SubscribeCreateError       NotificationEventType = "subscribe.create.error"
 	SubscribeCreateSuccess     NotificationEventType = "subscribe.create.success"
+	SubscribeDeleteError       NotificationEventType = "subscribe.delete.error"
 	SubscribeDeleteSuccess     NotificationEventType = "subscribe.delete.success"
+	SubscribeUpdateError       NotificationEventType = "subscribe.update.error"
 	SubscribeUpdateSuccess     NotificationEventType = "subscribe.update.success"
 	WriteAsyncDone             NotificationEventType = "write.async.done"
 )
@@ -666,7 +668,11 @@ func (e NotificationEventType) Valid() bool {
 		return true
 	case SubscribeCreateSuccess:
 		return true
+	case SubscribeDeleteError:
+		return true
 	case SubscribeDeleteSuccess:
+		return true
+	case SubscribeUpdateError:
 		return true
 	case SubscribeUpdateSuccess:
 		return true

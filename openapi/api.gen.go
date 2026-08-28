@@ -2908,6 +2908,11 @@ type Oauth2Opts struct {
 	// ScopeMappings Maps input scopes to their full OAuth scope values with template variable support. Scopes not in this map are passed through unchanged. Needed for some providers.
 	ScopeMappings map[string]string `json:"scopeMappings,omitempty"`
 
+	// ScopeQueryParam The query parameter name used to pass OAuth scopes in the authorization URL.
+	// Defaults to "scope" when not specified. Some providers use a different
+	// parameter name, such as "user_scope" for Slack user scopes.
+	ScopeQueryParam string `json:"scopeQueryParam,omitempty"`
+
 	// TokenMetadataFields Fields to be used to extract token metadata from the token response.
 	TokenMetadataFields TokenMetadataFields `json:"tokenMetadataFields"`
 

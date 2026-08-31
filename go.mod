@@ -1,9 +1,9 @@
 module github.com/amp-labs/amp-common
 
-go 1.25.1
+go 1.27.0
 
 require (
-	codeberg.org/miekg/dns v0.6.101
+	codeberg.org/miekg/dns v0.6.105
 	facette.io/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/JustinTimperio/gpq v1.0.0-rc4
 	github.com/OneOfOne/xxhash v1.2.8

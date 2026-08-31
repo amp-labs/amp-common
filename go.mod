@@ -8,7 +8,7 @@ require (
 	github.com/JustinTimperio/gpq v1.0.0-rc4
 	github.com/OneOfOne/xxhash v1.2.8
 	github.com/alitto/pond/v2 v2.7.1
-	github.com/andybalholm/brotli v1.2.2
+	github.com/andybalholm/brotli v1.2.3
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fereidani/httpdecompressor v0.0.0-20250320190614-ccdf59c9caa2
 	github.com/google/uuid v1.6.0

@@ -15,7 +15,7 @@ jobs:
       - name: Set up go
         uses: actions/setup-go@v7
         with:
-          go-version: "1.25.5"
+          go-version-file: 'go.mod'
 
       # Run go generate
       - name: Generate

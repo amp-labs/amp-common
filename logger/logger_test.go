@@ -389,6 +389,19 @@ func TestGetPodName(t *testing.T) {
 	assert.Equal(t, podName, GetPodName())
 }
 
+// TestGetRegion tests the GetRegion function.
+func TestGetRegion(t *testing.T) {
+	t.Parallel()
+
+	// The value comes from LOG_REGION, which is typically unset in tests, so
+	// only stability can be asserted: the lazily-computed value is cached for
+	// the lifetime of the process.
+	regionValue := GetRegion()
+
+	// Should be callable multiple times and return the same value
+	assert.Equal(t, regionValue, GetRegion())
+}
+
 // TestWith tests the With function for adding key-value pairs.
 func TestWith(t *testing.T) { //nolint:paralleltest
 	tests := []struct {

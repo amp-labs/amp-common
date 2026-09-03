@@ -912,6 +912,29 @@ func GetPodName() string {
 	return hostname.Get()
 }
 
+// region holds the deployment region for this process, read from the
+// LOG_REGION environment variable (e.g. "us-west1", "europe-west3").
+// It is set on every deployed pod; in local development it is typically
+// unset, in which case the "region" attribute is omitted from log messages.
+//
+// This value is included in all log messages via the "region" attribute,
+// which helps with distinguishing log lines from services deployed in
+// multiple geographic regions (e.g. US vs EU).
+//
+// The value is computed lazily on first access and cached for the lifetime
+// of the process.
+//
+// Thread-safety: Uses lazy.New for safe concurrent initialization.
+// nolint:gochecknoglobals
+var region = lazy.New[string](func() string {
+	return envutil.String(context.Background(), "LOG_REGION").ValueOrElse("")
+})
+
+// GetRegion returns the deployment region (or empty string if LOG_REGION is unset).
+func GetRegion() string {
+	return region.Get()
+}
+
 // getRealContext extracts the first non-nil context from a variadic list.
 // If no context is provided or all are nil, it returns context.Background().
 //
@@ -1026,6 +1049,7 @@ var nullLogger = slog.New(&nullHandler{})
 // 3. Standard attributes: Adds common attributes to all log messages:
 //   - subsystem: The service/component name (from GetSubsystem)
 //   - pod: The hostname/pod name (useful in Kubernetes deployments)
+//   - region: The deployment region from LOG_REGION (omitted when unset)
 //   - request-id: The Kong request ID if present (for request tracing)
 //
 // 4. Custom values: Includes any additional key-value pairs added via With()
@@ -1086,6 +1110,12 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 	pod := hostname.Get()
 	if len(pod) > 0 {
 		logger = logger.With("pod", pod)
+	}
+
+	// Add the deployment region.
+	rgn := region.Get()
+	if len(rgn) > 0 {
+		logger = logger.With("region", rgn)
 	}
 
 	// Add the Kong request id.

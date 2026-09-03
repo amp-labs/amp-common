@@ -1,11 +1,11 @@
-name: Unit Tests
+name: CI
 on:
   push:
     branches:
       - main
   pull_request: {}
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
     steps:
       # Predefined action from marketplace. Clones the source code.
@@ -15,22 +15,40 @@ jobs:
       - name: Set up go
         uses: actions/setup-go@v7
         with:
-          go-version-file: 'go.mod'
+          go-version: "1.25.5"
 
       # Run go generate
       - name: Generate
         run: go generate ./...
+
+      # Compile everything once; lint and tests below reuse the build cache.
+      - name: Build
+        run: go build ./...
+
+      - name: Lint Go code
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.7.1
+
+      - name: Check for Typos
+        uses: crate-ci/typos@v1.50.0
+        with:
+          config: .typos.toml
+
       # Install go-acc for better multi-package coverage
       - name: Install go-acc
         run: go install github.com/ory/go-acc@latest
+
       # Run tests
       - name: Unit Tests
         env:
           SKIP_FLAKY_TESTS: "true"
           RUNNING_ENV: "test"
         run: go-acc -o cover.out --covermode atomic --ignore scripts -- -json ./... | tee results.json
+
       - name: Generate coverage results
         run: go tool cover -func=cover.out -o=coverage.func.out
+
       - name: Render Test Summary
         uses: robherley/go-test-action@v1
         with:
@@ -45,3 +63,10 @@ jobs:
           threshold-file: 0
           threshold-package: 0
           threshold-total: 0
+
+      # Run tests with race detector
+      - name: Race Detection Tests
+        env:
+          SKIP_FLAKY_TESTS: "true"
+          RUNNING_ENV: "test"
+        run: go test -race $(go list ./... | grep -v scripts/)

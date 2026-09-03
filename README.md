@@ -95,6 +95,22 @@ The linting stack includes:
 * Configurable override behavior for existing environment variables
 * Functions: `ConfigureEnvironment()`, `ConfigureEnvironmentFromFiles()`, `WithAllowOverride()`
 
+**`feature`** - Feature flags with runtime rollouts and percentage targeting
+
+* Define flags in code with `feature.Define(name, feature.Off())` and check
+  them with `flag.Enabled(ctx)`
+* `Rollout` is pure data, evaluated as `Denied` > `Allowed` > `Percentages`
+  (OR) > `Default`; JSON-serializable
+* Percentages bucket by xxh3 of flag name + salt + dimension + value:
+  deterministic, monotonic, independent per flag
+* Built-in dimensions: `Host` (hostname), `Stage`, `Region`; programs declare
+  their own as `feature.Dimension` constants
+* The subject travels in the context via `WithAttribute`/`WithSubject`;
+  `SetGlobalAttribute` sets process-wide values
+* Runtime changes: `flag.Set`, `FileSource` (polled JSON), `EnvSource`
+  (`FEATURE_<NAME>=on|off|25% user`), `Multi`, HTTP `Handler`
+* Prometheus metrics for evaluations, changes, and undefined lookups
+
 ### Observability
 
 **`telemetry`** - OpenTelemetry tracing integration

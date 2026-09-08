@@ -489,21 +489,7 @@ func TestDefaultMapClone(t *testing.T) {
 			return 99, nil
 		})
 
-		err := defaultMap.Add(testKey{value: "a"}, 1)
-		require.NoError(t, err)
-		err = defaultMap.Add(testKey{value: "b"}, 2)
-		require.NoError(t, err)
-
-		clone := defaultMap.Clone()
-		assert.Equal(t, 2, clone.Size())
-
-		// Modify original
-		err = defaultMap.Add(testKey{value: "c"}, 3)
-		require.NoError(t, err)
-
-		// Clone should be unchanged
-		assert.Equal(t, 3, defaultMap.Size())
-		assert.Equal(t, 2, clone.Size())
+		assertCloneIsIndependent(t, defaultMap)
 	})
 
 	t.Run("preserves default function", func(t *testing.T) {

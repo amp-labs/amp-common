@@ -309,15 +309,12 @@ func TestFlatMapOrderedMap_EmptyOutputs(t *testing.T) {
 	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 1))
 	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 2))
 
-	//nolint:lll // Type signature is unavoidably long
-	output, err := FlatMapOrderedMap(2, input,
-		func(ctx context.Context, k maps.Key[string], v int) (maps.OrderedMap[maps.Key[string], int], error) {
-			return maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256), nil
-		})
-
-	require.NoError(t, err)
-	require.NotNil(t, output)
-	assert.Equal(t, 0, output.Size())
+	assertFlatMapIsEmpty(t, func() (maps.OrderedMap[maps.Key[string], int], error) {
+		return FlatMapOrderedMap(2, input,
+			func(ctx context.Context, k maps.Key[string], v int) (maps.OrderedMap[maps.Key[string], int], error) {
+				return maps.NewOrderedHashMap[maps.Key[string], int](hashing.Sha256), nil
+			})
+	})
 }
 
 // TestFlatMapOrderedMap_ErrorHandling tests error propagation.

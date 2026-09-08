@@ -250,16 +250,16 @@ func (r ValidationResult) String() string {
 
 	var msgSb240 strings.Builder
 	for _, err := range r.Errors {
-		msgSb240.WriteString(fmt.Sprintf("  [%s] %s", err.Code, err.Message))
+		fmt.Fprintf(&msgSb240, "  [%s] %s", err.Code, err.Message)
 
 		if err.Location.State != "" {
-			msgSb240.WriteString(fmt.Sprintf(" (state: %s)", err.Location.State))
+			fmt.Fprintf(&msgSb240, " (state: %s)", err.Location.State)
 		}
 
 		msgSb240.WriteString("\n")
 
 		if err.Fix != nil {
-			msgSb240.WriteString(fmt.Sprintf("    Fix: %s\n", err.Fix.Description))
+			fmt.Fprintf(&msgSb240, "    Fix: %s\n", err.Fix.Description)
 		}
 	}
 
@@ -270,7 +270,7 @@ func (r ValidationResult) String() string {
 
 		var msgSb253 strings.Builder
 		for _, warn := range r.Warnings {
-			msgSb253.WriteString(fmt.Sprintf("  [%s] %s\n", warn.Code, warn.Message))
+			fmt.Fprintf(&msgSb253, "  [%s] %s\n", warn.Code, warn.Message)
 		}
 
 		msg += msgSb253.String()

@@ -60,7 +60,7 @@ func (b *Builder) AddActionState(name string, action Action, next string) *Build
 	// This will be overridden by the programmatic state in Build()
 	stateConfig := StateConfig{
 		Name: name,
-		Type: "action",
+		Type: StateTypeAction,
 		Actions: []ActionConfig{
 			{
 				Type:       "sampling", // placeholder type that can be built
@@ -96,7 +96,7 @@ func (b *Builder) AddConditionalState(name string, cond func(*Context) (string, 
 	// Conditional type would fail validation, so use action type with placeholder
 	stateConfig := StateConfig{
 		Name: name,
-		Type: "action",
+		Type: StateTypeAction,
 		Actions: []ActionConfig{
 			{
 				Type:       "sampling", // placeholder type that can be built

@@ -416,7 +416,10 @@ func (g *poolImpl[C]) loop() {
 		case <-ticker.C:
 			// Shuffle the object pool occasionally to avoid any potential
 			// starvation issues.
-			rand.Shuffle(len(objectPool), func(i, j int) {
+			// G404: this shuffle only spreads load across pooled objects to
+			// avoid starvation. It is not security-sensitive, so the faster
+			// non-cryptographic generator is the right choice.
+			rand.Shuffle(len(objectPool), func(i, j int) { //nolint:gosec
 				objectPool[i], objectPool[j] = objectPool[j], objectPool[i]
 			})
 		}

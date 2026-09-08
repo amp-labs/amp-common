@@ -66,6 +66,17 @@ const (
 	// This can be overridden using LogErrorParams.DefaultMessage or LogErrorParams.MessageOverride.
 	DefaultLogErrorMessage = "HTTP request failed"
 
+	// Field names of the structured detail map attached to every HTTP log record.
+	// Kept as constants so requests, responses and errors stay consistent.
+	fieldMethod        = "method"
+	fieldURL           = "url"
+	fieldCorrelationID = "correlationId"
+	fieldHeaders       = "headers"
+	fieldStatus        = "status"
+	fieldStatusCode    = "statusCode"
+	fieldBody          = "body"
+	fieldError         = "error"
+
 	// contextKeyArchive is the context key for marking HTTP logs for archival.
 	// This is used internally to tag logs that should be archived for long-term storage.
 	contextKeyArchive contextKey = "archive"
@@ -621,15 +632,15 @@ func LogRequest(
 	}
 
 	details := map[string]any{
-		"method":        request.Method,
-		"url":           u.String(),
-		"correlationId": correlationID,
-		"headers":       params.getHeaders(ctx, request),
+		fieldMethod:        request.Method,
+		fieldURL:           u.String(),
+		fieldCorrelationID: correlationID,
+		fieldHeaders:       params.getHeaders(ctx, request),
 	}
 
 	body, _ := params.getBody(ctx, request, optionalBody)
 	if body != nil {
-		details["body"] = body
+		details[fieldBody] = body
 	}
 
 	params.log(ctx, request, details)
@@ -677,17 +688,17 @@ func LogResponse(
 	}
 
 	details := map[string]any{
-		"method":        requestMethod,
-		"url":           u.String(),
-		"correlationId": correlationID,
-		"headers":       params.getHeaders(ctx, response),
-		"status":        response.Status,
-		"statusCode":    response.StatusCode,
+		fieldMethod:        requestMethod,
+		fieldURL:           u.String(),
+		fieldCorrelationID: correlationID,
+		fieldHeaders:       params.getHeaders(ctx, response),
+		fieldStatus:        response.Status,
+		fieldStatusCode:    response.StatusCode,
 	}
 
 	body, _ := params.getBody(ctx, response, optionalBody)
 	if body != nil {
-		details["body"] = body
+		details[fieldBody] = body
 	}
 
 	params.log(ctx, response, details)
@@ -743,13 +754,13 @@ func LogError(
 	}
 
 	details := map[string]any{
-		"method":        requestMethod,
-		"url":           urlString,
-		"correlationId": correlationID,
+		fieldMethod:        requestMethod,
+		fieldURL:           urlString,
+		fieldCorrelationID: correlationID,
 	}
 
 	if err != nil {
-		details["error"] = err.Error()
+		details[fieldError] = err.Error()
 	}
 
 	params.log(ctx, err, details)

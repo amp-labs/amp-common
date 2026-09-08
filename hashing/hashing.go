@@ -171,7 +171,9 @@ type HashableInt8 int8
 
 // UpdateHash writes the int8 value to the hash as a single byte.
 func (i HashableInt8) UpdateHash(h hash.Hash) error {
-	buf := []byte{byte(i)}
+	// G115: int8 and byte are the same width, so this is a deliberate
+	// reinterpretation of the bit pattern, not a lossy conversion.
+	buf := []byte{byte(i)} //nolint:gosec
 	_, err := h.Write(buf)
 
 	return err

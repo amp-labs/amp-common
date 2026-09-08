@@ -10,7 +10,7 @@ package pointer
 //	s := pointer.To("hello")  // *string
 //	i := pointer.To(42)       // *int
 func To[T any](v T) *T {
-	return &v
+	return new(v)
 }
 
 // Value safely dereferences a pointer and returns the value and a boolean indicating success.

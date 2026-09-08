@@ -2,6 +2,7 @@ package try_test
 
 import (
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/amp-labs/amp-common/try"
@@ -124,7 +125,7 @@ func TestMap(t *testing.T) {
 
 		tr := try.Try[int]{Value: 5, Error: nil}
 		result := try.Map(tr, func(v int) (string, error) {
-			return "Number: " + string(rune(v+'0')), nil
+			return "Number: " + strconv.Itoa(v), nil
 		})
 
 		assert.True(t, result.IsSuccess())

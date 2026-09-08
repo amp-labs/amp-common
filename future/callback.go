@@ -4,6 +4,7 @@ import (
 	"context"
 	"runtime/debug"
 
+	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/logger"
 	"github.com/amp-labs/amp-common/utils"
 )
@@ -95,17 +96,22 @@ func invokeCallback[T any](kind string, callback func(T), value T) {
 //   - Logging uses the amp-common logger with context for observability
 //
 // This function is intentionally unexported - callers should use OnSuccessContext/OnErrorContext/OnResultContext.
+//
+// contextcheck: the Background() fallback is only reached when the caller
+// registered the callback without a context, which Promise permits.
+//nolint:contextcheck
 func invokeCallbackContext[T any](ctx context.Context, kind string, callback func(context.Context, T), value T) {
 	if callback == nil {
 		return
 	}
 
-	go func() {
-		if ctx == nil {
-			ctx = context.Background()
-		}
+	// Callbacks can be registered with a nil context (see Promise callback
+	// registrations), so resolve the fallback before starting the goroutine.
+	// That way the callback always inherits the caller's context when it has one.
+	parent := contexts.EnsureContext(ctx)
 
-		cctx, cancel := context.WithCancel(ctx)
+	go func() {
+		cctx, cancel := context.WithCancel(parent)
 		defer cancel()
 
 		defer func() {

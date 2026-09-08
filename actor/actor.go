@@ -116,7 +116,7 @@ func (a *Actor[Request, Response]) runProcessor(
 			actorPanic.WithLabelValues(subsystem, name).Inc()
 
 			log.Error("actor recovered from panic",
-				"actor", name,
+				labelActor, name,
 				"request", msg.Request,
 				"error", err,
 				"stack", string(debug.Stack()))
@@ -369,7 +369,7 @@ func (r *Ref[Request, Response]) submit(ctx context.Context, message Message[Req
 func (r *Ref[Request, Response]) Publish(message Message[Request, Response]) {
 	err := r.submit(context.Background(), message)
 	if err != nil {
-		slog.Error("Publish: error publishing actor message", "actor", r.name, "error", err)
+		slog.Error("Publish: error publishing actor message", labelActor, r.name, "error", err)
 	}
 }
 
@@ -378,7 +378,7 @@ func (r *Ref[Request, Response]) Publish(message Message[Request, Response]) {
 func (r *Ref[Request, Response]) PublishCtx(ctx context.Context, message Message[Request, Response]) {
 	err := r.submit(ctx, message)
 	if err != nil {
-		slog.Error("PublishCtx: error publishing actor message", "actor", r.name, "error", err)
+		slog.Error("PublishCtx: error publishing actor message", labelActor, r.name, "error", err)
 	}
 }
 
@@ -399,7 +399,7 @@ func (r *Ref[Request, Response]) SendWithWeight(request Request, weight int) {
 		Weight:  weight,
 	})
 	if err != nil {
-		slog.Error("Send: error sending actor message", "actor", r.name, "error", err)
+		slog.Error("Send: error sending actor message", labelActor, r.name, "error", err)
 	}
 }
 
@@ -419,7 +419,7 @@ func (r *Ref[Request, Response]) SendCtxWithWeight(ctx context.Context, request 
 		Weight:  weight,
 	})
 	if err != nil {
-		slog.Error("SendCtx: error sending actor message", "actor", r.name, "error", err)
+		slog.Error("SendCtx: error sending actor message", labelActor, r.name, "error", err)
 	}
 }
 

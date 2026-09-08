@@ -63,18 +63,18 @@ func (l *DefaultLogger) StateEntered(ctx context.Context, state string, data map
 	smCtx, hasCtx := ctx.Value(stateMachineContextKey).(*Context)
 
 	fields := []any{
-		"state", state,
+		labelState, state,
 		"data_keys", len(data),
 	}
 
 	if hasCtx {
 		fields = append(
 			fields,
-			"session_id", smCtx.SessionID,
-			"project_id", smCtx.ProjectID,
-			"provider", smCtx.Provider,
-			"chunk_id", smCtx.ContextChunkID,
-			"tool", smCtx.ToolName,
+			labelSessionID, smCtx.SessionID,
+			labelProjectID, smCtx.ProjectID,
+			labelProvider, smCtx.Provider,
+			labelChunkID, smCtx.ContextChunkID,
+			labelTool, smCtx.ToolName,
 			"path_history", smCtx.PathHistory,
 		)
 
@@ -95,20 +95,20 @@ func (l *DefaultLogger) StateExited(ctx context.Context, state string, duration 
 	smCtx, hasCtx := ctx.Value(stateMachineContextKey).(*Context)
 
 	fields := []any{
-		"state", state,
+		labelState, state,
 		"duration_ms", duration.Milliseconds(),
 	}
 
 	if hasCtx {
 		fields = append(
 			fields,
-			"session_id", smCtx.SessionID,
-			"project_id", smCtx.ProjectID,
-			"provider", smCtx.Provider,
-			"chunk_id", smCtx.ContextChunkID,
-			"tool", smCtx.ToolName,
+			labelSessionID, smCtx.SessionID,
+			labelProjectID, smCtx.ProjectID,
+			labelProvider, smCtx.Provider,
+			labelChunkID, smCtx.ContextChunkID,
+			labelTool, smCtx.ToolName,
 			"path_history", smCtx.PathHistory,
-			"outcome", func() string {
+			labelOutcome, func() string {
 				if err != nil {
 					return "error"
 				}
@@ -137,11 +137,11 @@ func (l *DefaultLogger) TransitionExecuted(ctx context.Context, from, to string)
 	if hasCtx {
 		fields = append(
 			fields,
-			"session_id", smCtx.SessionID,
-			"project_id", smCtx.ProjectID,
-			"provider", smCtx.Provider,
-			"chunk_id", smCtx.ContextChunkID,
-			"tool", smCtx.ToolName,
+			labelSessionID, smCtx.SessionID,
+			labelProjectID, smCtx.ProjectID,
+			labelProvider, smCtx.Provider,
+			labelChunkID, smCtx.ContextChunkID,
+			labelTool, smCtx.ToolName,
 			"path_history", smCtx.PathHistory,
 		)
 	}
@@ -154,7 +154,7 @@ func (l *DefaultLogger) ActionStarted(ctx context.Context, action string) {
 	// Use logger.Get(ctx) for automatic trace correlation
 	logger.Get(ctx).InfoContext(
 		ctx, "Action started",
-		"action", action,
+		labelAction, action,
 	)
 }
 
@@ -163,14 +163,14 @@ func (l *DefaultLogger) ActionCompleted(ctx context.Context, action string, dura
 	if err != nil {
 		logger.Get(ctx).ErrorContext(
 			ctx, "Action completed with error",
-			"action", action,
+			labelAction, action,
 			"duration_ms", duration.Milliseconds(),
 			"error", err,
 		)
 	} else {
 		logger.Get(ctx).InfoContext(
 			ctx, "Action completed",
-			"action", action,
+			labelAction, action,
 			"duration_ms", duration.Milliseconds(),
 		)
 	}

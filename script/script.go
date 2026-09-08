@@ -303,9 +303,7 @@ func run(
 
 	err := callback(ctx)
 	if err != nil {
-		var exitErr *exitError
-
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exitError](err); ok {
 			if exitErr.code != 0 {
 				log.Error("error running script", "error", err)
 			}

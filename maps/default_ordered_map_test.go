@@ -584,26 +584,11 @@ func TestDefaultOrderedMapClone(t *testing.T) {
 		t.Parallel()
 
 		baseMap := maps.NewOrderedHashMap[testKey, int](hashing.Sha256)
-		//nolint:varnamelen // Short name acceptable in test context
-		m := maps.NewDefaultOrderedMap(baseMap, func(k testKey) (int, error) {
+		orderedMap := maps.NewDefaultOrderedMap(baseMap, func(k testKey) (int, error) {
 			return 99, nil
 		})
 
-		err := m.Add(testKey{value: "a"}, 1)
-		require.NoError(t, err)
-		err = m.Add(testKey{value: "b"}, 2)
-		require.NoError(t, err)
-
-		clone := m.Clone()
-		assert.Equal(t, 2, clone.Size())
-
-		// Modify original
-		err = m.Add(testKey{value: "c"}, 3)
-		require.NoError(t, err)
-
-		// Clone should be unchanged
-		assert.Equal(t, 3, m.Size())
-		assert.Equal(t, 2, clone.Size())
+		assertCloneIsIndependent(t, orderedMap)
 	})
 
 	t.Run("preserves insertion order", func(t *testing.T) {

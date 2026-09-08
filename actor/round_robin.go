@@ -12,11 +12,11 @@ var ErrNoActors = errors.New("no actors provided")
 // thread-safe access to the counter variable. The counter will wrap around
 // to zero when it reaches the maximum number of actors or overflows.
 func roundRobinCounter(n int) func() int {
-	var counter int32
+	var counter atomic.Int32
 
 	return func() int {
 		for {
-			current := atomic.LoadInt32(&counter)
+			current := counter.Load()
 			next := current + 1
 
 			// Reset to zero if we're at an overflow boundary
@@ -26,7 +26,7 @@ func roundRobinCounter(n int) func() int {
 
 			// Ensure thread-safety by using CompareAndSwap.
 			// If we failed to update the counter, retry by looping.
-			if atomic.CompareAndSwapInt32(&counter, current, next) {
+			if counter.CompareAndSwap(current, next) {
 				return int(next)
 			}
 		}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/andybalholm/brotli"
@@ -219,7 +220,7 @@ func TestDecompressor_MultipleRequests(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		data := []byte("Request " + string(rune('0'+callCount)))
+		data := []byte("Request " + strconv.Itoa(callCount))
 
 		compressedData, err := compressGzip(data)
 		if err != nil {
@@ -251,7 +252,7 @@ func TestDecompressor_MultipleRequests(t *testing.T) {
 
 		_ = resp.Body.Close()
 
-		expected := "Request " + string(rune('0'+i))
+		expected := "Request " + strconv.Itoa(i)
 		assert.Equal(t, expected, string(body))
 	}
 }

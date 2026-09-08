@@ -100,14 +100,14 @@ func DumpContext(ctx *statemachine.Context) string {
 	var builder strings.Builder
 
 	builder.WriteString("=== Context State ===\n")
-	builder.WriteString(fmt.Sprintf("Session ID: %s\n", ctx.SessionID))
-	builder.WriteString(fmt.Sprintf("Project ID: %s\n", ctx.ProjectID))
-	builder.WriteString(fmt.Sprintf("Current State: %s\n", ctx.CurrentState))
+	fmt.Fprintf(&builder, "Session ID: %s\n", ctx.SessionID)
+	fmt.Fprintf(&builder, "Project ID: %s\n", ctx.ProjectID)
+	fmt.Fprintf(&builder, "Current State: %s\n", ctx.CurrentState)
 	builder.WriteString("\nData:\n")
 
 	// Pretty print data
 	for key, val := range ctx.Data {
-		builder.WriteString(fmt.Sprintf("  %s: ", key))
+		fmt.Fprintf(&builder, "  %s: ", key)
 
 		// Try to format as JSON for complex types
 		if _, isSimple := val.(string); !isSimple { //nolint:nestif // Checking multiple simple types sequentially
@@ -125,14 +125,14 @@ func DumpContext(ctx *statemachine.Context) string {
 			}
 		}
 
-		builder.WriteString(fmt.Sprintf("%v\n", val))
+		fmt.Fprintf(&builder, "%v\n", val)
 	}
 
 	builder.WriteString("\nHistory:\n")
 
 	for historyIdx, transition := range ctx.History {
-		builder.WriteString(fmt.Sprintf("  [%d] %s -> %s (%s)\n",
-			historyIdx, transition.From, transition.To, transition.Timestamp.Format("15:04:05")))
+		fmt.Fprintf(&builder, "  [%d] %s -> %s (%s)\n",
+			historyIdx, transition.From, transition.To, transition.Timestamp.Format("15:04:05"))
 	}
 
 	builder.WriteString("====================\n")
@@ -154,9 +154,9 @@ func VisualizeDependencies(actions map[string][]string) string {
 		} else {
 			for depIdx, dep := range deps {
 				if depIdx == len(deps)-1 {
-					builder.WriteString(fmt.Sprintf("  └─ %s\n", dep))
+					fmt.Fprintf(&builder, "  └─ %s\n", dep)
 				} else {
-					builder.WriteString(fmt.Sprintf("  ├─ %s\n", dep))
+					fmt.Fprintf(&builder, "  ├─ %s\n", dep)
 				}
 			}
 		}
@@ -177,7 +177,7 @@ func CompareContexts(before, after *statemachine.Context) string {
 
 	// Check state change
 	if before.CurrentState != after.CurrentState {
-		builder.WriteString(fmt.Sprintf("State: %s -> %s\n\n", before.CurrentState, after.CurrentState))
+		fmt.Fprintf(&builder, "State: %s -> %s\n\n", before.CurrentState, after.CurrentState)
 	}
 
 	// Check data changes
@@ -188,16 +188,16 @@ func CompareContexts(before, after *statemachine.Context) string {
 		beforeVal, existed := before.Data[key]
 
 		if !existed {
-			builder.WriteString(fmt.Sprintf("  + %s: %v\n", key, afterVal))
+			fmt.Fprintf(&builder, "  + %s: %v\n", key, afterVal)
 		} else if fmt.Sprintf("%v", beforeVal) != fmt.Sprintf("%v", afterVal) {
-			builder.WriteString(fmt.Sprintf("  ~ %s: %v -> %v\n", key, beforeVal, afterVal))
+			fmt.Fprintf(&builder, "  ~ %s: %v -> %v\n", key, beforeVal, afterVal)
 		}
 	}
 
 	// Removed keys
 	for key := range before.Data {
 		if _, exists := after.Data[key]; !exists {
-			builder.WriteString(fmt.Sprintf("  - %s\n", key))
+			fmt.Fprintf(&builder, "  - %s\n", key)
 		}
 	}
 
@@ -207,8 +207,8 @@ func CompareContexts(before, after *statemachine.Context) string {
 
 		for transIdx := len(before.History); transIdx < len(after.History); transIdx++ {
 			t := after.History[transIdx]
-			builder.WriteString(fmt.Sprintf("  %s -> %s (%s)\n",
-				t.From, t.To, t.Timestamp.Format("15:04:05")))
+			fmt.Fprintf(&builder, "  %s -> %s (%s)\n",
+				t.From, t.To, t.Timestamp.Format("15:04:05"))
 		}
 	}
 

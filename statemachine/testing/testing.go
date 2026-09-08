@@ -65,7 +65,7 @@ func NewTestEngineWithFactory(
 	// Add execution hook to record state/action trace
 	engine.AddExecutionHook(func(ctx context.Context, actionName string, stateName string, phase string, err error) {
 		switch phase {
-		case "start":
+		case statemachine.PhaseStart:
 			// Record state entry
 			te.executionTrace = append(te.executionTrace, TraceEntry{
 				Timestamp: time.Now(),
@@ -75,7 +75,7 @@ func NewTestEngineWithFactory(
 				Error:     nil,
 				Context:   nil, // Context snapshot added on "end" phase
 			})
-		case "end":
+		case statemachine.PhaseEnd:
 			// Update the last trace entry with duration and error
 			if len(te.executionTrace) > 0 {
 				lastIdx := len(te.executionTrace) - 1

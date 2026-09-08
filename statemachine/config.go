@@ -10,8 +10,14 @@ import (
 )
 
 const (
+	// StateTypeAction represents an action state type.
+	StateTypeAction = "action"
+
 	// StateTypeConditional represents a conditional state type.
 	StateTypeConditional = "conditional"
+
+	// StateTypeFinal represents a terminal state type.
+	StateTypeFinal = "final"
 )
 
 // ConfigLoader is an interface for loading configurations by name.
@@ -193,7 +199,7 @@ func (c *Config) Validate() error {
 		}
 
 		// Validate action states have actions
-		if state.Type == "action" && len(state.Actions) == 0 {
+		if state.Type == StateTypeAction && len(state.Actions) == 0 {
 			return fmt.Errorf("state %s: %w", state.Name, ErrActionStateMissingAction)
 		}
 

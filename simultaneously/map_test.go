@@ -489,14 +489,12 @@ func TestFlatMapMap_EmptyOutputs(t *testing.T) {
 	require.NoError(t, input.Add(maps.Key[string]{Key: "a"}, 1))
 	require.NoError(t, input.Add(maps.Key[string]{Key: "b"}, 2))
 
-	//nolint:lll // Type signature is unavoidably long
-	output, err := FlatMapMap(2, input, func(ctx context.Context, k maps.Key[string], v int) (maps.Map[maps.Key[string], int], error) {
-		return maps.NewHashMap[maps.Key[string], int](hashing.Sha256), nil
+	assertFlatMapIsEmpty(t, func() (maps.Map[maps.Key[string], int], error) {
+		//nolint:lll // Type signature is unavoidably long
+		return FlatMapMap(2, input, func(ctx context.Context, k maps.Key[string], v int) (maps.Map[maps.Key[string], int], error) {
+			return maps.NewHashMap[maps.Key[string], int](hashing.Sha256), nil
+		})
 	})
-
-	require.NoError(t, err)
-	require.NotNil(t, output)
-	assert.Equal(t, 0, output.Size())
 }
 
 // TestFlatMapMapCtx_ContextCancellation tests context cancellation.

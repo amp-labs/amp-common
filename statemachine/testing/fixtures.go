@@ -105,6 +105,46 @@ func SaveTestConfig(name string, config *statemachine.Config) error {
 	return nil
 }
 
+// State and condition names used by the fixture configurations below.
+const (
+	stateStart    = "start"
+	stateMiddle   = "middle"
+	stateEnd      = "end"
+	stateInit     = "init"
+	stateValidate = "validate"
+	stateProcess  = "process"
+	stateRetry    = "retry"
+	stateSuccess  = "success"
+	stateFailure  = "failure"
+	stateComplete = "complete"
+
+	conditionAlways = "always"
+
+	// Every fixture state carries the same placeholder action.
+	actionTypeNoop = "noop"
+	actionNameTest = "test"
+)
+
+// actionState builds an action state with the placeholder action that every
+// fixture below uses. Keeps the fixture configs readable.
+func actionState(name string) statemachine.StateConfig {
+	return statemachine.StateConfig{
+		Name: name,
+		Type: statemachine.StateTypeAction,
+		Actions: []statemachine.ActionConfig{
+			{Type: actionTypeNoop, Name: actionNameTest},
+		},
+	}
+}
+
+// finalState builds a terminal state with the given name.
+func finalState(name string) statemachine.StateConfig {
+	return statemachine.StateConfig{
+		Name: name,
+		Type: statemachine.StateTypeFinal,
+	}
+}
+
 // CommonTestConfigs provides frequently used test configurations.
 var CommonTestConfigs = struct {
 	Linear    func() *statemachine.Config
@@ -115,73 +155,73 @@ var CommonTestConfigs = struct {
 	Linear: func() *statemachine.Config {
 		return &statemachine.Config{
 			Name:         "linear",
-			InitialState: "start",
-			FinalStates:  []string{"end"},
+			InitialState: stateStart,
+			FinalStates:  []string{stateEnd},
 			States: []statemachine.StateConfig{
-				{Name: "start", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "middle", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "end", Type: "final"},
+				actionState(stateStart),
+				actionState(stateMiddle),
+				finalState(stateEnd),
 			},
 			Transitions: []statemachine.TransitionConfig{
-				{From: "start", To: "middle", Condition: "always"},
-				{From: "middle", To: "end", Condition: "always"},
+				{From: stateStart, To: stateMiddle, Condition: conditionAlways},
+				{From: stateMiddle, To: stateEnd, Condition: conditionAlways},
 			},
 		}
 	},
 	Branching: func() *statemachine.Config {
 		return &statemachine.Config{
 			Name:         "branching",
-			InitialState: "start",
-			FinalStates:  []string{"success", "failure"},
+			InitialState: stateStart,
+			FinalStates:  []string{stateSuccess, stateFailure},
 			States: []statemachine.StateConfig{
-				{Name: "start", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "success", Type: "final"},
-				{Name: "failure", Type: "final"},
+				actionState(stateStart),
+				finalState(stateSuccess),
+				finalState(stateFailure),
 			},
 			Transitions: []statemachine.TransitionConfig{
-				{From: "start", To: "success", Condition: "result.success"},
-				{From: "start", To: "failure", Condition: "result.failure"},
+				{From: stateStart, To: stateSuccess, Condition: "result.success"},
+				{From: stateStart, To: stateFailure, Condition: "result.failure"},
 			},
 		}
 	},
 	Loop: func() *statemachine.Config {
 		return &statemachine.Config{
 			Name:         "loop",
-			InitialState: "start",
-			FinalStates:  []string{"complete"},
+			InitialState: stateStart,
+			FinalStates:  []string{stateComplete},
 			States: []statemachine.StateConfig{
-				{Name: "start", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "retry", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "complete", Type: "final"},
+				actionState(stateStart),
+				actionState(stateRetry),
+				finalState(stateComplete),
 			},
 			Transitions: []statemachine.TransitionConfig{
-				{From: "start", To: "retry", Condition: "always"},
-				{From: "retry", To: "retry", Condition: "attempts < 3"},
-				{From: "retry", To: "complete", Condition: "attempts >= 3"},
+				{From: stateStart, To: stateRetry, Condition: conditionAlways},
+				{From: stateRetry, To: stateRetry, Condition: "attempts < 3"},
+				{From: stateRetry, To: stateComplete, Condition: "attempts >= 3"},
 			},
 		}
 	},
 	Complex: func() *statemachine.Config {
 		return &statemachine.Config{
 			Name:         "complex",
-			InitialState: "init",
-			FinalStates:  []string{"success", "failure"},
+			InitialState: stateInit,
+			FinalStates:  []string{stateSuccess, stateFailure},
 			States: []statemachine.StateConfig{
-				{Name: "init", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "validate", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "process", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "retry", Type: "action", Actions: []statemachine.ActionConfig{{Type: "noop", Name: "test"}}},
-				{Name: "success", Type: "final"},
-				{Name: "failure", Type: "final"},
+				actionState(stateInit),
+				actionState(stateValidate),
+				actionState(stateProcess),
+				actionState(stateRetry),
+				finalState(stateSuccess),
+				finalState(stateFailure),
 			},
 			Transitions: []statemachine.TransitionConfig{
-				{From: "init", To: "validate", Condition: "always"},
-				{From: "validate", To: "process", Condition: "valid"},
-				{From: "validate", To: "failure", Condition: "!valid"},
-				{From: "process", To: "success", Condition: "success"},
-				{From: "process", To: "retry", Condition: "retryable"},
-				{From: "retry", To: "process", Condition: "attempts < 3"},
-				{From: "retry", To: "failure", Condition: "attempts >= 3"},
+				{From: stateInit, To: stateValidate, Condition: conditionAlways},
+				{From: stateValidate, To: stateProcess, Condition: "valid"},
+				{From: stateValidate, To: stateFailure, Condition: "!valid"},
+				{From: stateProcess, To: stateSuccess, Condition: "success"},
+				{From: stateProcess, To: stateRetry, Condition: "retryable"},
+				{From: stateRetry, To: stateProcess, Condition: "attempts < 3"},
+				{From: stateRetry, To: stateFailure, Condition: "attempts >= 3"},
 			},
 		}
 	},

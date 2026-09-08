@@ -608,7 +608,7 @@ func ToNestedPath(keys ...string) string {
 	b.WriteString("$")
 
 	for _, key := range keys {
-		b.WriteString(fmt.Sprintf("['%s']", key))
+		fmt.Fprintf(&b, "['%s']", key)
 	}
 
 	return b.String()

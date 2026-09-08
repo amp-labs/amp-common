@@ -25,6 +25,15 @@ const (
 // ActionExecutionHook is called before and after action execution.
 type ActionExecutionHook func(ctx context.Context, actionName string, stateName string, phase string, err error)
 
+// Phases reported to an ActionExecutionHook.
+const (
+	// PhaseStart is reported before an action executes.
+	PhaseStart = "start"
+
+	// PhaseEnd is reported after an action executes.
+	PhaseEnd = "end"
+)
+
 // Engine orchestrates state machine execution.
 type Engine struct {
 	states             map[string]State
@@ -313,7 +322,7 @@ func (e *Engine) executeStateWithHooks(ctx context.Context, state State, smCtx *
 
 	// Call "start" hooks
 	for _, hook := range e.executionHooks {
-		hook(execCtx, state.Name(), smCtx.CurrentState, "start", nil)
+		hook(execCtx, state.Name(), smCtx.CurrentState, PhaseStart, nil)
 	}
 
 	// Execute state
@@ -321,7 +330,7 @@ func (e *Engine) executeStateWithHooks(ctx context.Context, state State, smCtx *
 
 	// Call "end" hooks
 	for _, hook := range e.executionHooks {
-		hook(execCtx, state.Name(), smCtx.CurrentState, "end", err)
+		hook(execCtx, state.Name(), smCtx.CurrentState, PhaseEnd, err)
 	}
 
 	// Return result and error (properly propagated)
@@ -370,7 +379,7 @@ func (e *Engine) findTransition(ctx context.Context, smCtx *Context, preferred s
 // buildStateFromConfig creates a State from configuration.
 func buildStateFromConfig(config StateConfig, factory *ActionFactory) (State, error) {
 	switch config.Type {
-	case "action":
+	case StateTypeAction:
 		// Build actions
 		var actions []Action
 
@@ -394,11 +403,11 @@ func buildStateFromConfig(config StateConfig, factory *ActionFactory) (State, er
 		// Determine next state (will be overridden by transitions)
 		return NewActionState(config.Name, action, ""), nil
 
-	case "conditional":
+	case StateTypeConditional:
 		// Conditional states need custom implementation
 		return nil, ErrConditionalNotImplemented
 
-	case "final":
+	case StateTypeFinal:
 		return NewFinalState(config.Name), nil
 
 	default:

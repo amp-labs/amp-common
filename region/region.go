@@ -11,11 +11,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
 
 	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/envutil"
 	"github.com/amp-labs/amp-common/lazy"
-	"github.com/amp-labs/amp-common/logger"
 )
 
 // Region represents a deployment region. It is a plain string so that it
@@ -131,7 +132,7 @@ var currentRegion = lazy.NewCtx[Region](func(ctx context.Context) Region {
 	// Only announce a region that was actually configured. An Unknown region
 	// is the expected state in local development and tests, so it stays quiet.
 	if value != Unknown {
-		logger.Get().Info("Configured region", "region", value)
+		slog.Info("Configured region", "region", value)
 	}
 
 	return value
@@ -145,6 +146,8 @@ func getRegion(ctx context.Context) Region {
 	reader := envutil.String(ctx, "REGION")
 
 	env := envutil.Map[string, Region](reader, func(s string) (Region, error) {
+		s = strings.ToLower(strings.TrimSpace(s))
+
 		switch Region(s) {
 		case Us, Eu:
 			return Region(s), nil
@@ -154,7 +157,7 @@ func getRegion(ctx context.Context) Region {
 			// REGION=unknown is treated as a misconfiguration, not a choice.
 			fallthrough
 		default:
-			logger.Get(ctx).Warn("unknown region", "value", s)
+			slog.Warn("unknown region", "value", s)
 
 			return "", fmt.Errorf("%w: %s", ErrUnrecognizedRegion, s)
 		}

@@ -17,6 +17,7 @@ import (
 	"github.com/amp-labs/amp-common/envutil"
 	errors2 "github.com/amp-labs/amp-common/errors"
 	"github.com/amp-labs/amp-common/lazy"
+	"github.com/amp-labs/amp-common/region"
 	"github.com/amp-labs/amp-common/shutdown"
 	"github.com/amp-labs/amp-common/tests"
 	"github.com/neilotoole/slogt"
@@ -912,7 +913,7 @@ func GetPodName() string {
 	return hostname.Get()
 }
 
-// region holds the deployment region for this process, read from the
+// logRegion holds the deployment region for this process, read from the
 // LOG_REGION environment variable (e.g. "us-west1", "europe-west3").
 // It is set on every deployed pod; in local development it is typically
 // unset, in which case the "region" attribute is omitted from log messages.
@@ -926,13 +927,23 @@ func GetPodName() string {
 //
 // Thread-safety: Uses lazy.New for safe concurrent initialization.
 // nolint:gochecknoglobals
-var region = lazy.New[string](func() string {
+var logRegion = lazy.New[string](func() string {
 	return envutil.String(context.Background(), "LOG_REGION").ValueOrElse("")
 })
 
 // GetRegion returns the deployment region (or empty string if LOG_REGION is unset).
-func GetRegion() string {
-	return region.Get()
+func GetRegion(ctx context.Context) string {
+	lr := logRegion.Get()
+
+	if lr == "" {
+		reg := region.Current(ctx)
+
+		if reg.Valid() {
+			return reg.String()
+		}
+	}
+
+	return lr
 }
 
 // getRealContext extracts the first non-nil context from a variadic list.
@@ -1113,7 +1124,7 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 	}
 
 	// Add the deployment region.
-	rgn := region.Get()
+	rgn := GetRegion(ctx)
 	if len(rgn) > 0 {
 		logger = logger.With("region", rgn)
 	}

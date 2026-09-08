@@ -48,10 +48,10 @@ func GenerateMermaidWithOptions(config *statemachine.Config, opts Options) (stri
 
 	// Header
 	sb.WriteString("```mermaid\n")
-	sb.WriteString(fmt.Sprintf("stateDiagram-%s\n", opts.Direction))
+	fmt.Fprintf(&sb, "stateDiagram-%s\n", opts.Direction)
 
 	// Initial state marker
-	sb.WriteString(fmt.Sprintf("    [*] --> %s\n", config.InitialState))
+	fmt.Fprintf(&sb, "    [*] --> %s\n", config.InitialState)
 
 	// Build highlight map for quick lookup
 	highlightMap := make(map[string]bool)
@@ -80,8 +80,8 @@ func GenerateMermaidWithOptions(config *statemachine.Config, opts Options) (stri
 				actionNames[i] = action.Type
 			}
 
-			sb.WriteString(fmt.Sprintf("    %s: %s\\n[%s]\n",
-				state.Name, state.Name, strings.Join(actionNames, ", ")))
+			fmt.Fprintf(&sb, "    %s: %s\\n[%s]\n",
+				state.Name, state.Name, strings.Join(actionNames, ", "))
 		}
 
 		isFinal := finalStatesMap[state.Name]
@@ -89,11 +89,11 @@ func GenerateMermaidWithOptions(config *statemachine.Config, opts Options) (stri
 		// Apply styling based on state type and highlighting
 		switch {
 		case highlightMap[state.Name]:
-			sb.WriteString(fmt.Sprintf("    class %s highlighted\n", state.Name))
+			fmt.Fprintf(&sb, "    class %s highlighted\n", state.Name)
 		case isFinal:
-			sb.WriteString(fmt.Sprintf("    class %s finalState\n", state.Name))
+			fmt.Fprintf(&sb, "    class %s finalState\n", state.Name)
 		case len(state.Actions) > 0:
-			sb.WriteString(fmt.Sprintf("    class %s actionState\n", state.Name))
+			fmt.Fprintf(&sb, "    class %s actionState\n", state.Name)
 		}
 
 		// Add transitions from this state
@@ -104,13 +104,13 @@ func GenerateMermaidWithOptions(config *statemachine.Config, opts Options) (stri
 				transitionLabel = ": " + transition.Condition
 			}
 
-			sb.WriteString(fmt.Sprintf("    %s --> %s%s\n",
-				state.Name, transition.To, transitionLabel))
+			fmt.Fprintf(&sb, "    %s --> %s%s\n",
+				state.Name, transition.To, transitionLabel)
 		}
 
 		// Mark final states
 		if isFinal {
-			sb.WriteString(fmt.Sprintf("    %s --> [*]\n", state.Name))
+			fmt.Fprintf(&sb, "    %s --> [*]\n", state.Name)
 		}
 	}
 

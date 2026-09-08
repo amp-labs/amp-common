@@ -52,7 +52,7 @@ func (f *ActionFactory) Create(config ActionConfig) (Action, error) {
 
 // noopActionBuilder creates a NoopAction from parameters.
 func noopActionBuilder(_ *ActionFactory, name string, params map[string]any) (Action, error) {
-	return &NoopAction{BaseAction: BaseAction{name: name}}, nil
+	return &NoopAction{name: name}, nil
 }
 
 // sequenceActionBuilder creates a SequenceAction from parameters.

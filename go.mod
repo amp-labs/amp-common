@@ -1,6 +1,6 @@
 module github.com/amp-labs/amp-common
 
-go 1.25.1
+go 1.27.0
 
 require (
 	codeberg.org/miekg/dns v0.6.101

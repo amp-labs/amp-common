@@ -22,7 +22,7 @@ type NoopAction struct {
 // NewNoopAction creates a new noop action.
 func NewNoopAction(name string) *NoopAction {
 	return &NoopAction{
-		BaseAction: BaseAction{name: name},
+		name: name,
 	}
 }
 
@@ -44,8 +44,8 @@ func NewValidationAction(
 	validator func(ctx context.Context, smCtx *Context) (bool, string, error),
 ) *ValidationAction {
 	return &ValidationAction{
-		BaseAction: BaseAction{name: name},
-		validator:  validator,
+		name:      name,
+		validator: validator,
 	}
 }
 

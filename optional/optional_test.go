@@ -2,6 +2,7 @@ package optional
 
 import (
 	"encoding/json"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -276,7 +277,7 @@ func TestMap(t *testing.T) {
 func TestMapTypeChange(t *testing.T) {
 	t.Parallel()
 
-	toString := func(n int) string { return string(rune(n + '0')) }
+	toString := strconv.Itoa
 
 	some := Some(5)
 	result := Map(some, toString)

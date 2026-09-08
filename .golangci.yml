@@ -15,6 +15,8 @@ linters:
     - depguard
     # Annoying and unhelpful. Assumes uninitialized (zero-valued) fields are always a bug, which is plain wrong.
     - exhaustruct
+    # Deprecated, replaced by exhaustruct_v5
+    - exhaustruct_v5
     # Marks [TODO, FIXME, BUG] comments as errors. We use these, so this is not helpful - unless we decide this is a good policy.
     - godox
     # We're not doing black-box testing, so enabling this would be counterproductive. We might want to discuss this though, it's a good practice.
@@ -45,6 +47,8 @@ linters:
     - tagliatelle
     # Deprecated, replaced by wsl_v5
     - wsl
+    # Deprecated, replaced by gomodguard_v2 (which is enabled via `default: all`)
+    - gomodguard
   settings:
     # See https://golangci-lint.run/usage/linters#revive
     revive:
@@ -68,6 +72,11 @@ linters:
         - generic
         - stdlib
         - empty
+    goconst:
+      # goconst counts occurrences across every file in a package, so test
+      # fixtures inflate the count for production code. This option exists
+      # precisely because that cannot be expressed as an exclusion rule.
+      ignore-tests: true
     misspell:
       locale: US
       mode: restricted

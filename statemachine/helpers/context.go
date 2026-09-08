@@ -31,7 +31,7 @@ func FormatContextChunks(chunks []ContextChunk) string {
 		}
 
 		if chunk.Title != "" {
-			sb.WriteString(fmt.Sprintf("## %s\n\n", chunk.Title))
+			fmt.Fprintf(&sb, "## %s\n\n", chunk.Title)
 		}
 
 		sb.WriteString(chunk.Content)
@@ -109,7 +109,7 @@ func FormatContextForPrompt(contextData map[string]any) string {
 	sb.WriteString("**Context:**\n")
 
 	for key, value := range contextData {
-		sb.WriteString(fmt.Sprintf("- %s: %v\n", key, value))
+		fmt.Fprintf(&sb, "- %s: %v\n", key, value)
 	}
 
 	return sb.String()

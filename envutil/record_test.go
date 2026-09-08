@@ -2,6 +2,7 @@ package envutil
 
 import (
 	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -267,7 +268,7 @@ func TestObserverConcurrency(t *testing.T) {
 		go func(idx int) {
 			defer wg.Done()
 
-			key := "TEST_CONCURRENT_VAR_" + string(rune('0'+idx))
+			key := "TEST_CONCURRENT_VAR_" + strconv.Itoa(idx)
 			_, _ = String(t.Context(), key).Value()
 		}(i)
 	}

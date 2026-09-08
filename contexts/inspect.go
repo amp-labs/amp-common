@@ -46,7 +46,7 @@ func getContextInternals(ctx any) *ContextNode {
 
 	// Handle both pointer and non-pointer types
 	// Some contexts like emptyCtx are not pointers
-	isPointer := val.Kind() == reflect.Ptr
+	isPointer := val.Kind() == reflect.Pointer
 	if isPointer {
 		val = val.Elem()
 		typ = typ.Elem()

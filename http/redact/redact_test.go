@@ -479,7 +479,7 @@ func TestHeaders_RealisticScenario_LoggingSafeHeaders(t *testing.T) {
 	assert.Equal(t, "MyApp/1.0", result.Get("User-Agent"))
 	assert.Equal(t, "Bearer **************************", result.Get("Authorization"))
 	assert.Equal(t, "[redacted]", result.Get("X-Api-Key"))
-	assert.Equal(t, "req-12345", result.Get("X-Request-Id"))
+	assert.Equal(t, "req-12345", result.Get("X-Request-ID"))
 	assert.Empty(t, result.Get("X-Internal-Token"))
 }
 

@@ -10,7 +10,7 @@ type OfErr[T any] struct {
 	create atomic.Pointer[func() (T, error)]
 	value  atomic.Pointer[T]
 
-	done uint32
+	done atomic.Uint32
 	m    sync.Mutex
 }
 
@@ -26,7 +26,7 @@ func (t *OfErr[T]) Get() (T, error) { //nolint:ireturn
 
 	defer func() {
 		if err := recover(); err != nil {
-			atomic.StoreUint32(&t.done, 0)
+			t.done.Store(0)
 
 			panic(err)
 		}
@@ -77,7 +77,7 @@ func (t *OfErr[T]) Get() (T, error) { //nolint:ireturn
 // This is useful in some cases (e.g., setting up test fixtures), but you should
 // prefer the Get + callback pattern for normal usage.
 func (t *OfErr[T]) Set(value T) {
-	atomic.StoreUint32(&t.done, 1)
+	t.done.Store(1)
 	t.create.Store(nil)
 	t.value.Store(&value)
 }
@@ -90,7 +90,7 @@ func (t *OfErr[T]) Initialized() bool {
 }
 
 func (t *OfErr[T]) doOrError(f func() error) error {
-	if atomic.LoadUint32(&t.done) == 0 {
+	if t.done.Load() == 0 {
 		// Outlined slow-path to allow inlining of the fast-path.
 		return t.doSlowOrError(f)
 	}
@@ -102,14 +102,14 @@ func (t *OfErr[T]) doSlowOrError(f func() error) error {
 	t.m.Lock()
 	defer t.m.Unlock()
 
-	if atomic.LoadUint32(&t.done) == 0 {
+	if t.done.Load() == 0 {
 		err := f()
 		if err != nil {
 			return err
 		}
 
 		// The callback ran without error, now we can call it initialized
-		atomic.StoreUint32(&t.done, 1)
+		t.done.Store(1)
 	}
 
 	return nil

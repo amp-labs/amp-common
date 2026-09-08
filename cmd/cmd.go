@@ -25,7 +25,9 @@ type Cmd struct {
 // The command inherits the current process's environment variables.
 // The provided context can be used to cancel the command.
 func New(ctx context.Context, cmd string, args ...string) *Cmd {
-	c := exec.CommandContext(ctx, cmd, args...)
+	// G204: running a caller-supplied command is the entire purpose of this
+	// package; there is no fixed command set to validate against.
+	c := exec.CommandContext(ctx, cmd, args...) //nolint:gosec
 	c.Env = os.Environ()
 
 	return &Cmd{
@@ -154,8 +156,7 @@ func status(err error) (int, error) {
 		return e.ExitStatus(), nil
 	}
 
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
+	if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 		if len(exitErr.Stderr) == 0 {
 			return exitErr.ExitCode(), nil
 		} else {

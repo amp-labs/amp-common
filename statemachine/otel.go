@@ -37,7 +37,7 @@ func startStateSpan(ctx context.Context, stateName string, smCtx *Context) (cont
 	ctx, span := tracer.Start(ctx, spanName)
 	addContextAttributes(span, smCtx)
 	span.SetAttributes(
-		attribute.String("state", stateName),
+		attribute.String(labelState, stateName),
 		attribute.StringSlice("path_history", smCtx.PathHistory),
 	)
 	logSpanDebug(ctx, "started", spanName, span)
@@ -60,8 +60,8 @@ func startActionSpan(
 	ctx, span := tracer.Start(ctx, spanName)
 	addContextAttributes(span, smCtx)
 	span.SetAttributes(
-		attribute.String("action", actionName),
-		attribute.String("state", stateName),
+		attribute.String(labelAction, actionName),
+		attribute.String(labelState, stateName),
 		attribute.StringSlice("path_history", smCtx.PathHistory),
 	)
 	logSpanDebug(ctx, "started", spanName, span)
@@ -72,11 +72,11 @@ func startActionSpan(
 // addContextAttributes adds Context metadata to span.
 func addContextAttributes(span trace.Span, smCtx *Context) {
 	span.SetAttributes(
-		attribute.String("tool", smCtx.ToolName),
-		attribute.String("session_id", smCtx.SessionID),
+		attribute.String(labelTool, smCtx.ToolName),
+		attribute.String(labelSessionID, smCtx.SessionID),
 		attribute.String("project_id_hash", hashID(smCtx.ProjectID)),
-		attribute.String("provider", smCtx.Provider),
-		attribute.String("chunk_id", smCtx.ContextChunkID),
+		attribute.String(labelProvider, smCtx.Provider),
+		attribute.String(labelChunkID, smCtx.ContextChunkID),
 		attribute.String("chunk_id_hash", hashID(smCtx.ContextChunkID)),
 	)
 }

@@ -8,6 +8,13 @@ import (
 // Prometheus metrics for monitoring actor behavior and performance.
 // All metrics with labels support multi-tenancy via "subsystem" and "actor" labels.
 
+// Names of the labels shared by the actor metrics. The same names are used as
+// log record keys, so that metrics and logs can be correlated by actor.
+const (
+	labelSubsystem = "subsystem"
+	labelActor     = "actor"
+)
+
 var (
 	// actorStarted counts the total number of actors started (global counter).
 	actorStarted = promauto.NewCounter(prometheus.CounterOpts{ //nolint:gochecknoglobals
@@ -25,37 +32,37 @@ var (
 	actorIdle = promauto.NewGaugeVec(prometheus.GaugeOpts{ //nolint:gochecknoglobals
 		Name: "actor_idle",
 		Help: "The total number of actors that are idle",
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// actorBusy tracks the number of actors currently busy (processing messages).
 	actorBusy = promauto.NewGaugeVec(prometheus.GaugeOpts{ //nolint:gochecknoglobals
 		Name: "actor_busy",
 		Help: "The total number of actors that are busy",
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// actorPanic counts the number of times an actor recovered from a panic.
 	actorPanic = promauto.NewCounterVec(prometheus.CounterOpts{ //nolint:gochecknoglobals
 		Name: "actor_panic",
 		Help: "The total number of actors that recovered from a panic",
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// aliveActors tracks the number of currently running actors.
 	aliveActors = promauto.NewGaugeVec(prometheus.GaugeOpts{ //nolint:gochecknoglobals
 		Name: "actor_alive_actors",
 		Help: "The total number of actors alive",
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// enqueuedMessages tracks the current queue depth (number of messages waiting to be processed).
 	enqueuedMessages = promauto.NewGaugeVec(prometheus.GaugeOpts{ //nolint:gochecknoglobals
 		Name: "actor_enqueued_messages",
 		Help: "The total number of messages enqueued",
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// submitCount counts the total number of messages submitted to actors.
 	submitCount = promauto.NewCounterVec(prometheus.CounterOpts{ //nolint:gochecknoglobals
 		Name: "actor_submit_count",
 		Help: "The total number of messages submitted",
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// submitTime measures the time spent waiting to submit a message to an actor's inbox.
 	submitTime = promauto.NewHistogramVec(prometheus.HistogramOpts{ //nolint:gochecknoglobals
@@ -71,7 +78,7 @@ var (
 			300,  // 5m
 			600,  // 10m
 		},
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// receiveTime measures the time spent waiting to receive a response from an actor.
 	receiveTime = promauto.NewHistogramVec(prometheus.HistogramOpts{ //nolint:gochecknoglobals
@@ -87,13 +94,13 @@ var (
 			300,  // 5m
 			600,  // 10m
 		},
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// processedMessages counts the total number of messages successfully processed.
 	processedMessages = promauto.NewCounterVec(prometheus.CounterOpts{ //nolint:gochecknoglobals
 		Name: "actor_processed_messages",
 		Help: "The total number of messages processed",
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 
 	// processingTime measures the time spent by the processor handling each message.
 	processingTime = promauto.NewHistogramVec(prometheus.HistogramOpts{ //nolint:gochecknoglobals
@@ -109,5 +116,5 @@ var (
 			300,  // 5m
 			600,  // 10m
 		},
-	}, []string{"subsystem", "actor"})
+	}, []string{labelSubsystem, labelActor})
 )

@@ -92,11 +92,11 @@ func validateStructPointers(inputs, outputs any) (reflect.Value, reflect.Value, 
 	inputVal := reflect.ValueOf(inputs)
 	outputVal := reflect.ValueOf(outputs)
 
-	if inputVal.Kind() != reflect.Ptr {
+	if inputVal.Kind() != reflect.Pointer {
 		return reflect.Value{}, reflect.Value{}, fmt.Errorf("%w, got %T", ErrInputsNotPointer, inputs)
 	}
 
-	if outputVal.Kind() != reflect.Ptr {
+	if outputVal.Kind() != reflect.Pointer {
 		return reflect.Value{}, reflect.Value{}, fmt.Errorf("%w, got %T", ErrOutputsNotPointer, outputs)
 	}
 
@@ -136,8 +136,8 @@ func validateFieldCompatibility(inputField, outputField reflect.Value, displayNa
 		return fmt.Errorf("%w: field %s (unexported?)", ErrFieldNotSettable, displayName)
 	}
 
-	inputIsPtr := inputField.Kind() == reflect.Ptr
-	outputIsPtr := outputField.Kind() == reflect.Ptr
+	inputIsPtr := inputField.Kind() == reflect.Pointer
+	outputIsPtr := outputField.Kind() == reflect.Pointer
 
 	if inputIsPtr != outputIsPtr {
 		return fmt.Errorf(
@@ -248,7 +248,7 @@ func BulkParseUUIDs(inputs, outputs any) error {
 		}
 
 		var fieldErr error
-		if inputField.Kind() == reflect.Ptr {
+		if inputField.Kind() == reflect.Pointer {
 			fieldErr = processPointerField(inputField, outputField, displayName)
 		} else {
 			fieldErr = processNonPointerField(inputField, outputField, displayName)

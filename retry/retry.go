@@ -224,8 +224,7 @@ func do(ctx context.Context, opts *options, operation func(ctx context.Context) 
 		// Check if the error is permanent (non-retryable)
 		var retryErr Error
 		if errors.As(err, &retryErr) && !retryErr.Temporary() {
-			var p permanentError
-			if errors.As(err, &p) {
+			if p, ok := errors.AsType[permanentError](err); ok {
 				return p.error
 			}
 

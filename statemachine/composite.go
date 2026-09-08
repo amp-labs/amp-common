@@ -17,8 +17,8 @@ type SequenceAction struct {
 // NewSequenceAction creates a new sequence action.
 func NewSequenceAction(name string, actions ...Action) *SequenceAction {
 	return &SequenceAction{
-		BaseAction: BaseAction{name: name},
-		actions:    actions,
+		name:    name,
+		actions: actions,
 	}
 }
 
@@ -49,7 +49,7 @@ func NewConditionalAction(
 	thenAction, elseAction Action,
 ) *ConditionalAction {
 	return &ConditionalAction{
-		BaseAction: BaseAction{name: name},
+		name:       name,
 		condition:  cond,
 		thenAction: thenAction,
 		elseAction: elseAction,
@@ -85,7 +85,7 @@ type RetryAction struct {
 // NewRetryAction creates a new retry action.
 func NewRetryAction(name string, action Action, maxRetries int, backoff time.Duration) *RetryAction {
 	return &RetryAction{
-		BaseAction: BaseAction{name: name},
+		name:       name,
 		action:     action,
 		maxRetries: maxRetries,
 		backoff:    backoff,
@@ -121,8 +121,8 @@ type ParallelAction struct {
 // NewParallelAction creates a new parallel action.
 func NewParallelAction(name string, actions ...Action) *ParallelAction {
 	return &ParallelAction{
-		BaseAction: BaseAction{name: name},
-		actions:    actions,
+		name:    name,
+		actions: actions,
 	}
 }
 

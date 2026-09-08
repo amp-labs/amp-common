@@ -396,10 +396,10 @@ func TestGetRegion(t *testing.T) {
 	// The value comes from LOG_REGION, which is typically unset in tests, so
 	// only stability can be asserted: the lazily-computed value is cached for
 	// the lifetime of the process.
-	regionValue := GetRegion()
+	regionValue := GetRegion(t.Context())
 
 	// Should be callable multiple times and return the same value
-	assert.Equal(t, regionValue, GetRegion())
+	assert.Equal(t, regionValue, GetRegion(t.Context()))
 }
 
 // TestWith tests the With function for adding key-value pairs.

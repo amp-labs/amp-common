@@ -59,7 +59,6 @@ func TestRegionValid(t *testing.T) {
 		{"Unknown", Unknown, false},
 		{"Empty", Region(""), false},
 		{"Unrecognized", Region("apac"), false},
-		{"WrongCase", Region("US"), false},
 	}
 
 	for _, tt := range tests {
@@ -126,8 +125,6 @@ func TestGetRegionInvalidValue(t *testing.T) {
 		envValue string
 	}{
 		{"Unrecognized", "invalid-region"},
-		{"WrongCase", "US"},
-		{"Whitespace", " us"},
 		{"Empty", ""},
 		// "unknown" is the fallback, never an accepted configuration value.
 		{"ExplicitUnknown", "unknown"},

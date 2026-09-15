@@ -3421,6 +3421,9 @@ type SubscribeConfigObject struct {
 type SubscribeProviderOptions struct {
 	// QuotaOptimization Reduces API quota consumption for update events by filtering irrelevant change events at the source, so only updates that affect watched fields are delivered. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`. Currently supported for Salesforce.
 	QuotaOptimization *QuotaOptimizationConfig `json:"quotaOptimization,omitempty"`
+
+	// UseSalesforceFlows Opt a Salesforce subscribe installation into record-triggered flows and outbound messages instead of Change Data Capture. An installation uses only one subscribe method: if any object sets this to enabled, every object with a subscribe event in that installation must set it too. Delete events are not supported on this path. Defaults to false (CDC).
+	UseSalesforceFlows *UseSalesforceFlowsConfig `json:"useSalesforceFlows,omitempty"`
 }
 
 // SubscribeRequirements Declares which auxiliary steps a provider requires to support subscriptions, beyond the per-object subscribe call itself.
@@ -3585,6 +3588,12 @@ type UpsertMetadataResponse struct {
 
 	// Success Indicates if the upsert operation was successful
 	Success bool `json:"success"`
+}
+
+// UseSalesforceFlowsConfig Opt a Salesforce subscribe installation into record-triggered flows and outbound messages instead of Change Data Capture. An installation uses only one subscribe method: if any object sets this to enabled, every object with a subscribe event in that installation must set it too. Delete events are not supported on this path. Defaults to false (CDC).
+type UseSalesforceFlowsConfig struct {
+	// Enabled Whether this object uses Salesforce record-triggered flows for subscribe.
+	Enabled bool `json:"enabled"`
 }
 
 // ValueDefault defines model for ValueDefault.

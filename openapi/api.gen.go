@@ -618,6 +618,7 @@ const (
 	ConnectionError            NotificationEventType = "connection.error"
 	ConnectionRefreshed        NotificationEventType = "connection.refreshed"
 	ConnectionUpdated          NotificationEventType = "connection.updated"
+	DestinationDeliveryError   NotificationEventType = "destination.delivery.error"
 	DestinationWebhookDisabled NotificationEventType = "destination.webhook.disabled"
 	InstallationCreated        NotificationEventType = "installation.created"
 	InstallationDeleted        NotificationEventType = "installation.deleted"
@@ -647,6 +648,8 @@ func (e NotificationEventType) Valid() bool {
 	case ConnectionRefreshed:
 		return true
 	case ConnectionUpdated:
+		return true
+	case DestinationDeliveryError:
 		return true
 	case DestinationWebhookDisabled:
 		return true

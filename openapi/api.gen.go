@@ -1283,6 +1283,9 @@ type BaseReadConfigObject struct {
 // BaseSubscribeConfig defines model for BaseSubscribeConfig.
 type BaseSubscribeConfig struct {
 	Objects *map[string]BaseSubscribeConfigObject `json:"objects,omitempty"`
+
+	// ProviderOptions Subscribe options that apply to the whole installation and only to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. For options that are set per object, see `subscribe.objects.<name>.providerOptions`.
+	ProviderOptions *SubscribeInstallationProviderOptions `json:"providerOptions,omitempty"`
 }
 
 // BaseSubscribeConfigObject defines model for BaseSubscribeConfigObject.
@@ -1300,7 +1303,7 @@ type BaseSubscribeConfigObject struct {
 	ObjectName  string             `json:"objectName" validate:"required"`
 	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
 
-	// ProviderOptions Subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected.
+	// ProviderOptions Per-object subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. Options that apply to the whole subscription live on `subscribe.providerOptions` instead.
 	ProviderOptions *SubscribeProviderOptions `json:"providerOptions,omitempty"`
 	UpdateEvent     *ConfigUpdateEvent        `json:"updateEvent,omitempty"`
 }
@@ -3398,6 +3401,9 @@ type StringFieldOptions struct {
 // SubscribeConfig defines model for SubscribeConfig.
 type SubscribeConfig struct {
 	Objects map[string]SubscribeConfigObject `json:"objects"`
+
+	// ProviderOptions Subscribe options that apply to the whole installation and only to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. For options that are set per object, see `subscribe.objects.<name>.providerOptions`.
+	ProviderOptions *SubscribeInstallationProviderOptions `json:"providerOptions,omitempty"`
 }
 
 // SubscribeConfigObject defines model for SubscribeConfigObject.
@@ -3415,18 +3421,21 @@ type SubscribeConfigObject struct {
 	ObjectName  string             `json:"objectName" validate:"required"`
 	OtherEvents *ConfigOtherEvents `json:"otherEvents,omitempty"`
 
-	// ProviderOptions Subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected.
+	// ProviderOptions Per-object subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. Options that apply to the whole subscription live on `subscribe.providerOptions` instead.
 	ProviderOptions *SubscribeProviderOptions `json:"providerOptions,omitempty"`
 	UpdateEvent     *ConfigUpdateEvent        `json:"updateEvent,omitempty"`
 }
 
-// SubscribeProviderOptions Subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected.
+// SubscribeInstallationProviderOptions Subscribe options that apply to the whole installation and only to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. For options that are set per object, see `subscribe.objects.<name>.providerOptions`.
+type SubscribeInstallationProviderOptions struct {
+	// UseSalesforceFlows Opt this installation's Salesforce subscription into record-triggered flows and outbound messages instead of Change Data Capture. Delete events are not supported on this path. Defaults to false (CDC).
+	UseSalesforceFlows *UseSalesforceFlowsConfig `json:"useSalesforceFlows,omitempty"`
+}
+
+// SubscribeProviderOptions Per-object subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. Options that apply to the whole subscription live on `subscribe.providerOptions` instead.
 type SubscribeProviderOptions struct {
 	// QuotaOptimization Reduces API quota consumption for update events by filtering irrelevant change events at the source, so only updates that affect watched fields are delivered. Requires `updateEvent.requiredWatchFields` to be non-empty; it cannot be used with `updateEvent.watchFieldsAuto: all`. Currently supported for Salesforce.
 	QuotaOptimization *QuotaOptimizationConfig `json:"quotaOptimization,omitempty"`
-
-	// UseSalesforceFlows Opt a Salesforce subscribe installation into record-triggered flows and outbound messages instead of Change Data Capture. An installation uses only one subscribe method: if any object sets this to enabled, every object with a subscribe event in that installation must set it too. Delete events are not supported on this path. Defaults to false (CDC).
-	UseSalesforceFlows *UseSalesforceFlowsConfig `json:"useSalesforceFlows,omitempty"`
 }
 
 // SubscribeRequirements Declares which auxiliary steps a provider requires to support subscriptions, beyond the per-object subscribe call itself.
@@ -3593,9 +3602,9 @@ type UpsertMetadataResponse struct {
 	Success bool `json:"success"`
 }
 
-// UseSalesforceFlowsConfig Opt a Salesforce subscribe installation into record-triggered flows and outbound messages instead of Change Data Capture. An installation uses only one subscribe method: if any object sets this to enabled, every object with a subscribe event in that installation must set it too. Delete events are not supported on this path. Defaults to false (CDC).
+// UseSalesforceFlowsConfig Opt this installation's Salesforce subscription into record-triggered flows and outbound messages instead of Change Data Capture. Delete events are not supported on this path. Defaults to false (CDC).
 type UseSalesforceFlowsConfig struct {
-	// Enabled Whether this object uses Salesforce record-triggered flows for subscribe.
+	// Enabled Whether this installation uses Salesforce record-triggered flows for subscribe.
 	Enabled bool `json:"enabled"`
 }
 

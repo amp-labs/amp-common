@@ -9,9 +9,16 @@ import (
 	"github.com/amp-labs/amp-common/errors"
 )
 
+// Job is a function that performs a unit of work and returns an error if it fails.
+//
+// This is an alias rather than a defined type so that a []Job and a
+// []func(ctx context.Context) error remain the same type: callers can build a
+// slice under either spelling and spread it into any of the Do* functions.
+type Job = func(ctx context.Context) error
+
 // Do runs the given functions in parallel and returns the first error encountered.
 // See SimultaneouslyCtx for more information.
-func Do(maxConcurrent int, f ...func(ctx context.Context) error) error {
+func Do(maxConcurrent int, f ...Job) error {
 	return DoCtx(context.Background(), maxConcurrent, f...)
 }
 
@@ -25,7 +32,7 @@ func Do(maxConcurrent int, f ...func(ctx context.Context) error) error {
 //
 // Panics that occur within the callback functions are automatically recovered and converted to errors.
 // This prevents a single panicking function from crashing the entire process.
-func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.Context) error) error {
+func DoCtx(ctx context.Context, maxConcurrent int, callback ...Job) error {
 	de := newDefaultExecutor(maxConcurrent, len(callback))
 
 	errs := errors.Collection{}
@@ -38,7 +45,7 @@ func DoCtx(ctx context.Context, maxConcurrent int, callback ...func(ctx context.
 
 // DoWithExecutor runs the given functions in parallel using a custom executor.
 // See DoCtxWithExecutor for more information.
-func DoWithExecutor(exec Executor, callback ...func(ctx context.Context) error) error {
+func DoWithExecutor(exec Executor, callback ...Job) error {
 	return DoCtxWithExecutor(context.Background(), exec, callback...)
 }
 
@@ -47,7 +54,7 @@ func DoWithExecutor(exec Executor, callback ...func(ctx context.Context) error) 
 // or when you need custom execution behavior. The executor is not closed by this function,
 // allowing it to be reused. All other behavior matches DoCtx including context cancellation,
 // panic recovery, and error handling.
-func DoCtxWithExecutor(ctx context.Context, exec Executor, callback ...func(ctx context.Context) error) error {
+func DoCtxWithExecutor(ctx context.Context, exec Executor, callback ...Job) error {
 	ctx, cancel := context.WithCancel(ctx)
 
 	var cancelOnce sync.Once

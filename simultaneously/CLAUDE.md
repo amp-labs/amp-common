@@ -26,6 +26,9 @@ defer exec.Close()
 
 ## Common Patterns
 
+- `Job` - Alias for `func(ctx context.Context) error`; the unit of work every Do* takes.
+  Being an alias (not a defined type), `[]Job` and `[]func(ctx context.Context) error`
+  are the same type and spread interchangeably.
 - `Do()` / `DoCtx()` - Run functions with max concurrency limit
 - Returns first error encountered
 - Cancels remaining functions on error (via context)

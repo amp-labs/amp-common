@@ -75,6 +75,10 @@ func MapSet[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 //	        }
 //	        return hashing.HashableInt(len(s)), nil
 //	    })
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func MapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	ctx context.Context,
 	maxConcurrent int,
@@ -85,10 +89,12 @@ func MapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, input.Size())
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}
@@ -184,6 +190,10 @@ func FlatMapSet[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 //	        }
 //	        return result, nil
 //	    })
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func FlatMapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	ctx context.Context,
 	maxConcurrent int,
@@ -194,10 +204,12 @@ func FlatMapSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, input.Size())
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}

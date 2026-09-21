@@ -77,6 +77,10 @@ func MapGoMap[InKey comparable, InVal any, OutKey comparable, OutVal any](
 //	    }
 //	    return v, strings.ToUpper(k), nil
 //	})
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func MapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any](
 	ctx context.Context,
 	maxConcurrent int,
@@ -87,10 +91,12 @@ func MapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any](
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, len(input))
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, len(input))
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}
@@ -243,6 +249,10 @@ func FlatMapGoMap[InKey comparable, InVal any, OutKey comparable, OutVal any](
 //	    }
 //	    return result, nil
 //	})
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func FlatMapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any](
 	ctx context.Context,
 	maxConcurrent int,
@@ -253,10 +263,12 @@ func FlatMapGoMapCtx[InKey comparable, InVal any, OutKey comparable, OutVal any]
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, len(input))
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, len(input))
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}
@@ -405,6 +417,10 @@ func MapMap[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], Out
 //	    }
 //	    return k, strconv.Itoa(v), nil
 //	})
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func MapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], OutVal any](
 	ctx context.Context,
 	maxConcurrent int,
@@ -415,10 +431,12 @@ func MapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], 
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, input.Size())
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}
@@ -601,6 +619,10 @@ func FlatMapMap[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey],
 //	    }
 //	    return result, nil
 //	})
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func FlatMapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], OutVal any](
 	ctx context.Context,
 	maxConcurrent int,
@@ -611,10 +633,12 @@ func FlatMapMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKe
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, input.Size())
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}

@@ -268,6 +268,76 @@ if err != nil {
 }
 ```
 
+### Ambient Executors (via Context)
+
+Passing an executor down through every layer of a call stack means
+changing every signature in between. Instead, attach it once to the
+context:
+
+```go
+exec := simultaneously.NewDefaultExecutor(8)
+defer exec.Close()
+
+ctx = simultaneously.WithExecutor(ctx, exec)
+
+// ...many layers later, in code that knows nothing about exec...
+// Both run on exec
+err := simultaneously.DoCtx(ctx, 0, tasks...)
+out, err := simultaneously.MapSliceCtx(ctx, 0, values, transform)
+```
+
+Every context-taking entry point consults the context: `DoCtx` and the whole
+`MapXCtx` / `FlatMapXCtx` family. When it finds an executor there, it runs the
+work on it instead of building a throwaway one.
+
+This is how you put a whole subtree of work under a single concurrency budget --
+one pool, one limit, however many separate `Do`/`Map` calls it is spread across.
+
+Three things to know:
+
+**Ownership does not transfer.** The call that finds an executor on the context
+never closes it. Whoever called `WithExecutor` stays responsible for closing it.
+That is what makes it reusable across calls.
+
+**`maxConcurrent` is ignored.** The executor already has a limit of its own, and
+that limit is shared by every caller using it. Set the limit you want when you
+construct the executor; the argument at the call site has no effect.
+
+```go
+exec := simultaneously.NewDefaultExecutor(1)
+defer exec.Close()
+
+ctx := simultaneously.WithExecutor(context.Background(), exec)
+
+// Runs one at a time. The 100 is ignored.
+err := simultaneously.DoCtx(ctx, 100, taskA, taskB, taskC)
+```
+
+**Nested calls share the pool, and can deadlock.** A job or transform receives a
+context that still carries the executor, so a `DoCtx` or `MapSliceCtx` made from
+inside one queues onto the same pool its caller is occupying:
+
+```go
+exec := simultaneously.NewDefaultExecutor(1) // only one slot
+ctx := simultaneously.WithExecutor(ctx, exec)
+
+// DEADLOCK: the outer job holds the only slot, and the inner call waits for a
+// slot that cannot free up until the outer job returns.
+err := simultaneously.DoCtx(ctx, 1, func(ctx context.Context) error {
+    return simultaneously.DoCtx(ctx, 1, innerTask)
+})
+```
+
+Only context cancellation breaks the cycle. If your work fans out
+further, either size the executor above the peak depth of the nesting,
+or give the inner level its own executor with another `WithExecutor`.
+
+Functions that take no context -- `Do`, `MapSlice`, and friends -- start from
+`context.Background()` and so never see an ambient executor. The `*WithExecutor`
+variants use the executor they were handed and ignore the context entirely. Use
+those when you want an explicit executor at a specific call site rather than an
+ambient one for a whole subtree.
+
 ### Custom Executor Implementation
 
 Implement the `Executor` interface for custom behavior:
@@ -344,7 +414,7 @@ The package provides parallel transformation functions for various data structur
 ### amp-common Maps
 
 | Function | Description | Order Preserved |
-|----------|-------------|-----------------|
+| ---------- | ------------- | ----------------- |
 | `MapMap` | Transform amp-common Map | ✗ |
 | `FlatMapMap` | Transform and flatten | ✗ |
 | `MapOrderedMap` | Transform with order | ✓ |
@@ -353,7 +423,7 @@ The package provides parallel transformation functions for various data structur
 ### amp-common Sets
 
 | Function | Description | Order Preserved |
-|----------|-------------|-----------------|
+| ---------- | ------------- | ----------------- |
 | `MapSet` | Transform set elements | ✗ |
 | `FlatMapSet` | Transform and flatten | ✗ |
 | `MapOrderedSet` | Transform with order | ✓ |
@@ -562,6 +632,16 @@ Create a new executor with concurrency limit:
 
 ```go
 func NewDefaultExecutor(maxConcurrent int) Executor
+```
+
+#### WithExecutor / GetExecutor
+
+Attach an executor to a context so the context-taking entry points run
+their work on it. See [Ambient Executors](#ambient-executors-via-context).
+
+```go
+func WithExecutor(ctx context.Context, exec Executor) context.Context
+func GetExecutor(ctx context.Context) (Executor, bool)
 ```
 
 ### Slice Transformations

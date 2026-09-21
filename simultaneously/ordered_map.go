@@ -80,6 +80,10 @@ func MapOrderedMap[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKe
 //	        }
 //	        return k, strconv.Itoa(v), nil
 //	    })
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func MapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], OutVal any](
 	ctx context.Context,
 	maxConcurrent int,
@@ -90,10 +94,12 @@ func MapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[Ou
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, input.Size())
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}
@@ -185,6 +191,10 @@ func FlatMapOrderedMap[InKey Collectable[InKey], InVal any, OutKey Collectable[O
 //	        }
 //	        return result, nil
 //	    })
+//
+// If ctx carries an executor (see WithExecutor), the work runs on that shared
+// executor and maxConcurrent is ignored. The executor is not closed here; it
+// belongs to whoever attached it.
 func FlatMapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectable[OutKey], OutVal any](
 	ctx context.Context,
 	maxConcurrent int,
@@ -195,10 +205,12 @@ func FlatMapOrderedMapCtx[InKey Collectable[InKey], InVal any, OutKey Collectabl
 		return nil, nil
 	}
 
-	exec := newDefaultExecutor(maxConcurrent, input.Size())
+	// An executor on the context (see WithExecutor) wins over a throwaway one,
+	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, input.Size())
 
 	defer func() {
-		closeErr := exec.Close()
+		closeErr := closeExec()
 		if closeErr != nil && err == nil {
 			err = closeErr
 		}

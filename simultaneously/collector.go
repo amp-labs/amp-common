@@ -2,7 +2,10 @@ package simultaneously
 
 import (
 	"context"
+	"runtime/debug"
 	"sync"
+
+	"github.com/amp-labs/amp-common/utils"
 )
 
 // collector orchestrates the concurrent execution of multiple callback functions.
@@ -47,7 +50,29 @@ func (e *collector) cleanup() {
 func (e *collector) launchAll(ctx context.Context, callbacks []func(context.Context) error) {
 	for _, fn := range callbacks {
 		e.waitGroup.Add(1)
-		e.exec.GoContext(ctx, fn, func(err error) {
+		e.launch(ctx, fn)
+	}
+}
+
+// launch dispatches a single callback and guarantees that exactly one result
+// reaches the collector for it, whatever the executor does.
+//
+// That guarantee is what the rest of the type is built on: cleanup blocks until
+// the wait group drains, and collectResults blocks until it has seen one result
+// per callback. An Executor that neither delivers a result nor returns normally
+// would strand both. A panic out of GoContext is the realistic way that happens
+// -- a custom Executor with a bug, or a nil one -- and it used to hang the whole
+// call: the Add(1) above was never matched by a Done, so the deferred cleanup
+// waited forever on a wait group that could not drain, swallowing the panic that
+// was unwinding through it. Reporting it as this callback's error instead keeps
+// the counts balanced and matches how the package treats a panicking job.
+func (e *collector) launch(ctx context.Context, callback func(context.Context) error) {
+	var reportOnce sync.Once
+
+	// Exactly-once, so a late result from an executor that already panicked is
+	// dropped rather than double-counted or sent on a channel cleanup has closed.
+	report := func(err error) {
+		reportOnce.Do(func() {
 			defer e.waitGroup.Done()
 
 			if err != nil {
@@ -61,6 +86,14 @@ func (e *collector) launchAll(ctx context.Context, callbacks []func(context.Cont
 			}
 		})
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			report(utils.GetPanicRecoveryError(r, debug.Stack()))
+		}
+	}()
+
+	e.exec.GoContext(ctx, callback, report)
 }
 
 // collectResults gathers results from all callbacks, collecting errors or success signals.

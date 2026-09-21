@@ -32,13 +32,24 @@ func Do(maxConcurrent int, f ...Job) error {
 //
 // Panics that occur within the callback functions are automatically recovered and converted to errors.
 // This prevents a single panicking function from crashing the entire process.
+//
+// If ctx carries an executor (see WithExecutor), the jobs run on that executor and
+// maxConcurrent is ignored -- the shared executor's own limit governs. That executor
+// belongs to whoever put it on the context, so it is left open for reuse here. Beware
+// that a DoCtx nested inside a job inherits the same executor and can deadlock against
+// it; WithExecutor documents the conditions.
 func DoCtx(ctx context.Context, maxConcurrent int, callback ...Job) error {
-	de := newDefaultExecutor(maxConcurrent, len(callback))
+	// An executor on the context (see WithExecutor) wins over a throwaway one, in
+	// which case maxConcurrent is ignored and closeExec is a no-op.
+	exec, closeExec := resolveExecutor(ctx, maxConcurrent, len(callback))
 
 	errs := errors.Collection{}
 
-	errs.Add(DoCtxWithExecutor(ctx, de, callback...))
-	errs.Add(de.Close())
+	// Both the work and the shutdown can fail, and a Close error (e.g. a leaked
+	// in-flight job) is worth surfacing even when every job succeeded, so collect
+	// the two rather than letting either shadow the other.
+	errs.Add(DoCtxWithExecutor(ctx, exec, callback...))
+	errs.Add(closeExec())
 
 	return errs.GetError()
 }

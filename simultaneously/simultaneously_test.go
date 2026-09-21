@@ -655,3 +655,32 @@ func TestDoCtxWithExecutor_ConcurrencyLimit(t *testing.T) {
 	// With maxConcurrent=2, we should never have more than 2 active at once
 	assert.LessOrEqual(t, maxActive.Load(), int32(2))
 }
+
+// TestJob_AliasInteroperability pins down the property that makes Job an alias
+// rather than a defined type: []Job and []func(ctx context.Context) error are
+// the same type, so a slice built under either spelling spreads into Do*.
+func TestJob_AliasInteroperability(t *testing.T) {
+	t.Parallel()
+
+	var counter atomic.Int32
+
+	increment := func(ctx context.Context) error {
+		counter.Add(1)
+
+		return nil
+	}
+
+	// A []Job spreads into DoCtx.
+	jobs := []Job{increment, increment}
+	require.NoError(t, DoCtx(t.Context(), 2, jobs...))
+
+	// So does a slice spelled with the underlying type.
+	raw := []func(ctx context.Context) error{increment, increment}
+	require.NoError(t, DoCtx(t.Context(), 2, raw...))
+
+	// And the two slice types are assignable to each other.
+	jobs = raw
+	require.NoError(t, DoCtx(t.Context(), 2, jobs...))
+
+	assert.Equal(t, int32(6), counter.Load())
+}

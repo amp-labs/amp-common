@@ -29,6 +29,29 @@ The `simultaneously` package provides utilities for running functions concurrent
 
 ## Core Concepts
 
+### Job
+
+A `Job` is the unit of work every `Do*` function accepts:
+
+```go
+type Job = func(ctx context.Context) error
+```
+
+It is a **type alias**, not a defined type, so `[]Job` and
+`[]func(ctx context.Context) error` are the same type. You can build a slice
+under either spelling and spread it into any `Do*` function:
+
+```go
+jobs := make([]simultaneously.Job, 0, len(objects))
+for _, obj := range objects {
+    jobs = append(jobs, func(ctx context.Context) error {
+        return process(ctx, obj)
+    })
+}
+
+err := simultaneously.DoCtx(ctx, 4, jobs...)
+```
+
 ### Executor
 
 The `Executor` interface manages concurrent execution with configurable concurrency limits:
@@ -516,8 +539,10 @@ err = simultaneously.DoCtx(ctx2, 2, longRunningTasks...)
 Run multiple functions in parallel with controlled concurrency:
 
 ```go
-func Do(maxConcurrent int, funcs ...func(ctx context.Context) error) error
-func DoCtx(ctx context.Context, maxConcurrent int, funcs ...func(ctx context.Context) error) error
+type Job = func(ctx context.Context) error
+
+func Do(maxConcurrent int, funcs ...Job) error
+func DoCtx(ctx context.Context, maxConcurrent int, funcs ...Job) error
 ```
 
 #### DoWithExecutor / DoCtxWithExecutor
@@ -525,8 +550,8 @@ func DoCtx(ctx context.Context, maxConcurrent int, funcs ...func(ctx context.Con
 Run functions using a custom executor:
 
 ```go
-func DoWithExecutor(exec Executor, funcs ...func(ctx context.Context) error) error
-func DoCtxWithExecutor(ctx context.Context, exec Executor, funcs ...func(ctx context.Context) error) error
+func DoWithExecutor(exec Executor, funcs ...Job) error
+func DoCtxWithExecutor(ctx context.Context, exec Executor, funcs ...Job) error
 ```
 
 ### Executor

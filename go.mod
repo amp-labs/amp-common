@@ -29,7 +29,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.46.0
 	go.opentelemetry.io/otel/sdk v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0
-	go.uber.org/atomic v1.11.0
+	go.uber.org/atomic v1.12.0
 	golang.org/x/net v0.59.0
 	golang.org/x/text v0.42.0
 	gopkg.in/yaml.v3 v3.0.1

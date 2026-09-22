@@ -83,7 +83,7 @@ func MapOrderedSet[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 //	    })
 //
 // If ctx carries an executor (see WithExecutor), the work runs on that shared
-// executor and maxConcurrent is ignored. The executor is not closed here; it
+// executor, and maxConcurrent still caps this call. The executor is not closed here; it
 // belongs to whoever attached it.
 func MapOrderedSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	ctx context.Context,
@@ -204,7 +204,7 @@ func FlatMapOrderedSet[InElem Collectable[InElem], OutElem Collectable[OutElem]]
 //	    })
 //
 // If ctx carries an executor (see WithExecutor), the work runs on that shared
-// executor and maxConcurrent is ignored. The executor is not closed here; it
+// executor, and maxConcurrent still caps this call. The executor is not closed here; it
 // belongs to whoever attached it.
 func FlatMapOrderedSetCtx[InElem Collectable[InElem], OutElem Collectable[OutElem]](
 	ctx context.Context,
@@ -217,7 +217,7 @@ func FlatMapOrderedSetCtx[InElem Collectable[InElem], OutElem Collectable[OutEle
 	}
 
 	// An executor on the context (see WithExecutor) wins over a throwaway one,
-	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	// in which case maxConcurrent caps only this call and closeExec is a no-op.
 	exec, closeExec := resolveExecutor(ctx, maxConcurrent, input.Size())
 
 	defer func() {

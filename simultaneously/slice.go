@@ -36,7 +36,7 @@ func MapSlice[Input, Output any](
 //	// doubled = [2, 4, 6, 8, 10]
 //
 // If ctx carries an executor (see WithExecutor), the work runs on that shared
-// executor and maxConcurrent is ignored. The executor is not closed here; it
+// executor, and maxConcurrent still caps this call. The executor is not closed here; it
 // belongs to whoever attached it.
 func MapSliceCtx[Input, Output any](
 	ctx context.Context,
@@ -45,7 +45,7 @@ func MapSliceCtx[Input, Output any](
 	transform func(ctx context.Context, value Input) (Output, error),
 ) (result []Output, err error) {
 	// An executor on the context (see WithExecutor) wins over a throwaway one,
-	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	// in which case maxConcurrent caps only this call and closeExec is a no-op.
 	exec, closeExec := resolveExecutor(ctx, maxConcurrent, len(values))
 
 	defer func() {
@@ -172,7 +172,7 @@ func FlatMapSlice[Input, Output any](
 //	// chars = ['h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd']
 //
 // If ctx carries an executor (see WithExecutor), the work runs on that shared
-// executor and maxConcurrent is ignored. The executor is not closed here; it
+// executor, and maxConcurrent still caps this call. The executor is not closed here; it
 // belongs to whoever attached it.
 func FlatMapSliceCtx[Input, Output any](
 	ctx context.Context,
@@ -181,7 +181,7 @@ func FlatMapSliceCtx[Input, Output any](
 	transform func(ctx context.Context, value Input) ([]Output, error),
 ) (result []Output, err error) {
 	// An executor on the context (see WithExecutor) wins over a throwaway one,
-	// in which case maxConcurrent is ignored and closeExec is a no-op.
+	// in which case maxConcurrent caps only this call and closeExec is a no-op.
 	exec, closeExec := resolveExecutor(ctx, maxConcurrent, len(values))
 
 	defer func() {

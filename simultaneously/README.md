@@ -299,18 +299,23 @@ Three things to know:
 never closes it. Whoever called `WithExecutor` stays responsible for closing it.
 That is what makes it reusable across calls.
 
-**`maxConcurrent` is ignored.** The executor already has a limit of its own, and
-that limit is shared by every caller using it. Set the limit you want when you
-construct the executor; the argument at the call site has no effect.
+**Both limits apply.** The executor bounds the total concurrency shared by every
+caller using it, and `maxConcurrent` at the call site still bounds that one call.
+A call site that caps itself -- say, to stay under a provider's rate limit --
+keeps its cap. The effective concurrency of a call is the smaller of the two,
+and a call waiting on its own cap does not hold a slot in the shared pool.
 
 ```go
-exec := simultaneously.NewDefaultExecutor(1)
+exec := simultaneously.NewDefaultExecutor(100)
 defer exec.Close()
 
 ctx := simultaneously.WithExecutor(context.Background(), exec)
 
-// Runs one at a time. The 100 is ignored.
-err := simultaneously.DoCtx(ctx, 100, taskA, taskB, taskC)
+// At most 2 of these run at once, and they count against the pool's 100.
+err := simultaneously.DoCtx(ctx, 2, taskA, taskB, taskC, taskD)
+
+// maxConcurrent < 1 means "no cap of my own": only the pool's limit applies.
+err = simultaneously.DoCtx(ctx, 0, taskA, taskB, taskC, taskD)
 ```
 
 **Nested calls share the pool, and can deadlock.** A job or transform receives a

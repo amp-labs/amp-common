@@ -52,8 +52,10 @@ points through it rather than calling `newDefaultExecutor` directly.
 
 - The executor is **not closed** by the call that finds it -- whoever attached
   it owns its lifetime
-- `maxConcurrent` is **ignored** when an ambient executor is present; the
-  executor's own limit governs
+- **Both limits apply** when an ambient executor is present: the executor
+  bounds the shared total, and `maxConcurrent` still caps the one call (via a
+  per-call `limitedExecutor` wrapper, `limit.go`). `maxConcurrent < 1` means
+  no per-call cap. A call waiting on its own cap holds no shared slot
 - The context-free variants (`Do`, `MapSlice`, ...) start from
   `context.Background()` and never see one; the `*WithExecutor` variants use
   what they were handed

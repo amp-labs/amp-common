@@ -291,7 +291,7 @@ func TestDoCtx_DoesNotCloseAmbientExecutor(t *testing.T) {
 	assert.Equal(t, int32(2), rec.goCalls.Load())
 }
 
-func TestDoCtx_AmbientExecutorOverridesMaxConcurrent(t *testing.T) {
+func TestDoCtx_AmbientExecutorLimitCapsLargerMaxConcurrent(t *testing.T) {
 	t.Parallel()
 
 	exec := NewDefaultExecutor(1)
@@ -299,7 +299,8 @@ func TestDoCtx_AmbientExecutorOverridesMaxConcurrent(t *testing.T) {
 
 	tracker := &peakTracker{}
 
-	// maxConcurrent of 100 is ignored: the ambient executor's single slot wins.
+	// The call asks for 100, but the ambient executor only has one slot, and the
+	// smaller of the two limits wins.
 	err := DoCtx(WithExecutor(t.Context(), exec), 100,
 		tracker.job(), tracker.job(), tracker.job(),
 	)
@@ -671,7 +672,7 @@ func TestMapFamily_UsesAmbientExecutor(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, int32(3), rec.goCalls.Load(), "each element dispatches on the ambient executor")
-			assert.Equal(t, 1, tracker.observed(), "the ambient limit governs, not maxConcurrent")
+			assert.Equal(t, 1, tracker.observed(), "the smaller ambient limit governs over maxConcurrent")
 			assert.Equal(t, int32(0), rec.closeCalls.Load(), "ownership stays with the caller that attached it")
 		})
 	}

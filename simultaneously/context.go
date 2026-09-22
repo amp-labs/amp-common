@@ -38,10 +38,12 @@ const executorContextKey contextKey = "executor"
 //     closing it. That is what makes the executor reusable across many DoCtx
 //     calls, which is the point of putting it on the context.
 //
-//  2. The maxConcurrent argument to DoCtx is ignored once an executor is on the
-//     context, because the executor already has a concurrency limit of its own
-//     and that limit is shared by every caller using it. Set the limit you want
-//     when you construct the executor.
+//  2. Both limits apply. The executor bounds the total concurrency shared by
+//     every caller using it, and the maxConcurrent argument to DoCtx still
+//     bounds that one call, so a call site that caps itself (for example to
+//     respect a provider rate limit) keeps its cap. The effective concurrency
+//     of a call is the smaller of the two. A call waiting on its own cap does
+//     not hold a slot in the shared executor while it waits.
 //
 //  3. Nested calls share the pool, and can deadlock. A job or transform started
 //     here receives a context that still carries exec, so any DoCtx or MapXCtx
@@ -91,9 +93,11 @@ func GetExecutor(ctx context.Context) (Executor, bool) {
 // every Do/Map/FlatMap entry point applies it identically. Two cases:
 //
 //   - The context carries an executor. It is shared with other callers and
-//     outlives this call, so maxConcurrent is ignored (the executor's own limit
-//     governs) and the returned closer does nothing -- closing it here would pull
-//     the pool out from under whoever attached it.
+//     outlives this call, so the returned closer does nothing -- closing it here
+//     would pull the pool out from under whoever attached it. If maxConcurrent
+//     would actually constrain this call (at least 1 and below itemCount), the
+//     executor is wrapped in a per-call limiter so the call keeps its own cap on
+//     top of the shared one.
 //
 //   - It does not. We build one scoped to this call, sized to the smaller of
 //     maxConcurrent and itemCount, and hand back its Close so the caller can shut
@@ -103,7 +107,13 @@ func GetExecutor(ctx context.Context) (Executor, bool) {
 // keeps the two paths indistinguishable at the call site.
 func resolveExecutor(ctx context.Context, maxConcurrent, itemCount int) (Executor, func() error) {
 	if exec, ok := GetExecutor(ctx); ok {
-		return exec, func() error { return nil }
+		noop := func() error { return nil }
+
+		if maxConcurrent < 1 || maxConcurrent >= itemCount {
+			return exec, noop
+		}
+
+		return newLimitedExecutor(exec, maxConcurrent), noop
 	}
 
 	exec := newDefaultExecutor(maxConcurrent, itemCount)

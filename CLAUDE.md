@@ -63,6 +63,8 @@ go test -v -run TestName ./package-name
 - Returns first error encountered, cancels remaining on error
 - Automatic panic recovery with stack traces
 - Semaphore-based concurrency limiting
+- Prometheus metrics (active executions, execution count by outcome, time
+  spent) labeled per executor via `NewDefaultExecutor(n, WithName("x"))`
 
 **`envutil`** - Type-safe environment variable parsing
 
@@ -216,5 +218,6 @@ Special rules:
 Many packages expose Prometheus metrics:
 
 - Actor: message counts, processing time, panics, queue depth
+- Simultaneously: active executions, executions by outcome, execution time
 - Pool: object counts, creation/close events, errors
 - Metrics use subsystem labels for multi-tenancy

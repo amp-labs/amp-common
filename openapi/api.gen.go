@@ -624,6 +624,7 @@ const (
 	InstallationDeleted        NotificationEventType = "installation.deleted"
 	InstallationUpdated        NotificationEventType = "installation.updated"
 	ReadBackfillDone           NotificationEventType = "read.backfill.done"
+	ReadBackfillError          NotificationEventType = "read.backfill.error"
 	ReadSchedulePaused         NotificationEventType = "read.schedule.paused"
 	ReadTriggeredDone          NotificationEventType = "read.triggered.done"
 	ReadTriggeredError         NotificationEventType = "read.triggered.error"
@@ -660,6 +661,8 @@ func (e NotificationEventType) Valid() bool {
 	case InstallationUpdated:
 		return true
 	case ReadBackfillDone:
+		return true
+	case ReadBackfillError:
 		return true
 	case ReadSchedulePaused:
 		return true

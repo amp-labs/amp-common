@@ -16,6 +16,7 @@ A Go library for safe, controlled parallel execution with automatic panic recove
 - [Best Practices](#best-practices)
 - [Error Handling](#error-handling)
 - [API Reference](#api-reference)
+- [Metrics](#metrics)
 
 ## Purpose
 
@@ -636,8 +637,11 @@ func DoCtxWithExecutor(ctx context.Context, exec Executor, funcs ...Job) error
 Create a new executor with concurrency limit:
 
 ```go
-func NewDefaultExecutor(maxConcurrent int) Executor
+func NewDefaultExecutor(maxConcurrent int, opts ...ExecutorOption) Executor
+func WithName(name string) ExecutorOption
 ```
+
+`WithName` sets the `executor` label on the executor's [metrics](#metrics).
 
 #### WithExecutor / GetExecutor
 
@@ -799,6 +803,27 @@ results, err := simultaneously.MapSlice(10, items,
     },
 )
 ```
+
+## Metrics
+
+Every executor reports Prometheus metrics, labeled `executor` with the name
+given via `WithName`. Unnamed executors (including the throwaway ones that
+`Do`, `MapSlice`, etc. create internally) report as `"default"`.
+
+```go
+exec := simultaneously.NewDefaultExecutor(8, simultaneously.WithName("sync"))
+```
+
+| Metric                                      | Type      | Labels                | Meaning                          |
+|---------------------------------------------|-----------|-----------------------|----------------------------------|
+| `simultaneously_active_executions`          | gauge     | `executor`            | Callbacks running right now      |
+| `simultaneously_executions_total`           | counter   | `executor`, `outcome` | Callbacks finished               |
+| `simultaneously_execution_milliseconds_total` | counter | `executor`          | Total time spent in callbacks, ms |
+| `simultaneously_execution_duration_seconds` | histogram | `executor`            | Per-callback running time        |
+
+`outcome` is `success`, `error`, or `panic`. Only time spent running the
+callback is measured; time spent waiting for a slot is not, and a callback
+whose context ended before it got a slot is never run and never counted.
 
 ## Thread Safety
 

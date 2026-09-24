@@ -60,6 +60,18 @@ points through it rather than calling `newDefaultExecutor` directly.
   `context.Background()` and never see one; the `*WithExecutor` variants use
   what they were handed
 
+## Metrics
+
+`metrics.go` defines Prometheus metrics recorded in `defaultExecutor.executeCallback`,
+all labeled `executor` (set via `NewDefaultExecutor(n, WithName("x"))`; empty
+or unset is `"default"`, as are the internal throwaway executors):
+`simultaneously_active_executions` (gauge), `simultaneously_executions_total`
+(counter, plus `outcome` = success|error|panic),
+`simultaneously_execution_milliseconds_total` (counter) and
+`simultaneously_execution_duration_seconds` (histogram). Only callback run time
+is measured, not slot waiting. Metrics are process-wide, so tests use unique
+names and assert deltas.
+
 ## Gotchas
 
 - Functions should check context for cancellation

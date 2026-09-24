@@ -5,6 +5,7 @@ import (
 	"errors"
 	"runtime/debug"
 	"sync/atomic"
+	"time"
 
 	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/utils"
@@ -35,6 +36,25 @@ type defaultExecutor struct {
 	maxConcurrent int           // Maximum number of concurrent executions allowed
 	sem           chan struct{} // Semaphore channel for concurrency control
 	closed        *atomic.Bool  // Thread-safe flag indicating if executor is closed
+	metrics       *executorMetrics
+}
+
+// ExecutorOption configures an executor created by NewDefaultExecutor.
+type ExecutorOption func(*executorOptions)
+
+type executorOptions struct {
+	name string
+}
+
+// WithName sets the value of the "executor" label on the metrics this executor
+// reports, so that its activity can be told apart from other executors'. An
+// empty name, or leaving this option out, reports as DefaultExecutorName.
+//
+// Executors sharing a name share their metrics.
+func WithName(name string) ExecutorOption {
+	return func(o *executorOptions) {
+		o.name = name
+	}
 }
 
 // NewDefaultExecutor creates a new executor with the specified concurrency limit.
@@ -52,6 +72,7 @@ type defaultExecutor struct {
 // Parameters:
 //   - maxConcurrent: Maximum number of functions that can execute concurrently.
 //     If less than 1, defaults to 1 (sequential execution).
+//   - opts: Optional settings, such as WithName to label the executor's metrics.
 //
 // Returns:
 //   - An Executor that can be used with DoWithExecutor, MapSliceWithExecutor,
@@ -81,25 +102,19 @@ type defaultExecutor struct {
 //
 // Executor reuse is beneficial when processing multiple batches of work
 // as it avoids the overhead of creating and destroying executors repeatedly.
-func NewDefaultExecutor(maxConcurrent int) Executor {
+func NewDefaultExecutor(maxConcurrent int, opts ...ExecutorOption) Executor {
+	var options executorOptions
+
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	// If maxConcurrent not specified (< 1), use 1 as the limit
 	if maxConcurrent < 1 {
 		maxConcurrent = 1
 	}
 
-	sem := make(chan struct{}, maxConcurrent)
-
-	// Fill the semaphore with maxConcurrent empty structs (tokens).
-	// Each token represents an available execution slot.
-	for range maxConcurrent {
-		sem <- struct{}{}
-	}
-
-	return &defaultExecutor{
-		maxConcurrent: maxConcurrent,
-		sem:           sem,
-		closed:        &atomic.Bool{},
-	}
+	return newExecutorWithLimit(maxConcurrent, options.name)
 }
 
 // newDefaultExecutor creates a new executor with the specified concurrency limit.
@@ -119,6 +134,12 @@ func newDefaultExecutor(maxConcurrent, itemCount int) *defaultExecutor {
 		maxConcurrent = 1
 	}
 
+	return newExecutorWithLimit(maxConcurrent, DefaultExecutorName)
+}
+
+// newExecutorWithLimit builds an executor allowing exactly maxConcurrent
+// concurrent executions (which must be at least 1), reporting metrics under name.
+func newExecutorWithLimit(maxConcurrent int, name string) *defaultExecutor {
 	sem := make(chan struct{}, maxConcurrent)
 
 	// Fill the semaphore with maxConcurrent empty structs (tokens).
@@ -131,6 +152,7 @@ func newDefaultExecutor(maxConcurrent, itemCount int) *defaultExecutor {
 		maxConcurrent: maxConcurrent,
 		sem:           sem,
 		closed:        &atomic.Bool{},
+		metrics:       newExecutorMetrics(name),
 	}
 }
 
@@ -213,7 +235,7 @@ func (d *defaultExecutor) Close() error {
 // the context parameter without modification for maximum flexibility.
 //
 //nolint:contextcheck
-func (d *defaultExecutor) executeCallback(ctx context.Context, fn func(context.Context) error) (err error) {
+func (d *defaultExecutor) executeCallback(ctx context.Context, callback func(context.Context) error) (err error) {
 	// Ensure we have a valid context
 	if ctx == nil {
 		ctx = context.Background()
@@ -224,11 +246,22 @@ func (d *defaultExecutor) executeCallback(ctx context.Context, fn func(context.C
 		return ctx.Err()
 	}
 
+	// Record the execution once it ends. This is deferred before recoverPanic so
+	// that it runs after it, and so sees err with any panic already folded in.
+	// panicked is cleared only if callback returns normally.
+	start := d.metrics.start()
+	panicked := true
+
+	defer func(start time.Time) {
+		d.metrics.finish(start, panicked, err)
+	}(start)
+
 	// Set up panic recovery to convert panics into errors
 	defer d.recoverPanic(&err)
 
 	// Execute the callback
-	err = fn(ctx)
+	err = callback(ctx)
+	panicked = false
 
 	return
 }

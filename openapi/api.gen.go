@@ -1315,7 +1315,7 @@ type BaseSubscribeConfigObject struct {
 	Destination string `json:"destination"`
 
 	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-	InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
+	InheritFieldsAndMappings *bool `json:"inheritFieldsAndMappings"`
 
 	// ObjectName The name of the object to subscribe to.
 	ObjectName  string             `json:"objectName" validate:"required"`
@@ -3439,7 +3439,7 @@ type SubscribeConfigObject struct {
 	Destination string `json:"destination"`
 
 	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-	InheritFieldsAndMappings bool `json:"inheritFieldsAndMappings"`
+	InheritFieldsAndMappings *bool `json:"inheritFieldsAndMappings"`
 
 	// ObjectName The name of the object to subscribe to.
 	ObjectName  string             `json:"objectName" validate:"required"`

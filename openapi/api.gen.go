@@ -482,6 +482,21 @@ func (e FieldSettingWriteOnUpdate) Valid() bool {
 	}
 }
 
+// Defines values for HydratedIntegrationObjectEnabled.
+const (
+	HydratedIntegrationObjectEnabledAlways HydratedIntegrationObjectEnabled = "always"
+)
+
+// Valid indicates whether the value is a known member of the HydratedIntegrationObjectEnabled enum.
+func (e HydratedIntegrationObjectEnabled) Valid() bool {
+	switch e {
+	case HydratedIntegrationObjectEnabledAlways:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstallationHealthStatus.
 const (
 	Healthy   InstallationHealthStatus = "healthy"
@@ -898,16 +913,16 @@ func (e ValueDefaultIntegerApplyOnUpdate) Valid() bool {
 
 // Defines values for ValueDefaultStringApplyOnUpdate.
 const (
-	ValueDefaultStringApplyOnUpdateAlways ValueDefaultStringApplyOnUpdate = "always"
-	ValueDefaultStringApplyOnUpdateNever  ValueDefaultStringApplyOnUpdate = "never"
+	Always ValueDefaultStringApplyOnUpdate = "always"
+	Never  ValueDefaultStringApplyOnUpdate = "never"
 )
 
 // Valid indicates whether the value is a known member of the ValueDefaultStringApplyOnUpdate enum.
 func (e ValueDefaultStringApplyOnUpdate) Valid() bool {
 	switch e {
-	case ValueDefaultStringApplyOnUpdateAlways:
+	case Always:
 		return true
-	case ValueDefaultStringApplyOnUpdateNever:
+	case Never:
 		return true
 	default:
 		return false
@@ -2380,6 +2395,9 @@ type HydratedIntegrationObject struct {
 	Destination       string                    `json:"destination"`
 	DisplayName       string                    `json:"displayName"`
 
+	// Enabled If set to `always`, Ampersand reads this object for every installation even if the customer never selects it (or it isn't present) in the installation config.
+	Enabled *HydratedIntegrationObjectEnabled `json:"enabled,omitempty"`
+
 	// Error Error message if there was an issue hydrating this object.
 	Error string `json:"error,omitempty"`
 
@@ -2394,6 +2412,9 @@ type HydratedIntegrationObject struct {
 	RequiredFields     *[]HydratedIntegrationField `json:"requiredFields,omitempty"`
 	Schedule           string                      `json:"schedule"`
 }
+
+// HydratedIntegrationObjectEnabled If set to `always`, Ampersand reads this object for every installation even if the customer never selects it (or it isn't present) in the installation config.
+type HydratedIntegrationObjectEnabled string
 
 // HydratedIntegrationProxy defines model for HydratedIntegrationProxy.
 type HydratedIntegrationProxy struct {

@@ -3424,7 +3424,8 @@ type StringFieldOptions struct {
 
 // SubscribeConfig defines model for SubscribeConfig.
 type SubscribeConfig struct {
-	Objects map[string]SubscribeConfigObject `json:"objects"`
+	// Objects Per-object subscribe configuration. Optional: when omitted, the subscribe objects come from the integration revision, and the config may carry only `providerOptions`.
+	Objects *map[string]SubscribeConfigObject `json:"objects,omitempty"`
 
 	// ProviderOptions Subscribe options that apply to the whole installation and only to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. For options that are set per object, see `subscribe.objects.<name>.providerOptions`.
 	ProviderOptions *SubscribeInstallationProviderOptions `json:"providerOptions,omitempty"`
@@ -4347,6 +4348,7 @@ type UpdateInstallationJSONBody struct {
 	// - `config.content.write.objects` - replace the entire write objects map.
 	// - `config.content.subscribe.objects.<objectName>` - replace the subscribe config for a single object.
 	// - `config.content.subscribe.objects` - replace the entire subscribe objects map.
+	// - `config.content.subscribe.providerOptions` - replace subscribe-level provider options, including `useSalesforceFlows`.
 	// - `config.content.proxy.enabled` - enable or disable the proxy.
 	//
 	// Replace `<objectName>` with the provider object name (e.g. `contacts`, `leads`, `accounts`).

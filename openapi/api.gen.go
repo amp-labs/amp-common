@@ -1217,6 +1217,9 @@ type BackfillConfig struct {
 
 	// FieldFilters Filters to apply only during backfill. Multiple conditions are joined by AND. Use this when you want different filter behavior for backfill vs. incremental reads.
 	FieldFilters []ReadFilter `json:"fieldFilters,omitempty"`
+
+	// RawFilter A filter in the provider's native query syntax. It cannot be combined with fieldFilters.  It can apply to incremental reads, backfills or a search API call.
+	RawFilter *RawFilter `json:"rawFilter,omitempty"`
 }
 
 // BackfillProgress defines model for BackfillProgress.
@@ -1281,6 +1284,9 @@ type BaseReadConfigObject struct {
 
 	// ObjectName The name of the object to read from.
 	ObjectName *string `json:"objectName,omitempty" validate:"required"`
+
+	// RawFilter A filter in the provider's native query syntax. It cannot be combined with fieldFilters.  It can apply to incremental reads, backfills or a search API call.
+	RawFilter *RawFilter `json:"rawFilter,omitempty"`
 
 	// Schedule The schedule for reading the object, in cron syntax.
 	Schedule string `json:"schedule,omitempty"`
@@ -3295,6 +3301,18 @@ type QuotaOptimizationConfig struct {
 	Enabled bool `json:"enabled"`
 }
 
+// RawFilter A filter in the provider's native query syntax. It cannot be combined with fieldFilters.  It can apply to incremental reads, backfills or a search API call.
+type RawFilter struct {
+	// Filter The filter expression.
+	Filter RawFilterValue `json:"filter"`
+
+	// Type The syntax of the filter. Supported values are documented in each provider's guide. For example, `soql` is a supported filter type for Salesforce.
+	Type string `json:"type"`
+}
+
+// RawFilterValue The filter expression.
+type RawFilterValue = interface{}
+
 // ReadConfig defines model for ReadConfig.
 type ReadConfig struct {
 	Objects map[string]ReadConfigObject `json:"objects"`
@@ -3318,6 +3336,9 @@ type ReadConfigObject struct {
 
 	// ObjectName The name of the object to read from.
 	ObjectName string `json:"objectName" validate:"required"`
+
+	// RawFilter A filter in the provider's native query syntax. It cannot be combined with fieldFilters.  It can apply to incremental reads, backfills or a search API call.
+	RawFilter *RawFilter `json:"rawFilter,omitempty"`
 
 	// Schedule The schedule for reading the object, in cron syntax.
 	Schedule string `json:"schedule,omitempty"`

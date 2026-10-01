@@ -812,6 +812,16 @@ func GetRoutingToBuilder(ctx context.Context) (string, bool) { //nolint:contextc
 	return "", false
 }
 
+// StripRoutingToBuilder ensures the log does not get routed to the builder
+// by removing the project ID from the context.
+func StripRoutingToBuilder(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	return context.WithValue(ctx, logProjectContextKey(), nil)
+}
+
 // GetSubsystem returns the subsystem from the context. If the
 // subsystem is not provided, the default subsystem will be used.
 func GetSubsystem(ctx context.Context) string { //nolint:contextcheck

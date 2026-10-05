@@ -3145,6 +3145,11 @@ type Project struct {
 
 	// Entitlements Plan-based feature flags for the project. These are managed by Ampersand and cannot be set via the API.
 	Entitlements *struct {
+		AndiChat struct {
+			// Value True if Andi is available for this project.
+			Value bool `json:"value"`
+		} `json:"andiChat,omitempty"`
+
 		// BrandingRemoval Controls whether Ampersand branding is removed from the embeddable UI components.
 		BrandingRemoval struct {
 			// Value True if Ampersand branding has been removed for this project.
@@ -3832,7 +3837,7 @@ type OauthConnectJSONBody struct {
 	// Provider The provider that this app connects to.
 	Provider string `json:"provider"`
 
-	// ProviderAppId ID of the provider app, returned from the [Create Provider App endpoint](https://docs.withampersand.com/reference/provider-apps/create-provider-app). If omitted, the default provider app that was set up on the Ampersand Dashboard is assumed.
+	// ProviderAppId ID of the provider app, returned from the [Create Provider App endpoint](https://docs.ampersand.ai/reference/provider-app/create-a-new-provider-app). If omitted, the default provider app that was set up on the Ampersand Dashboard is assumed.
 	ProviderAppId    *string           `json:"providerAppId,omitempty"`
 	ProviderMetadata *ProviderMetadata `json:"providerMetadata,omitempty"`
 

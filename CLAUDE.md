@@ -172,6 +172,7 @@ go test -v -run TestName ./package-name
 - **`emoji`** - Emoji constants for terminal output and UI (Rocket, Fire, ThumbsUp, Warning, etc.)
 - **`zero`** - Zero value utilities for generic types (`Value[T]()`, `IsZero[T](value)`)
 - **`debug`** - Debugging utilities (for local development only, not for production use)
+- **`bugreport`** - Standardized bug-report slog records (`Submit(ctx, Report{...})`) for a log-sink -> tracker pipeline
 
 ## Dependency Management
 

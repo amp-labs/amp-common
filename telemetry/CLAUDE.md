@@ -28,6 +28,7 @@ result, err := spans.StartValErr[int](ctx, "operation").Enter(...)
 
 ## Gotchas
 
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` is passed to `otlptracehttp.WithEndpointURL`, which uses the path verbatim; a URL without `/v1/traces` posts to `/` and the collector returns 404
 - Auto-discovers k8s collector at `opentelemetry-collector.opentelemetry.svc.cluster.local:4318`
 - Disabled by default (set OTEL_ENABLED=true)
 - Service name defaults to logger subsystem

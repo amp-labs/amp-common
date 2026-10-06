@@ -11,6 +11,7 @@ func TestParse_ValidJSON(t *testing.T) {
 	t.Parallel()
 
 	js := `{
+		"version": "1.0-20251005-abc123",
 		"git_commit": "abc123",
 		"git_branch": "main",
 		"git_date": "2025-10-05",
@@ -27,6 +28,7 @@ func TestParse_ValidJSON(t *testing.T) {
 
 	assert.True(t, ok)
 	assert.NotNil(t, info)
+	assert.Equal(t, "1.0-20251005-abc123", info.Version)
 	assert.Equal(t, "abc123", info.GitCommit)
 	assert.Equal(t, "main", info.GitBranch)
 	assert.Equal(t, "2025-10-05", info.GitDate)

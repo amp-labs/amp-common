@@ -241,8 +241,9 @@ type Options struct {
 }
 
 // GetVersion constructs a version string from the build information.
-// It concatenates the git branch, commit hash, and date (if available)
-// into a slash-separated string (e.g., "main/abc123/2024-01-15").
+// If the build info carries a stamped Version, that is returned as-is. Otherwise it
+// concatenates the git branch, commit hash, and date (if available) into a slash-separated
+// string (e.g., "main/abc123/2024-01-15").
 // This version string is used by OpenTelemetry when EnableOtel is true.
 // Returns an empty string if no build information is available.
 func (o *Options) GetVersion() string {
@@ -252,6 +253,10 @@ func (o *Options) GetVersion() string {
 
 	if o.BuildInfo == nil {
 		return ""
+	}
+
+	if len(o.BuildInfo.Version) > 0 && o.BuildInfo.Version != "unknown" {
+		return o.BuildInfo.Version
 	}
 
 	vers := ""

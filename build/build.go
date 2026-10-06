@@ -12,6 +12,7 @@ import (
 // This struct is populated in other repositories using -ldflags to inject
 // version information, build details, and dependency versions.
 type Info struct {
+	Version      string            `json:"version"`    // e.g. "1.0-20261006-36b50e054" (semver-builddate-shortcommit)
 	GitCommit    string            `json:"git_commit"` //nolint:tagliatelle
 	GitBranch    string            `json:"git_branch"` //nolint:tagliatelle
 	GitDate      string            `json:"git_date"`   //nolint:tagliatelle

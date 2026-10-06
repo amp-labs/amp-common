@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/amp-labs/amp-common/build"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1125,4 +1126,22 @@ func TestAddSourceOption(t *testing.T) { //nolint:paralleltest
 		assert.Contains(t, output, "logger_test.go")
 		assert.Contains(t, output, "source")
 	})
+}
+
+func TestOptionsGetVersion(t *testing.T) {
+	t.Parallel()
+
+	gitInfo := build.Info{GitBranch: "main", GitCommit: "abc123", GitDate: "2025-10-05"}
+
+	stamped := gitInfo
+	stamped.Version = "1.0-20251005-abc123"
+
+	unknown := gitInfo
+	unknown.Version = "unknown"
+
+	assert.Empty(t, (*Options)(nil).GetVersion())
+	assert.Empty(t, (&Options{}).GetVersion())
+	assert.Equal(t, "1.0-20251005-abc123", (&Options{BuildInfo: &stamped}).GetVersion())
+	assert.Equal(t, "main/abc123/2025-10-05", (&Options{BuildInfo: &gitInfo}).GetVersion())
+	assert.Equal(t, "main/abc123/2025-10-05", (&Options{BuildInfo: &unknown}).GetVersion())
 }

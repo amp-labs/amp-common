@@ -55,8 +55,11 @@ func LoadConfigFromEnv(ctx context.Context, runningEnv string) (*Config, error) 
 	// Default to GKE OpenTelemetry collector endpoint if running in GKE
 	defaultEndpoint := ""
 	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" { // Check if running in Kubernetes
-		// Running in Kubernetes, use GKE OpenTelemetry collector service endpoint
-		defaultEndpoint = "http://opentelemetry-collector.opentelemetry.svc.cluster.local:4318"
+		// Running in Kubernetes, use GKE OpenTelemetry collector service endpoint.
+		// The path is required: WithEndpointURL uses it verbatim, and since
+		// otlptracehttp v1.45.0 a URL with no path posts to "/", which the
+		// collector's OTLP receiver answers with 404.
+		defaultEndpoint = "http://opentelemetry-collector.opentelemetry.svc.cluster.local:4318/v1/traces"
 	}
 
 	serviceName := logger.GetSubsystem(ctx)

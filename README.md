@@ -119,6 +119,7 @@ The linting stack includes:
 * `LoadConfigFromEnv()` - Load config from environment variables
 * Auto-detects Kubernetes environments and uses cluster-local collector
 * Environment variables: `OTEL_ENABLED`, `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+* `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` is used verbatim and must include the signal path (e.g. `http://collector:4318/v1/traces`)
 
 **`logger`** - Structured logging utilities
 

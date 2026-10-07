@@ -2157,6 +2157,9 @@ type FieldDefinition struct {
 	// DisplayName The human-readable name of the field
 	DisplayName string `json:"displayName"`
 
+	// ExternalId Marks the field as an ID from an external system, which can be used as an upsert or relationship key. Salesforce only; supported on Text and Number fields. Ignored by other providers.
+	ExternalId *bool `json:"externalId,omitempty"`
+
 	// FieldName The identifier of the field
 	FieldName string `json:"fieldName"`
 

@@ -12,15 +12,19 @@ import (
 // This struct is populated in other repositories using -ldflags to inject
 // version information, build details, and dependency versions.
 type Info struct {
-	Version      string            `json:"version"`    // e.g. "1.0-20261006-36b50e054" (semver-builddate-shortcommit)
-	GitCommit    string            `json:"git_commit"` //nolint:tagliatelle
-	GitBranch    string            `json:"git_branch"` //nolint:tagliatelle
-	GitDate      string            `json:"git_date"`   //nolint:tagliatelle
-	BuildTime    string            `json:"build_time"` //nolint:tagliatelle
-	BuildHost    string            `json:"build_host"` //nolint:tagliatelle
-	BuildUser    string            `json:"build_user"` //nolint:tagliatelle
-	GoVersion    string            `json:"go_version"` //nolint:tagliatelle
-	Dependencies map[string]string `json:"dependencies"`
+	// Version is the full build version: "<semantic version>-<build day>-<short commit>",
+	// e.g. "1.0.0-20261006-56c77bb0d".
+	Version string `json:"version"`
+	// SemanticVersion is just the semantic version part of Version, e.g. "1.0.0".
+	SemanticVersion string            `json:"semantic_version"` //nolint:tagliatelle
+	GitCommit       string            `json:"git_commit"`       //nolint:tagliatelle
+	GitBranch       string            `json:"git_branch"`       //nolint:tagliatelle
+	GitDate         string            `json:"git_date"`         //nolint:tagliatelle
+	BuildTime       string            `json:"build_time"`       //nolint:tagliatelle
+	BuildHost       string            `json:"build_host"`       //nolint:tagliatelle
+	BuildUser       string            `json:"build_user"`       //nolint:tagliatelle
+	GoVersion       string            `json:"go_version"`       //nolint:tagliatelle
+	Dependencies    map[string]string `json:"dependencies"`
 }
 
 // Parse deserializes a JSON string into build Info.

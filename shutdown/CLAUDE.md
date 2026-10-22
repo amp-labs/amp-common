@@ -32,6 +32,9 @@ func main() {
 - Hooks run in registration order
 - Thread-safe hook registration
 - Supports SIGINT and SIGTERM
+- Signals after the first are logged and ignored. The signal channel is never
+  closed or unregistered: either would let a repeated signal crash or kill a
+  process mid-shutdown
 
 ## Related
 

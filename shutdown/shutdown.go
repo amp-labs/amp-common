@@ -65,24 +65,37 @@ func Shutdown() {
 // The returned context is canceled after all registered
 // BeforeShutdown hooks have been executed.
 func SetupHandler() context.Context {
-	channel = make(chan os.Signal, 1)
-	signal.Notify(channel, syscall.SIGINT, syscall.SIGTERM)
+	sigCh := make(chan os.Signal, 1)
+	channel = sigCh
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
-		for c := range channel {
-			slog.Warn("Received " + c.String() + ", shutting down...")
-			close(channel)
+		c := <-sigCh
+		slog.Warn("Received " + c.String() + ", shutting down...")
 
-			channel = nil
+		channel = nil
 
-			cleanup()
-			cancel()
-		}
+		cleanup()
+		cancel()
+
+		ignoreRepeatedSignals(sigCh)
 	}()
 
 	return ctx
+}
+
+// ignoreRepeatedSignals receives from sigCh for the rest of the process's life, logging and
+// discarding each signal, so a repeated SIGINT or SIGTERM (a second Ctrl-C, or Kubernetes
+// signaling a pod that is already terminating) cannot cut a shutdown short. sigCh must stay
+// registered with signal.Notify: closing it makes the next signal panic inside os/signal ("send
+// on closed channel"), and unregistering it (signal.Stop) restores the default action, which
+// kills the process.
+func ignoreRepeatedSignals(sigCh <-chan os.Signal) {
+	for c := range sigCh {
+		slog.Warn("Received " + c.String() + " while already shutting down; ignoring")
+	}
 }
 
 // DrainableContexts holds the two contexts that govern a drainable process
@@ -124,8 +137,9 @@ type DrainableContexts struct {
 // warning is logged. DrainComplete is idempotent, so an automatic
 // trigger followed by a caller-initiated call (or vice versa) is safe.
 func SetupDrainable() *DrainableContexts {
-	channel = make(chan os.Signal, 1)
-	signal.Notify(channel, syscall.SIGINT, syscall.SIGTERM)
+	sigCh := make(chan os.Signal, 1)
+	channel = sigCh
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	intakeCtx, cancelIntake := context.WithCancel(context.Background())
 	lifetimeCtx, cancelLifetime := context.WithCancel(context.Background())
@@ -140,14 +154,14 @@ func SetupDrainable() *DrainableContexts {
 	}
 
 	go func() {
-		for c := range channel {
-			slog.Warn("Received " + c.String() + ", shutting down...")
-			close(channel)
+		c := <-sigCh
+		slog.Warn("Received " + c.String() + ", shutting down...")
 
-			channel = nil
+		channel = nil
 
-			cancelIntake()
-		}
+		cancelIntake()
+
+		ignoreRepeatedSignals(sigCh)
 	}()
 
 	timeout := envutil.Duration(context.Background(), DrainTimeoutEnvVar,

@@ -3660,6 +3660,9 @@ type UpsertMetadataResponse struct {
 type UseSalesforceFlowsConfig struct {
 	// Enabled Whether this installation uses Salesforce record-triggered flows for subscribe.
 	Enabled bool `json:"enabled"`
+
+	// ManualManagement Whether the customer creates and maintains the flows and outbound messages in their Salesforce org themselves. When true, Ampersand never creates, updates or deletes them; the customer's outbound messages post to the installation's subscribe webhook URL. Requires `enabled` to be true. Defaults to false.
+	ManualManagement *bool `json:"manualManagement,omitempty"`
 }
 
 // ValueDefault defines model for ValueDefault.

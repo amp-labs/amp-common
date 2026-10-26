@@ -7,7 +7,7 @@ require (
 	facette.io/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/JustinTimperio/gpq v1.0.0-rc4
 	github.com/OneOfOne/xxhash v1.2.8
-	github.com/alitto/pond/v2 v2.7.2
+	github.com/alitto/pond/v2 v2.7.3
 	github.com/andybalholm/brotli v1.2.6
 	github.com/dustin/go-humanize v1.1.0
 	github.com/fereidani/httpdecompressor v0.0.0-20250320190614-ccdf59c9caa2

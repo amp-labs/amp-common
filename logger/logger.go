@@ -1077,6 +1077,8 @@ var nullLogger = slog.New(&nullHandler{})
 //   - pod: The hostname/pod name (useful in Kubernetes deployments)
 //   - region: The deployment region from LOG_REGION (omitted when unset)
 //   - request-id: The Kong request ID if present (for request tracing)
+//   - trace_id, span_id, trace_sampled: The span in the context, if any, and whether its
+//     trace was sampled (exported)
 //
 // 4. Custom values: Includes any additional key-value pairs added via With()
 //
@@ -1116,13 +1118,16 @@ func getBaseLogger(ctx context.Context) *slog.Logger {
 		}
 	}
 
-	// Extract trace context if available
+	// Extract trace context if available. trace_sampled says whether the trace was sampled,
+	// so its spans are exported: a reader can tell a trace the tracing backend keeps from one
+	// it never received without asking the backend.
 	span := trace.SpanFromContext(ctx)
 	if span.SpanContext().IsValid() {
 		spanCtx := span.SpanContext()
 		logger = logger.With(
 			"trace_id", spanCtx.TraceID().String(),
 			"span_id", spanCtx.SpanID().String(),
+			"trace_sampled", spanCtx.IsSampled(),
 		)
 	}
 

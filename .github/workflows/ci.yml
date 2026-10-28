@@ -55,7 +55,7 @@ jobs:
           fromJSONFile: results.json
 
       - name: Coverage Check
-        uses: vladopajic/go-test-coverage@v2201
+        uses: vladopajic/go-test-coverage@v2
         with:
           config: ./.testcoverage.yml
           profile: cover.out

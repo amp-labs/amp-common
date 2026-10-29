@@ -1320,8 +1320,8 @@ type BaseSubscribeConfigObject struct {
 	// Destination The name of the destination that the result should be sent to.
 	Destination string `json:"destination"`
 
-	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-	InheritFieldsAndMappings *bool `json:"inheritFieldsAndMappings"`
+	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config. When omitted, the integration's `inheritFieldsAndMapping` from amp.yaml is used. If true, fields and mappings come from the matching read config object, and `selectedFields` and `selectedFieldMappings` cannot be used. If false, nothing is inherited from the read config, and the object's own `selectedFields` and `selectedFieldMappings` are used instead; at least one of them must be set.
+	InheritFieldsAndMappings *bool `json:"inheritFieldsAndMappings,omitempty"`
 
 	// ObjectName The name of the object to subscribe to.
 	ObjectName  string             `json:"objectName" validate:"required"`
@@ -1329,7 +1329,13 @@ type BaseSubscribeConfigObject struct {
 
 	// ProviderOptions Per-object subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. Options that apply to the whole subscription live on `subscribe.providerOptions` instead.
 	ProviderOptions *SubscribeProviderOptions `json:"providerOptions,omitempty"`
-	UpdateEvent     *ConfigUpdateEvent        `json:"updateEvent,omitempty"`
+
+	// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.) Only used when `inheritFieldsAndMappings` is false; otherwise mappings are inherited from the read config.
+	SelectedFieldMappings *map[string]string `json:"selectedFieldMappings,omitempty"`
+
+	// SelectedFields This is a map of field names to booleans indicating whether they should be included in subscription events. Only used when `inheritFieldsAndMappings` is false; otherwise fields are inherited from the read config. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
+	SelectedFields *map[string]bool   `json:"selectedFields,omitempty"`
+	UpdateEvent    *ConfigUpdateEvent `json:"updateEvent,omitempty"`
 }
 
 // BaseWriteConfig defines model for BaseWriteConfig.
@@ -3468,8 +3474,8 @@ type SubscribeConfigObject struct {
 	// Destination The name of the destination that the result should be sent to.
 	Destination string `json:"destination"`
 
-	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config.
-	InheritFieldsAndMappings *bool `json:"inheritFieldsAndMappings"`
+	// InheritFieldsAndMappings Whether to inherit fields and mappings from the read config. When omitted, the integration's `inheritFieldsAndMapping` from amp.yaml is used. If true, fields and mappings come from the matching read config object, and `selectedFields` and `selectedFieldMappings` cannot be used. If false, nothing is inherited from the read config, and the object's own `selectedFields` and `selectedFieldMappings` are used instead; at least one of them must be set.
+	InheritFieldsAndMappings *bool `json:"inheritFieldsAndMappings,omitempty"`
 
 	// ObjectName The name of the object to subscribe to.
 	ObjectName  string             `json:"objectName" validate:"required"`
@@ -3477,7 +3483,13 @@ type SubscribeConfigObject struct {
 
 	// ProviderOptions Per-object subscribe options that only apply to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. Options that apply to the whole subscription live on `subscribe.providerOptions` instead.
 	ProviderOptions *SubscribeProviderOptions `json:"providerOptions,omitempty"`
-	UpdateEvent     *ConfigUpdateEvent        `json:"updateEvent,omitempty"`
+
+	// SelectedFieldMappings This is a map of mapToNames to field names. (A mapTo name is the name the builder wants to map a field to when it lands in their destination.) Only used when `inheritFieldsAndMappings` is false; otherwise mappings are inherited from the read config.
+	SelectedFieldMappings *map[string]string `json:"selectedFieldMappings,omitempty"`
+
+	// SelectedFields This is a map of field names to booleans indicating whether they should be included in subscription events. Only used when `inheritFieldsAndMappings` is false; otherwise fields are inherited from the read config. If a field is already included in `selectedFieldMappings`, it does not need to be included here.
+	SelectedFields *map[string]bool   `json:"selectedFields,omitempty"`
+	UpdateEvent    *ConfigUpdateEvent `json:"updateEvent,omitempty"`
 }
 
 // SubscribeInstallationProviderOptions Subscribe options that apply to the whole installation and only to certain providers. Each option documents which providers support it; setting one for a provider that does not support it is rejected. For options that are set per object, see `subscribe.objects.<name>.providerOptions`.

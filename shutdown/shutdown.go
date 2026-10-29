@@ -12,6 +12,7 @@ package shutdown
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -30,6 +31,11 @@ const DrainTimeoutEnvVar = "SHUTDOWN_DRAIN_TIMEOUT"
 
 // DefaultDrainTimeout is used when DrainTimeoutEnvVar is unset or invalid.
 const DefaultDrainTimeout = 5 * time.Minute
+
+// ErrDrainTimeout is the cause of Lifetime's cancellation when SetupDrainable's watchdog forced the
+// drain to complete. context.Cause on Lifetime, or on any context derived from it, returns it, so
+// work cut off at the drain deadline can be told apart from other cancellations.
+var ErrDrainTimeout = errors.New("shutdown: drain timeout exceeded")
 
 var (
 	mut     sync.Mutex     //nolint:gochecknoglobals // Protects hooks slice
@@ -114,7 +120,8 @@ func ignoreRepeatedSignals(sigCh <-chan os.Signal) {
 //
 // DrainComplete must be called by the caller once all in-flight work has
 // finished. It runs registered BeforeShutdown hooks and then cancels
-// Lifetime, allowing the rest of the process to tear down.
+// Lifetime, allowing the rest of the process to tear down. Lifetime's cause
+// is then context.Canceled, or ErrDrainTimeout if the watchdog called it.
 type DrainableContexts struct {
 	Intake   context.Context //nolint:containedctx
 	Lifetime context.Context //nolint:containedctx
@@ -142,14 +149,15 @@ func SetupDrainable() *DrainableContexts {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	intakeCtx, cancelIntake := context.WithCancel(context.Background())
-	lifetimeCtx, cancelLifetime := context.WithCancel(context.Background())
+	lifetimeCtx, cancelLifetime := context.WithCancelCause(context.Background())
 
 	var once sync.Once
 
-	drainComplete := func() {
+	// finish ends the drain once; a nil cause leaves context.Canceled as Lifetime's cause.
+	finish := func(cause error) {
 		once.Do(func() {
 			cleanup()
-			cancelLifetime()
+			cancelLifetime(cause)
 		})
 	}
 
@@ -177,14 +185,14 @@ func SetupDrainable() *DrainableContexts {
 			slog.Warn("!!! DRAIN TIMEOUT EXCEEDED — forcing shutdown; in-flight work may be abandoned !!!",
 				"timeout", timeout,
 				"envVar", DrainTimeoutEnvVar)
-			drainComplete()
+			finish(ErrDrainTimeout)
 		}
 	}()
 
 	return &DrainableContexts{
 		Intake:        intakeCtx,
 		Lifetime:      lifetimeCtx,
-		DrainComplete: drainComplete,
+		DrainComplete: func() { finish(nil) },
 	}
 }
 

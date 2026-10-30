@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -239,7 +240,13 @@ func removeMeta(dir string) error {
 	return syncDir(dir)
 }
 
+// syncDir makes a rename or removal in dir durable. Windows cannot sync a
+// directory and does not need to.
 func syncDir(dir string) error {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
+
 	d, err := os.Open(dir) //nolint:gosec // Caller-provided directory.
 	if err != nil {
 		return err

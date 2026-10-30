@@ -66,6 +66,14 @@ go test -v -run TestName ./package-name
 - Prometheus metrics (active executions, execution count by outcome, time
   spent) labeled per executor via `NewDefaultExecutor(n, WithName("x"))`
 
+**`diskmap`** - Disk-backed `map[string][]byte` for data that outgrows memory
+
+- `Open(dir, opts...)`, then `Get`/`AppendValue`/`Add`/`Remove`/`Contains`/`Range`; `Close` is required to reopen
+- Append-only segment files plus a sharded on-disk extendible hash index behind fixed-size page caches
+- `WithMemoryLimit` caps memory (default 64 MiB); `WithValueCache` carves out a hot-value cache
+- File I/O happens outside locks; background goroutines flush writes, write back index pages and compact
+- Not crash-durable: an unclosed directory reopens only with `WithDiscardExisting()`
+
 **`envutil`** - Type-safe environment variable parsing
 
 - Fluent API with `Reader[T]` type for chaining operations

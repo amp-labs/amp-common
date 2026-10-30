@@ -2,7 +2,6 @@ package diskmap
 
 import (
 	"fmt"
-	"slices"
 	"sync"
 	"sync/atomic"
 )
@@ -23,14 +22,20 @@ type valueLog struct {
 	table   atomic.Pointer[segTable]
 	nextSeg uint32
 
-	cur       memBuf // cur.seg is the active segment
+	cur memBuf // cur.seg is the active segment
+
+	// compactOut is the segment the compactor writes relocated records to.
+	// Only the compactor writes it, straight to the file.
+	compactOut *segment
+
 	pending   memBuf // being written by the flusher; data == nil when idle
 	spare     []byte
 	bufCap    int
 	flushCond *sync.Cond
 
-	total int64 // bytes in all segments
-	dead  int64 // bytes of overwritten, removed or relocated records
+	total  int64 // bytes in all segments
+	dead   int64 // bytes of overwritten, removed or relocated records
+	stalls int64 // times a writer waited for the flusher
 
 	// gen counts Clear calls. A record appended in one generation must not
 	// be indexed in another. It changes only while every shard lock and the
@@ -169,26 +174,6 @@ func (lg *valueLog) appendRecord(key string, value []byte) (loc, uint64, error) 
 	return l, lg.gen.Load(), nil
 }
 
-// appendRaw copies an encoded record into the log.
-func (lg *valueLog) appendRaw(rec []byte) (loc, uint64, error) {
-	lg.mu.Lock()
-	defer lg.mu.Unlock()
-
-	err := lg.ensureRoom(len(rec))
-	if err != nil {
-		return loc{}, 0, err
-	}
-
-	if len(rec) > lg.bufCap {
-		return lg.appendOversized(slices.Clone(rec)), lg.gen.Load(), nil
-	}
-
-	l := lg.appended(len(rec))
-	lg.cur.data = append(lg.cur.data, rec...)
-
-	return l, lg.gen.Load(), nil
-}
-
 // ensureRoom prepares the active segment for a record of the given size:
 // it starts a new segment if this one would grow past the segment size, and
 // hands cur to the flusher if the record does not fit, waiting for the
@@ -208,7 +193,7 @@ func (lg *valueLog) ensureRoom(size int) error {
 		if s := lg.cur.seg; s.size > 0 && s.size+int64(size) > lg.segSize {
 			if len(lg.cur.data) > 0 {
 				if lg.pending.data != nil {
-					lg.flushCond.Wait()
+					lg.stall()
 
 					continue
 				}
@@ -229,7 +214,7 @@ func (lg *valueLog) ensureRoom(size int) error {
 		}
 
 		if lg.pending.data != nil {
-			lg.flushCond.Wait()
+			lg.stall()
 
 			continue
 		}
@@ -240,6 +225,12 @@ func (lg *valueLog) ensureRoom(size int) error {
 
 		lg.handOff()
 	}
+}
+
+// stall waits for the flusher to finish the pending buffer.
+func (lg *valueLog) stall() {
+	lg.stalls++
+	lg.flushCond.Wait()
 }
 
 // appendOversized hands a record larger than a write buffer straight to the
@@ -339,18 +330,23 @@ func (lg *valueLog) flushLoop(wg *sync.WaitGroup) {
 			lg.flushCond.Wait()
 		}
 
-		p := lg.pending
+		flushing := lg.pending
 
-		err := lg.writeUnlocked(p)
+		err := lg.writeUnlocked(flushing)
 		if err != nil {
-			_ = lg.fail(fmt.Errorf("diskmap: writing segment %d: %w", p.seg.id, err))
+			_ = lg.fail(fmt.Errorf("diskmap: writing segment %d: %w", flushing.seg.id, err))
 		} else {
-			p.seg.written.Store(p.end())
+			flushing.seg.written.Store(flushing.end())
+
+			// A sealed segment can be compacted once its last bytes land.
+			if flushing.seg != lg.cur.seg {
+				lg.wakeCompactor(flushing.seg)
+			}
 		}
 
 		// One-off buffers for oversized records are not recycled.
-		if cap(p.data) == lg.bufCap && lg.spare == nil {
-			lg.spare = p.data[:0]
+		if cap(flushing.data) == lg.bufCap && lg.spare == nil {
+			lg.spare = flushing.data[:0]
 		}
 
 		lg.pending = memBuf{}
@@ -358,11 +354,11 @@ func (lg *valueLog) flushLoop(wg *sync.WaitGroup) {
 	}
 }
 
-func (lg *valueLog) writeUnlocked(p memBuf) error {
+func (lg *valueLog) writeUnlocked(buf memBuf) error {
 	lg.mu.Unlock()
 	defer lg.mu.Lock()
 
-	_, err := p.seg.file.WriteAt(p.data, p.start)
+	_, err := buf.seg.file.WriteAt(buf.data, buf.start)
 
 	return err
 }

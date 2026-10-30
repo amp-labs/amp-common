@@ -55,7 +55,8 @@ func (o *options) validate() error {
 		return fmt.Errorf("%w: value cache must be between 0 and half the memory limit", ErrInvalidOption)
 	}
 
-	least := max(minMemoryLimit, o.valueCache+2*minWriteBuffer+chunkSize+o.shards*(minFrames+minWriteBack)*pageSize)
+	least := max(minMemoryLimit,
+		o.valueCache+2*minWriteBuffer+chunkSize+compactBatch+o.shards*(minFrames+minWriteBack)*pageSize)
 	if o.memoryLimit < least {
 		return fmt.Errorf("%w: memory limit must be at least %d bytes", ErrInvalidOption, least)
 	}

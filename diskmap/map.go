@@ -119,6 +119,9 @@ type Stats struct {
 	// without WithValueCache.
 	ValueCacheHits   uint64
 	ValueCacheMisses uint64
+	// WriteStalls counts the times a write waited for buffered data to reach
+	// the disk because the disk had fallen behind.
+	WriteStalls int64
 }
 
 // Open opens the map stored in dir, creating the directory and an empty map
@@ -147,10 +150,10 @@ func Open(dir string, opts ...Option) (*Map, error) {
 		cfg.shards = len(saved.shards)
 	}
 
-	// Two write buffers and the compactor's chunk come out of the budget;
-	// the rest holds index pages, split evenly between shards.
+	// Two write buffers and the compactor's read and write buffers come out
+	// of the budget; the rest holds index pages, split evenly between shards.
 	bufCap := min(max(cfg.memoryLimit/writeBufferShare, minWriteBuffer), maxWriteBuffer)
-	pages := (cfg.memoryLimit - cfg.valueCache - 2*bufCap - chunkSize) / pageSize / cfg.shards
+	pages := (cfg.memoryLimit - cfg.valueCache - 2*bufCap - chunkSize - compactBatch) / pageSize / cfg.shards
 
 	dmap := &Map{
 		dir:  dir,
@@ -370,6 +373,7 @@ func (m *Map) Clear() error {
 	}
 
 	vlog.table.Store(&segTable{})
+	vlog.compactOut = nil
 	vlog.total, vlog.dead = 0, 0
 	vlog.gen.Add(1)
 
@@ -448,6 +452,7 @@ func (m *Map) Stats() Stats {
 	stats.SegmentBytes = vlog.total
 	stats.DeadBytes = vlog.dead
 	stats.CompactedBytes = vlog.compacted
+	stats.WriteStalls = vlog.stalls
 	vlog.mu.Unlock()
 
 	return stats

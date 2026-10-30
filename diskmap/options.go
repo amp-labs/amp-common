@@ -75,11 +75,12 @@ func (o *options) validate() error {
 // Option configures a Map in Open.
 type Option func(*options)
 
-// WithMemoryLimit sets the in-memory budget, in bytes, for the index page
-// cache and the write buffer. The map also keeps a small directory that grows
-// by four bytes per index page (about 0.03 bytes per key) and a few bytes per
-// segment; those are not counted against the limit. Defaults to
-// DefaultMemoryLimit; the minimum is 1 MiB.
+// WithMemoryLimit sets the in-memory budget, in bytes: the index page caches,
+// the write buffers, the compactor's read buffer and any value cache all come
+// out of it. Bookkeeping that grows with the map is not counted: about 12
+// bytes per index page (roughly 0.1 bytes per key) and a few bytes per
+// segment. Each Range in progress also uses a 64 KiB buffer. Defaults to
+// DefaultMemoryLimit; the minimum is 1 MiB, more with many shards.
 func WithMemoryLimit(bytes int) Option {
 	return func(o *options) {
 		o.memoryLimit = bytes

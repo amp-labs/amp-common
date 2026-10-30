@@ -3,6 +3,7 @@ package diskmap
 import (
 	"encoding/binary"
 	"hash/crc32"
+	"math/bits"
 )
 
 // On-disk layout.
@@ -15,22 +16,26 @@ import (
 // segment; compaction copies live records to the active segment and deletes
 // the old file.
 //
-// The index is an extendible hash table stored in one file of fixed-size
-// pages. A page is one bucket:
+// Each shard's index is an extendible hash table stored in a file of
+// fixed-size pages. A page is one bucket:
 //
 //	[count uint16][local depth uint8][5 bytes reserved]
+//	[slotsPerPage tags, one byte each, padded to a multiple of 8]
 //	[slotsPerPage hashes, uint64 each]
 //	[slotsPerPage locations, 12 bytes each: segment, offset, record size]
 //
-// Hashes and locations are stored as two arrays so a lookup scans a dense run
-// of hashes and touches a location only on a match.
+// A tag is one byte of the hash. Lookups compare eight tags at a time and
+// read a full hash only where a tag matches, so a lookup touches about four
+// cache lines of a page instead of scanning every hash.
 const (
 	pageSize     = 4096
 	pageHeader   = 8
 	hashSize     = 8
 	locSize      = 12
-	slotsPerPage = (pageSize - pageHeader) / (hashSize + locSize)
-	locsOffset   = pageHeader + slotsPerPage*hashSize
+	slotsPerPage = (pageSize - pageHeader - 8) / (1 + hashSize + locSize)
+	tagsOffset   = pageHeader
+	hashesOffset = tagsOffset + (slotsPerPage+7)&^7
+	locsOffset   = hashesOffset + slotsPerPage*hashSize
 
 	recordHeaderSize = 12
 
@@ -112,7 +117,14 @@ func setPageDepth(p []byte, depth uint8) {
 }
 
 func slotHash(p []byte, i int) uint64 {
-	return binary.LittleEndian.Uint64(p[pageHeader+i*hashSize:])
+	return binary.LittleEndian.Uint64(p[hashesOffset+i*hashSize:])
+}
+
+// tagOf picks the hash byte stored as a slot's tag. The low bits choose the
+// shard and the high bits the directory entry, so bits 8-15 vary within a
+// page.
+func tagOf(h uint64) byte {
+	return byte(h >> 8) //nolint:gosec // Deliberate truncation.
 }
 
 func slotLoc(p []byte, i int) loc {
@@ -134,8 +146,56 @@ func setSlotLoc(p []byte, i int, l loc) {
 }
 
 func setSlot(p []byte, i int, h uint64, l loc) {
-	binary.LittleEndian.PutUint64(p[pageHeader+i*hashSize:], h)
+	p[tagsOffset+i] = tagOf(h)
+	binary.LittleEndian.PutUint64(p[hashesOffset+i*hashSize:], h)
 	setSlotLoc(p, i, l)
+}
+
+const (
+	lowBits  = 0x0101010101010101
+	highBits = 0x8080808080808080
+)
+
+// slotMatcher yields the slots of a page whose hash equals h, using the tags
+// to skip most slots eight at a time.
+type slotMatcher struct {
+	p    []byte
+	h    uint64
+	want uint64
+	n    int
+	base int
+	hits uint64
+}
+
+func matchSlots(p []byte, h uint64) slotMatcher {
+	return slotMatcher{p: p, h: h, want: uint64(tagOf(h)) * lowBits, n: pageCount(p), base: -8}
+}
+
+// next returns the next matching slot, or -1.
+func (s *slotMatcher) next() int {
+	for {
+		for s.hits != 0 {
+			i := s.base + bits.TrailingZeros64(s.hits)/8
+			s.hits &= s.hits - 1
+
+			if slotHash(s.p, i) == s.h {
+				return i
+			}
+		}
+
+		if s.base += 8; s.base >= s.n {
+			return -1
+		}
+
+		// Bytes of x are zero where tags match. The bit trick can also flag a
+		// byte just above a real match; the full hash check discards those.
+		x := binary.LittleEndian.Uint64(s.p[tagsOffset+s.base:]) ^ s.want
+		s.hits = (x - lowBits) &^ x & highBits
+
+		if left := s.n - s.base; left < 8 {
+			s.hits &= 1<<(8*left) - 1
+		}
+	}
 }
 
 // removeSlot deletes slot i by moving the last slot into its place.

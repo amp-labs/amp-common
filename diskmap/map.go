@@ -1,13 +1,16 @@
 // Package diskmap provides a disk-backed map from string keys to byte-slice
 // values, for maps that have outgrown memory.
 //
-// Values are appended to segment files and found through an on-disk hash
-// index read through a fixed-size page cache, so memory use stays near the
-// configured limit no matter how many entries the map holds. Every lookup
-// reads exactly one index page (often from the cache) and one record. Growth
-// splits one index page at a time and space is reclaimed by compacting a
-// little at a time alongside writes, so no single operation pays for a full
-// rehash or a full compaction.
+// Values are appended to segment files, and an on-disk hash index, read
+// through a fixed-size page cache, says where each one is. Memory use stays
+// near the configured limit no matter how many entries the map holds.
+//
+// Every lookup reads exactly one index page (usually from the cache) and one
+// record. The index is split into independently locked shards, and record
+// reads happen outside any lock, so goroutines rarely wait on each other.
+// Growth splits one index page at a time, and background goroutines flush
+// writes and compact dead space in small steps, so no single operation pays
+// for a rehash, a flush or a compaction pass.
 //
 // A map lives in its own directory. Close writes the state needed to reopen
 // it; a directory whose map was not closed (for example after a crash) cannot
@@ -21,9 +24,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	"github.com/zeebo/xxh3"
 )
@@ -63,39 +66,27 @@ const (
 
 // Map is a disk-backed map from string keys to byte-slice values. It is safe
 // for concurrent use.
+//
+// Locks are taken in a fixed order: a shard lock, then the log lock. Reads
+// hold only a shard lock, and only while consulting the index.
 type Map struct {
-	mu sync.Mutex
-
 	dir  string
 	opts options
 	seed uint64
 	hash func(key string, seed uint64) uint64
 
-	idxFile *os.File
-	pc      *pageCache
-	ix      *index
+	shards []*shard
+	mask   uint64
+	log    *valueLog
 
-	segs    map[uint32]*segment
-	active  *segment
-	nextSeg uint32
-	wbuf    []byte
-	flushed int64 // bytes of the active segment already written to its file
-
-	count int
-	total int64 // bytes in all segments
-	dead  int64 // bytes of overwritten or removed records
-
-	comp      compactor
-	iterators int
-	gen       uint64 // incremented by Clear, so iterators can tell
-	closed    bool
-	failed    error // a write failed and the files may be inconsistent
-
-	keyBuf []byte
+	closed  atomic.Bool
+	closeMu sync.Mutex
+	wg      sync.WaitGroup // flusher and compactor
+	writers sync.WaitGroup // index page writers, one per shard
 }
 
 // Open opens the map stored in dir, creating the directory and an empty map
-// if needed.
+// if needed. The map must be closed with Close.
 func Open(dir string, opts ...Option) (*Map, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
@@ -134,99 +125,89 @@ func Open(dir string, opts ...Option) (*Map, error) {
 		if len(files) > 0 {
 			return nil, fmt.Errorf("%w: %s", ErrNotCleanlyClosed, dir)
 		}
+	} else {
+		o.shards = len(saved.shards)
 	}
 
-	wbufSize := min(max(o.memoryLimit/16, minWriteBuffer), maxWriteBuffer)
+	// Two write buffers and the compactor's chunk come out of the budget;
+	// the rest holds index pages, split evenly between shards.
+	bufCap := min(max(o.memoryLimit/32, minWriteBuffer), maxWriteBuffer)
+	pages := (o.memoryLimit - 2*bufCap - chunkSize) / pageSize / o.shards
 
 	m := &Map{
 		dir:  dir,
 		opts: o,
 		hash: o.hash,
-		segs: make(map[uint32]*segment),
-		wbuf: make([]byte, 0, wbufSize),
+		mask: uint64(o.shards - 1), //nolint:gosec // Validated positive.
+		log:  newValueLog(dir, o.segmentSize, bufCap, o.compactionThreshold),
 	}
 
-	idxFile, err := os.OpenFile(filepath.Join(dir, indexFile), os.O_RDWR|os.O_CREATE, filePerm) //nolint:gosec,lll // Path built from dir.
-	if err != nil {
-		return nil, fmt.Errorf("diskmap: opening index: %w", err)
-	}
-
-	m.idxFile = idxFile
-	m.pc = newPageCache(idxFile, (o.memoryLimit-wbufSize-chunkSize)/pageSize)
-
-	if saved == nil {
-		err = m.create()
-	} else {
-		err = m.load(saved)
-	}
-
-	if err != nil {
-		m.closeFiles()
+	if err := m.open(saved, pages); err != nil {
+		m.releaseFiles()
 
 		return nil, err
+	}
+
+	m.wg.Add(2) //nolint:mnd // Flusher and compactor.
+
+	go m.log.flushLoop(&m.wg)
+	go m.compactLoop()
+
+	for _, sh := range m.shards {
+		m.writers.Add(1)
+
+		go sh.pc.writeLoop(&m.writers)
 	}
 
 	return m, nil
 }
 
-func (m *Map) create() error {
-	var seed [8]byte
-
-	_, _ = rand.Read(seed[:])
-	m.seed = binary.LittleEndian.Uint64(seed[:])
-
-	ix, err := newIndex(m.pc)
-	if err != nil {
-		return err
-	}
-
-	m.ix = ix
-
-	return m.rotate()
-}
-
-func (m *Map) load(saved *meta) error {
-	m.seed = saved.seed
-	m.count = int(saved.count) //nolint:gosec // Written from an int.
-	m.nextSeg = saved.nextSeg
-	m.ix = &index{pc: m.pc, dir: saved.dir, depth: saved.depth, numPages: saved.numPages}
-	m.pc.setPages(saved.numPages)
-
-	info, err := m.idxFile.Stat()
-	if err != nil {
-		return fmt.Errorf("diskmap: opening index: %w", err)
-	}
-
-	if info.Size() < int64(saved.numPages)*pageSize {
-		return fmt.Errorf("%w: index file is shorter than its %d pages", ErrCorrupt, saved.numPages)
-	}
-
-	for _, sm := range saved.segments {
-		s, err := openSegment(m.dir, sm.id, sm.size, sm.dead)
+func (m *Map) open(saved *meta, pages int) error {
+	for i := range m.opts.shards {
+		sh, err := openShard(m.dir, i, pages)
 		if err != nil {
 			return err
 		}
 
-		m.segs[s.id] = s
-		m.total += s.size
-		m.dead += s.dead
-		m.active = s
+		m.shards = append(m.shards, sh)
 	}
 
-	m.flushed = m.active.size
+	if saved == nil {
+		var seed [8]byte
 
-	if err := m.active.file.Truncate(m.active.size); err != nil {
-		return fmt.Errorf("diskmap: truncating active segment: %w", err)
+		_, _ = rand.Read(seed[:])
+		m.seed = binary.LittleEndian.Uint64(seed[:])
+
+		for _, sh := range m.shards {
+			if err := sh.create(); err != nil {
+				return err
+			}
+		}
+
+		return m.log.rotate()
+	}
+
+	m.seed = saved.seed
+
+	for i, sh := range m.shards {
+		if err := sh.load(saved.shards[i]); err != nil {
+			return err
+		}
+	}
+
+	if err := m.log.load(saved); err != nil {
+		return err
 	}
 
 	return removeMeta(m.dir)
 }
 
+func (m *Map) shardFor(h uint64) *shard {
+	return m.shards[h&m.mask]
+}
+
 // Get returns a copy of the value stored under key.
 func (m *Map) Get(key string) (value []byte, found bool, err error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	return m.get(nil, key)
 }
 
@@ -234,9 +215,6 @@ func (m *Map) Get(key string) (value []byte, found bool, err error) {
 // extended slice. It lets callers reuse a buffer across reads; if the key is
 // missing, dst is returned unchanged.
 func (m *Map) AppendValue(dst []byte, key string) (value []byte, found bool, err error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if dst == nil {
 		dst = []byte{}
 	}
@@ -244,107 +222,157 @@ func (m *Map) AppendValue(dst []byte, key string) (value []byte, found bool, err
 	return m.get(dst, key)
 }
 
-// get appends the value for key to dst. A nil dst gets an exactly sized
-// fresh slice.
+// get appends the value for key to dst; a nil dst gets an exactly sized
+// fresh slice. The index lookup happens under the shard lock and the record
+// read outside it.
 func (m *Map) get(dst []byte, key string) ([]byte, bool, error) {
-	if err := m.usable(); err != nil {
+	h := m.hash(key, m.seed)
+	sh := m.shardFor(h)
+
+	sh.mu.Lock()
+
+	var (
+		l   loc
+		n   int
+		err error
+	)
+
+	for {
+		if err = sh.usable(m.log); err == nil {
+			l, n, err = sh.candidates(h)
+		}
+
+		if err != errRetry { //nolint:errorlint // errRetry is never wrapped.
+			break
+		}
+	}
+
+	if err != nil || n == 0 {
+		sh.mu.Unlock()
+
 		return dst, false, err
 	}
 
-	h := m.hash(key, m.seed)
+	if n > 1 {
+		// Distinct keys with equal 64-bit hashes: rare enough to handle the
+		// simple way, entirely under the lock (the page is cached now).
+		defer sh.mu.Unlock()
 
-	frame, err := m.ix.frameFor(h)
+		return m.getCollided(sh, dst, key, h)
+	}
+
+	// The index points into s, so s cannot be dropped while the shard is
+	// locked; the reference keeps it open after the lock is released.
+	s := m.log.segment(l.seg)
+	if s == nil {
+		sh.mu.Unlock()
+
+		return dst, false, fmt.Errorf("%w: index points to missing segment %d", ErrCorrupt, l.seg)
+	}
+
+	s.acquire()
+	sh.mu.Unlock()
+
+	defer s.release()
+
+	if dst == nil {
+		dst = make([]byte, 0, l.size)
+	}
+
+	start := len(dst)
+	grown := slices.Grow(dst, int(l.size))
+	buf := grown[start : start+int(l.size)]
+
+	if err := m.log.read(s, int64(l.off), buf); err != nil {
+		return dst, false, err
+	}
+
+	n, ok, err := m.extractValue(buf, key, l)
+	if err != nil || !ok {
+		return dst, false, err
+	}
+
+	return grown[:start+n], true, nil
+}
+
+// getCollided is get for a key whose hash matches several slots. It runs
+// under the shard lock.
+func (m *Map) getCollided(sh *shard, dst []byte, key string, h uint64) ([]byte, bool, error) {
+	frame, err := sh.ix.frameFor(h)
 	if err != nil {
 		return dst, false, err
 	}
 
-	p := m.pc.buf(frame)
+	p := sh.pc.buf(frame)
+	mt := matchSlots(p, h)
 
-	for i := range pageCount(p) {
-		if slotHash(p, i) != h {
-			continue
+	for i := mt.next(); i >= 0; i = mt.next() {
+		l := slotLoc(p, i)
+
+		s := m.log.segment(l.seg)
+		if s == nil {
+			return dst, false, fmt.Errorf("%w: index points to missing segment %d", ErrCorrupt, l.seg)
 		}
 
-		out, ok, err := m.readValue(dst, slotLoc(p, i), key)
-		if err != nil || ok {
-			return out, ok, err
+		buf := make([]byte, l.size)
+		if err := m.log.read(s, int64(l.off), buf); err != nil {
+			return dst, false, err
+		}
+
+		n, ok, err := m.extractValue(buf, key, l)
+		if err != nil {
+			return dst, false, err
+		}
+
+		if ok {
+			if dst == nil {
+				dst = make([]byte, 0, n)
+			}
+
+			return append(dst, buf[:n]...), true, nil
 		}
 	}
 
 	return dst, false, nil
 }
 
-// readValue reads the record at l and, if it holds key, appends its value to
-// dst. Records are read straight into dst's spare capacity and the value is
-// then moved down over the header and key, so the value is copied once.
-func (m *Map) readValue(dst []byte, l loc, key string) ([]byte, bool, error) {
-	size := int(l.size)
-	if size < recordSize(len(key), 0) {
-		return dst, false, nil
-	}
-
-	if dst == nil {
-		dst = make([]byte, 0, size)
-	}
-
-	start := len(dst)
-	grown := slices.Grow(dst, size)
-	buf := grown[start : start+size]
-
-	if err := m.readAt(m.segs[l.seg], int64(l.off), buf); err != nil {
-		return dst, false, err
-	}
-
-	k, v, err := parseRecord(buf, m.opts.verifyChecksums)
+// extractValue checks that rec holds key and moves its value to the front of
+// rec, returning the value's length.
+func (m *Map) extractValue(rec []byte, key string, l loc) (int, bool, error) {
+	k, v, err := parseRecord(rec, m.opts.verifyChecksums)
 	if err != nil {
-		return dst, false, fmt.Errorf("record at segment %d offset %d: %w", l.seg, l.off, err)
+		return 0, false, fmt.Errorf("record at segment %d offset %d: %w", l.seg, l.off, err)
 	}
 
 	if string(k) != key {
-		return dst, false, nil
+		return 0, false, nil
 	}
 
-	n := copy(buf, v)
-
-	return grown[:start+n], true, nil
-}
-
-// readAt fills buf with the bytes of segment s starting at off. The tail of
-// the active segment may still be in the write buffer.
-func (m *Map) readAt(s *segment, off int64, buf []byte) error {
-	if s == nil {
-		return fmt.Errorf("%w: index points to a missing segment", ErrCorrupt)
-	}
-
-	if s == m.active && off+int64(len(buf)) > m.flushed {
-		split := max(m.flushed-off, 0)
-		copy(buf[split:], m.wbuf[off+split-m.flushed:])
-		buf = buf[:split]
-	}
-
-	if len(buf) == 0 {
-		return nil
-	}
-
-	if _, err := s.file.ReadAt(buf, off); err != nil {
-		return fmt.Errorf("diskmap: reading segment %d: %w", s.id, err)
-	}
-
-	return nil
+	return copy(rec, v), true, nil
 }
 
 // Contains reports whether key is in the map.
 func (m *Map) Contains(key string) (bool, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	h := m.hash(key, m.seed)
+	sh := m.shardFor(h)
 
-	if err := m.usable(); err != nil {
-		return false, err
+	var checkBuf [2]keyCheck
+
+	checks := checkBuf[:0]
+
+	sh.mu.Lock()
+	defer sh.mu.Unlock()
+
+	for {
+		if err := sh.usable(m.log); err != nil {
+			return false, err
+		}
+
+		_, _, _, found, err := sh.find(m.log, h, key, &checks)
+		if err != errRetry { //nolint:errorlint // errRetry is never wrapped.
+			return found, err
+		}
 	}
-
-	_, _, _, found, err := m.find(m.hash(key, m.seed), key)
-
-	return found, err
 }
 
 // Add stores value under key, replacing any existing value. The map keeps its
@@ -358,356 +386,263 @@ func (m *Map) Add(key string, value []byte) error {
 		return ErrValueTooLarge
 	}
 
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if err := m.usable(); err != nil {
-		return err
+	if m.closed.Load() {
+		return ErrClosed
 	}
 
 	h := m.hash(key, m.seed)
+	sh := m.shardFor(h)
 
-	frame, slot, old, found, err := m.find(h, key)
+	// Append first, then point the index at the new record. Concurrent Adds
+	// of one key may append in one order and index in the other; either
+	// result is a valid outcome of the race.
+	m.log.writeMu.RLock()
+
+	l, gen, err := m.log.appendRecord(key, value)
 	if err != nil {
+		m.log.writeMu.RUnlock()
+
 		return err
 	}
 
-	l, err := m.appendRecord(key, value)
-	if err != nil {
-		return err
+	var checkBuf [2]keyCheck
+
+	checks := checkBuf[:0]
+
+	sh.mu.Lock()
+
+	dead, err := m.indexRecord(sh, h, key, l, gen, &checks)
+	for err == errRetry { //nolint:errorlint // errRetry is never wrapped.
+		dead, err = m.indexRecord(sh, h, key, l, gen, &checks)
 	}
 
-	// Appending touches only segment files, so frame still holds the page.
-	if found {
-		setSlotLoc(m.pc.buf(frame), slot, l)
-		m.pc.markDirty(frame)
-		m.markDead(old)
-	} else {
-		if err := m.ix.insert(h, l); err != nil {
-			m.markDead(l)
+	sh.mu.Unlock()
 
-			return err
-		}
+	m.log.writeMu.RUnlock()
 
-		m.count++
-	}
-
-	return m.compactStep(int64(l.size))
-}
-
-// Remove deletes key from the map. Removing a missing key is not an error.
-func (m *Map) Remove(key string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if err := m.usable(); err != nil {
-		return err
-	}
-
-	frame, slot, old, found, err := m.find(m.hash(key, m.seed), key)
-	if err != nil || !found {
-		return err
-	}
-
-	removeSlot(m.pc.buf(frame), slot)
-	m.pc.markDirty(frame)
-	m.markDead(old)
-	m.count--
-
-	return m.compactStep(int64(old.size))
-}
-
-// find locates the index slot for key. The returned frame stays valid until
-// the next index call.
-func (m *Map) find(h uint64, key string) (frame, slot int, l loc, found bool, err error) {
-	frame, err = m.ix.frameFor(h)
-	if err != nil {
-		return 0, 0, loc{}, false, err
-	}
-
-	p := m.pc.buf(frame)
-
-	for i := range pageCount(p) {
-		if slotHash(p, i) != h {
-			continue
-		}
-
-		l = slotLoc(p, i)
-
-		same, err := m.recordHasKey(l, key)
-		if err != nil {
-			return 0, 0, loc{}, false, err
-		}
-
-		if same {
-			return frame, i, l, true, nil
-		}
-	}
-
-	return frame, 0, loc{}, false, nil
-}
-
-// recordHasKey reports whether the record at l stores key, reading only its
-// header and key.
-func (m *Map) recordHasKey(l loc, key string) (bool, error) {
-	n := recordSize(len(key), 0)
-	if int(l.size) < n {
-		return false, nil
-	}
-
-	if cap(m.keyBuf) < n {
-		m.keyBuf = make([]byte, n)
-	}
-
-	buf := m.keyBuf[:n]
-	if err := m.readAt(m.segs[l.seg], int64(l.off), buf); err != nil {
-		return false, err
-	}
-
-	keyLen, _ := recordLengths(buf)
-
-	return keyLen == len(key) && string(buf[recordHeaderSize:]) == key, nil
-}
-
-func (m *Map) markDead(l loc) {
-	if s := m.segs[l.seg]; s != nil {
-		s.dead += int64(l.size)
-		m.dead += int64(l.size)
-	}
-}
-
-// appendRecord writes a record for key and value to the active segment.
-func (m *Map) appendRecord(key string, value []byte) (loc, error) {
-	size := int64(recordSize(len(key), len(value)))
-
-	if err := m.reserve(size); err != nil {
-		return loc{}, err
-	}
-
-	if size <= int64(cap(m.wbuf)) {
-		m.wbuf = appendRecord(m.wbuf, key, value)
-
-		return m.appended(size), nil
-	}
-
-	// Too big to buffer; the buffer is empty after reserve, so write it now.
-	rec := appendRecord(make([]byte, 0, size), key, value)
-	if err := m.writeDirect(rec); err != nil {
-		return loc{}, err
-	}
-
-	return m.appended(size), nil
-}
-
-// appendRaw copies an encoded record to the active segment.
-func (m *Map) appendRaw(rec []byte) (loc, error) {
-	size := int64(len(rec))
-
-	if err := m.reserve(size); err != nil {
-		return loc{}, err
-	}
-
-	if size <= int64(cap(m.wbuf)) {
-		m.wbuf = append(m.wbuf, rec...)
-
-		return m.appended(size), nil
-	}
-
-	if err := m.writeDirect(rec); err != nil {
-		return loc{}, err
-	}
-
-	return m.appended(size), nil
-}
-
-// reserve makes room for a record of the given size: it starts a new segment
-// if this one would grow past the segment size, and flushes the write buffer
-// if the record does not fit.
-func (m *Map) reserve(size int64) error {
-	if m.active.size > 0 && m.active.size+size > m.opts.segmentSize {
-		if err := m.rotate(); err != nil {
-			return err
-		}
-	}
-
-	if len(m.wbuf)+int(size) > cap(m.wbuf) {
-		return m.flush()
-	}
-
-	return nil
-}
-
-func (m *Map) writeDirect(rec []byte) error {
-	if _, err := m.active.file.WriteAt(rec, m.flushed); err != nil {
-		return m.fail(fmt.Errorf("diskmap: writing segment %d: %w", m.active.id, err))
-	}
-
-	m.flushed += int64(len(rec))
-
-	return nil
-}
-
-// appended records that size bytes were just added to the active segment and
-// returns their location.
-func (m *Map) appended(size int64) loc {
-	off := m.active.size
-
-	m.active.size += size
-	m.active.unsynced = true
-	m.total += size
-
-	return loc{seg: m.active.id, off: uint32(off), size: uint32(size)} //nolint:gosec // Segments stay below 4 GiB.
-}
-
-// flush writes the write buffer to the active segment.
-func (m *Map) flush() error {
-	if len(m.wbuf) == 0 {
-		return nil
-	}
-
-	if _, err := m.active.file.WriteAt(m.wbuf, m.flushed); err != nil {
-		return m.fail(fmt.Errorf("diskmap: writing segment %d: %w", m.active.id, err))
-	}
-
-	m.flushed += int64(len(m.wbuf))
-	m.wbuf = m.wbuf[:0]
-
-	return nil
-}
-
-// rotate seals the active segment and starts a new one.
-func (m *Map) rotate() error {
-	if m.active != nil {
-		if err := m.flush(); err != nil {
-			return err
-		}
-	}
-
-	s, err := createSegment(m.dir, m.nextSeg)
-	if err != nil {
-		return m.fail(err)
-	}
-
-	m.nextSeg++
-	m.segs[s.id] = s
-	m.active = s
-	m.flushed = 0
-
-	return nil
-}
-
-// fail marks the map unusable after a failed write left its files
-// inconsistent.
-func (m *Map) fail(err error) error {
-	if m.failed == nil {
-		m.failed = err
+	if dead.size > 0 {
+		m.log.markDead(dead.seg, dead.size)
 	}
 
 	return err
 }
 
-func (m *Map) usable() error {
-	if m.closed {
-		return ErrClosed
+// indexRecord points key at the record l, appended in generation gen, and
+// returns the location of the record that no longer holds a live value: the
+// one l replaced, or l itself if it could not be indexed. It returns errRetry
+// if it had to release the lock.
+func (m *Map) indexRecord(sh *shard, h uint64, key string, l loc, gen uint64, checks *[]keyCheck) (loc, error) {
+	if err := sh.usable(m.log); err != nil {
+		return l, err
 	}
 
-	if m.failed != nil {
-		return m.failed
+	// Clear ran after the append and deleted the record with everything else.
+	if m.log.gen.Load() != gen {
+		return loc{}, nil
 	}
 
-	return m.pc.failed
+	frame, slot, old, found, err := sh.find(m.log, h, key, checks)
+	if err == errRetry { //nolint:errorlint // errRetry is never wrapped.
+		return loc{}, err
+	}
+
+	if err != nil {
+		return l, err
+	}
+
+	if found {
+		setSlotLoc(sh.pc.buf(frame), slot, l)
+		sh.pc.markDirty(frame)
+
+		return old, nil
+	}
+
+	if err := sh.ix.insert(h, l); err == errRetry { //nolint:errorlint // errRetry is never wrapped.
+		return loc{}, err
+	} else if err != nil {
+		return l, err
+	}
+
+	sh.count++
+
+	return loc{}, nil
+}
+
+// Remove deletes key from the map. Removing a missing key is not an error.
+func (m *Map) Remove(key string) error {
+	h := m.hash(key, m.seed)
+	sh := m.shardFor(h)
+
+	var (
+		checkBuf   [2]keyCheck
+		frame, slot int
+		old        loc
+		found      bool
+		err        error
+	)
+
+	checks := checkBuf[:0]
+
+	sh.mu.Lock()
+
+	for {
+		if err = sh.usable(m.log); err == nil {
+			frame, slot, old, found, err = sh.find(m.log, h, key, &checks)
+		}
+
+		if err != errRetry { //nolint:errorlint // errRetry is never wrapped.
+			break
+		}
+	}
+
+	if found {
+		removeSlot(sh.pc.buf(frame), slot)
+		sh.pc.markDirty(frame)
+		sh.count--
+	}
+
+	sh.mu.Unlock()
+
+	if found {
+		m.log.markDead(old.seg, old.size)
+	}
+
+	return err
 }
 
 // Size returns the number of entries in the map.
 func (m *Map) Size() int {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	total := 0
 
-	return m.count
+	for _, sh := range m.shards {
+		sh.mu.Lock()
+		total += sh.count
+		sh.mu.Unlock()
+	}
+
+	return total
 }
 
 // Clear removes every entry and deletes all data files.
 func (m *Map) Clear() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	// Take every shard and wait for its page writer to finish any write in
+	// progress. Once a shard is locked and idle its writer cannot start
+	// another, because that needs the lock.
+	for _, sh := range m.shards {
+		sh.mu.Lock()
+		defer sh.mu.Unlock() //nolint:gocritic // Every shard stays locked until Clear returns.
 
-	if err := m.usable(); err != nil {
+		sh.pc.idle()
+	}
+
+	lg := m.log
+
+	lg.mu.Lock()
+	defer lg.mu.Unlock()
+
+	if err := m.shards[0].usable(lg); err != nil {
 		return err
 	}
 
-	var errs []error
-
-	for _, s := range m.segs {
-		errs = append(errs, s.remove())
+	// Write out the buffers rather than discarding them: a Get that found
+	// its record before Clear took the locks may still be reading it.
+	if err := lg.drain(); err != nil {
+		return err
 	}
 
-	m.segs = make(map[uint32]*segment)
-	m.active = nil
-	m.wbuf = m.wbuf[:0]
-	m.count, m.total, m.dead = 0, 0, 0
-	m.comp.reset()
-	m.gen++
-
-	if err := m.idxFile.Truncate(0); err != nil {
-		errs = append(errs, fmt.Errorf("diskmap: truncating index: %w", err))
+	for _, s := range lg.table.Load().all() {
+		s.drop()
 	}
 
-	if err := errors.Join(errs...); err != nil {
-		return m.fail(err)
+	lg.table.Store(&segTable{})
+	lg.total, lg.dead = 0, 0
+	lg.gen.Add(1)
+
+	for _, sh := range m.shards {
+		if err := sh.reset(); err != nil {
+			return lg.fail(err)
+		}
 	}
 
-	if err := m.ix.reset(); err != nil {
-		return m.fail(err)
-	}
-
-	return m.rotate()
+	return lg.rotate()
 }
 
 // Close writes everything needed to reopen the map, syncs it to disk and
 // releases the map's files. Closing a closed map is a no-op.
 func (m *Map) Close() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.closeMu.Lock()
+	defer m.closeMu.Unlock()
 
-	if m.closed {
+	if m.closed.Swap(true) {
 		return nil
 	}
 
-	m.closed = true
+	lg := m.log
 
-	err := m.persist()
+	lg.mu.Lock()
+	lg.closed = true
+	err := lg.drain()
+	lg.stopping = true
+	lg.flushCond.Broadcast()
+	lg.compactCond.Broadcast()
+	lg.compactDone.Broadcast()
+	lg.mu.Unlock()
 
-	return errors.Join(err, m.closeFiles())
+	m.wg.Wait()
+
+	err = errors.Join(err, m.persist())
+
+	for _, sh := range m.shards {
+		sh.mu.Lock()
+		sh.pc.stop()
+		sh.mu.Unlock()
+	}
+
+	m.writers.Wait()
+	m.releaseFiles()
+
+	return err
 }
 
+// persist writes back the index, syncs every file and writes the meta file.
+// It marks every shard closed whether or not it succeeds.
 func (m *Map) persist() error {
-	if m.failed != nil {
-		return m.failed
+	saved := &meta{seed: m.seed}
+
+	var errs []error
+
+	for _, sh := range m.shards {
+		sh.mu.Lock()
+
+		err := sh.usable(m.log)
+		sh.closed = true
+
+		if err == nil {
+			var sm shardMeta
+			if sm, err = sh.persist(); err == nil {
+				saved.shards = append(saved.shards, sm)
+			}
+		}
+
+		if err != nil {
+			errs = append(errs, err)
+		}
+
+		sh.mu.Unlock()
 	}
 
-	if err := m.flush(); err != nil {
+	if err := errors.Join(errs...); err != nil {
 		return err
 	}
 
-	if err := m.pc.flush(); err != nil {
-		return err
-	}
+	lg := m.log
 
-	if err := m.idxFile.Sync(); err != nil {
-		return fmt.Errorf("diskmap: syncing index: %w", err)
-	}
+	lg.mu.Lock()
+	defer lg.mu.Unlock()
 
-	saved := &meta{
-		seed:     m.seed,
-		count:    uint64(m.count), //nolint:gosec // Count is non-negative.
-		numPages: m.ix.numPages,
-		depth:    m.ix.depth,
-		nextSeg:  m.nextSeg,
-		dir:      m.ix.dir,
-	}
+	saved.nextSeg = lg.nextSeg
 
-	for _, id := range m.segmentIDs() {
-		s := m.segs[id]
+	for _, s := range lg.table.Load().all() {
 		if err := s.sync(); err != nil {
 			return err
 		}
@@ -718,31 +653,16 @@ func (m *Map) persist() error {
 	return writeMeta(m.dir, saved)
 }
 
-func (m *Map) closeFiles() error {
-	var errs []error
-
-	for _, s := range m.segs {
-		errs = append(errs, s.file.Close())
+// releaseFiles drops the map's references to its files. Segment files close
+// once in-flight reads finish.
+func (m *Map) releaseFiles() {
+	for _, s := range m.log.table.Load().all() {
+		s.release()
 	}
 
-	if m.idxFile != nil {
-		errs = append(errs, m.idxFile.Close())
+	for _, sh := range m.shards {
+		_ = sh.idxFile.Close()
 	}
-
-	return errors.Join(errs...)
-}
-
-// segmentIDs returns the ids of all segments in ascending order, which is
-// the order they were written.
-func (m *Map) segmentIDs() []uint32 {
-	ids := make([]uint32, 0, len(m.segs))
-	for id := range m.segs {
-		ids = append(ids, id)
-	}
-
-	slices.Sort(ids)
-
-	return ids
 }
 
 // Stats describes a map's size and cache behavior.
@@ -756,13 +676,13 @@ type Stats struct {
 	// DeadBytes is the part of SegmentBytes held by overwritten or removed
 	// records, which compaction reclaims.
 	DeadBytes int64
-	// IndexPages is the number of pages in the index file.
+	// IndexPages is the number of pages in the index files.
 	IndexPages int
-	// CachedPages is the number of index pages the cache can hold.
+	// CachedPages is the number of index pages the caches can hold.
 	CachedPages int
 	// PageHits, PageMisses and PageWrites count index cache lookups served
-	// from memory, lookups that read the index file, and dirty pages written
-	// back to it.
+	// from memory, lookups that read an index file, and dirty pages written
+	// back.
 	PageHits   uint64
 	PageMisses uint64
 	PageWrites uint64
@@ -772,19 +692,27 @@ type Stats struct {
 
 // Stats returns a snapshot of the map's statistics.
 func (m *Map) Stats() Stats {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	var st Stats
 
-	return Stats{
-		Entries:        m.count,
-		Segments:       len(m.segs),
-		SegmentBytes:   m.total,
-		DeadBytes:      m.dead,
-		IndexPages:     int(m.ix.numPages),
-		CachedPages:    m.pc.frames(),
-		PageHits:       m.pc.hits,
-		PageMisses:     m.pc.misses,
-		PageWrites:     m.pc.writes,
-		CompactedBytes: m.comp.processed,
+	for _, sh := range m.shards {
+		sh.mu.Lock()
+		st.Entries += sh.count
+		st.IndexPages += int(sh.ix.numPages)
+		st.CachedPages += sh.pc.frames()
+		st.PageHits += sh.pc.hits
+		st.PageMisses += sh.pc.misses
+		st.PageWrites += sh.pc.writes
+		sh.mu.Unlock()
 	}
+
+	lg := m.log
+
+	lg.mu.Lock()
+	st.Segments = len(lg.table.Load().all())
+	st.SegmentBytes = lg.total
+	st.DeadBytes = lg.dead
+	st.CompactedBytes = lg.compacted
+	lg.mu.Unlock()
+
+	return st
 }

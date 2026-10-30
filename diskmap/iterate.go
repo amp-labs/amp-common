@@ -12,44 +12,86 @@ import (
 // reached are not visited, and no entry is visited twice. Compaction pauses
 // while any Range is in progress, and Clear ends the iteration early.
 func (m *Map) Range(fn func(key string, value []byte) bool) error {
-	m.mu.Lock()
+	if m.closed.Load() {
+		return ErrClosed
+	}
 
-	if err := m.usable(); err != nil {
-		m.mu.Unlock()
+	lg := m.log
+
+	// Snapshot the segments and where each one ends now; records appended
+	// later are not visited. Holding writeMu means every record before the
+	// snapshot's end is already indexed.
+	type span struct {
+		seg   *segment
+		limit int64
+	}
+
+	lg.writeMu.Lock()
+	lg.mu.Lock()
+
+	if err := lg.err(); err != nil {
+		lg.mu.Unlock()
+		lg.writeMu.Unlock()
 
 		return err
 	}
 
-	it := &iterator{
-		gen:    m.gen,
-		endSeg: m.active.id,
-		endOff: m.active.size,
-	}
-	ids := m.segmentIDs()
-	m.iterators++
+	segs := lg.table.Load().all()
+	spans := make([]span, 0, len(segs))
 
-	m.mu.Unlock()
+	for _, s := range segs {
+		s.acquire()
+		spans = append(spans, span{seg: s, limit: s.size})
+	}
+
+	gen := lg.gen.Load()
+	lg.iterators.Add(1)
+
+	lg.mu.Unlock()
+	lg.writeMu.Unlock()
 
 	defer func() {
-		m.mu.Lock()
-		m.iterators--
-		m.mu.Unlock()
+		lg.mu.Lock()
+
+		if lg.iterators.Add(-1) == 0 {
+			lg.compactCond.Broadcast()
+		}
+
+		lg.mu.Unlock()
+
+		for _, sp := range spans {
+			sp.seg.release()
+		}
 	}()
 
-	for _, id := range ids {
-		it.seg, it.off, it.reader.n = id, 0, 0
+	var reader chunkReader
 
-		for {
-			key, value, state, err := m.rangeNext(it)
-			if err != nil || state == iterCleared {
+	for _, sp := range spans {
+		reader.n = 0
+
+		for off := int64(0); off < sp.limit; {
+			rec, err := reader.record(lg, sp.seg, off, sp.limit)
+			if err != nil {
 				return err
 			}
 
-			if state == iterSegmentDone {
-				break
+			state, err := m.recordState(sp.seg, off, rec, gen)
+			if err != nil || state == recordCleared {
+				return err
 			}
 
-			if state == iterLive && !fn(key, value) {
+			off += int64(len(rec))
+
+			if state == recordDead {
+				continue
+			}
+
+			key, value, err := parseRecord(rec, m.opts.verifyChecksums)
+			if err != nil {
+				return err
+			}
+
+			if !fn(string(key), slices.Clone(value)) {
 				return nil
 			}
 		}
@@ -58,70 +100,40 @@ func (m *Map) Range(fn func(key string, value []byte) bool) error {
 	return nil
 }
 
-type iterState int
+type recordState int
 
 const (
-	iterLive iterState = iota
-	iterDead
-	iterSegmentDone
-	iterCleared
+	recordLive recordState = iota
+	recordDead
+	recordCleared
 )
 
-type iterator struct {
-	gen    uint64
-	endSeg uint32
-	endOff int64
-	seg    uint32
-	off    int64
-	reader chunkReader
-}
-
-// rangeNext reads the next record of the iterator's segment and reports
-// whether it is live.
-func (m *Map) rangeNext(it *iterator) (string, []byte, iterState, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if err := m.usable(); err != nil {
-		return "", nil, 0, err
+// recordState reports whether the record rec at (s, off) is the current
+// value of its key, or whether Clear has run since the iteration began.
+func (m *Map) recordState(s *segment, off int64, rec []byte, gen uint64) (recordState, error) {
+	keyLen, _ := recordLengths(rec)
+	if recordHeaderSize+keyLen > len(rec) {
+		return recordCleared, ErrCorrupt
 	}
 
-	if m.gen != it.gen {
-		return "", nil, iterCleared, nil
+	h := m.hash(bytesToString(rec[recordHeaderSize:recordHeaderSize+keyLen]), m.seed)
+	sh := m.shardFor(h)
+
+	sh.mu.Lock()
+	defer sh.mu.Unlock()
+
+	if err := sh.usable(m.log); err != nil {
+		return recordCleared, err
 	}
 
-	// Compaction is paused while iterating, so only Clear removes segments.
-	s := m.segs[it.seg]
-	if s == nil {
-		return "", nil, iterSegmentDone, nil
+	if m.log.gen.Load() != gen {
+		return recordCleared, nil
 	}
 
-	limit := s.size
-	if s.id == it.endSeg {
-		limit = it.endOff
-	}
-
-	if it.off >= limit {
-		return "", nil, iterSegmentDone, nil
-	}
-
-	rec, err := it.reader.record(m, s, it.off, limit)
-	if err != nil {
-		return "", nil, 0, err
-	}
-
-	off := it.off
-	it.off += int64(len(rec))
-
-	_, _, live, err := m.liveSlot(s.id, off, rec)
+	_, _, live, err := sh.liveSlotRetry(h, s.id, off)
 	if err != nil || !live {
-		return "", nil, iterDead, err
+		return recordDead, err
 	}
 
-	key, value, err := parseRecord(rec, m.opts.verifyChecksums)
-	if err != nil {
-		return "", nil, 0, err
-	}
-
-	return string(key), slices.Clone(value), iterLive, nil
+	return recordLive, nil
 }

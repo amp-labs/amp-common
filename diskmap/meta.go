@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	metaFile  = "meta"
-	indexFile = "index"
+	metaFile = "meta"
 
 	metaMagic   = "DISKMAP1"
 	metaVersion = 1
@@ -31,28 +30,30 @@ type segmentMeta struct {
 	dead int64
 }
 
+// shardMeta is the persisted state of one shard's index.
+type shardMeta struct {
+	count    uint64
+	numPages uint32
+	depth    uint8
+	dir      []uint32
+}
+
 // meta is everything needed to reopen a cleanly closed map. It exists only
 // between Close and the next Open, so a directory with data files but no meta
 // file was not closed cleanly.
 type meta struct {
 	seed     uint64
-	count    uint64
-	numPages uint32
-	depth    uint8
 	nextSeg  uint32
 	segments []segmentMeta // ascending id; the last one is the active segment
-	dir      []uint32
+	shards   []shardMeta
 }
 
 func (m *meta) encode() []byte {
-	buf := make([]byte, 0, 64+len(m.segments)*20+len(m.dir)*4)
+	buf := make([]byte, 0, 64+len(m.segments)*20)
 
 	buf = append(buf, metaMagic...)
 	buf = binary.LittleEndian.AppendUint32(buf, metaVersion)
 	buf = binary.LittleEndian.AppendUint64(buf, m.seed)
-	buf = binary.LittleEndian.AppendUint64(buf, m.count)
-	buf = binary.LittleEndian.AppendUint32(buf, m.numPages)
-	buf = binary.LittleEndian.AppendUint32(buf, uint32(m.depth))
 	buf = binary.LittleEndian.AppendUint32(buf, m.nextSeg)
 	buf = binary.LittleEndian.AppendUint32(buf, uint32(len(m.segments))) //nolint:gosec // Segment ids are uint32.
 
@@ -62,8 +63,16 @@ func (m *meta) encode() []byte {
 		buf = binary.LittleEndian.AppendUint64(buf, uint64(s.dead)) //nolint:gosec // Sizes are non-negative.
 	}
 
-	for _, id := range m.dir {
-		buf = binary.LittleEndian.AppendUint32(buf, id)
+	buf = binary.LittleEndian.AppendUint32(buf, uint32(len(m.shards))) //nolint:gosec // At most maxShards.
+
+	for _, sh := range m.shards {
+		buf = binary.LittleEndian.AppendUint64(buf, sh.count)
+		buf = binary.LittleEndian.AppendUint32(buf, sh.numPages)
+		buf = binary.LittleEndian.AppendUint32(buf, uint32(sh.depth))
+
+		for _, id := range sh.dir {
+			buf = binary.LittleEndian.AppendUint32(buf, id)
+		}
 	}
 
 	return binary.LittleEndian.AppendUint32(buf, crc32.Checksum(buf, castagnoli))
@@ -111,21 +120,12 @@ func decodeMeta(buf []byte) (*meta, error) {
 		return nil, fmt.Errorf("%w: unsupported format version %d", ErrCorrupt, v)
 	}
 
-	m := &meta{
-		seed:     r.u64(),
-		count:    r.u64(),
-		numPages: r.u32(),
-	}
+	m := &meta{seed: r.u64(), nextSeg: r.u32()}
 
-	depth := r.u32()
-	m.nextSeg = r.u32()
 	nsegs := r.u32()
-
-	if depth > maxDepth || nsegs == 0 || int(nsegs) > len(r.buf)/20 {
-		return nil, fmt.Errorf("%w: bad meta header", ErrCorrupt)
+	if nsegs == 0 || int(nsegs) > len(r.buf)/20 {
+		return nil, fmt.Errorf("%w: bad segment count", ErrCorrupt)
 	}
-
-	m.depth = uint8(depth)
 
 	for range nsegs {
 		m.segments = append(m.segments, segmentMeta{
@@ -135,12 +135,29 @@ func decodeMeta(buf []byte) (*meta, error) {
 		})
 	}
 
-	m.dir = make([]uint32, 1<<depth)
-	for i := range m.dir {
-		m.dir[i] = r.u32()
-		if m.dir[i] >= m.numPages {
-			return nil, fmt.Errorf("%w: directory points past the index", ErrCorrupt)
+	nshards := r.u32()
+	if nshards == 0 || nshards > maxShards || nshards&(nshards-1) != 0 {
+		return nil, fmt.Errorf("%w: bad shard count %d", ErrCorrupt, nshards)
+	}
+
+	for range nshards {
+		sh := shardMeta{count: r.u64(), numPages: r.u32()}
+
+		depth := r.u32()
+		if depth > maxDepth || 4<<depth > len(r.buf) {
+			return nil, fmt.Errorf("%w: bad index depth", ErrCorrupt)
 		}
+
+		sh.depth = uint8(depth)
+		sh.dir = make([]uint32, 1<<depth)
+
+		for i := range sh.dir {
+			if sh.dir[i] = r.u32(); sh.dir[i] >= sh.numPages {
+				return nil, fmt.Errorf("%w: directory points past the index", ErrCorrupt)
+			}
+		}
+
+		m.shards = append(m.shards, sh)
 	}
 
 	if r.err != nil || len(r.buf) != 0 {
@@ -231,7 +248,7 @@ func dataFiles(dir string) ([]string, error) {
 
 	for _, e := range entries {
 		name := e.Name()
-		if name == metaFile || name == metaFile+".tmp" || name == indexFile || isSegmentName(name) {
+		if name == metaFile || name == metaFile+".tmp" || isNumbered(name, indexSuffix) || isNumbered(name, segmentSuffix) {
 			files = append(files, name)
 		}
 	}
@@ -241,8 +258,9 @@ func dataFiles(dir string) ([]string, error) {
 	return files, nil
 }
 
-func isSegmentName(name string) bool {
-	stem, ok := strings.CutSuffix(name, segmentSuffix)
+// isNumbered reports whether name is a decimal number followed by suffix.
+func isNumbered(name, suffix string) bool {
+	stem, ok := strings.CutSuffix(name, suffix)
 	if !ok {
 		return false
 	}

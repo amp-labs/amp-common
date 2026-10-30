@@ -2,6 +2,7 @@ package diskmap
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 	"sync/atomic"
 )
@@ -110,7 +111,9 @@ func (lg *valueLog) load(saved *meta) error {
 	lg.nextSeg = saved.nextSeg
 
 	active := live[len(live)-1]
-	if err := active.file.Truncate(active.size); err != nil {
+
+	err := active.file.Truncate(active.size)
+	if err != nil {
 		return fmt.Errorf("diskmap: truncating active segment: %w", err)
 	}
 
@@ -151,7 +154,8 @@ func (lg *valueLog) appendRecord(key string, value []byte) (loc, uint64, error) 
 	lg.mu.Lock()
 	defer lg.mu.Unlock()
 
-	if err := lg.ensureRoom(size); err != nil {
+	err := lg.ensureRoom(size)
+	if err != nil {
 		return loc{}, 0, err
 	}
 
@@ -170,12 +174,13 @@ func (lg *valueLog) appendRaw(rec []byte) (loc, uint64, error) {
 	lg.mu.Lock()
 	defer lg.mu.Unlock()
 
-	if err := lg.ensureRoom(len(rec)); err != nil {
+	err := lg.ensureRoom(len(rec))
+	if err != nil {
 		return loc{}, 0, err
 	}
 
 	if len(rec) > lg.bufCap {
-		return lg.appendOversized(rec), lg.gen.Load(), nil
+		return lg.appendOversized(slices.Clone(rec)), lg.gen.Load(), nil
 	}
 
 	l := lg.appended(len(rec))
@@ -191,7 +196,8 @@ func (lg *valueLog) appendRaw(rec []byte) (loc, uint64, error) {
 // and the flusher idle (for records larger than a buffer).
 func (lg *valueLog) ensureRoom(size int) error {
 	for {
-		if err := lg.err(); err != nil {
+		err := lg.err()
+		if err != nil {
 			return err
 		}
 
@@ -210,7 +216,8 @@ func (lg *valueLog) ensureRoom(size int) error {
 				lg.handOff()
 			}
 
-			if err := lg.rotate(); err != nil {
+			err = lg.rotate()
+			if err != nil {
 				return err
 			}
 
@@ -297,7 +304,8 @@ func (lg *valueLog) rotate() error {
 // drain waits until every buffered record is in its file.
 func (lg *valueLog) drain() error {
 	for {
-		if err := lg.err(); err != nil {
+		err := lg.err()
+		if err != nil {
 			return err
 		}
 
@@ -333,12 +341,9 @@ func (lg *valueLog) flushLoop(wg *sync.WaitGroup) {
 
 		p := lg.pending
 
-		lg.mu.Unlock()
-		_, err := p.seg.file.WriteAt(p.data, p.start)
-		lg.mu.Lock()
-
+		err := lg.writeUnlocked(p)
 		if err != nil {
-			lg.fail(fmt.Errorf("diskmap: writing segment %d: %w", p.seg.id, err))
+			_ = lg.fail(fmt.Errorf("diskmap: writing segment %d: %w", p.seg.id, err))
 		} else {
 			p.seg.written.Store(p.end())
 		}
@@ -351,6 +356,15 @@ func (lg *valueLog) flushLoop(wg *sync.WaitGroup) {
 		lg.pending = memBuf{}
 		lg.flushCond.Broadcast()
 	}
+}
+
+func (lg *valueLog) writeUnlocked(p memBuf) error {
+	lg.mu.Unlock()
+	defer lg.mu.Lock()
+
+	_, err := p.seg.file.WriteAt(p.data, p.start)
+
+	return err
 }
 
 // markDead records that size bytes of segment id no longer hold a live

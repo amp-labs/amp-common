@@ -32,6 +32,7 @@ type options struct {
 	verifyChecksums     bool
 	discardExisting     bool
 	shards              int
+	valueCache          int
 	hash                func(key string, seed uint64) uint64
 }
 
@@ -50,7 +51,12 @@ func (o *options) validate() error {
 		return fmt.Errorf("%w: shards must be a power of two between 1 and %d", ErrInvalidOption, maxShards)
 	}
 
-	if least := max(minMemoryLimit, 2*minWriteBuffer+chunkSize+o.shards*(minFrames+minWriteBack)*pageSize); o.memoryLimit < least {
+	if o.valueCache < 0 || o.valueCache > o.memoryLimit/2 {
+		return fmt.Errorf("%w: value cache must be between 0 and half the memory limit", ErrInvalidOption)
+	}
+
+	least := max(minMemoryLimit, o.valueCache+2*minWriteBuffer+chunkSize+o.shards*(minFrames+minWriteBack)*pageSize)
+	if o.memoryLimit < least {
 		return fmt.Errorf("%w: memory limit must be at least %d bytes", ErrInvalidOption, least)
 	}
 
@@ -109,6 +115,17 @@ func WithCompactionThreshold(ratio float64) Option {
 func WithShards(n int) Option {
 	return func(o *options) {
 		o.shards = n
+	}
+}
+
+// WithValueCache sets aside bytes of the memory limit to keep recently read
+// values in memory, so repeated reads of the same keys skip the file read.
+// It pays off when some keys are read much more often than others; for
+// uniformly random reads the memory does more good caching the index, which
+// is where it goes by default. At most half the memory limit. Defaults to 0.
+func WithValueCache(bytes int) Option {
+	return func(o *options) {
+		o.valueCache = bytes
 	}
 }
 

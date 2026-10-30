@@ -22,5 +22,7 @@ extend-ignore-identifiers-re = ["[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0
 # German character replacements (intentional)
 ue = "ue"
 Ue = "Ue"
+# Extendible hashing is the name of the technique (Fagin et al., 1979)
+extendible = "extendible"
 
 [default.extend-identifiers]

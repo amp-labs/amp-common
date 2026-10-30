@@ -20,22 +20,28 @@ import (
 // fixed-size pages. A page is one bucket:
 //
 //	[count uint16][local depth uint8][5 bytes reserved]
-//	[slotsPerPage tags, one byte each, padded to a multiple of 8]
+//	[slotsPerPage tags, one byte each, padded to a whole word]
 //	[slotsPerPage hashes, uint64 each]
 //	[slotsPerPage locations, 12 bytes each: segment, offset, record size]
 //
-// A tag is one byte of the hash. Lookups compare eight tags at a time and
+// A tag is one byte of the hash. Lookups compare a word of tags at a time and
 // read a full hash only where a tag matches, so a lookup touches about four
 // cache lines of a page instead of scanning every hash.
 const (
 	pageSize     = 4096
 	pageHeader   = 8
+	tagsPerWord  = 8
 	hashSize     = 8
 	locSize      = 12
-	slotsPerPage = (pageSize - pageHeader - 8) / (1 + hashSize + locSize)
+	slotsPerPage = (pageSize - pageHeader - tagsPerWord) / (1 + hashSize + locSize)
 	tagsOffset   = pageHeader
-	hashesOffset = tagsOffset + (slotsPerPage+7)&^7
+	hashesOffset = tagsOffset + (slotsPerPage+tagsPerWord-1)/tagsPerWord*tagsPerWord
 	locsOffset   = hashesOffset + slotsPerPage*hashSize
+
+	// hashBits is the width of a key hash. The directory uses its top bits,
+	// shards its bottom bits and tags the byte at tagShift.
+	hashBits = 64
+	tagShift = 8
 
 	recordHeaderSize = 12
 
@@ -77,6 +83,17 @@ func appendRecord(dst []byte, key string, value []byte) []byte {
 // recordLengths reads the key and value lengths from a record header.
 func recordLengths(rec []byte) (keyLen, valueLen int) {
 	return int(binary.LittleEndian.Uint32(rec[4:])), int(binary.LittleEndian.Uint32(rec[8:]))
+}
+
+// recordKey returns the key of a record whose header is complete, or nil if
+// the record is too short to hold it.
+func recordKey(rec []byte) []byte {
+	keyLen, _ := recordLengths(rec)
+	if recordHeaderSize+keyLen > len(rec) {
+		return nil
+	}
+
+	return rec[recordHeaderSize : recordHeaderSize+keyLen]
 }
 
 // parseRecord splits a complete record into key and value, verifying its
@@ -121,10 +138,10 @@ func slotHash(p []byte, i int) uint64 {
 }
 
 // tagOf picks the hash byte stored as a slot's tag. The low bits choose the
-// shard and the high bits the directory entry, so bits 8-15 vary within a
+// shard and the high bits the directory entry, so this byte varies within a
 // page.
 func tagOf(h uint64) byte {
-	return byte(h >> 8) //nolint:gosec // Deliberate truncation.
+	return byte(h >> tagShift) //nolint:gosec // Deliberate truncation.
 }
 
 func slotLoc(p []byte, i int) loc {
@@ -151,53 +168,6 @@ func setSlot(p []byte, i int, h uint64, l loc) {
 	setSlotLoc(p, i, l)
 }
 
-const (
-	lowBits  = 0x0101010101010101
-	highBits = 0x8080808080808080
-)
-
-// slotMatcher yields the slots of a page whose hash equals h, using the tags
-// to skip most slots eight at a time.
-type slotMatcher struct {
-	p    []byte
-	h    uint64
-	want uint64
-	n    int
-	base int
-	hits uint64
-}
-
-func matchSlots(p []byte, h uint64) slotMatcher {
-	return slotMatcher{p: p, h: h, want: uint64(tagOf(h)) * lowBits, n: pageCount(p), base: -8}
-}
-
-// next returns the next matching slot, or -1.
-func (s *slotMatcher) next() int {
-	for {
-		for s.hits != 0 {
-			i := s.base + bits.TrailingZeros64(s.hits)/8
-			s.hits &= s.hits - 1
-
-			if slotHash(s.p, i) == s.h {
-				return i
-			}
-		}
-
-		if s.base += 8; s.base >= s.n {
-			return -1
-		}
-
-		// Bytes of x are zero where tags match. The bit trick can also flag a
-		// byte just above a real match; the full hash check discards those.
-		x := binary.LittleEndian.Uint64(s.p[tagsOffset+s.base:]) ^ s.want
-		s.hits = (x - lowBits) &^ x & highBits
-
-		if left := s.n - s.base; left < 8 {
-			s.hits &= 1<<(8*left) - 1
-		}
-	}
-}
-
 // removeSlot deletes slot i by moving the last slot into its place.
 func removeSlot(p []byte, i int) {
 	last := pageCount(p) - 1
@@ -206,4 +176,52 @@ func removeSlot(p []byte, i int) {
 	}
 
 	setPageCount(p, last)
+}
+
+const (
+	lowBits  = 0x0101010101010101
+	highBits = 0x8080808080808080
+)
+
+// slotMatcher yields the slots of a page whose hash equals h, using the tags
+// to skip most slots a word at a time.
+type slotMatcher struct {
+	page []byte
+	hash uint64
+	want uint64 // the tag repeated in every byte
+	n    int
+	base int
+	hits uint64
+}
+
+func matchSlots(p []byte, h uint64) slotMatcher {
+	return slotMatcher{page: p, hash: h, want: uint64(tagOf(h)) * lowBits, n: pageCount(p), base: -tagsPerWord}
+}
+
+// next returns the next matching slot, or -1.
+func (s *slotMatcher) next() int {
+	for {
+		for s.hits != 0 {
+			i := s.base + bits.TrailingZeros64(s.hits)/tagsPerWord
+			s.hits &= s.hits - 1
+
+			if slotHash(s.page, i) == s.hash {
+				return i
+			}
+		}
+
+		s.base += tagsPerWord
+		if s.base >= s.n {
+			return -1
+		}
+
+		// Bytes of x are zero where tags match. The bit trick can also flag a
+		// byte just above a real match; the full hash check discards those.
+		x := binary.LittleEndian.Uint64(s.page[tagsOffset+s.base:]) ^ s.want
+		s.hits = (x - lowBits) &^ x & highBits
+
+		if left := s.n - s.base; left < tagsPerWord {
+			s.hits &= 1<<(tagsPerWord*left) - 1
+		}
+	}
 }

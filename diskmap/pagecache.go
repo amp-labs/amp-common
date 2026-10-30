@@ -17,10 +17,11 @@ const (
 
 	minFrames = 8
 
-	// An eighth of each shard's pages, between minWriteBack and maxWriteBack,
-	// buffers evicted dirty pages for the background writer.
-	minWriteBack = 2
-	maxWriteBack = 32
+	// One page in writeBackShare of each shard's budget, between minWriteBack
+	// and maxWriteBack, buffers evicted dirty pages for the background writer.
+	writeBackShare = 8
+	minWriteBack   = 2
+	maxWriteBack   = 32
 )
 
 // pagePool holds buffers for reading index pages with the lock released.
@@ -54,7 +55,7 @@ type pageCache struct {
 	frameOf []int32  // frame holding each page, or noFrame
 	version []uint32 // bumped each time a page is written to the file
 
-	// epoch changes when the cache is reset or closed, invalidating reads
+	// epoch changes when the cache is reset or stopped, invalidating reads
 	// that were in progress.
 	epoch uint64
 
@@ -82,13 +83,13 @@ type writeBack struct {
 	writing bool
 }
 
-// newPageCache creates a cache using pages pages of memory, split between
-// frames and write-back buffers.
-func newPageCache(mu *sync.Mutex, file *os.File, pages int) *pageCache {
-	wbPages := min(max(pages/8, minWriteBack), maxWriteBack) //nolint:mnd // An eighth.
-	frames := max(pages-wbPages, minFrames)
+// newPageCache creates a cache with a budget of the given number of pages,
+// split between frames and write-back buffers.
+func newPageCache(mu *sync.Mutex, file *os.File, budget int) *pageCache {
+	wbPages := min(max(budget/writeBackShare, minWriteBack), maxWriteBack)
+	frames := max(budget-wbPages, minFrames)
 
-	pc := &pageCache{
+	cache := &pageCache{
 		mu:        mu,
 		file:      file,
 		data:      make([]byte, frames*pageSize),
@@ -100,16 +101,16 @@ func newPageCache(mu *sync.Mutex, file *os.File, pages int) *pageCache {
 		wbCond:    sync.NewCond(mu),
 	}
 
-	for i := range pc.framePage {
-		pc.framePage[i] = noPage
+	for i := range cache.framePage {
+		cache.framePage[i] = noPage
 	}
 
 	wbData := make([]byte, wbPages*pageSize)
 	for i := range wbPages {
-		pc.wbFree = append(pc.wbFree, wbData[i*pageSize:(i+1)*pageSize:(i+1)*pageSize])
+		cache.wbFree = append(cache.wbFree, wbData[i*pageSize:(i+1)*pageSize:(i+1)*pageSize])
 	}
 
-	return pc
+	return cache
 }
 
 func (pc *pageCache) frames() int {
@@ -128,10 +129,10 @@ func (pc *pageCache) setPages(n uint32) {
 	}
 }
 
-// page returns the frame holding page id. On a miss it reads the page with
+// page returns the frame holding a page. On a miss it reads the page with
 // the lock released, caches it and returns errRetry.
-func (pc *pageCache) page(id uint32) (int, error) {
-	if frame := pc.frameOf[id]; frame != noFrame {
+func (pc *pageCache) page(pageID uint32) (int, error) {
+	if frame := pc.frameOf[pageID]; frame != noFrame {
 		pc.flags[frame] |= flagRef
 		pc.hits++
 
@@ -140,7 +141,7 @@ func (pc *pageCache) page(id uint32) (int, error) {
 
 	pc.misses++
 
-	if wb := pc.wb[id]; wb != nil {
+	if wb := pc.wb[pageID]; wb != nil {
 		frame, err := pc.evict()
 		if err != nil {
 			return 0, err
@@ -148,63 +149,77 @@ func (pc *pageCache) page(id uint32) (int, error) {
 
 		// Clean, because wb.buf is on its way to the file.
 		copy(pc.buf(frame), wb.buf)
-		pc.install(frame, id, flagRef)
+		pc.install(frame, pageID, flagRef)
 
 		return frame, nil
 	}
 
-	epoch, version := pc.epoch, pc.version[id]
+	epoch, version := pc.epoch, pc.version[pageID]
 
 	pooled, _ := pagePool.Get().(*[pageSize]byte)
 	defer pagePool.Put(pooled)
 
-	page := pooled[:]
-
-	pc.mu.Unlock()
-	_, err := pc.file.ReadAt(page, int64(id)*pageSize)
-	pc.mu.Lock()
+	err := pc.readUnlocked(pooled[:], pageID)
 
 	if pc.epoch != epoch {
 		return 0, errRetry
 	}
 
 	if err != nil {
-		return 0, fmt.Errorf("diskmap: reading index page %d: %w", id, err)
+		return 0, fmt.Errorf("diskmap: reading index page %d: %w", pageID, err)
 	}
 
 	// Install only if nobody loaded, changed or rewrote the page meanwhile;
 	// otherwise the copy may be stale and the retry will read it again.
-	if pc.frameOf[id] == noFrame && pc.wb[id] == nil && pc.version[id] == version {
+	if pc.frameOf[pageID] == noFrame && pc.wb[pageID] == nil && pc.version[pageID] == version {
 		frame, err := pc.evict()
 		if err != nil {
 			return 0, err
 		}
 
-		copy(pc.buf(frame), page)
-		pc.install(frame, id, flagRef)
+		copy(pc.buf(frame), pooled[:])
+		pc.install(frame, pageID, flagRef)
 	}
 
 	return 0, errRetry
 }
 
-// newPage adds page id to the cache as an empty, dirty page without reading
-// the file. The caller must have called setPages to cover id.
-func (pc *pageCache) newPage(id uint32) (int, error) {
+func (pc *pageCache) readUnlocked(page []byte, pageID uint32) error {
+	pc.mu.Unlock()
+	defer pc.mu.Lock()
+
+	_, err := pc.file.ReadAt(page, int64(pageID)*pageSize)
+
+	return err
+}
+
+func (pc *pageCache) writeUnlocked(page []byte, pageID uint32) error {
+	pc.mu.Unlock()
+	defer pc.mu.Lock()
+
+	_, err := pc.file.WriteAt(page, int64(pageID)*pageSize)
+
+	return err
+}
+
+// newPage adds a page to the cache as an empty, dirty page without reading
+// the file. The caller must have called setPages to cover it.
+func (pc *pageCache) newPage(pageID uint32) (int, error) {
 	frame, err := pc.evict()
 	if err != nil {
 		return 0, err
 	}
 
 	clear(pc.buf(frame))
-	pc.install(frame, id, flagRef|flagDirty)
+	pc.install(frame, pageID, flagRef|flagDirty)
 
 	return frame, nil
 }
 
-func (pc *pageCache) install(frame int, id uint32, flags uint8) {
-	pc.framePage[frame] = id
+func (pc *pageCache) install(frame int, pageID uint32, flags uint8) {
+	pc.framePage[frame] = pageID
 	pc.flags[frame] = flags
-	pc.frameOf[id] = int32(frame) //nolint:gosec // Frame counts fit in int32.
+	pc.frameOf[pageID] = int32(frame) //nolint:gosec // Frame counts fit in int32.
 }
 
 func (pc *pageCache) markDirty(frame int) {
@@ -241,13 +256,14 @@ func (pc *pageCache) evict() (int, error) {
 		}
 
 		if pc.flags[frame]&flagDirty != 0 {
-			if err := pc.queueWriteBack(frame); err != nil {
+			err := pc.queueWriteBack(frame)
+			if err != nil {
 				return 0, err
 			}
 		}
 
-		if id := pc.framePage[frame]; id != noPage {
-			pc.frameOf[id] = noFrame
+		if pageID := pc.framePage[frame]; pageID != noPage {
+			pc.frameOf[pageID] = noFrame
 			pc.framePage[frame] = noPage
 		}
 
@@ -258,11 +274,11 @@ func (pc *pageCache) evict() (int, error) {
 // queueWriteBack hands a dirty frame's contents to the background writer,
 // or writes them synchronously if its queue is full.
 func (pc *pageCache) queueWriteBack(frame int) error {
-	id := pc.framePage[frame]
+	pageID := pc.framePage[frame]
 	pc.flags[frame] &^= flagDirty
 
 	// A queued copy not yet being written can simply be updated.
-	if wb := pc.wb[id]; wb != nil && !wb.writing {
+	if wb := pc.wb[pageID]; wb != nil && !wb.writing {
 		copy(wb.buf, pc.buf(frame))
 
 		return nil
@@ -274,32 +290,33 @@ func (pc *pageCache) queueWriteBack(frame int) error {
 	case len(pc.wbFree) > 0:
 		buf = pc.wbFree[len(pc.wbFree)-1]
 		pc.wbFree = pc.wbFree[:len(pc.wbFree)-1]
-	case pc.wb[id] != nil:
+	case pc.wb[pageID] != nil:
 		// An older copy of this page is being written. Writing the newer one
 		// synchronously could land first and be overwritten, so queue it in
 		// a buffer beyond the usual bound; this is rare.
 		buf = make([]byte, pageSize)
 	default:
-		return pc.writePage(id, pc.buf(frame))
+		return pc.writePage(pageID, pc.buf(frame))
 	}
 
 	copy(buf, pc.buf(frame))
-	pc.wb[id] = &writeBack{buf: buf}
-	pc.wbQueue = append(pc.wbQueue, id)
+	pc.wb[pageID] = &writeBack{buf: buf}
+	pc.wbQueue = append(pc.wbQueue, pageID)
 	pc.wbCond.Broadcast()
 
 	return nil
 }
 
 // writePage writes a page to the file under the lock.
-func (pc *pageCache) writePage(id uint32, page []byte) error {
-	if _, err := pc.file.WriteAt(page, int64(id)*pageSize); err != nil {
-		pc.failed = fmt.Errorf("diskmap: writing index page %d: %w", id, err)
+func (pc *pageCache) writePage(pageID uint32, page []byte) error {
+	_, err := pc.file.WriteAt(page, int64(pageID)*pageSize)
+	if err != nil {
+		pc.failed = fmt.Errorf("diskmap: writing index page %d: %w", pageID, err)
 
 		return pc.failed
 	}
 
-	pc.version[id]++
+	pc.version[pageID]++
 	pc.writes++
 
 	return nil
@@ -322,43 +339,46 @@ func (pc *pageCache) writeLoop(wg *sync.WaitGroup) {
 			pc.wbCond.Wait()
 		}
 
-		id := pc.wbQueue[0]
+		pageID := pc.wbQueue[0]
 		pc.wbQueue = pc.wbQueue[1:]
 
-		wb := pc.wb[id]
-		if wb == nil {
+		entry := pc.wb[pageID]
+		if entry == nil {
 			continue
 		}
 
-		wb.writing = true
+		entry.writing = true
 		pc.wbBusy = true
 		epoch := pc.epoch
 
-		pc.mu.Unlock()
-		_, err := pc.file.WriteAt(wb.buf, int64(id)*pageSize)
-		pc.mu.Lock()
+		err := pc.writeUnlocked(entry.buf, pageID)
 
 		pc.wbBusy = false
 
 		if pc.epoch == epoch {
 			if err != nil && pc.failed == nil {
-				pc.failed = fmt.Errorf("diskmap: writing index page %d: %w", id, err)
+				pc.failed = fmt.Errorf("diskmap: writing index page %d: %w", pageID, err)
 			}
 
-			pc.version[id]++
+			pc.version[pageID]++
 			pc.writes++
 
 			// A newer copy may have been queued while this one was written.
-			if pc.wb[id] == wb {
-				delete(pc.wb, id)
+			if pc.wb[pageID] == entry {
+				delete(pc.wb, pageID)
 			}
 		}
 
-		if len(wb.buf) == pageSize && len(pc.wbFree) < pc.wbMax {
-			pc.wbFree = append(pc.wbFree, wb.buf)
-		}
-
+		pc.recycle(entry.buf)
 		pc.wbCond.Broadcast()
+	}
+}
+
+// recycle returns a write-back buffer to the free list, dropping buffers
+// allocated beyond the bound.
+func (pc *pageCache) recycle(buf []byte) {
+	if len(pc.wbFree) < pc.wbMax {
+		pc.wbFree = append(pc.wbFree, buf)
 	}
 }
 
@@ -381,12 +401,13 @@ func (pc *pageCache) flush() error {
 		return pc.failed
 	}
 
-	for frame, id := range pc.framePage {
+	for frame, pageID := range pc.framePage {
 		if pc.flags[frame]&flagDirty == 0 {
 			continue
 		}
 
-		if err := pc.writePage(id, pc.buf(frame)); err != nil {
+		err := pc.writePage(pageID, pc.buf(frame))
+		if err != nil {
 			return err
 		}
 
@@ -413,9 +434,7 @@ func (pc *pageCache) reset() {
 	}
 
 	for _, wb := range pc.wb {
-		if len(wb.buf) == pageSize && len(pc.wbFree) < pc.wbMax {
-			pc.wbFree = append(pc.wbFree, wb.buf)
-		}
+		pc.recycle(wb.buf)
 	}
 
 	clear(pc.wb)

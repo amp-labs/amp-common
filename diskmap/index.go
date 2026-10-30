@@ -42,37 +42,37 @@ func (ix *index) reset() error {
 
 // pageFor returns the page responsible for hash h.
 func (ix *index) pageFor(h uint64) uint32 {
-	return ix.dir[h>>(64-ix.depth)]
+	return ix.dir[h>>(hashBits-ix.depth)]
 }
 
 // frameFor returns the cache frame holding the page responsible for hash h.
-// The frame stays valid until the next index or page cache call.
+// The frame stays valid until the next index or page cache call. It returns
+// errRetry if it had to read the page with the lock released.
 func (ix *index) frameFor(h uint64) (int, error) {
 	return ix.pc.page(ix.pageFor(h))
 }
 
-// insert adds a slot for hash h, splitting pages as needed.
-func (ix *index) insert(h uint64, l loc) error {
+// insert adds a slot for a hash, splitting pages as needed.
+func (ix *index) insert(hash uint64, addr loc) error {
 	for {
-		id := ix.pageFor(h)
-
-		frame, err := ix.pc.page(id)
+		frame, err := ix.pc.page(ix.pageFor(hash))
 		if err != nil {
 			return err
 		}
 
-		p := ix.pc.buf(frame)
+		page := ix.pc.buf(frame)
 
-		n := pageCount(p)
+		n := pageCount(page)
 		if n < slotsPerPage {
-			setSlot(p, n, h, l)
-			setPageCount(p, n+1)
+			setSlot(page, n, hash, addr)
+			setPageCount(page, n+1)
 			ix.pc.markDirty(frame)
 
 			return nil
 		}
 
-		if err := ix.split(id, frame, h); err != nil {
+		err = ix.split(frame, hash)
+		if err != nil {
 			return err
 		}
 	}
@@ -80,13 +80,13 @@ func (ix *index) insert(h uint64, l loc) error {
 
 // split divides a full page in two on the next hash bit below its local
 // depth, doubling the directory first if the page already uses every
-// directory bit. h is any hash that maps to the page.
-func (ix *index) split(id uint32, frame int, h uint64) error {
-	p := ix.pc.buf(frame)
-	depth := pageDepth(p)
+// directory bit. hash is any hash that maps to the page.
+func (ix *index) split(frame int, hash uint64) error {
+	page := ix.pc.buf(frame)
+	depth := pageDepth(page)
 
-	if allSameHash(p) {
-		return fmt.Errorf("%w: %d keys share one 64-bit hash", ErrTooManyCollisions, pageCount(p))
+	if allSameHash(page) {
+		return fmt.Errorf("%w: %d keys share one 64-bit hash", ErrTooManyCollisions, pageCount(page))
 	}
 
 	if depth == ix.depth {
@@ -100,44 +100,43 @@ func (ix *index) split(id uint32, frame int, h uint64) error {
 	ix.pc.pin(frame)
 	defer ix.pc.unpin(frame)
 
-	newID := ix.numPages
+	siblingID := ix.numPages
 	ix.numPages++
 	ix.pc.setPages(ix.numPages)
 
-	newFrame, err := ix.pc.newPage(newID)
+	siblingFrame, err := ix.pc.newPage(siblingID)
 	if err != nil {
 		return err
 	}
 
-	q := ix.pc.buf(newFrame)
-	bit := uint64(1) << (63 - depth)
+	sibling := ix.pc.buf(siblingFrame)
+	bit := uint64(1) << (hashBits - 1 - depth)
 	kept, moved := 0, 0
 
-	for i := range pageCount(p) {
-		sh, sl := slotHash(p, i), slotLoc(p, i)
-		if sh&bit != 0 {
-			setSlot(q, moved, sh, sl)
+	for i := range pageCount(page) {
+		slotH, slotL := slotHash(page, i), slotLoc(page, i)
+		if slotH&bit != 0 {
+			setSlot(sibling, moved, slotH, slotL)
 			moved++
 		} else {
-			setSlot(p, kept, sh, sl)
+			setSlot(page, kept, slotH, slotL)
 			kept++
 		}
 	}
 
-	setPageCount(p, kept)
-	setPageCount(q, moved)
-	setPageDepth(p, depth+1)
-	setPageDepth(q, depth+1)
+	setPageCount(page, kept)
+	setPageCount(sibling, moved)
+	setPageDepth(page, depth+1)
+	setPageDepth(sibling, depth+1)
 	ix.pc.markDirty(frame)
 
 	// The page owns a contiguous run of 2^(global-local) directory entries;
-	// the upper half of that run now belongs to the new page.
-	shift := ix.depth - depth
-	span := uint64(1) << shift
-	start := (h >> (64 - ix.depth)) &^ (span - 1)
+	// the upper half of that run now belongs to the sibling.
+	span := uint64(1) << (ix.depth - depth)
+	start := (hash >> (hashBits - ix.depth)) &^ (span - 1)
 
-	for i := start + span/2; i < start+span; i++ {
-		ix.dir[i] = newID
+	for i := start + span>>1; i < start+span; i++ {
+		ix.dir[i] = siblingID
 	}
 
 	return nil
@@ -146,10 +145,10 @@ func (ix *index) split(id uint32, frame int, h uint64) error {
 // grow doubles the directory. Each entry is duplicated, so every page keeps
 // owning the same hashes.
 func (ix *index) grow() {
-	dir := make([]uint32, 2*len(ix.dir))
+	dir := make([]uint32, len(ix.dir)<<1)
 	for i, id := range ix.dir {
-		dir[2*i] = id
-		dir[2*i+1] = id
+		dir[i<<1] = id
+		dir[i<<1|1] = id
 	}
 
 	ix.dir = dir

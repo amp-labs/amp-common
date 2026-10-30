@@ -19,6 +19,10 @@ const (
 	metaMagic   = "DISKMAP1"
 	metaVersion = 1
 
+	u32Size        = 4
+	u64Size        = 8
+	segmentMetaLen = u32Size + 2*u64Size
+
 	filePerm = 0o600
 	dirPerm  = 0o750
 )
@@ -49,7 +53,7 @@ type meta struct {
 }
 
 func (m *meta) encode() []byte {
-	buf := make([]byte, 0, 64+len(m.segments)*20)
+	buf := make([]byte, 0, len(metaMagic)+len(m.segments)*segmentMetaLen+len(m.shards)*segmentMetaLen)
 
 	buf = append(buf, metaMagic...)
 	buf = binary.LittleEndian.AppendUint32(buf, metaVersion)
@@ -97,74 +101,85 @@ func (r *metaReader) take(n int) []byte {
 	return b
 }
 
-func (r *metaReader) u32() uint32 { return binary.LittleEndian.Uint32(r.take(4)) }
-func (r *metaReader) u64() uint64 { return binary.LittleEndian.Uint64(r.take(8)) }
+func (r *metaReader) u32() uint32 { return binary.LittleEndian.Uint32(r.take(u32Size)) }
+func (r *metaReader) u64() uint64 { return binary.LittleEndian.Uint64(r.take(u64Size)) }
 
 func decodeMeta(buf []byte) (*meta, error) {
-	if len(buf) < len(metaMagic)+4 {
+	if len(buf) < len(metaMagic)+u32Size {
 		return nil, fmt.Errorf("%w: meta file too short", ErrCorrupt)
 	}
 
-	body, sum := buf[:len(buf)-4], binary.LittleEndian.Uint32(buf[len(buf)-4:])
+	body, sum := buf[:len(buf)-u32Size], binary.LittleEndian.Uint32(buf[len(buf)-u32Size:])
 	if crc32.Checksum(body, castagnoli) != sum {
 		return nil, fmt.Errorf("%w: meta checksum mismatch", ErrCorrupt)
 	}
 
-	r := &metaReader{buf: body}
+	reader := &metaReader{buf: body}
 
-	if string(r.take(len(metaMagic))) != metaMagic {
+	if string(reader.take(len(metaMagic))) != metaMagic {
 		return nil, fmt.Errorf("%w: not a diskmap directory", ErrCorrupt)
 	}
 
-	if v := r.u32(); v != metaVersion {
-		return nil, fmt.Errorf("%w: unsupported format version %d", ErrCorrupt, v)
+	version := reader.u32()
+	if version != metaVersion {
+		return nil, fmt.Errorf("%w: unsupported format version %d", ErrCorrupt, version)
 	}
 
-	m := &meta{seed: r.u64(), nextSeg: r.u32()}
+	saved := &meta{seed: reader.u64(), nextSeg: reader.u32()}
 
-	nsegs := r.u32()
-	if nsegs == 0 || int(nsegs) > len(r.buf)/20 {
+	nsegs := reader.u32()
+	if nsegs == 0 || int(nsegs) > len(reader.buf)/segmentMetaLen {
 		return nil, fmt.Errorf("%w: bad segment count", ErrCorrupt)
 	}
 
 	for range nsegs {
-		m.segments = append(m.segments, segmentMeta{
-			id:   r.u32(),
-			size: int64(r.u64()), //nolint:gosec // Written from non-negative int64.
-			dead: int64(r.u64()), //nolint:gosec // Written from non-negative int64.
+		saved.segments = append(saved.segments, segmentMeta{
+			id:   reader.u32(),
+			size: int64(reader.u64()), //nolint:gosec // Written from non-negative int64.
+			dead: int64(reader.u64()), //nolint:gosec // Written from non-negative int64.
 		})
 	}
 
-	nshards := r.u32()
+	nshards := reader.u32()
 	if nshards == 0 || nshards > maxShards || nshards&(nshards-1) != 0 {
 		return nil, fmt.Errorf("%w: bad shard count %d", ErrCorrupt, nshards)
 	}
 
 	for range nshards {
-		sh := shardMeta{count: r.u64(), numPages: r.u32()}
-
-		depth := r.u32()
-		if depth > maxDepth || 4<<depth > len(r.buf) {
-			return nil, fmt.Errorf("%w: bad index depth", ErrCorrupt)
+		state, err := decodeShardMeta(reader)
+		if err != nil {
+			return nil, err
 		}
 
-		sh.depth = uint8(depth)
-		sh.dir = make([]uint32, 1<<depth)
-
-		for i := range sh.dir {
-			if sh.dir[i] = r.u32(); sh.dir[i] >= sh.numPages {
-				return nil, fmt.Errorf("%w: directory points past the index", ErrCorrupt)
-			}
-		}
-
-		m.shards = append(m.shards, sh)
+		saved.shards = append(saved.shards, state)
 	}
 
-	if r.err != nil || len(r.buf) != 0 {
+	if reader.err != nil || len(reader.buf) != 0 {
 		return nil, fmt.Errorf("%w: bad meta length", ErrCorrupt)
 	}
 
-	return m, nil
+	return saved, nil
+}
+
+func decodeShardMeta(reader *metaReader) (shardMeta, error) {
+	state := shardMeta{count: reader.u64(), numPages: reader.u32()}
+
+	depth := reader.u32()
+	if depth > maxDepth || u32Size<<depth > len(reader.buf) {
+		return shardMeta{}, fmt.Errorf("%w: bad index depth", ErrCorrupt)
+	}
+
+	state.depth = uint8(depth)
+	state.dir = make([]uint32, 1<<depth)
+
+	for i := range state.dir {
+		state.dir[i] = reader.u32()
+		if state.dir[i] >= state.numPages {
+			return shardMeta{}, fmt.Errorf("%w: directory points past the index", ErrCorrupt)
+		}
+	}
+
+	return state, nil
 }
 
 // readMeta loads the meta file, returning nil if there is none.
@@ -216,7 +231,8 @@ func writeMeta(dir string, m *meta) error {
 
 // removeMeta deletes the meta file, marking the directory as in use.
 func removeMeta(dir string) error {
-	if err := os.Remove(filepath.Join(dir, metaFile)); err != nil {
+	err := os.Remove(filepath.Join(dir, metaFile))
+	if err != nil {
 		return fmt.Errorf("diskmap: removing meta: %w", err)
 	}
 
@@ -278,7 +294,8 @@ func removeDataFiles(dir string) error {
 	}
 
 	for _, name := range files {
-		if err := os.Remove(filepath.Join(dir, name)); err != nil {
+		err := os.Remove(filepath.Join(dir, name))
+		if err != nil {
 			return fmt.Errorf("diskmap: removing %s: %w", name, err)
 		}
 	}

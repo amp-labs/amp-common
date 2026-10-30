@@ -48,19 +48,19 @@ func newSegment(id uint32, file *os.File, path string) *segment {
 	return s
 }
 
-func createSegment(dir string, id uint32) (*segment, error) {
-	path := segmentPath(dir, id)
+func createSegment(dir string, segID uint32) (*segment, error) {
+	path := segmentPath(dir, segID)
 
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, filePerm) //nolint:gosec // Path built from dir.
 	if err != nil {
 		return nil, fmt.Errorf("diskmap: creating segment: %w", err)
 	}
 
-	return newSegment(id, file, path), nil
+	return newSegment(segID, file, path), nil
 }
 
-func openSegment(dir string, id uint32, size, dead int64) (*segment, error) {
-	path := segmentPath(dir, id)
+func openSegment(dir string, segID uint32, size, dead int64) (*segment, error) {
+	path := segmentPath(dir, segID)
 
 	file, err := os.OpenFile(path, os.O_RDWR, filePerm) //nolint:gosec // Path built from dir.
 	if err != nil {
@@ -80,7 +80,7 @@ func openSegment(dir string, id uint32, size, dead int64) (*segment, error) {
 		return nil, fmt.Errorf("%w: segment %s is %d bytes, expected %d", ErrCorrupt, path, info.Size(), size)
 	}
 
-	s := newSegment(id, file, path)
+	s := newSegment(segID, file, path)
 	s.size, s.dead = size, dead
 	s.written.Store(size)
 
@@ -117,7 +117,8 @@ func (s *segment) sync() error {
 		return nil
 	}
 
-	if err := s.file.Sync(); err != nil {
+	err := s.file.Sync()
+	if err != nil {
 		return fmt.Errorf("diskmap: syncing segment: %w", err)
 	}
 
@@ -127,7 +128,8 @@ func (s *segment) sync() error {
 }
 
 func readFile(s *segment, off int64, buf []byte) error {
-	if _, err := s.file.ReadAt(buf, off); err != nil {
+	_, err := s.file.ReadAt(buf, off)
+	if err != nil {
 		return fmt.Errorf("diskmap: reading segment %d: %w", s.id, err)
 	}
 

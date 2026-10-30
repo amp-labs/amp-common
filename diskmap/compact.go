@@ -5,9 +5,15 @@ import (
 	"unsafe"
 )
 
-// compactBatch bounds how many victim bytes the compactor processes between
-// checks for stopping, Clear and new iterators.
-const compactBatch = 64 << 10
+const (
+	// compactBatch bounds how many victim bytes the compactor processes
+	// between checks for stopping, Clear and new iterators.
+	compactBatch = 64 << 10
+
+	// A segment qualifies for compaction once its dead fraction is at least
+	// the threshold divided by victimShare.
+	victimShare = 2
+)
 
 // Compaction runs in a background goroutine. Once dead bytes exceed the
 // threshold it picks the sealed segment with the largest dead fraction and
@@ -17,42 +23,234 @@ const compactBatch = 64 << 10
 // lock only briefly. When the whole segment has been read, it is dropped and
 // its file deleted.
 
+// Compact reclaims all space held by overwritten and removed entries and
+// waits for it to finish. Other operations continue meanwhile. Compact does
+// nothing while a Range is in progress.
+func (m *Map) Compact() error {
+	if m.closed.Load() {
+		return ErrClosed
+	}
+
+	vlog := m.log
+
+	vlog.mu.Lock()
+	defer vlog.mu.Unlock()
+
+	if vlog.iterators.Load() > 0 {
+		return nil
+	}
+
+	// Seal the active segment so its dead bytes can be reclaimed too.
+	if vlog.cur.seg.dead > 0 {
+		err := vlog.drain()
+		if err != nil {
+			return err
+		}
+
+		err = vlog.rotate()
+		if err != nil {
+			return err
+		}
+	}
+
+	vlog.forceCompact = true
+	vlog.compactIdle = false
+	vlog.compactCond.Signal()
+
+	for vlog.forceCompact && !vlog.stopping && vlog.err() == nil {
+		vlog.compactDone.Wait()
+	}
+
+	if vlog.stopping {
+		return ErrClosed
+	}
+
+	return vlog.err()
+}
+
 // compactLoop is the compactor goroutine.
 func (m *Map) compactLoop() {
 	defer m.wg.Done()
 
-	lg := m.log
+	vlog := m.log
 
 	var reader chunkReader
 
-	lg.mu.Lock()
-	defer lg.mu.Unlock()
+	vlog.mu.Lock()
+	defer vlog.mu.Unlock()
 
 	for {
-		victim := lg.nextVictim()
+		victim := vlog.nextVictim()
 		if victim == nil {
 			return
 		}
 
 		victim.acquire()
-		size, gen := victim.size, lg.gen.Load()
 
-		lg.mu.Unlock()
-		done := m.compactVictim(victim, size, gen, &reader)
-		lg.mu.Lock()
+		size, gen := victim.size, vlog.gen.Load()
+		done := m.compactUnlocked(victim, size, gen, &reader)
 
 		victim.release()
 
-		if done && lg.gen.Load() == gen {
-			lg.table.Store(lg.table.Load().without(victim.id))
-			lg.total -= victim.size
-			lg.dead -= victim.dead
+		if done && vlog.gen.Load() == gen {
+			vlog.table.Store(vlog.table.Load().without(victim.id))
+			vlog.total -= victim.size
+			vlog.dead -= victim.dead
 
-			lg.mu.Unlock()
-			victim.drop()
-			lg.mu.Lock()
+			vlog.dropUnlocked(victim)
 		}
 	}
+}
+
+// compactUnlocked runs compactVictim with the log lock released.
+func (m *Map) compactUnlocked(victim *segment, size int64, gen uint64, reader *chunkReader) bool {
+	m.log.mu.Unlock()
+	defer m.log.mu.Lock()
+
+	return m.compactVictim(victim, size, gen, reader)
+}
+
+// compactVictim relocates the victim's live records. It returns true once the
+// whole victim has been processed, or false if it stopped early (stopping,
+// Clear, or a failure). It is called without any lock held.
+func (m *Map) compactVictim(victim *segment, size int64, gen uint64, reader *chunkReader) bool {
+	vlog := m.log
+	reader.n = 0
+
+	for off := int64(0); off < size; {
+		if !vlog.mayCompact(gen) {
+			return false
+		}
+
+		vlog.writeMu.RLock()
+
+		if vlog.iterators.Load() > 0 {
+			vlog.writeMu.RUnlock()
+
+			continue
+		}
+
+		var (
+			moved  int64
+			wasted []loc
+			err    error
+		)
+
+		for batch := int64(0); off < size && batch < compactBatch; {
+			var rec []byte
+
+			rec, err = reader.record(vlog, victim, off, size)
+			if err != nil {
+				break
+			}
+
+			var (
+				relocated bool
+				copied    loc
+			)
+
+			relocated, copied, err = m.relocate(victim, off, rec, gen)
+			if copied.size > 0 {
+				wasted = append(wasted, copied)
+			}
+
+			if err != nil {
+				break
+			}
+
+			if relocated {
+				moved += int64(len(rec))
+			}
+
+			off += int64(len(rec))
+			batch += int64(len(rec))
+		}
+
+		vlog.writeMu.RUnlock()
+
+		if !vlog.settleBatch(victim, moved, wasted, err) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// relocate copies the record at (victim, off) to the end of the log if the
+// index still points at it, and repoints the index. relocated reports
+// whether it did. If the record died while it was being copied, the copy is
+// returned as wasted, to be counted as dead.
+func (m *Map) relocate(victim *segment, off int64, rec []byte, gen uint64) (relocated bool, wasted loc, err error) {
+	key := recordKey(rec)
+	if key == nil {
+		return false, loc{}, ErrCorrupt
+	}
+
+	hash := m.hash(bytesToString(key), m.seed)
+	shd := m.shardFor(hash)
+
+	shd.mu.Lock()
+	_, live, err := shd.liveSlot(hash, victim.id, off)
+	shd.mu.Unlock()
+
+	if err != nil || !live {
+		return false, loc{}, err
+	}
+
+	copied, copiedGen, err := m.log.appendRaw(rec)
+	if err != nil {
+		return false, loc{}, err
+	}
+
+	shd.mu.Lock()
+	defer shd.mu.Unlock()
+
+	if copiedGen != gen || shd.usable(m.log) != nil {
+		return false, copied, nil
+	}
+
+	ref, live, err := shd.liveSlot(hash, victim.id, off)
+	if err != nil || !live {
+		return false, copied, err
+	}
+
+	setSlotLoc(shd.pc.buf(ref.frame), ref.slot, copied)
+	shd.pc.markDirty(ref.frame)
+
+	return true, loc{}, nil
+}
+
+// settleBatch records the outcome of a batch of relocations: relocated
+// records are dead in the victim, and copies that lost a race with a
+// concurrent write are dead where they landed. It reports whether compaction
+// may continue.
+func (lg *valueLog) settleBatch(victim *segment, moved int64, wasted []loc, err error) bool {
+	lg.mu.Lock()
+	defer lg.mu.Unlock()
+
+	victim.dead += moved
+	lg.dead += moved
+	lg.compacted += moved
+
+	for _, copied := range wasted {
+		lg.markDeadLocked(copied.seg, int64(copied.size))
+	}
+
+	if err != nil {
+		_ = lg.fail(fmt.Errorf("diskmap: compacting segment %d: %w", victim.id, err))
+
+		return false
+	}
+
+	return true
+}
+
+// dropUnlocked deletes a dropped segment's file with the log lock released.
+func (lg *valueLog) dropUnlocked(seg *segment) {
+	lg.mu.Unlock()
+	defer lg.mu.Lock()
+
+	seg.drop()
 }
 
 // nextVictim waits until there is a segment worth compacting and returns it,
@@ -64,7 +262,8 @@ func (lg *valueLog) nextVictim() *segment {
 		}
 
 		if lg.err() == nil && lg.iterators.Load() == 0 {
-			if victim := lg.pickVictim(); victim != nil {
+			victim := lg.pickVictim()
+			if victim != nil {
 				lg.compactIdle = false
 
 				return victim
@@ -86,7 +285,7 @@ func (lg *valueLog) nextVictim() *segment {
 // threshold, and only segments at least half as dead as the threshold
 // qualify; Compact makes every segment with dead bytes qualify.
 func (lg *valueLog) pickVictim() *segment {
-	minRatio := lg.threshold / 2 //nolint:mnd // Half the threshold.
+	minRatio := lg.threshold / victimShare
 
 	switch {
 	case lg.forceCompact:
@@ -99,13 +298,14 @@ func (lg *valueLog) pickVictim() *segment {
 
 	bestRatio := minRatio
 
-	for _, s := range lg.table.Load().all() {
-		if s == lg.cur.seg || s.dead == 0 {
+	for _, seg := range lg.table.Load().all() {
+		if seg == lg.cur.seg || seg.dead == 0 {
 			continue
 		}
 
-		if ratio := float64(s.dead) / float64(s.size); ratio >= bestRatio {
-			best, bestRatio = s, ratio
+		ratio := float64(seg.dead) / float64(seg.size)
+		if ratio >= bestRatio {
+			best, bestRatio = seg, ratio
 		}
 	}
 
@@ -116,104 +316,21 @@ func (lg *valueLog) overThreshold() bool {
 	return float64(lg.dead) > lg.threshold*float64(lg.total)
 }
 
-// wakeCompactor wakes an idle compactor if s, a segment that just gained dead
-// bytes (or nil after a rotation), may now be worth compacting. The caller
-// must hold lg.mu.
-func (lg *valueLog) wakeCompactor(s *segment) {
+// wakeCompactor wakes an idle compactor if seg, a segment that just gained
+// dead bytes (or nil after a rotation), may now be worth compacting. The
+// caller must hold lg.mu.
+func (lg *valueLog) wakeCompactor(seg *segment) {
 	if !lg.compactIdle || lg.threshold == 0 || !lg.overThreshold() {
 		return
 	}
 
-	if s != nil && (s == lg.cur.seg || float64(s.dead) < lg.threshold/2*float64(s.size)) {
+	if seg != nil && (seg == lg.cur.seg || float64(seg.dead) < lg.threshold/victimShare*float64(seg.size)) {
 		return
 	}
 
 	lg.compactIdle = false
 	lg.compactCond.Signal()
 }
-
-// compactVictim relocates the victim's live records. It returns true once the
-// whole victim has been processed, or false if it stopped early (stopping,
-// Clear, or a failure). It is called without any lock held.
-func (m *Map) compactVictim(victim *segment, size int64, gen uint64, reader *chunkReader) bool {
-	lg := m.log
-	reader.n = 0
-
-	for off := int64(0); off < size; {
-		if !lg.mayCompact(gen) {
-			return false
-		}
-
-		lg.writeMu.RLock()
-
-		if lg.iterators.Load() > 0 {
-			lg.writeMu.RUnlock()
-
-			continue
-		}
-
-		var (
-			moved  int64
-			wasted []loc
-			err    error
-		)
-
-		for batch := int64(0); off < size && batch < compactBatch; {
-			var rec []byte
-
-			if rec, err = reader.record(lg, victim, off, size); err != nil {
-				break
-			}
-
-			var copied loc
-
-			if copied, err = m.relocate(victim, off, rec, gen); err != nil {
-				break
-			}
-
-			switch {
-			case copied.size == 0:
-			case copied.seg == noSegment:
-				moved += int64(len(rec))
-			default:
-				wasted = append(wasted, copied)
-			}
-
-			off += int64(len(rec))
-			batch += int64(len(rec))
-		}
-
-		lg.writeMu.RUnlock()
-
-		lg.mu.Lock()
-
-		// Relocated records are dead in the victim; copies that lost a race
-		// with a concurrent write are dead where they landed.
-		victim.dead += moved
-		lg.dead += moved
-		lg.compacted += moved
-
-		for _, l := range wasted {
-			lg.markDeadLocked(l.seg, int64(l.size))
-		}
-
-		if err != nil {
-			lg.fail(fmt.Errorf("diskmap: compacting segment %d: %w", victim.id, err))
-		}
-
-		lg.mu.Unlock()
-
-		if err != nil {
-			return false
-		}
-	}
-
-	return true
-}
-
-// noSegment marks a relocation that moved the record: relocate returns a loc
-// with this segment and the record's size.
-const noSegment = ^uint32(0)
 
 // mayCompact waits while iterators are running and reports whether
 // compaction of a victim from generation gen may continue.
@@ -226,93 +343,6 @@ func (lg *valueLog) mayCompact(gen uint64) bool {
 	}
 
 	return !lg.stopping && !lg.closed && lg.err() == nil && lg.gen.Load() == gen
-}
-
-// relocate copies the record at (victim, off) to the end of the log if the
-// index still points at it, and repoints the index. It returns a zero loc if
-// the record was dead, {noSegment, size} if it moved, or the location of the
-// copy if the record died while being copied, leaving the copy dead.
-func (m *Map) relocate(victim *segment, off int64, rec []byte, gen uint64) (loc, error) {
-	keyLen, _ := recordLengths(rec)
-	if recordHeaderSize+keyLen > len(rec) {
-		return loc{}, ErrCorrupt
-	}
-
-	h := m.hash(bytesToString(rec[recordHeaderSize:recordHeaderSize+keyLen]), m.seed)
-	sh := m.shardFor(h)
-
-	sh.mu.Lock()
-	_, _, live, err := sh.liveSlotRetry(h, victim.id, off)
-	sh.mu.Unlock()
-
-	if err != nil || !live {
-		return loc{}, err
-	}
-
-	copied, copiedGen, err := m.log.appendRaw(rec)
-	if err != nil {
-		return loc{}, err
-	}
-
-	sh.mu.Lock()
-	defer sh.mu.Unlock()
-
-	if copiedGen != gen || sh.usable(m.log) != nil {
-		return copied, nil
-	}
-
-	frame, slot, live, err := sh.liveSlotRetry(h, victim.id, off)
-	if err != nil || !live {
-		return copied, err
-	}
-
-	setSlotLoc(sh.pc.buf(frame), slot, copied)
-	sh.pc.markDirty(frame)
-
-	return loc{seg: noSegment, size: copied.size}, nil
-}
-
-// Compact reclaims all space held by overwritten and removed entries and
-// waits for it to finish. Other operations continue meanwhile. Compact does
-// nothing while a Range is in progress.
-func (m *Map) Compact() error {
-	if m.closed.Load() {
-		return ErrClosed
-	}
-
-	lg := m.log
-
-	lg.mu.Lock()
-	defer lg.mu.Unlock()
-
-	if lg.iterators.Load() > 0 {
-		return nil
-	}
-
-	// Seal the active segment so its dead bytes can be reclaimed too.
-	if lg.cur.seg.dead > 0 {
-		if err := lg.drain(); err != nil {
-			return err
-		}
-
-		if err := lg.rotate(); err != nil {
-			return err
-		}
-	}
-
-	lg.forceCompact = true
-	lg.compactIdle = false
-	lg.compactCond.Signal()
-
-	for lg.forceCompact && !lg.stopping && lg.err() == nil {
-		lg.compactDone.Wait()
-	}
-
-	if lg.stopping {
-		return ErrClosed
-	}
-
-	return lg.err()
 }
 
 // bytesToString views b as a string without copying. The caller must not
@@ -329,23 +359,26 @@ type chunkReader struct {
 	n   int   // valid bytes in buf
 }
 
-// record returns the record at off in segment s, whose data ends at limit,
-// reading from the file as needed. The caller must hold a reference to s.
+// record returns the record at off in segment seg, whose data ends at limit,
+// reading from the file as needed. The caller must hold a reference to seg.
 // The slice is valid until the next call.
-func (r *chunkReader) record(lg *valueLog, s *segment, off, limit int64) ([]byte, error) {
-	if rec, ok := r.buffered(off, limit); ok {
+func (r *chunkReader) record(vlog *valueLog, seg *segment, off, limit int64) ([]byte, error) {
+	rec, ok := r.buffered(off, limit)
+	if ok {
 		return rec, nil
 	}
 
-	if err := r.load(lg, s, off, limit); err != nil {
+	err := r.load(vlog, seg, off, limit)
+	if err != nil {
 		return nil, err
 	}
 
-	if rec, ok := r.buffered(off, limit); ok {
-		return rec, nil
+	rec, ok = r.buffered(off, limit)
+	if !ok {
+		return nil, ErrCorrupt
 	}
 
-	return nil, ErrCorrupt
+	return rec, nil
 }
 
 // buffered returns the record at off if it is entirely in the buffer.
@@ -370,7 +403,7 @@ func (r *chunkReader) has(off, n int64) bool {
 
 // load fills the buffer starting at off, growing it to hold the record there
 // if that record is larger than a chunk.
-func (r *chunkReader) load(lg *valueLog, s *segment, off, limit int64) error {
+func (r *chunkReader) load(vlog *valueLog, seg *segment, off, limit int64) error {
 	// A record larger than a chunk grows the buffer; shrink it back so one
 	// huge value does not pin memory.
 	if len(r.buf) != chunkSize {
@@ -379,26 +412,28 @@ func (r *chunkReader) load(lg *valueLog, s *segment, off, limit int64) error {
 
 	r.n = 0
 
-	n := min(int64(chunkSize), limit-off)
-	if n < recordHeaderSize {
+	length := min(int64(chunkSize), limit-off)
+	if length < recordHeaderSize {
 		return ErrCorrupt
 	}
 
-	if err := lg.read(s, off, r.buf[:n]); err != nil {
+	err := vlog.read(seg, off, r.buf[:length])
+	if err != nil {
 		return err
 	}
 
 	keyLen, valueLen := recordLengths(r.buf)
-	if size := int64(recordSize(keyLen, valueLen)); size > n && off+size <= limit {
+	if size := int64(recordSize(keyLen, valueLen)); size > length && off+size <= limit {
 		r.buf = make([]byte, size)
-		n = size
+		length = size
 
-		if err := lg.read(s, off, r.buf[:n]); err != nil {
+		err = vlog.read(seg, off, r.buf[:length])
+		if err != nil {
 			return err
 		}
 	}
 
-	r.off, r.n = off, int(n)
+	r.off, r.n = off, int(length)
 
 	return nil
 }

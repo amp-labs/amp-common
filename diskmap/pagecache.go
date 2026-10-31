@@ -550,7 +550,16 @@ func (pc *pageCache) beginSnapshot() {
 // its page table. The lock is released while waiting for the writer.
 func (pc *pageCache) finishSnapshot() ([]uint32, error) {
 	for frame := range pc.framePage {
-		if pc.flags[frame]&flagSnap != 0 {
+		// Queue each page through the background writer, waiting with the
+		// lock released for a free buffer rather than writing it
+		// synchronously; the page may change meanwhile, so check again.
+		for pc.flags[frame]&flagSnap != 0 && pc.failed == nil {
+			if len(pc.wbFree) == 0 {
+				pc.wbCond.Wait()
+
+				continue
+			}
+
 			err := pc.queueWriteBack(frame)
 			if err != nil {
 				return nil, err

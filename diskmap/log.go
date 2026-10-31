@@ -21,7 +21,13 @@ const (
 	durableBuffered
 )
 
-const bufferedFlushDelay = 2 * time.Millisecond
+const (
+	bufferedFlushDelay = 2 * time.Millisecond
+
+	// The flusher writes at once when more than a buffer divided by
+	// batchShare is queued.
+	batchShare = 16
+)
 
 // valueLog is the append-only store of records, shared by all shards. Its
 // lock guards the write queue, sequence numbers and segment accounting;
@@ -595,7 +601,9 @@ func (lg *valueLog) flushLoop(wg *sync.WaitGroup) {
 			lg.writeCond.Wait()
 		}
 
-		if lg.mode == durableBuffered && lg.queued < lg.bufCap/2 {
+		// Wait a moment for a trickle of buffered writes to batch up; under
+		// load, write at once so writers never fill the queue.
+		if lg.mode == durableBuffered && lg.queued < lg.bufCap/batchShare {
 			lg.mu.Unlock()
 			time.Sleep(bufferedFlushDelay)
 			lg.mu.Lock()

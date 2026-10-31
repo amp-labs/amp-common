@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -294,12 +295,19 @@ func TestOverwritesKeepDiskUsageBounded(t *testing.T) {
 		}
 	}
 
-	stats := dmap.Stats()
-	live := stats.SegmentBytes - stats.DeadBytes
+	// Compaction runs in the background without holding writers back, so on
+	// a slow machine it may trail the writes for a moment. Once it catches
+	// up, disk use is live data, plus dead data up to the threshold, plus
+	// segments that are being filled or compacted.
+	var stats Stats
 
-	// Live data, plus dead data up to the threshold, plus segments that are
-	// being filled or compacted.
-	assert.Less(t, stats.SegmentBytes, 2*live+3*minSegmentSize, "%+v", stats)
+	require.Eventually(t, func() bool {
+		stats = dmap.Stats()
+		live := stats.SegmentBytes - stats.DeadBytes
+
+		return stats.SegmentBytes < 2*live+3*minSegmentSize
+	}, 30*time.Second, 10*time.Millisecond, "disk use stayed above the bound")
+
 	assert.Equal(t, keys, stats.Entries)
 }
 

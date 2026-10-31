@@ -149,6 +149,7 @@ The linting stack includes:
 ### Data Structures & Collections
 
 * **`maps`** - Generic map utilities with red-black tree implementation
+* **`diskmap`** - Disk-backed, crash-safe `map[string][]byte` for data that outgrows memory, with a configurable memory ceiling
 * **`set`** - Generic set implementation with red-black tree backing
 * **`tuple`** - Generic tuple types
 * **`collectable`** - Interface combining `Hashable` and `Comparable` for use in Map/Set data structures

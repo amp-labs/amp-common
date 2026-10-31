@@ -66,6 +66,15 @@ go test -v -run TestName ./package-name
 - Prometheus metrics (active executions, execution count by outcome, time
   spent) labeled per executor via `NewDefaultExecutor(n, WithName("x"))`
 
+**`diskmap`** - Disk-backed `map[string][]byte` for data that outgrows memory
+
+- `Open(dir, opts...)`, then `Get`/`AppendValue`/`Add`/`Remove`/`Contains`/`Range`/`Sync`; `Close` takes a final checkpoint
+- Append-only segment files plus a sharded on-disk extendible hash index behind fixed-size page caches
+- `WithMemoryLimit` caps memory (default 64 MiB); `WithValueCache` carves out a hot-value cache
+- File I/O happens outside locks; background goroutines flush writes, write back index pages and compact
+- Crash-safe by default (writes reach the OS before returning); `Sync()` / `WithSyncWrites()` for power-loss durability
+- Recovery replays the log after the last copy-on-write index checkpoint, so reopening after a crash is fast at any size
+
 **`envutil`** - Type-safe environment variable parsing
 
 - Fluent API with `Reader[T]` type for chaining operations

@@ -76,19 +76,23 @@ func (sh *shard) create() error {
 	return nil
 }
 
-// load restores the index from saved state.
-func (sh *shard) load(saved shardMeta) error {
+// loadCheckpoint restores the index of a checkpoint.
+func (sh *shard) loadCheckpoint(saved shardMeta) error {
 	info, err := sh.idxFile.Stat()
 	if err != nil {
 		return fmt.Errorf("diskmap: opening index: %w", err)
 	}
 
-	if info.Size() < int64(saved.numPages)*pageSize {
-		return fmt.Errorf("%w: index file %d is shorter than its %d pages", ErrCorrupt, sh.id, saved.numPages)
+	slots := uint32(info.Size() / pageSize) //nolint:gosec // Slot counts fit in uint32.
+
+	for _, slot := range saved.pageTable {
+		if slot >= slots {
+			return fmt.Errorf("%w: index file %d is shorter than its checkpoint", ErrCorrupt, sh.id)
+		}
 	}
 
-	sh.ix = &index{pc: sh.pc, dir: saved.dir, depth: saved.depth, numPages: saved.numPages}
-	sh.pc.setPages(saved.numPages)
+	sh.ix = &index{pc: sh.pc, dir: saved.dir, depth: saved.depth, numPages: uint32(len(saved.pageTable))} //nolint:gosec,lll // Page counts fit in uint32.
+	sh.pc.load(saved.pageTable, slots)
 	sh.count = int(saved.count) //nolint:gosec // Written from an int.
 
 	return nil
@@ -248,13 +252,9 @@ func (sh *shard) liveSlotOnce(h uint64, seg uint32, off int64) (slotRef, bool, e
 	return slotRef{}, false, nil
 }
 
-// reset empties the index. The page cache's writer must be idle.
+// reset empties the index. The page cache's writer must be idle. The index
+// file keeps the durable checkpoint's pages until a new one replaces it.
 func (sh *shard) reset() error {
-	err := sh.idxFile.Truncate(0)
-	if err != nil {
-		return fmt.Errorf("diskmap: truncating index: %w", err)
-	}
-
 	sh.count = 0
 
 	if sh.vc != nil {
@@ -262,26 +262,4 @@ func (sh *shard) reset() error {
 	}
 
 	return sh.ix.reset()
-}
-
-// persist writes back every page and syncs the index file. It releases the
-// lock while waiting for the background writer, so the shard must already
-// be closed to other operations.
-func (sh *shard) persist() (shardMeta, error) {
-	err := sh.pc.flush()
-	if err != nil {
-		return shardMeta{}, err
-	}
-
-	err = sh.idxFile.Sync()
-	if err != nil {
-		return shardMeta{}, fmt.Errorf("diskmap: syncing index: %w", err)
-	}
-
-	return shardMeta{
-		count:    uint64(sh.count), //nolint:gosec // Count is non-negative.
-		numPages: sh.ix.numPages,
-		depth:    sh.ix.depth,
-		dir:      sh.ix.dir,
-	}, nil
 }

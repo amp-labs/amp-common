@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/bits"
 	"os"
 	"sync"
 )
@@ -11,9 +12,11 @@ import (
 const (
 	noFrame = -1
 	noPage  = math.MaxUint32
+	noPhys  = math.MaxUint32
 
 	flagRef   = 1 << 0
 	flagDirty = 1 << 1
+	flagSnap  = 1 << 2 // content belongs to the checkpoint being written
 
 	minFrames = 8
 
@@ -37,6 +40,12 @@ var errRetry = errors.New("diskmap: retry")
 // frames live in one pointer-free allocation, so the garbage collector never
 // scans it and the cache never grows past its budget.
 //
+// Pages are copy-on-write on disk. The index refers to logical pages, and a
+// page table maps each to a physical slot in the file. Slots that belong to
+// a checkpoint are never overwritten; a page whose slot is protected moves to
+// a fresh slot the next time it is written. So the file always holds the
+// last durable checkpoint intact, whatever happened since.
+//
 // No file I/O happens under the shard lock in the common case. Misses read
 // the page with the lock released and return errRetry. Dirty pages are
 // copied to a bounded write-back queue on eviction and written by a
@@ -47,13 +56,25 @@ type pageCache struct {
 	file *os.File
 	data []byte
 
-	framePage []uint32 // page held by each frame, or noPage
-	flags     []uint8  // flagRef and flagDirty per frame
+	framePage []uint32 // logical page held by each frame, or noPage
+	flags     []uint8  // flagRef, flagDirty and flagSnap per frame
 	pins      []uint8  // frames that must not be evicted
 	hand      int
 
-	frameOf []int32  // frame holding each page, or noFrame
-	version []uint32 // bumped each time a page is written to the file
+	frameOf   []int32  // frame holding each logical page, or noFrame
+	version   []uint32 // bumped each time a page is written to the file
+	pageTable []uint32 // physical slot of each logical page, or noPhys
+
+	physSlots uint32   // slots in the file
+	freeSlots []uint32 // slots no checkpoint or page uses
+	protected bitset   // slots of the durable checkpoint and the one in progress
+
+	// The checkpoint being written: the slot of every page as of the
+	// snapshot, the slots it newly protects, and pages still to be written.
+	snapTable   []uint32
+	snapSlots   bitset
+	snapPending int
+	snapCond    *sync.Cond
 
 	// epoch changes when the cache is reset or stopped, invalidating reads
 	// that were in progress.
@@ -61,8 +82,8 @@ type pageCache struct {
 
 	// Write-back queue. wb holds the newest pending contents of each page
 	// not yet in the file; readers must prefer it to the file.
-	wb        map[uint32]*writeBack
-	wbQueue   []uint32
+	wb        map[uint32]*writeBack // newest pending content of each page
+	wbQueue   []*writeBack          // pending writes, oldest first
 	wbFree    [][]byte
 	wbMax     int
 	wbBusy    bool // the writer is writing a page with the lock released
@@ -79,8 +100,25 @@ type pageCache struct {
 }
 
 type writeBack struct {
+	pageID  uint32
 	buf     []byte
 	writing bool
+	snap    bool // this content belongs to the checkpoint being written
+}
+
+// bitset is a growable set of slot numbers.
+type bitset []uint64
+
+func (b *bitset) set(i uint32) {
+	for int(i/64) >= len(*b) {
+		*b = append(*b, 0)
+	}
+
+	(*b)[i/64] |= 1 << (i % 64)
+}
+
+func (b bitset) has(i uint32) bool {
+	return int(i/64) < len(b) && b[i/64]&(1<<(i%64)) != 0
 }
 
 // newPageCache creates a cache with a budget of the given number of pages,
@@ -99,6 +137,7 @@ func newPageCache(mu *sync.Mutex, file *os.File, budget int) *pageCache {
 		wb:        make(map[uint32]*writeBack),
 		wbMax:     wbPages,
 		wbCond:    sync.NewCond(mu),
+		snapCond:  sync.NewCond(mu),
 	}
 
 	for i := range cache.framePage {
@@ -121,11 +160,33 @@ func (pc *pageCache) buf(frame int) []byte {
 	return pc.data[frame*pageSize : (frame+1)*pageSize : (frame+1)*pageSize]
 }
 
-// setPages declares how many pages the index file holds.
+// setPages declares how many logical pages the index has.
 func (pc *pageCache) setPages(n uint32) {
 	for uint32(len(pc.frameOf)) < n { //nolint:gosec // Page counts fit in uint32.
 		pc.frameOf = append(pc.frameOf, noFrame)
 		pc.version = append(pc.version, 0)
+		pc.pageTable = append(pc.pageTable, noPhys)
+	}
+}
+
+// load restores the page table of a checkpoint. Every slot it uses is
+// protected; every other slot in the file is free.
+func (pc *pageCache) load(table []uint32, physSlots uint32) {
+	pc.setPages(uint32(len(table))) //nolint:gosec // Page counts fit in uint32.
+	copy(pc.pageTable, table)
+	pc.physSlots = physSlots
+	pc.protected = nil
+
+	for _, slot := range table {
+		pc.protected.set(slot)
+	}
+
+	pc.freeSlots = pc.freeSlots[:0]
+
+	for slot := range physSlots {
+		if !pc.protected.has(slot) {
+			pc.freeSlots = append(pc.freeSlots, slot)
+		}
 	}
 }
 
@@ -154,12 +215,17 @@ func (pc *pageCache) page(pageID uint32) (int, error) {
 		return frame, nil
 	}
 
+	slot := pc.pageTable[pageID]
+	if slot == noPhys {
+		return 0, fmt.Errorf("%w: index page %d was never written", ErrCorrupt, pageID)
+	}
+
 	epoch, version := pc.epoch, pc.version[pageID]
 
 	pooled, _ := pagePool.Get().(*[pageSize]byte)
 	defer pagePool.Put(pooled)
 
-	err := pc.readUnlocked(pooled[:], pageID)
+	err := pc.readUnlocked(pooled[:], slot)
 
 	if pc.epoch != epoch {
 		return 0, errRetry
@@ -184,20 +250,20 @@ func (pc *pageCache) page(pageID uint32) (int, error) {
 	return 0, errRetry
 }
 
-func (pc *pageCache) readUnlocked(page []byte, pageID uint32) error {
+func (pc *pageCache) readUnlocked(page []byte, slot uint32) error {
 	pc.mu.Unlock()
 	defer pc.mu.Lock()
 
-	_, err := pc.file.ReadAt(page, int64(pageID)*pageSize)
+	_, err := pc.file.ReadAt(page, int64(slot)*pageSize)
 
 	return err
 }
 
-func (pc *pageCache) writeUnlocked(page []byte, pageID uint32) error {
+func (pc *pageCache) writeUnlocked(page []byte, slot uint32) error {
 	pc.mu.Unlock()
 	defer pc.mu.Lock()
 
-	_, err := pc.file.WriteAt(page, int64(pageID)*pageSize)
+	_, err := pc.file.WriteAt(page, int64(slot)*pageSize)
 
 	return err
 }
@@ -222,8 +288,20 @@ func (pc *pageCache) install(frame int, pageID uint32, flags uint8) {
 	pc.frameOf[pageID] = int32(frame) //nolint:gosec // Frame counts fit in int32.
 }
 
-func (pc *pageCache) markDirty(frame int) {
+// modify must be called before changing a frame's page. If the page's
+// current content belongs to a checkpoint being written, that content is
+// queued for the checkpoint first.
+func (pc *pageCache) modify(frame int) error {
+	if pc.flags[frame]&flagSnap != 0 {
+		err := pc.queueWriteBack(frame)
+		if err != nil {
+			return err
+		}
+	}
+
 	pc.flags[frame] |= flagDirty
+
+	return nil
 }
 
 func (pc *pageCache) pin(frame int) {
@@ -255,7 +333,7 @@ func (pc *pageCache) evict() (int, error) {
 			continue
 		}
 
-		if pc.flags[frame]&flagDirty != 0 {
+		if pc.flags[frame]&(flagDirty|flagSnap) != 0 {
 			err := pc.queueWriteBack(frame)
 			if err != nil {
 				return 0, err
@@ -271,15 +349,20 @@ func (pc *pageCache) evict() (int, error) {
 	}
 }
 
-// queueWriteBack hands a dirty frame's contents to the background writer,
-// or writes them synchronously if its queue is full.
+// queueWriteBack hands a frame's contents to the background writer, or
+// writes them synchronously if its queue is full. The frame is clean
+// afterwards.
 func (pc *pageCache) queueWriteBack(frame int) error {
 	pageID := pc.framePage[frame]
-	pc.flags[frame] &^= flagDirty
+	snap := pc.flags[frame]&flagSnap != 0
+	pc.flags[frame] &^= flagDirty | flagSnap
 
-	// A queued copy not yet being written can simply be updated.
-	if wb := pc.wb[pageID]; wb != nil && !wb.writing {
+	// A queued copy not yet being written can simply be updated, unless it
+	// already holds checkpoint content that this newer content must not
+	// replace.
+	if wb := pc.wb[pageID]; wb != nil && !wb.writing && (!wb.snap || snap) {
 		copy(wb.buf, pc.buf(frame))
+		wb.snap = wb.snap || snap
 
 		return nil
 	}
@@ -291,33 +374,75 @@ func (pc *pageCache) queueWriteBack(frame int) error {
 		buf = pc.wbFree[len(pc.wbFree)-1]
 		pc.wbFree = pc.wbFree[:len(pc.wbFree)-1]
 	case pc.wb[pageID] != nil:
-		// An older copy of this page is being written. Writing the newer one
-		// synchronously could land first and be overwritten, so queue it in
-		// a buffer beyond the usual bound; this is rare.
+		// An older copy of this page is queued or being written. Writing the
+		// newer one synchronously could land first and be overwritten, so
+		// queue it in a buffer beyond the usual bound; this is rare.
 		buf = make([]byte, pageSize)
 	default:
-		return pc.writePage(pageID, pc.buf(frame))
+		return pc.writePage(pageID, pc.buf(frame), snap)
 	}
 
 	copy(buf, pc.buf(frame))
-	pc.wb[pageID] = &writeBack{buf: buf}
-	pc.wbQueue = append(pc.wbQueue, pageID)
+
+	entry := &writeBack{pageID: pageID, buf: buf, snap: snap}
+	pc.wb[pageID] = entry
+	pc.wbQueue = append(pc.wbQueue, entry)
 	pc.wbCond.Broadcast()
 
 	return nil
 }
 
+// slotFor returns the slot a page's next write goes to, moving the page to a
+// fresh slot if its current one is protected or unassigned.
+func (pc *pageCache) slotFor(pageID uint32) uint32 {
+	slot := pc.pageTable[pageID]
+	if slot != noPhys && !pc.protected.has(slot) && !pc.snapSlots.has(slot) {
+		return slot
+	}
+
+	if n := len(pc.freeSlots); n > 0 {
+		slot = pc.freeSlots[n-1]
+		pc.freeSlots = pc.freeSlots[:n-1]
+	} else {
+		slot = pc.physSlots
+		pc.physSlots++
+	}
+
+	pc.pageTable[pageID] = slot
+
+	return slot
+}
+
+// written records that a page's content reached slot; snap marks content
+// that belongs to the checkpoint being written.
+func (pc *pageCache) written(pageID, slot uint32, snap bool) {
+	pc.version[pageID]++
+	pc.writes++
+
+	if snap && pc.snapTable != nil {
+		pc.snapTable[pageID] = slot
+		pc.snapSlots.set(slot)
+		pc.snapPending--
+
+		if pc.snapPending == 0 {
+			pc.snapCond.Broadcast()
+		}
+	}
+}
+
 // writePage writes a page to the file under the lock.
-func (pc *pageCache) writePage(pageID uint32, page []byte) error {
-	_, err := pc.file.WriteAt(page, int64(pageID)*pageSize)
+func (pc *pageCache) writePage(pageID uint32, page []byte, snap bool) error {
+	slot := pc.slotFor(pageID)
+
+	_, err := pc.file.WriteAt(page, int64(slot)*pageSize)
 	if err != nil {
 		pc.failed = fmt.Errorf("diskmap: writing index page %d: %w", pageID, err)
+		pc.snapCond.Broadcast()
 
 		return pc.failed
 	}
 
-	pc.version[pageID]++
-	pc.writes++
+	pc.written(pageID, slot, snap)
 
 	return nil
 }
@@ -339,29 +464,26 @@ func (pc *pageCache) writeLoop(wg *sync.WaitGroup) {
 			pc.wbCond.Wait()
 		}
 
-		pageID := pc.wbQueue[0]
+		entry := pc.wbQueue[0]
 		pc.wbQueue = pc.wbQueue[1:]
-
-		entry := pc.wb[pageID]
-		if entry == nil {
-			continue
-		}
+		pageID := entry.pageID
 
 		entry.writing = true
 		pc.wbBusy = true
 		epoch := pc.epoch
+		slot := pc.slotFor(pageID)
 
-		err := pc.writeUnlocked(entry.buf, pageID)
+		err := pc.writeUnlocked(entry.buf, slot)
 
 		pc.wbBusy = false
 
 		if pc.epoch == epoch {
 			if err != nil && pc.failed == nil {
 				pc.failed = fmt.Errorf("diskmap: writing index page %d: %w", pageID, err)
+				pc.snapCond.Broadcast()
 			}
 
-			pc.version[pageID]++
-			pc.writes++
+			pc.written(pageID, slot, entry.snap)
 
 			// A newer copy may have been queued while this one was written.
 			if pc.wb[pageID] == entry {
@@ -390,31 +512,119 @@ func (pc *pageCache) idle() {
 	}
 }
 
-// flush writes every queued and dirty page to the file. The lock is released
-// while waiting for the background writer.
-func (pc *pageCache) flush() error {
-	for (len(pc.wbQueue) > 0 || pc.wbBusy) && pc.failed == nil {
-		pc.wbCond.Wait()
-	}
+// beginSnapshot starts a checkpoint of the index as it is now. Pages whose
+// newest content is already on disk keep their slots, which become
+// protected; every other page is marked, and its content is written to a
+// fresh slot before it may change. The caller must hold the lock, and no
+// other checkpoint may be in progress.
+func (pc *pageCache) beginSnapshot() {
+	pc.snapTable = make([]uint32, len(pc.pageTable))
+	copy(pc.snapTable, pc.pageTable)
+	pc.snapSlots = nil
+	pc.snapPending = 0
 
-	if pc.failed != nil {
-		return pc.failed
-	}
+	for pageID := range pc.pageTable {
+		id := uint32(pageID) //nolint:gosec // Page counts fit in uint32.
 
-	for frame, pageID := range pc.framePage {
-		if pc.flags[frame]&flagDirty == 0 {
+		if frame := pc.frameOf[id]; frame != noFrame && pc.flags[frame]&flagDirty != 0 {
+			pc.flags[frame] |= flagSnap
+			pc.snapPending++
+
 			continue
 		}
 
-		err := pc.writePage(pageID, pc.buf(frame))
-		if err != nil {
-			return err
+		if wb := pc.wb[id]; wb != nil {
+			wb.snap = true
+			pc.snapPending++
+
+			continue
 		}
 
-		pc.flags[frame] &^= flagDirty
+		pc.snapSlots.set(pc.snapTable[id])
+	}
+}
+
+// finishSnapshot writes every page the checkpoint still needs and returns
+// its page table. The lock is released while waiting for the writer.
+func (pc *pageCache) finishSnapshot() ([]uint32, error) {
+	for frame := range pc.framePage {
+		if pc.flags[frame]&flagSnap != 0 {
+			err := pc.queueWriteBack(frame)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	return nil
+	for pc.snapPending > 0 && pc.failed == nil {
+		pc.snapCond.Wait()
+	}
+
+	if pc.failed != nil {
+		return nil, pc.failed
+	}
+
+	return pc.snapTable, nil
+}
+
+// commitSnapshot makes the finished checkpoint the protected one: slots that
+// only the previous checkpoint used, and no live page uses, become free.
+func (pc *pageCache) commitSnapshot() {
+	var live bitset
+
+	for _, slot := range pc.pageTable {
+		if slot != noPhys {
+			live.set(slot)
+		}
+	}
+
+	old := pc.protected
+	pc.protected = pc.snapSlots
+
+	for word, gone := range old {
+		if word < len(pc.protected) {
+			gone &^= pc.protected[word]
+		}
+
+		if word < len(live) {
+			gone &^= live[word]
+		}
+
+		for gone != 0 {
+			bit := bits.TrailingZeros64(gone)
+			gone &= gone - 1
+
+			pc.freeSlots = append(pc.freeSlots, uint32(word*64+bit)) //nolint:gosec // Slot counts fit in uint32.
+		}
+	}
+
+	pc.snapTable = nil
+	pc.snapSlots = nil
+}
+
+// abortSnapshot abandons a checkpoint that failed.
+func (pc *pageCache) abortSnapshot() {
+	for frame := range pc.framePage {
+		if pc.flags[frame]&flagSnap != 0 {
+			pc.flags[frame] = pc.flags[frame]&^flagSnap | flagDirty
+		}
+	}
+
+	for _, wb := range pc.wbQueue {
+		wb.snap = false
+	}
+
+	for word, set := range pc.snapSlots {
+		for set != 0 {
+			bit := bits.TrailingZeros64(set)
+			set &= set - 1
+
+			pc.protected.set(uint32(word*64 + bit)) //nolint:gosec // Slot counts fit in uint32.
+		}
+	}
+
+	pc.snapTable = nil
+	pc.snapSlots = nil
 }
 
 // stop tells the background writer to exit once its queue is empty.
@@ -424,8 +634,8 @@ func (pc *pageCache) stop() {
 	pc.wbCond.Broadcast()
 }
 
-// reset forgets every cached and queued page without writing anything. The
-// background writer must be idle.
+// reset forgets every page without writing anything; slots the durable
+// checkpoint uses stay protected. The background writer must be idle.
 func (pc *pageCache) reset() {
 	for i := range pc.framePage {
 		pc.framePage[i] = noPage
@@ -433,7 +643,7 @@ func (pc *pageCache) reset() {
 		pc.pins[i] = 0
 	}
 
-	for _, wb := range pc.wb {
+	for _, wb := range pc.wbQueue {
 		pc.recycle(wb.buf)
 	}
 
@@ -441,6 +651,15 @@ func (pc *pageCache) reset() {
 	pc.wbQueue = pc.wbQueue[:0]
 	pc.frameOf = pc.frameOf[:0]
 	pc.version = pc.version[:0]
+	pc.pageTable = pc.pageTable[:0]
+	pc.freeSlots = pc.freeSlots[:0]
+
+	for slot := range pc.physSlots {
+		if !pc.protected.has(slot) {
+			pc.freeSlots = append(pc.freeSlots, slot)
+		}
+	}
+
 	pc.hand = 0
 	pc.epoch++
 }

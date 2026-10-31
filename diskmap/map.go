@@ -12,10 +12,11 @@
 // goroutines flush writes and compact dead space in small steps, so no
 // single operation pays for a rehash, a flush or a compaction pass.
 //
-// A map lives in its own directory. Close writes the state needed to reopen
-// it; a directory whose map was not closed (for example after a crash) cannot
-// be reopened, and Open returns ErrNotCleanlyClosed. The map is a place to
-// keep data that does not fit in memory, not a durable database.
+// A map lives in its own directory and survives crashes. By default every
+// Add and Remove reaches the operating system before it returns, so it
+// survives the process dying; Sync (or WithSyncWrites) makes writes survive
+// a power failure too. Checkpoints taken in the background bound how much
+// the next Open replays after a crash, and Close takes a final one.
 package diskmap
 
 import (
@@ -24,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -35,10 +37,9 @@ var (
 	// ErrClosed is returned by operations on a closed map.
 	ErrClosed = errors.New("diskmap: map is closed")
 
-	// ErrNotCleanlyClosed is returned by Open when the directory holds a map
-	// that was never closed. Its contents cannot be trusted; reopen with
-	// WithDiscardExisting to start over.
-	ErrNotCleanlyClosed = errors.New("diskmap: map was not closed cleanly")
+	// ErrLocked is returned by Open when another open map is using the
+	// directory.
+	ErrLocked = errors.New("diskmap: directory is in use")
 
 	// ErrCorrupt is returned when on-disk data fails validation.
 	ErrCorrupt = errors.New("diskmap: corrupt data")
@@ -67,7 +68,7 @@ const (
 	minWriteBuffer   = 64 << 10
 	chunkSize        = 64 << 10
 
-	backgroundGoroutines = 2 // the flusher and the compactor
+	backgroundGoroutines = 3 // the flusher, the compactor and the checkpointer
 )
 
 // Map is a disk-backed map from string keys to byte-slice values. It is safe
@@ -84,10 +85,12 @@ type Map struct {
 	shards []*shard
 	mask   uint64
 	log    *valueLog
+	lock   *os.File
 
-	closed  atomic.Bool
-	closeMu sync.Mutex
-	wg      sync.WaitGroup // flusher and compactor
+	closed       atomic.Bool
+	closeMu      sync.Mutex
+	checkpointMu sync.Mutex
+	wg           sync.WaitGroup // flusher, compactor and checkpointer
 	writers sync.WaitGroup // index page writers, one per shard
 }
 
@@ -122,10 +125,14 @@ type Stats struct {
 	// WriteStalls counts the times a write waited for buffered data to reach
 	// the disk because the disk had fallen behind.
 	WriteStalls int64
+	// Checkpoints counts checkpoints taken since Open.
+	Checkpoints int64
 }
 
 // Open opens the map stored in dir, creating the directory and an empty map
-// if needed. The map must be closed with Close.
+// if needed. If the map was not closed, Open recovers it: it loads the last
+// checkpoint and replays what was written after it. The map must be closed
+// with Close.
 func Open(dir string, opts ...Option) (*Map, error) {
 	cfg := defaultOptions()
 	for _, opt := range opts {
@@ -141,8 +148,20 @@ func Open(dir string, opts ...Option) (*Map, error) {
 		cfg.hash = xxh3.HashStringSeed
 	}
 
+	err = os.MkdirAll(dir, dirPerm)
+	if err != nil {
+		return nil, fmt.Errorf("diskmap: creating directory: %w", err)
+	}
+
+	lock, err := lockDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
 	saved, err := prepareDir(dir, cfg.discardExisting)
 	if err != nil {
+		_ = lock.Close()
+
 		return nil, err
 	}
 
@@ -150,8 +169,8 @@ func Open(dir string, opts ...Option) (*Map, error) {
 		cfg.shards = len(saved.shards)
 	}
 
-	// Two write buffers and the compactor's read and write buffers come out
-	// of the budget; the rest holds index pages, split evenly between shards.
+	// Write buffers and the compactor's read and write buffers come out of
+	// the budget; the rest holds index pages, split evenly between shards.
 	bufCap := min(max(cfg.memoryLimit/writeBufferShare, minWriteBuffer), maxWriteBuffer)
 	pages := (cfg.memoryLimit - cfg.valueCache - 2*bufCap - chunkSize - compactBatch) / pageSize / cfg.shards
 
@@ -160,25 +179,38 @@ func Open(dir string, opts ...Option) (*Map, error) {
 		opts: cfg,
 		hash: cfg.hash,
 		mask: uint64(cfg.shards - 1), //nolint:gosec // Validated positive.
-		log:  newValueLog(dir, cfg.segmentSize, bufCap, cfg.compactionThreshold),
+		lock: lock,
+		log: newValueLog(dir, cfg.segmentSize, bufCap, cfg.compactionThreshold, cfg.durability,
+			cfg.checkpointBytes),
 	}
 
-	err = dmap.open(saved, pages)
+	var garbage []string
+
+	if saved == nil {
+		err = dmap.create(pages)
+	} else {
+		garbage, err = dmap.recover(saved, pages)
+	}
+
 	if err != nil {
 		dmap.releaseFiles()
 
 		return nil, err
 	}
 
-	dmap.wg.Add(backgroundGoroutines)
+	dmap.start()
 
-	go dmap.log.flushLoop(&dmap.wg)
-	go dmap.compactLoop()
+	// A new map needs its first checkpoint, and a recovered one a fresh one
+	// so the replayed records are not replayed again.
+	err = dmap.checkpoint(false)
+	if err != nil {
+		dmap.shutdown()
 
-	for _, shd := range dmap.shards {
-		dmap.writers.Add(1)
+		return nil, err
+	}
 
-		go shd.pc.writeLoop(&dmap.writers)
+	for _, name := range garbage {
+		_ = os.Remove(filepath.Join(dir, name))
 	}
 
 	return dmap, nil
@@ -236,86 +268,86 @@ func (m *Map) Add(key string, value []byte) error {
 		return ErrValueTooLarge
 	}
 
+	return m.write(key, value, false)
+}
+
+// Remove deletes key from the map. Removing a missing key is not an error.
+func (m *Map) Remove(key string) error {
+	return m.write(key, nil, true)
+}
+
+// write appends a put or tombstone and points the index at it, both under
+// the key's shard lock, so a key's records are numbered in the order they
+// took effect and recovery replays them that way. It then waits, without
+// any lock, until the record is as durable as the map requires.
+func (m *Map) write(key string, value []byte, tombstone bool) error {
 	if m.closed.Load() {
 		return ErrClosed
 	}
 
 	hash := m.hash(key, m.seed)
 	shd := m.shardFor(hash)
+	vlog := m.log
 
-	// Append first, then point the index at the new record. Concurrent Adds
-	// of one key may append in one order and index in the other; either
-	// result is a valid outcome of the race.
-	m.log.writeMu.RLock()
-
-	addr, gen, err := m.log.appendRecord(key, value)
+	err := vlog.reserve()
 	if err != nil {
-		m.log.writeMu.RUnlock()
-
 		return err
 	}
 
+	vlog.writeMu.RLock()
+	shd.mu.Lock()
+
+	seq, wrote, err := m.writeLocked(shd, hash, key, value, tombstone)
+
+	shd.mu.Unlock()
+	vlog.writeMu.RUnlock()
+
+	if err != nil || !wrote {
+		return err
+	}
+
+	return vlog.waitDurable(seq)
+}
+
+// writeLocked does the work of write under the shard lock. It returns the
+// record's sequence number and whether it appended anything (removing a
+// missing key does not).
+func (m *Map) writeLocked(
+	shd *shard, hash uint64, key string, value []byte, tombstone bool,
+) (seq uint64, wrote bool, err error) {
 	var checkBuf [2]keyCheck
 
 	checks := checkBuf[:0]
 
-	shd.mu.Lock()
-
-	dead, err := m.indexRecord(shd, hash, key, addr, gen, &checks)
-	for errors.Is(err, errRetry) {
-		dead, err = m.indexRecord(shd, hash, key, addr, gen, &checks)
-	}
-
-	shd.mu.Unlock()
-	m.log.writeMu.RUnlock()
-
-	if dead.size > 0 {
-		m.log.markDead(dead.seg, dead.size)
-	}
-
-	return err
-}
-
-// Remove deletes key from the map. Removing a missing key is not an error.
-func (m *Map) Remove(key string) error {
-	hash := m.hash(key, m.seed)
-	shd := m.shardFor(hash)
-
-	var (
-		checkBuf [2]keyCheck
-		ref      slotRef
-		found    bool
-		err      error
-	)
-
-	checks := checkBuf[:0]
-
-	shd.mu.Lock()
-
 	for {
 		err = shd.usable(m.log)
-		if err == nil {
-			ref, found, err = shd.find(m.log, hash, key, &checks)
+		if err != nil {
+			return 0, false, err
 		}
 
-		if !errors.Is(err, errRetry) {
-			break
+		var (
+			ref   slotRef
+			found bool
+		)
+
+		ref, found, err = shd.find(m.log, hash, key, &checks)
+		if errors.Is(err, errRetry) {
+			continue
 		}
+
+		if err != nil || tombstone && !found {
+			return 0, false, err
+		}
+
+		var addr loc
+
+		addr, seq, err = m.log.appendRecord(key, value, tombstone)
+		if err != nil {
+			return 0, false, err
+		}
+
+		return seq, true, m.applyFound(shd, hash, ref, found, addr, tombstone)
 	}
-
-	if found {
-		removeSlot(shd.pc.buf(ref.frame), ref.slot)
-		shd.pc.markDirty(ref.frame)
-		shd.count--
-	}
-
-	shd.mu.Unlock()
-
-	if found {
-		m.log.markDead(ref.addr.seg, ref.addr.size)
-	}
-
-	return err
 }
 
 // Size returns the number of entries in the map.
@@ -337,12 +369,39 @@ func (m *Map) Clear() error {
 		return ErrClosed
 	}
 
+	vlog := m.log
+
+	vlog.writeMu.Lock()
+	defer vlog.writeMu.Unlock()
+
+	old, err := m.clearLocked()
+	if err != nil {
+		return err
+	}
+
+	// The old files stay until the empty map's checkpoint is durable, since
+	// until then the previous checkpoint refers to them.
+	err = m.checkpoint(true)
+	if err != nil {
+		return err
+	}
+
+	for _, seg := range old {
+		seg.drop()
+	}
+
+	return nil
+}
+
+// clearLocked empties the index and the log and returns the segments to
+// delete. The caller holds writeMu for writing.
+func (m *Map) clearLocked() ([]*segment, error) {
 	// Take every shard and wait for its page writer to finish any write in
 	// progress. Once a shard is locked and idle its writer cannot start
 	// another, because that needs the lock.
 	for _, shd := range m.shards {
 		shd.mu.Lock()
-		defer shd.mu.Unlock() //nolint:gocritic // Every shard stays locked until Clear returns.
+		defer shd.mu.Unlock() //nolint:gocritic // Every shard stays locked until the index is reset.
 
 		shd.pc.idle()
 	}
@@ -352,26 +411,24 @@ func (m *Map) Clear() error {
 	vlog.mu.Lock()
 	defer vlog.mu.Unlock()
 
-	if vlog.closed {
-		return ErrClosed
-	}
-
-	err := m.shards[0].usable(vlog)
+	err := vlog.usable()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Write out the buffers rather than discarding them: a Get that found
-	// its record before Clear took the locks may still be reading it.
+	// Write out the queue rather than discarding it: a Get that found its
+	// record before Clear took the locks may still be reading it.
 	err = vlog.drain()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for _, seg := range vlog.table.Load().all() {
-		seg.drop()
+	old := vlog.table.Load().all()
+	for _, r := range vlog.retired {
+		old = append(old, r.seg)
 	}
 
+	vlog.retired = nil
 	vlog.table.Store(&segTable{})
 	vlog.compactOut = nil
 	vlog.total, vlog.dead = 0, 0
@@ -380,15 +437,15 @@ func (m *Map) Clear() error {
 	for _, shd := range m.shards {
 		err = shd.reset()
 		if err != nil {
-			return vlog.fail(err)
+			return nil, vlog.fail(err)
 		}
 	}
 
-	return vlog.rotate()
+	return old, vlog.rotate()
 }
 
-// Close writes everything needed to reopen the map, syncs it to disk and
-// releases the map's files. Closing a closed map is a no-op.
+// Close takes a final checkpoint, syncs everything to disk and releases the
+// map's files. Closing a closed map is a no-op.
 func (m *Map) Close() error {
 	m.closeMu.Lock()
 	defer m.closeMu.Unlock()
@@ -403,23 +460,19 @@ func (m *Map) Close() error {
 	vlog.closed = true
 	err := vlog.drain()
 	vlog.stopping = true
-	vlog.flushCond.Broadcast()
+	vlog.writeCond.Broadcast()
 	vlog.compactCond.Broadcast()
 	vlog.compactDone.Broadcast()
+	vlog.checkpointCond.Broadcast()
 	vlog.mu.Unlock()
 
 	m.wg.Wait()
 
-	err = errors.Join(err, m.persist())
-
-	for _, shd := range m.shards {
-		shd.mu.Lock()
-		shd.pc.stop()
-		shd.mu.Unlock()
+	if err == nil {
+		err = m.checkpoint(false)
 	}
 
-	m.writers.Wait()
-	m.releaseFiles()
+	m.shutdown()
 
 	return err
 }
@@ -453,21 +506,17 @@ func (m *Map) Stats() Stats {
 	stats.DeadBytes = vlog.dead
 	stats.CompactedBytes = vlog.compacted
 	stats.WriteStalls = vlog.stalls
+	stats.Checkpoints = vlog.checkpoints
 	vlog.mu.Unlock()
 
 	return stats
 }
 
-// prepareDir creates dir if needed and loads the saved state of the map in
-// it, returning nil for a new map.
+// prepareDir creates dir if needed and loads the last checkpoint of the map
+// in it, returning nil for a new map.
 func prepareDir(dir string, discard bool) (*meta, error) {
-	err := os.MkdirAll(dir, dirPerm)
-	if err != nil {
-		return nil, fmt.Errorf("diskmap: creating directory: %w", err)
-	}
-
 	if discard {
-		err = removeDataFiles(dir)
+		err := removeDataFiles(dir)
 		if err != nil {
 			return nil, err
 		}
@@ -478,19 +527,18 @@ func prepareDir(dir string, discard bool) (*meta, error) {
 		return saved, err
 	}
 
-	files, err := dataFiles(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(files) > 0 {
-		return nil, fmt.Errorf("%w: %s", ErrNotCleanlyClosed, dir)
-	}
-
-	return nil, nil
+	// Without a checkpoint the map never finished opening, so it holds
+	// nothing a caller was told was written.
+	return nil, removeDataFiles(dir)
 }
 
-func (m *Map) open(saved *meta, pages int) error {
+// create starts an empty map.
+func (m *Map) create(pages int) error {
+	var seed [8]byte
+
+	_, _ = rand.Read(seed[:])
+	m.seed = binary.LittleEndian.Uint64(seed[:])
+
 	for i := range m.opts.shards {
 		shd, err := openShard(m.dir, i, pages, m.opts.valueCache/m.opts.shards)
 		if err != nil {
@@ -498,39 +546,57 @@ func (m *Map) open(saved *meta, pages int) error {
 		}
 
 		m.shards = append(m.shards, shd)
-	}
 
-	if saved == nil {
-		var seed [8]byte
-
-		_, _ = rand.Read(seed[:])
-		m.seed = binary.LittleEndian.Uint64(seed[:])
-
-		for _, shd := range m.shards {
-			err := shd.create()
-			if err != nil {
-				return err
-			}
-		}
-
-		return m.log.rotate()
-	}
-
-	m.seed = saved.seed
-
-	for i, shd := range m.shards {
-		err := shd.load(saved.shards[i])
+		err = shd.create()
 		if err != nil {
 			return err
 		}
 	}
 
-	err := m.log.load(saved)
-	if err != nil {
-		return err
+	m.log.mu.Lock()
+	defer m.log.mu.Unlock()
+
+	return m.log.rotate()
+}
+
+// start launches the background goroutines.
+func (m *Map) start() {
+	m.wg.Add(backgroundGoroutines)
+
+	go m.log.flushLoop(&m.wg)
+	go m.compactLoop()
+	go m.checkpointLoop()
+
+	for _, shd := range m.shards {
+		m.writers.Add(1)
+
+		go shd.pc.writeLoop(&m.writers)
+	}
+}
+
+// shutdown stops the background goroutines and releases the map's files.
+func (m *Map) shutdown() {
+	vlog := m.log
+
+	vlog.mu.Lock()
+	vlog.closed, vlog.stopping = true, true
+	vlog.writeCond.Broadcast()
+	vlog.compactCond.Broadcast()
+	vlog.compactDone.Broadcast()
+	vlog.checkpointCond.Broadcast()
+	vlog.mu.Unlock()
+
+	m.wg.Wait()
+
+	for _, shd := range m.shards {
+		shd.mu.Lock()
+		shd.closed = true
+		shd.pc.stop()
+		shd.mu.Unlock()
 	}
 
-	return removeMeta(m.dir)
+	m.writers.Wait()
+	m.releaseFiles()
 }
 
 func (m *Map) shardFor(hash uint64) *shard {
@@ -705,111 +771,21 @@ func (m *Map) extractValue(rec []byte, key string, addr loc) (int, bool, error) 
 	return copy(rec, value), true, nil
 }
 
-// indexRecord points key at the record addr, appended in generation gen, and
-// returns the location of the record that no longer holds a live value: the
-// one addr replaced, or addr itself if it could not be indexed. It returns
-// errRetry if it had to release the lock.
-func (m *Map) indexRecord(
-	shd *shard, hash uint64, key string, addr loc, gen uint64, checks *[]keyCheck,
-) (loc, error) {
-	err := shd.usable(m.log)
-	if err != nil {
-		return addr, err
-	}
-
-	// Clear ran after the append and deleted the record with everything else.
-	if m.log.gen.Load() != gen {
-		return loc{}, nil
-	}
-
-	ref, found, err := shd.find(m.log, hash, key, checks)
-	if errors.Is(err, errRetry) {
-		return loc{}, err
-	}
-
-	if err != nil {
-		return addr, err
-	}
-
-	if found {
-		setSlotLoc(shd.pc.buf(ref.frame), ref.slot, addr)
-		shd.pc.markDirty(ref.frame)
-
-		return ref.addr, nil
-	}
-
-	err = shd.ix.insert(hash, addr)
-	if errors.Is(err, errRetry) {
-		return loc{}, err
-	}
-
-	if err != nil {
-		return addr, err
-	}
-
-	shd.count++
-
-	return loc{}, nil
-}
-
-// persist writes back the index, syncs every file and writes the meta file.
-// It marks every shard closed whether or not it succeeds.
-func (m *Map) persist() error {
-	saved := &meta{seed: m.seed}
-
-	var errs []error
-
-	for _, shd := range m.shards {
-		shd.mu.Lock()
-
-		err := shd.usable(m.log)
-		shd.closed = true
-
-		if err == nil {
-			var state shardMeta
-
-			state, err = shd.persist()
-			if err == nil {
-				saved.shards = append(saved.shards, state)
-			}
-		}
-
-		if err != nil {
-			errs = append(errs, err)
-		}
-
-		shd.mu.Unlock()
-	}
-
-	err := errors.Join(errs...)
-	if err != nil {
-		return err
-	}
-
-	vlog := m.log
-
-	vlog.mu.Lock()
-	defer vlog.mu.Unlock()
-
-	saved.nextSeg = vlog.nextSeg
-
-	for _, seg := range vlog.table.Load().all() {
-		err = seg.sync()
-		if err != nil {
-			return err
-		}
-
-		saved.segments = append(saved.segments, segmentMeta{id: seg.id, size: seg.size, dead: seg.dead})
-	}
-
-	return writeMeta(m.dir, saved)
-}
-
 // releaseFiles drops the map's references to its files. Segment files close
 // once in-flight reads finish.
 func (m *Map) releaseFiles() {
 	for _, seg := range m.log.table.Load().all() {
 		seg.release()
+	}
+
+	for _, r := range m.log.retired {
+		r.seg.release()
+	}
+
+	m.log.retired = nil
+
+	if m.lock != nil {
+		_ = m.lock.Close()
 	}
 
 	for _, shd := range m.shards {

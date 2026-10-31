@@ -8,9 +8,14 @@ import (
 	"sync/atomic"
 )
 
-const segmentSuffix = ".seg"
+const (
+	segmentSuffix    = ".seg" // puts and tombstones
+	compactionSuffix = ".cmp" // records moved by compaction
+)
 
-// segment is one append-only file of records.
+// segment is one append-only file of records. Foreground segments hold puts
+// and tombstones in sequence order; compaction segments hold moves in move
+// order. Recovery replays the two streams side by side.
 //
 // Segments are reference counted so reads can run without any lock: the log
 // holds one reference while the segment is live, and readers take another
@@ -18,9 +23,10 @@ const segmentSuffix = ".seg"
 // is closed, and deleted if the segment was dropped, when the last reference
 // goes.
 type segment struct {
-	id   uint32
-	file *os.File
-	path string
+	id         uint32
+	compaction bool
+	file       *os.File
+	path       string
 
 	// written counts bytes already in the file. It only grows, so readers
 	// can check it without the log lock.
@@ -28,39 +34,47 @@ type segment struct {
 
 	// size counts every byte appended, including bytes still in a write
 	// buffer; dead counts bytes of records that were overwritten, removed or
-	// relocated. Both are guarded by the log lock.
-	size     int64
-	dead     int64
-	unsynced bool
+	// relocated; synced counts bytes known to be on stable storage. All are
+	// guarded by the log lock.
+	size   int64
+	dead   int64
+	synced int64
 
 	refs   atomic.Int32
 	doomed atomic.Bool
 }
 
-func segmentPath(dir string, id uint32) string {
-	return filepath.Join(dir, fmt.Sprintf("%010d%s", id, segmentSuffix))
+func segmentPath(dir string, id uint32, compaction bool) string {
+	suffix := segmentSuffix
+	if compaction {
+		suffix = compactionSuffix
+	}
+
+	return filepath.Join(dir, fmt.Sprintf("%010d%s", id, suffix))
 }
 
-func newSegment(id uint32, file *os.File, path string) *segment {
-	s := &segment{id: id, file: file, path: path}
+func newSegment(id uint32, compaction bool, file *os.File, path string) *segment {
+	s := &segment{id: id, compaction: compaction, file: file, path: path}
 	s.refs.Store(1)
 
 	return s
 }
 
-func createSegment(dir string, segID uint32) (*segment, error) {
-	path := segmentPath(dir, segID)
+func createSegment(dir string, segID uint32, compaction bool) (*segment, error) {
+	path := segmentPath(dir, segID, compaction)
 
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, filePerm) //nolint:gosec // Path built from dir.
 	if err != nil {
 		return nil, fmt.Errorf("diskmap: creating segment: %w", err)
 	}
 
-	return newSegment(segID, file, path), nil
+	return newSegment(segID, compaction, file, path), nil
 }
 
-func openSegment(dir string, segID uint32, size, dead int64) (*segment, error) {
-	path := segmentPath(dir, segID)
+// openSegment opens an existing segment file. Its size, written and synced
+// counts start at the file's length.
+func openSegment(dir string, segID uint32, compaction bool) (*segment, error) {
+	path := segmentPath(dir, segID, compaction)
 
 	file, err := os.OpenFile(path, os.O_RDWR, filePerm) //nolint:gosec // Path built from dir.
 	if err != nil {
@@ -74,17 +88,24 @@ func openSegment(dir string, segID uint32, size, dead int64) (*segment, error) {
 		return nil, fmt.Errorf("diskmap: opening segment: %w", err)
 	}
 
-	if info.Size() < size {
-		_ = file.Close()
-
-		return nil, fmt.Errorf("%w: segment %s is %d bytes, expected %d", ErrCorrupt, path, info.Size(), size)
-	}
-
-	s := newSegment(segID, file, path)
-	s.size, s.dead = size, dead
-	s.written.Store(size)
+	s := newSegment(segID, compaction, file, path)
+	s.size, s.synced = info.Size(), info.Size()
+	s.written.Store(info.Size())
 
 	return s, nil
+}
+
+// truncate cuts the segment's file to size bytes.
+func (s *segment) truncate(size int64) error {
+	err := s.file.Truncate(size)
+	if err != nil {
+		return fmt.Errorf("diskmap: truncating segment %d: %w", s.id, err)
+	}
+
+	s.size, s.synced = size, min(s.synced, size)
+	s.written.Store(size)
+
+	return nil
 }
 
 func (s *segment) acquire() {
@@ -110,21 +131,6 @@ func (s *segment) release() {
 func (s *segment) drop() {
 	s.doomed.Store(true)
 	s.release()
-}
-
-func (s *segment) sync() error {
-	if !s.unsynced {
-		return nil
-	}
-
-	err := s.file.Sync()
-	if err != nil {
-		return fmt.Errorf("diskmap: syncing segment: %w", err)
-	}
-
-	s.unsynced = false
-
-	return nil
 }
 
 func readFile(s *segment, off int64, buf []byte) error {

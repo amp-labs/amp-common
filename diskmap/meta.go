@@ -16,13 +16,14 @@ import (
 
 const (
 	metaFile = "meta"
+	lockFile = "LOCK"
 
-	metaMagic   = "DISKMAP1"
-	metaVersion = 1
+	metaMagic   = "DISKMAP2"
+	metaVersion = 2
 
 	u32Size        = 4
 	u64Size        = 8
-	segmentMetaLen = u32Size + 2*u64Size
+	segmentMetaLen = 2*u32Size + 2*u64Size
 
 	filePerm = 0o600
 	dirPerm  = 0o750
@@ -30,40 +31,51 @@ const (
 
 // segmentMeta is the persisted accounting for one segment.
 type segmentMeta struct {
-	id   uint32
-	size int64
-	dead int64
+	id         uint32
+	compaction bool
+	size       int64
+	dead       int64
 }
 
 // shardMeta is the persisted state of one shard's index.
 type shardMeta struct {
-	count    uint64
-	numPages uint32
-	depth    uint8
-	dir      []uint32
+	count     uint64
+	depth     uint8
+	dir       []uint32
+	pageTable []uint32 // physical slot of each logical page
 }
 
-// meta is everything needed to reopen a cleanly closed map. It exists only
-// between Close and the next Open, so a directory with data files but no meta
-// file was not closed cleanly.
+// meta describes the last checkpoint: the index as of sequence numbers seq
+// and moveSeq, and every segment and its size at that moment. Recovery loads
+// it and replays the records written after it.
 type meta struct {
 	seed     uint64
+	seq      uint64
+	moveSeq  uint64
 	nextSeg  uint32
-	segments []segmentMeta // ascending id; the last one is the active segment
+	segments []segmentMeta // ascending id
 	shards   []shardMeta
 }
 
 func (m *meta) encode() []byte {
-	buf := make([]byte, 0, len(metaMagic)+len(m.segments)*segmentMetaLen+len(m.shards)*segmentMetaLen)
+	buf := make([]byte, 0, len(metaMagic)+len(m.segments)*segmentMetaLen)
 
 	buf = append(buf, metaMagic...)
 	buf = binary.LittleEndian.AppendUint32(buf, metaVersion)
 	buf = binary.LittleEndian.AppendUint64(buf, m.seed)
+	buf = binary.LittleEndian.AppendUint64(buf, m.seq)
+	buf = binary.LittleEndian.AppendUint64(buf, m.moveSeq)
 	buf = binary.LittleEndian.AppendUint32(buf, m.nextSeg)
 	buf = binary.LittleEndian.AppendUint32(buf, uint32(len(m.segments))) //nolint:gosec // Segment ids are uint32.
 
 	for _, s := range m.segments {
+		kind := uint32(0)
+		if s.compaction {
+			kind = 1
+		}
+
 		buf = binary.LittleEndian.AppendUint32(buf, s.id)
+		buf = binary.LittleEndian.AppendUint32(buf, kind)
 		buf = binary.LittleEndian.AppendUint64(buf, uint64(s.size)) //nolint:gosec // Sizes are non-negative.
 		buf = binary.LittleEndian.AppendUint64(buf, uint64(s.dead)) //nolint:gosec // Sizes are non-negative.
 	}
@@ -72,11 +84,15 @@ func (m *meta) encode() []byte {
 
 	for _, sh := range m.shards {
 		buf = binary.LittleEndian.AppendUint64(buf, sh.count)
-		buf = binary.LittleEndian.AppendUint32(buf, sh.numPages)
 		buf = binary.LittleEndian.AppendUint32(buf, uint32(sh.depth))
+		buf = binary.LittleEndian.AppendUint32(buf, uint32(len(sh.pageTable))) //nolint:gosec // Page counts fit.
 
 		for _, id := range sh.dir {
 			buf = binary.LittleEndian.AppendUint32(buf, id)
+		}
+
+		for _, slot := range sh.pageTable {
+			buf = binary.LittleEndian.AppendUint32(buf, slot)
 		}
 	}
 
@@ -126,18 +142,19 @@ func decodeMeta(buf []byte) (*meta, error) {
 		return nil, fmt.Errorf("%w: unsupported format version %d", ErrCorrupt, version)
 	}
 
-	saved := &meta{seed: reader.u64(), nextSeg: reader.u32()}
+	saved := &meta{seed: reader.u64(), seq: reader.u64(), moveSeq: reader.u64(), nextSeg: reader.u32()}
 
 	nsegs := reader.u32()
-	if nsegs == 0 || int(nsegs) > len(reader.buf)/segmentMetaLen {
+	if int(nsegs) > len(reader.buf)/segmentMetaLen {
 		return nil, fmt.Errorf("%w: bad segment count", ErrCorrupt)
 	}
 
 	for range nsegs {
 		saved.segments = append(saved.segments, segmentMeta{
-			id:   reader.u32(),
-			size: int64(reader.u64()), //nolint:gosec // Written from non-negative int64.
-			dead: int64(reader.u64()), //nolint:gosec // Written from non-negative int64.
+			id:         reader.u32(),
+			compaction: reader.u32() == 1,
+			size:       int64(reader.u64()), //nolint:gosec // Written from non-negative int64.
+			dead:       int64(reader.u64()), //nolint:gosec // Written from non-negative int64.
 		})
 	}
 
@@ -163,11 +180,13 @@ func decodeMeta(buf []byte) (*meta, error) {
 }
 
 func decodeShardMeta(reader *metaReader) (shardMeta, error) {
-	state := shardMeta{count: reader.u64(), numPages: reader.u32()}
+	state := shardMeta{count: reader.u64()}
 
 	depth := reader.u32()
-	if depth > maxDepth || u32Size<<depth > len(reader.buf) {
-		return shardMeta{}, fmt.Errorf("%w: bad index depth", ErrCorrupt)
+	numPages := reader.u32()
+
+	if depth > maxDepth || u32Size<<depth > len(reader.buf) || int(numPages) > len(reader.buf)/u32Size {
+		return shardMeta{}, fmt.Errorf("%w: bad index header", ErrCorrupt)
 	}
 
 	state.depth = uint8(depth)
@@ -175,9 +194,14 @@ func decodeShardMeta(reader *metaReader) (shardMeta, error) {
 
 	for i := range state.dir {
 		state.dir[i] = reader.u32()
-		if state.dir[i] >= state.numPages {
+		if state.dir[i] >= numPages {
 			return shardMeta{}, fmt.Errorf("%w: directory points past the index", ErrCorrupt)
 		}
+	}
+
+	state.pageTable = make([]uint32, numPages)
+	for i := range state.pageTable {
+		state.pageTable[i] = reader.u32()
 	}
 
 	return state, nil
@@ -230,16 +254,6 @@ func writeMeta(dir string, m *meta) error {
 	return nil
 }
 
-// removeMeta deletes the meta file, marking the directory as in use.
-func removeMeta(dir string) error {
-	err := os.Remove(filepath.Join(dir, metaFile))
-	if err != nil {
-		return fmt.Errorf("diskmap: removing meta: %w", err)
-	}
-
-	return syncDir(dir)
-}
-
 // syncDir makes a rename or removal in dir durable. Windows cannot sync a
 // directory and does not need to.
 func syncDir(dir string) error {
@@ -271,7 +285,8 @@ func dataFiles(dir string) ([]string, error) {
 
 	for _, e := range entries {
 		name := e.Name()
-		if name == metaFile || name == metaFile+".tmp" || isNumbered(name, indexSuffix) || isNumbered(name, segmentSuffix) {
+		if name == metaFile || name == metaFile+".tmp" || isNumbered(name, indexSuffix) ||
+			isNumbered(name, segmentSuffix) || isNumbered(name, compactionSuffix) {
 			files = append(files, name)
 		}
 	}

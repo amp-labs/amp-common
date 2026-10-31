@@ -10,11 +10,16 @@ import (
 //
 // Values live in append-only segment files. Each record is:
 //
-//	[crc32c uint32][key length uint32][value length uint32][key][value]
+//	[crc32c uint32][key length uint32][value length and flags uint32]
+//	[sequence uint64][key][value][move trailer, 16 bytes, moves only]
 //
-// The checksum covers everything after itself. Records never move inside a
-// segment; compaction copies live records to the active segment and deletes
-// the old file.
+// The checksum covers everything after itself. The top two bits of the value
+// length mark tombstones (written by Remove) and moves (written by
+// compaction, which copies a live record and notes where it came from). Puts
+// and tombstones are numbered by one counter, so replaying them in order
+// rebuilds the map exactly; moves have their own counter and record the put
+// sequence they followed. Records never change once written; compaction
+// copies live ones elsewhere and deletes the old file.
 //
 // Each shard's index is an extendible hash table stored in a file of
 // fixed-size pages. A page is one bucket:
@@ -43,13 +48,18 @@ const (
 	hashBits = 64
 	tagShift = 8
 
-	recordHeaderSize = 12
+	recordHeaderSize = 20
+	moveTrailerSize  = 16
+
+	flagTombstone = 1 << 31
+	flagMove      = 1 << 30
+	lengthMask    = flagMove - 1
 
 	// MaxKeySize is the largest key the map accepts, in bytes.
 	MaxKeySize = 1<<16 - 1
 
 	// MaxValueSize is the largest value the map accepts, in bytes.
-	MaxValueSize = 1 << 30
+	MaxValueSize = 1 << 30 - 1
 )
 
 var castagnoli = crc32.MakeTable(crc32.Castagnoli)
@@ -61,17 +71,39 @@ type loc struct {
 	size uint32
 }
 
+// recordKind tells puts, tombstones and moves apart.
+type recordKind int
+
+const (
+	kindPut recordKind = iota
+	kindTombstone
+	kindMove
+)
+
+// moveInfo is the trailer of a move record: the put sequence the move
+// followed and the location the record was copied from.
+type moveInfo struct {
+	at   uint64
+	from loc
+}
+
 func recordSize(keyLen, valueLen int) int {
 	return recordHeaderSize + keyLen + valueLen
 }
 
-// appendRecord encodes a record onto dst.
-func appendRecord(dst []byte, key string, value []byte) []byte {
+// appendRecord encodes a put (or, with tombstone set, a tombstone) onto dst.
+func appendRecord(dst []byte, seq uint64, key string, value []byte, tombstone bool) []byte {
 	start := len(dst)
 
+	lengthAndFlags := uint32(len(value)) //nolint:gosec // Bounded by MaxValueSize.
+	if tombstone {
+		lengthAndFlags |= flagTombstone
+	}
+
 	dst = binary.LittleEndian.AppendUint32(dst, 0)
-	dst = binary.LittleEndian.AppendUint32(dst, uint32(len(key)))   //nolint:gosec // Bounded by MaxKeySize.
-	dst = binary.LittleEndian.AppendUint32(dst, uint32(len(value))) //nolint:gosec // Bounded by MaxValueSize.
+	dst = binary.LittleEndian.AppendUint32(dst, uint32(len(key))) //nolint:gosec // Bounded by MaxKeySize.
+	dst = binary.LittleEndian.AppendUint32(dst, lengthAndFlags)
+	dst = binary.LittleEndian.AppendUint64(dst, seq)
 	dst = append(dst, key...)
 	dst = append(dst, value...)
 
@@ -80,9 +112,57 @@ func appendRecord(dst []byte, key string, value []byte) []byte {
 	return dst
 }
 
+// appendMove encodes a copy of the live record rec, found at from, as a move
+// record onto dst.
+func appendMove(dst []byte, rec []byte, seq uint64, info moveInfo) []byte {
+	start := len(dst)
+	keyLen, valueLen := recordLengths(rec)
+	body := rec[recordHeaderSize : recordHeaderSize+keyLen+valueLen]
+
+	dst = binary.LittleEndian.AppendUint32(dst, 0)
+	dst = binary.LittleEndian.AppendUint32(dst, uint32(keyLen))             //nolint:gosec // Bounded by MaxKeySize.
+	dst = binary.LittleEndian.AppendUint32(dst, uint32(valueLen)|flagMove) //nolint:gosec // Bounded by MaxValueSize.
+	dst = binary.LittleEndian.AppendUint64(dst, seq)
+	dst = append(dst, body...)
+	dst = binary.LittleEndian.AppendUint64(dst, info.at)
+	dst = binary.LittleEndian.AppendUint32(dst, info.from.seg)
+	dst = binary.LittleEndian.AppendUint32(dst, info.from.off)
+
+	binary.LittleEndian.PutUint32(dst[start:], crc32.Checksum(dst[start+4:], castagnoli))
+
+	return dst
+}
+
 // recordLengths reads the key and value lengths from a record header.
 func recordLengths(rec []byte) (keyLen, valueLen int) {
-	return int(binary.LittleEndian.Uint32(rec[4:])), int(binary.LittleEndian.Uint32(rec[8:]))
+	return int(binary.LittleEndian.Uint32(rec[4:])), int(binary.LittleEndian.Uint32(rec[8:]) & lengthMask)
+}
+
+func recordKindOf(rec []byte) recordKind {
+	switch flags := binary.LittleEndian.Uint32(rec[8:]); {
+	case flags&flagTombstone != 0:
+		return kindTombstone
+	case flags&flagMove != 0:
+		return kindMove
+	default:
+		return kindPut
+	}
+}
+
+func recordSeq(rec []byte) uint64 {
+	return binary.LittleEndian.Uint64(rec[12:])
+}
+
+// fullRecordSize returns the size of the record whose header starts rec.
+func fullRecordSize(rec []byte) int {
+	keyLen, valueLen := recordLengths(rec)
+
+	size := recordSize(keyLen, valueLen)
+	if recordKindOf(rec) == kindMove {
+		size += moveTrailerSize
+	}
+
+	return size
 }
 
 // recordKey returns the key of a record whose header is complete, or nil if
@@ -96,15 +176,30 @@ func recordKey(rec []byte) []byte {
 	return rec[recordHeaderSize : recordHeaderSize+keyLen]
 }
 
+// recordMove reads the trailer of a complete move record.
+func recordMove(rec []byte) moveInfo {
+	trailer := rec[len(rec)-moveTrailerSize:]
+
+	return moveInfo{
+		at: binary.LittleEndian.Uint64(trailer),
+		from: loc{
+			seg: binary.LittleEndian.Uint32(trailer[8:]),
+			off: binary.LittleEndian.Uint32(trailer[12:]),
+		},
+	}
+}
+
+// validRecord reports whether rec holds exactly one complete record with a
+// correct checksum.
+func validRecord(rec []byte) bool {
+	return len(rec) >= recordHeaderSize && fullRecordSize(rec) == len(rec) &&
+		crc32.Checksum(rec[4:], castagnoli) == binary.LittleEndian.Uint32(rec)
+}
+
 // parseRecord splits a complete record into key and value, verifying its
 // length and, when verify is set, its checksum.
 func parseRecord(rec []byte, verify bool) (key, value []byte, err error) {
-	if len(rec) < recordHeaderSize {
-		return nil, nil, ErrCorrupt
-	}
-
-	keyLen, valueLen := recordLengths(rec)
-	if recordSize(keyLen, valueLen) != len(rec) {
+	if len(rec) < recordHeaderSize || fullRecordSize(rec) != len(rec) {
 		return nil, nil, ErrCorrupt
 	}
 
@@ -112,9 +207,10 @@ func parseRecord(rec []byte, verify bool) (key, value []byte, err error) {
 		return nil, nil, ErrCorrupt
 	}
 
+	keyLen, valueLen := recordLengths(rec)
 	key = rec[recordHeaderSize : recordHeaderSize+keyLen]
 
-	return key, rec[recordHeaderSize+keyLen:], nil
+	return key, rec[recordHeaderSize+keyLen : recordHeaderSize+keyLen+valueLen], nil
 }
 
 func pageCount(p []byte) int {

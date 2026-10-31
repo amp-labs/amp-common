@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
@@ -163,7 +164,11 @@ func TestRandomOperationsMatchGoMap(t *testing.T) {
 				cacheHits += stats.ValueCacheHits
 				pageMisses += stats.PageMisses
 
-				require.NoError(t, dmap.Close())
+				if round%2 == 0 {
+					require.NoError(t, dmap.Close())
+				} else {
+					dmap.crash()
+				}
 
 				dmap = openTest(t, dir, opts...)
 				checkModel(t, dmap, model)
@@ -298,7 +303,7 @@ func TestOverwritesKeepDiskUsageBounded(t *testing.T) {
 	assert.Equal(t, keys, stats.Entries)
 }
 
-func TestReopenRequiresCleanClose(t *testing.T) {
+func TestReopenAndLocking(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -307,10 +312,10 @@ func TestReopenRequiresCleanClose(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, dmap.Add("k", []byte("v")))
 
-	// A second Open while the first is still open sees no meta file, the same
-	// as after a crash.
-	_, err = Open(dir)
-	require.ErrorIs(t, err, ErrNotCleanlyClosed)
+	if runtime.GOOS != "windows" {
+		_, err = Open(dir)
+		require.ErrorIs(t, err, ErrLocked)
+	}
 
 	require.NoError(t, dmap.Close())
 	require.NoError(t, dmap.Close(), "closing twice is a no-op")
@@ -319,17 +324,19 @@ func TestReopenRequiresCleanClose(t *testing.T) {
 	require.ErrorIs(t, err, ErrClosed)
 	require.ErrorIs(t, dmap.Add("k", nil), ErrClosed)
 	require.ErrorIs(t, dmap.Clear(), ErrClosed)
+	require.ErrorIs(t, dmap.Sync(), ErrClosed)
 
 	// The shard count is fixed when the map is created.
-	dmap = openTest(t, dir, WithShards(64))
+	dmap, err = Open(dir, WithShards(64))
+	require.NoError(t, err)
 	require.Len(t, dmap.shards, 4)
 
 	value, found, err := dmap.Get("k")
 	require.NoError(t, err)
 	require.True(t, found)
 	require.Equal(t, "v", string(value))
+	require.NoError(t, dmap.Close())
 
-	// Discarding starts over even though dmap never closed.
 	other := openTest(t, dir, WithDiscardExisting())
 	require.Zero(t, other.Size())
 }
@@ -360,7 +367,7 @@ func TestCorruptRecordIsReported(t *testing.T) {
 	require.NoError(t, dmap.Add("k", []byte("value")))
 	require.NoError(t, dmap.Close())
 
-	path := segmentPath(dir, 0)
+	path := segmentPath(dir, 0, false)
 	data, err := os.ReadFile(path) //nolint:gosec // Path inside the test's temp dir.
 	require.NoError(t, err)
 

@@ -64,9 +64,13 @@ func (ix *index) insert(hash uint64, addr loc) error {
 
 		n := pageCount(page)
 		if n < slotsPerPage {
+			err = ix.pc.modify(frame)
+			if err != nil {
+				return err
+			}
+
 			setSlot(page, n, hash, addr)
 			setPageCount(page, n+1)
-			ix.pc.markDirty(frame)
 
 			return nil
 		}
@@ -95,6 +99,11 @@ func (ix *index) split(frame int, hash uint64) error {
 		}
 
 		ix.grow()
+	}
+
+	err := ix.pc.modify(frame)
+	if err != nil {
+		return err
 	}
 
 	ix.pc.pin(frame)
@@ -128,7 +137,6 @@ func (ix *index) split(frame int, hash uint64) error {
 	setPageCount(sibling, moved)
 	setPageDepth(page, depth+1)
 	setPageDepth(sibling, depth+1)
-	ix.pc.markDirty(frame)
 
 	// The page owns a contiguous run of 2^(global-local) directory entries;
 	// the upper half of that run now belongs to the sibling.

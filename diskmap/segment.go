@@ -122,7 +122,7 @@ func (s *segment) release() {
 	_ = s.file.Close()
 
 	if s.doomed.Load() {
-		_ = os.Remove(s.path)
+		_ = os.Remove(s.path) //nolint:gosec // Path built from the map's directory.
 	}
 }
 

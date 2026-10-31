@@ -335,6 +335,8 @@ func TestClearSurvivesCrash(t *testing.T) {
 // writes until it is killed, printing the number of each acknowledged
 // operation.
 func TestCrashChild(t *testing.T) {
+	t.Parallel()
+
 	dir := os.Getenv("DISKMAP_CRASH_DIR")
 	if dir == "" {
 		t.Skip("run by TestKilledProcessKeepsWrites")
@@ -401,7 +403,8 @@ func TestKilledProcessKeepsWrites(t *testing.T) {
 func runAndKill(t *testing.T, dir string, start, target int) int {
 	t.Helper()
 
-	cmd := exec.Command(os.Args[0], "-test.run=^TestCrashChild$") //nolint:gosec // Re-runs this test binary.
+	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestCrashChild$") //nolint:gosec,lll // Re-runs this test binary.
+
 	cmd.Env = append(os.Environ(), "DISKMAP_CRASH_DIR="+dir, "DISKMAP_CRASH_START="+strconv.Itoa(start))
 
 	stdout, err := cmd.StdoutPipe()

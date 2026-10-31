@@ -129,7 +129,7 @@ func (m *Map) openSegments(saved *meta) (puts, moves *stream, garbage []string, 
 			continue
 		}
 
-		sm, isListed := listed[segID]
+		segMeta, isListed := listed[segID]
 		if !isListed && segID < saved.nextSeg {
 			garbage = append(garbage, e.Name())
 
@@ -146,11 +146,12 @@ func (m *Map) openSegments(saved *meta) (puts, moves *stream, garbage []string, 
 		start := int64(0)
 
 		if isListed {
-			if seg.size < sm.size {
+			if seg.size < segMeta.size {
 				return nil, nil, nil, fmt.Errorf("%w: segment %d is shorter than its checkpoint", ErrCorrupt, segID)
 			}
 
-			seg.dead, start = sm.dead, sm.size
+			seg.dead, start = segMeta.dead, segMeta.size
+
 			delete(listed, segID)
 		}
 
@@ -237,6 +238,7 @@ func (m *Map) replay(saved *meta, puts, moves *stream) error {
 		}
 
 		expected++
+
 		puts.advance(vlog)
 	}
 

@@ -87,8 +87,8 @@ type compactor struct {
 // move is a live record copied into a compaction batch.
 type move struct {
 	hash uint64
-	from loc    // where the record is in the victim
-	at   int64  // offset of the record in the batch
+	from loc   // where the record is in the victim
+	at   int64 // offset of the record in the batch
 }
 
 // compactLoop is the compactor goroutine.
@@ -270,8 +270,14 @@ func (m *Map) relocateBatch(victim *segment, gen uint64, comp *compactor) (stop 
 	for i, mv := range comp.moves {
 		start := len(comp.out)
 		rec := comp.batch[mv.at : mv.at+int64(mv.from.size)]
-		comp.out = appendMove(comp.out, rec, first+uint64(i), moveInfo{at: at, from: mv.from}) //nolint:gosec // Small.
-		copies[i] = loc{seg: out.id, off: uint32(base) + uint32(start), size: uint32(len(comp.out) - start)} //nolint:gosec,lll // Below 4 GiB.
+		seq := first + uint64(i) //nolint:gosec // Non-negative.
+
+		comp.out = appendMove(comp.out, rec, seq, moveInfo{at: at, from: mv.from})
+		copies[i] = loc{
+			seg:  out.id,
+			off:  uint32(base) + uint32(start),  //nolint:gosec // Segments stay below 4 GiB.
+			size: uint32(len(comp.out) - start), //nolint:gosec // Records fit in uint32.
+		}
 	}
 
 	_, err = out.file.WriteAt(comp.out, base)

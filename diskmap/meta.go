@@ -316,7 +316,7 @@ func removeDataFiles(dir string) error {
 	}
 
 	for _, name := range files {
-		err := os.Remove(filepath.Join(dir, name))
+		err := os.Remove(filepath.Join(dir, name)) //nolint:gosec // A map file in the caller's directory.
 		if err != nil {
 			return fmt.Errorf("diskmap: removing %s: %w", name, err)
 		}

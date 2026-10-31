@@ -91,7 +91,7 @@ type Map struct {
 	closeMu      sync.Mutex
 	checkpointMu sync.Mutex
 	wg           sync.WaitGroup // flusher, compactor and checkpointer
-	writers sync.WaitGroup // index page writers, one per shard
+	writers      sync.WaitGroup // index page writers, one per shard
 }
 
 // Stats describes a map's size and cache behavior.
@@ -148,7 +148,7 @@ func Open(dir string, opts ...Option) (*Map, error) {
 		cfg.hash = xxh3.HashStringSeed
 	}
 
-	err = os.MkdirAll(dir, dirPerm)
+	err = os.MkdirAll(dir, dirPerm) //nolint:gosec // The caller chooses the directory.
 	if err != nil {
 		return nil, fmt.Errorf("diskmap: creating directory: %w", err)
 	}
@@ -210,7 +210,7 @@ func Open(dir string, opts ...Option) (*Map, error) {
 	}
 
 	for _, name := range garbage {
-		_ = os.Remove(filepath.Join(dir, name))
+		_ = os.Remove(filepath.Join(dir, name)) //nolint:gosec // A map file in the caller's directory.
 	}
 
 	return dmap, nil
@@ -274,6 +274,117 @@ func (m *Map) Add(key string, value []byte) error {
 // Remove deletes key from the map. Removing a missing key is not an error.
 func (m *Map) Remove(key string) error {
 	return m.write(key, nil, true)
+}
+
+// Size returns the number of entries in the map.
+func (m *Map) Size() int {
+	total := 0
+
+	for _, shd := range m.shards {
+		shd.mu.Lock()
+		total += shd.count
+		shd.mu.Unlock()
+	}
+
+	return total
+}
+
+// Clear removes every entry and deletes all data files.
+func (m *Map) Clear() error {
+	if m.closed.Load() {
+		return ErrClosed
+	}
+
+	vlog := m.log
+
+	vlog.writeMu.Lock()
+	defer vlog.writeMu.Unlock()
+
+	old, err := m.clearLocked()
+	if err != nil {
+		return err
+	}
+
+	// The old files stay until the empty map's checkpoint is durable, since
+	// until then the previous checkpoint refers to them.
+	err = m.checkpoint(true)
+	if err != nil {
+		return err
+	}
+
+	for _, seg := range old {
+		seg.drop()
+	}
+
+	return nil
+}
+
+// Close takes a final checkpoint, syncs everything to disk and releases the
+// map's files. Closing a closed map is a no-op.
+func (m *Map) Close() error {
+	m.closeMu.Lock()
+	defer m.closeMu.Unlock()
+
+	if m.closed.Swap(true) {
+		return nil
+	}
+
+	vlog := m.log
+
+	vlog.mu.Lock()
+	vlog.closed = true
+	err := vlog.drain()
+	vlog.stopping = true
+	vlog.writeCond.Broadcast()
+	vlog.compactCond.Broadcast()
+	vlog.compactDone.Broadcast()
+	vlog.checkpointCond.Broadcast()
+	vlog.mu.Unlock()
+
+	m.wg.Wait()
+
+	if err == nil {
+		err = m.checkpoint(false)
+	}
+
+	m.shutdown()
+
+	return err
+}
+
+// Stats returns a snapshot of the map's statistics.
+func (m *Map) Stats() Stats {
+	var stats Stats
+
+	for _, shd := range m.shards {
+		shd.mu.Lock()
+		stats.Entries += shd.count
+		stats.IndexPages += int(shd.ix.numPages)
+		stats.CachedPages += shd.pc.frames()
+		stats.PageHits += shd.pc.hits
+		stats.PageMisses += shd.pc.misses
+		stats.PageWrites += shd.pc.writes
+
+		if shd.vc != nil {
+			stats.ValueCacheHits += shd.vc.hits
+			stats.ValueCacheMisses += shd.vc.misses
+		}
+
+		shd.mu.Unlock()
+	}
+
+	vlog := m.log
+
+	vlog.mu.Lock()
+	stats.Segments = len(vlog.table.Load().all())
+	stats.SegmentBytes = vlog.total
+	stats.DeadBytes = vlog.dead
+	stats.CompactedBytes = vlog.compacted
+	stats.WriteStalls = vlog.stalls
+	stats.Checkpoints = vlog.checkpoints
+	vlog.mu.Unlock()
+
+	return stats
 }
 
 // write appends a put or tombstone and points the index at it, both under
@@ -350,49 +461,6 @@ func (m *Map) writeLocked(
 	}
 }
 
-// Size returns the number of entries in the map.
-func (m *Map) Size() int {
-	total := 0
-
-	for _, shd := range m.shards {
-		shd.mu.Lock()
-		total += shd.count
-		shd.mu.Unlock()
-	}
-
-	return total
-}
-
-// Clear removes every entry and deletes all data files.
-func (m *Map) Clear() error {
-	if m.closed.Load() {
-		return ErrClosed
-	}
-
-	vlog := m.log
-
-	vlog.writeMu.Lock()
-	defer vlog.writeMu.Unlock()
-
-	old, err := m.clearLocked()
-	if err != nil {
-		return err
-	}
-
-	// The old files stay until the empty map's checkpoint is durable, since
-	// until then the previous checkpoint refers to them.
-	err = m.checkpoint(true)
-	if err != nil {
-		return err
-	}
-
-	for _, seg := range old {
-		seg.drop()
-	}
-
-	return nil
-}
-
 // clearLocked empties the index and the log and returns the segments to
 // delete. The caller holds writeMu for writing.
 func (m *Map) clearLocked() ([]*segment, error) {
@@ -442,74 +510,6 @@ func (m *Map) clearLocked() ([]*segment, error) {
 	}
 
 	return old, vlog.rotate()
-}
-
-// Close takes a final checkpoint, syncs everything to disk and releases the
-// map's files. Closing a closed map is a no-op.
-func (m *Map) Close() error {
-	m.closeMu.Lock()
-	defer m.closeMu.Unlock()
-
-	if m.closed.Swap(true) {
-		return nil
-	}
-
-	vlog := m.log
-
-	vlog.mu.Lock()
-	vlog.closed = true
-	err := vlog.drain()
-	vlog.stopping = true
-	vlog.writeCond.Broadcast()
-	vlog.compactCond.Broadcast()
-	vlog.compactDone.Broadcast()
-	vlog.checkpointCond.Broadcast()
-	vlog.mu.Unlock()
-
-	m.wg.Wait()
-
-	if err == nil {
-		err = m.checkpoint(false)
-	}
-
-	m.shutdown()
-
-	return err
-}
-
-// Stats returns a snapshot of the map's statistics.
-func (m *Map) Stats() Stats {
-	var stats Stats
-
-	for _, shd := range m.shards {
-		shd.mu.Lock()
-		stats.Entries += shd.count
-		stats.IndexPages += int(shd.ix.numPages)
-		stats.CachedPages += shd.pc.frames()
-		stats.PageHits += shd.pc.hits
-		stats.PageMisses += shd.pc.misses
-		stats.PageWrites += shd.pc.writes
-
-		if shd.vc != nil {
-			stats.ValueCacheHits += shd.vc.hits
-			stats.ValueCacheMisses += shd.vc.misses
-		}
-
-		shd.mu.Unlock()
-	}
-
-	vlog := m.log
-
-	vlog.mu.Lock()
-	stats.Segments = len(vlog.table.Load().all())
-	stats.SegmentBytes = vlog.total
-	stats.DeadBytes = vlog.dead
-	stats.CompactedBytes = vlog.compacted
-	stats.WriteStalls = vlog.stalls
-	stats.Checkpoints = vlog.checkpoints
-	vlog.mu.Unlock()
-
-	return stats
 }
 
 // prepareDir creates dir if needed and loads the last checkpoint of the map

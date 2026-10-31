@@ -176,6 +176,14 @@ func (m *Map) dropRetired(gen uint64) {
 	}
 }
 
+// checkpointUnlocked takes a checkpoint with the log lock released.
+func (m *Map) checkpointUnlocked() error {
+	m.log.mu.Unlock()
+	defer m.log.mu.Lock()
+
+	return m.checkpoint(false)
+}
+
 // checkpointLoop takes a checkpoint whenever enough has been written since
 // the last one.
 func (m *Map) checkpointLoop() {
@@ -195,10 +203,7 @@ func (m *Map) checkpointLoop() {
 			return
 		}
 
-		vlog.mu.Unlock()
-		err := m.checkpoint(false)
-		vlog.mu.Lock()
-
+		err := m.checkpointUnlocked()
 		if err != nil && !errors.Is(err, ErrClosed) {
 			_ = vlog.fail(fmt.Errorf("diskmap: checkpoint: %w", err))
 		}

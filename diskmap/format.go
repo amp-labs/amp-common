@@ -59,7 +59,7 @@ const (
 	MaxKeySize = 1<<16 - 1
 
 	// MaxValueSize is the largest value the map accepts, in bytes.
-	MaxValueSize = 1 << 30 - 1
+	MaxValueSize = 1<<30 - 1
 )
 
 var castagnoli = crc32.MakeTable(crc32.Castagnoli)
@@ -120,7 +120,7 @@ func appendMove(dst []byte, rec []byte, seq uint64, info moveInfo) []byte {
 	body := rec[recordHeaderSize : recordHeaderSize+keyLen+valueLen]
 
 	dst = binary.LittleEndian.AppendUint32(dst, 0)
-	dst = binary.LittleEndian.AppendUint32(dst, uint32(keyLen))             //nolint:gosec // Bounded by MaxKeySize.
+	dst = binary.LittleEndian.AppendUint32(dst, uint32(keyLen))            //nolint:gosec // Bounded by MaxKeySize.
 	dst = binary.LittleEndian.AppendUint32(dst, uint32(valueLen)|flagMove) //nolint:gosec // Bounded by MaxValueSize.
 	dst = binary.LittleEndian.AppendUint64(dst, seq)
 	dst = append(dst, body...)

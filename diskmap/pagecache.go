@@ -109,16 +109,18 @@ type writeBack struct {
 // bitset is a growable set of slot numbers.
 type bitset []uint64
 
+const wordBits = 64
+
 func (b *bitset) set(i uint32) {
-	for int(i/64) >= len(*b) {
+	for int(i/wordBits) >= len(*b) {
 		*b = append(*b, 0)
 	}
 
-	(*b)[i/64] |= 1 << (i % 64)
+	(*b)[i/wordBits] |= 1 << (i % wordBits)
 }
 
-func (b bitset) has(i uint32) bool {
-	return int(i/64) < len(b) && b[i/64]&(1<<(i%64)) != 0
+func (b *bitset) has(i uint32) bool {
+	return int(i/wordBits) < len(*b) && (*b)[i/wordBits]&(1<<(i%wordBits)) != 0
 }
 
 // newPageCache creates a cache with a budget of the given number of pages,
@@ -524,23 +526,23 @@ func (pc *pageCache) beginSnapshot() {
 	pc.snapPending = 0
 
 	for pageID := range pc.pageTable {
-		id := uint32(pageID) //nolint:gosec // Page counts fit in uint32.
+		logical := uint32(pageID) //nolint:gosec // Page counts fit in uint32.
 
-		if frame := pc.frameOf[id]; frame != noFrame && pc.flags[frame]&flagDirty != 0 {
+		if frame := pc.frameOf[logical]; frame != noFrame && pc.flags[frame]&flagDirty != 0 {
 			pc.flags[frame] |= flagSnap
 			pc.snapPending++
 
 			continue
 		}
 
-		if wb := pc.wb[id]; wb != nil {
+		if wb := pc.wb[logical]; wb != nil {
 			wb.snap = true
 			pc.snapPending++
 
 			continue
 		}
 
-		pc.snapSlots.set(pc.snapTable[id])
+		pc.snapSlots.set(pc.snapTable[logical])
 	}
 }
 
@@ -594,7 +596,7 @@ func (pc *pageCache) commitSnapshot() {
 			bit := bits.TrailingZeros64(gone)
 			gone &= gone - 1
 
-			pc.freeSlots = append(pc.freeSlots, uint32(word*64+bit)) //nolint:gosec // Slot counts fit in uint32.
+			pc.freeSlots = append(pc.freeSlots, uint32(word*wordBits+bit)) //nolint:gosec // Slot counts fit in uint32.
 		}
 	}
 
@@ -619,7 +621,7 @@ func (pc *pageCache) abortSnapshot() {
 			bit := bits.TrailingZeros64(set)
 			set &= set - 1
 
-			pc.protected.set(uint32(word*64 + bit)) //nolint:gosec // Slot counts fit in uint32.
+			pc.protected.set(uint32(word*wordBits + bit)) //nolint:gosec // Slot counts fit in uint32.
 		}
 	}
 

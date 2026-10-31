@@ -355,6 +355,8 @@ func (lg *valueLog) waitDurable(seq uint64) error {
 		return nil
 	case durableSynced:
 		return lg.waitSynced(seq)
+	case durableWritten:
+		fallthrough
 	default:
 		lg.mu.Lock()
 		defer lg.mu.Unlock()
@@ -582,6 +584,7 @@ func (lg *valueLog) reserveMoves(size, count int, gen uint64) (out *segment, bas
 
 	first = lg.nextMoveSeq
 	lg.nextMoveSeq += uint64(count) //nolint:gosec // Non-negative.
+
 	out.acquire()
 
 	return out, base, first, lg.nextSeq, true, nil

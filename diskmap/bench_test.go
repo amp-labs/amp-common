@@ -62,6 +62,28 @@ func BenchmarkAdd(b *testing.B) {
 	}
 }
 
+func BenchmarkAddBuffered(b *testing.B) {
+	dmap, err := Open(b.TempDir(), WithBufferedWrites())
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.Cleanup(func() { _ = dmap.Close() })
+
+	value := make([]byte, benchValueSize)
+	b.SetBytes(benchValueSize)
+
+	i := 0
+	for b.Loop() {
+		err = dmap.Add(benchKey(i), value)
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		i++
+	}
+}
+
 func BenchmarkOverwrite(b *testing.B) {
 	dmap := loadedMap(b)
 	value := make([]byte, benchValueSize)

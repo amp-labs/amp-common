@@ -1,7 +1,8 @@
 # Package: diskmap
 
 Disk-backed `map[string][]byte` for data that has outgrown memory, with a
-configurable memory ceiling and predictable per-operation cost.
+configurable memory ceiling, predictable per-operation cost, and crash
+recovery.
 
 ## Usage
 
@@ -13,12 +14,13 @@ m, err := diskmap.Open("/var/lib/myapp/cache",
 if err != nil {
     return err
 }
-defer m.Close() // required: an unclosed map cannot be reopened
+defer m.Close()
 
-err = m.Add("user:42", payload)
+err = m.Add("user:42", payload)       // survives a crash once it returns
 value, found, err := m.Get("user:42")
 buf, found, err = m.AppendValue(buf[:0], "user:42") // reuse a buffer
 err = m.Remove("user:42")
+err = m.Sync()                        // survive a power failure too
 
 err = m.Range(func(key string, value []byte) bool {
     return true // keep going
@@ -27,35 +29,43 @@ err = m.Range(func(key string, value []byte) bool {
 
 ## Common Patterns
 
-- `Open(dir, opts...)` creates the directory, or reopens a map closed with `Close`
+- `Open(dir, opts...)` creates the directory, reopens a closed map, or
+  recovers one whose process crashed
+- Durability: default = each write reaches the OS before returning (crash-safe);
+  `Sync()` fsyncs; `WithSyncWrites()` fsyncs every write (group commit);
+  `WithBufferedWrites()` for bulk loads (fast, may lose the last few ms)
 - `WithDiscardExisting()` for scratch maps: wipe whatever is in the directory
 - `AppendValue` instead of `Get` in hot loops to avoid an allocation per read
 - `WithValueCache` when some keys are read far more than others
-- `Stats()` for cache hit rates, disk usage and dead bytes awaiting compaction
-- `Compact()` to reclaim all dead space now (normally automatic)
+- `Stats()` for cache hit rates, disk usage, checkpoints and write stalls
 
 ## Design
 
-- Values go into append-only segment files; the index is an extendible hash
-  table on disk, split into shards (`WithShards`, default 16), each with its
-  own lock and a fixed-size page cache
-- Every Get reads exactly one index page (usually cached) and one record
-- File I/O happens outside all locks; dirty index pages are written back by a
-  background goroutine per shard; a flusher writes double-buffered segment
-  data; a compactor rewrites live records out of mostly-dead segments
-- Memory held: about the memory limit, plus 8 bytes per index page and the
-  directory (4 bytes per entry), roughly 0.1 bytes per key
+- Values go into append-only segment files; every put and tombstone has a
+  sequence number, so the segments are a replayable log
+- The index is an extendible hash table on disk, split into shards
+  (`WithShards`, default 16), each with its own lock and fixed-size page cache
+- Index pages are copy-on-write through a logical-to-physical page table;
+  checkpoints (every `WithCheckpointInterval` bytes, default 128 MiB) snapshot
+  it after a brief freeze that copies each shard's directory and page table,
+  and recovery replays only the log after the last checkpoint, stopping at
+  the first gap (an exact prefix)
+- File I/O happens outside all locks; writers share write syscalls (and
+  fsyncs) through leader-based group commit
+- Compaction copies live records into its own segments as "move" records and
+  deletes old segments only after the next checkpoint is durable
 
 ## Gotchas
 
-- Not durable: a crash leaves the directory unopenable (`ErrNotCleanlyClosed`);
-  reopen with `WithDiscardExisting()` to start over
-- One `Map` per directory at a time; a second `Open` fails as if crashed
-- Disk use stays near live data / (1 - compaction threshold) plus one segment
+- One `Map` per directory; a second `Open` returns `ErrLocked` (not detected
+  on Windows)
+- Crash-safe writes cost a write syscall each (concurrent writers share it);
+  `WithSyncWrites` costs an fsync per write, which is milliseconds on many disks
+- Disk use stays near live data / (1 - compaction threshold) plus a few segments
 - Range does not see entries added during iteration, and pauses compaction
-- On copy-on-write filesystems (btrfs, ZFS) random index writes can stall for
-  hundreds of milliseconds; disable CoW on the directory (`chattr +C`)
-- Keys up to 64 KiB, values up to 1 GiB
+- On copy-on-write filesystems (btrfs, ZFS) random index writes can stall;
+  disable CoW on the directory (`chattr +C`)
+- Keys up to 64 KiB, values up to 1 GiB - 1
 
 ## Related
 

@@ -474,6 +474,67 @@ func (lg *valueLog) syncWritten() error {
 	return nil
 }
 
+// syncFrozen makes the records a checkpoint covers durable: everything
+// numbered below saved.seq, in the segments it lists. Those segments are no
+// longer written to, so this never delays a writer.
+func (lg *valueLog) syncFrozen(saved *meta) error {
+	lg.mu.Lock()
+
+	if saved.seq > 0 {
+		err := lg.waitWritten(saved.seq - 1)
+		if err != nil {
+			lg.mu.Unlock()
+
+			return err
+		}
+	}
+
+	var segs []*segment
+
+	for _, sm := range saved.segments {
+		if seg := lg.segment(sm.id); seg != nil && seg.synced < seg.written.Load() {
+			seg.acquire()
+			segs = append(segs, seg)
+		}
+	}
+
+	dirDirty := lg.dirDirty
+	lg.dirDirty = false
+	lg.mu.Unlock()
+
+	var err error
+
+	for _, seg := range segs {
+		written := seg.written.Load()
+
+		if err == nil {
+			err = seg.file.Sync()
+		}
+
+		if err == nil {
+			lg.mu.Lock()
+			seg.synced = max(seg.synced, written)
+			lg.mu.Unlock()
+		}
+
+		seg.release()
+	}
+
+	if err == nil && dirDirty {
+		err = syncDir(lg.dir)
+	}
+
+	if err != nil {
+		lg.mu.Lock()
+		lg.dirDirty = lg.dirDirty || dirDirty
+		lg.mu.Unlock()
+
+		return fmt.Errorf("diskmap: syncing: %w", err)
+	}
+
+	return nil
+}
+
 // syncAll makes everything appended so far durable: it writes the queue and
 // fsyncs every segment.
 func (lg *valueLog) syncAll() error {

@@ -105,6 +105,16 @@ func (m *Map) freeze(writeLocked bool) (*meta, uint64, error) {
 		shd.pc.beginSnapshot()
 	}
 
+	// Writers move on to fresh segments, so syncing the frozen ones below
+	// never makes a writer wait for an fsync.
+	if vlog.active.size > 0 {
+		err = vlog.rotate()
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	vlog.compactOut = nil
 	vlog.checkpointGen++
 	vlog.sinceCheckpoint = 0
 
@@ -132,7 +142,7 @@ func (m *Map) writeSnapshot(saved *meta) error {
 		}
 	}
 
-	err := m.log.syncAll()
+	err := m.log.syncFrozen(saved)
 	if err != nil {
 		return err
 	}

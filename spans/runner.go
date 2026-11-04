@@ -9,10 +9,15 @@ import (
 	"github.com/amp-labs/amp-common/assert"
 	"github.com/amp-labs/amp-common/utils"
 	"github.com/amp-labs/amp-common/zero"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
+
+// fallbackTracerName names the tracer spans uses from the global TracerProvider when the context
+// carries a span but no tracer.
+const fallbackTracerName = "github.com/amp-labs/amp-common/spans"
 
 // Option is a function that configures a runner.
 // Options are applied when creating orchestrators via Enter, EnterError, EnterValue, or EnterValueError.
@@ -168,9 +173,19 @@ func invoke[T any](
 ) (T, error) {
 	tracer, found := TracerFromContext(ctx)
 	if !found {
-		spanWithoutTracerCounter.WithLabelValues(name).Inc()
+		if !trace.SpanContextFromContext(ctx).IsValid() {
+			// No tracer and no trace to continue: run without a span (the callback gets the
+			// context's non-recording one) rather than start a trace from nothing.
+			spanWithoutTracerCounter.WithLabelValues(name).Inc()
 
-		return call(ctx, trace.SpanFromContext(ctx))
+			return call(ctx, trace.SpanFromContext(ctx))
+		}
+
+		// Inside a trace whose context carries no tracer (WithTracer is easy to miss: a service
+		// that never calls it had every span here silently skipped, and the callback handed the
+		// caller's span to annotate): continue the trace through the global TracerProvider, as
+		// other instrumentation does.
+		tracer = otel.Tracer(fallbackTracerName)
 	}
 
 	r := newRunner(tracer, name, opts...)

@@ -9,6 +9,10 @@
 //   - StartVal: func(context.Context, trace.Span) T - returns value only
 //   - StartValErr: func(context.Context, trace.Span) (T, error) - returns value and error
 //
+// The tracer is the one WithTracer put in the context. Without one, a call inside a trace (the
+// context carries a span) continues it through the global TracerProvider, and a call outside any
+// trace runs without a span.
+//
 // Usage example:
 //
 //	ctx = spans.WithTracer(ctx, tracer)

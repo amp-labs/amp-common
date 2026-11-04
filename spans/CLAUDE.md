@@ -32,7 +32,9 @@ result, err := spans.StartValErr[int](ctx, "fetch-data",
 
 - All functions receive both context and span
 - Span lifecycle managed automatically
-- Requires tracer set via `WithTracer()`
+- Uses the tracer set via `WithTracer()`; without one, a call inside a trace (the context carries a
+  span) continues it through the global TracerProvider (`otel.Tracer`), and a call outside any trace
+  runs without a span (counted in `amp_spans_without_tracer_total`)
 
 ## Related
 

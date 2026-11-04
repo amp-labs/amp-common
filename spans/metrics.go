@@ -21,7 +21,7 @@ var spanWithoutTracerCounter = promauto.NewCounterVec(
 		Namespace: "amp",
 		Subsystem: "spans",
 		Name:      "without_tracer_total",
-		Help:      "Total number of span executions without a tracer in context",
+		Help:      "Total number of span executions with neither a tracer in context nor a trace to continue",
 	},
 	[]string{"span_name"},
 )

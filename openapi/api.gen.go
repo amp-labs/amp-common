@@ -4363,6 +4363,12 @@ type CreateInstallationParams struct {
 	SkipSampling *bool `form:"skipSampling,omitempty" json:"skipSampling,omitempty"`
 }
 
+// DeleteInstallationParams defines parameters for DeleteInstallation.
+type DeleteInstallationParams struct {
+	// Force When `true`, deletes the installation even if cleanup in the provider fails (for example, because the connection's credentials are no longer valid) or a subscription change is still pending. A forced delete might not clean up the artifacts Ampersand created in the provider. Defaults to `false`.
+	Force *bool `form:"force,omitempty" json:"force,omitempty"`
+}
+
 // UpdateInstallationJSONBody defines parameters for UpdateInstallation.
 type UpdateInstallationJSONBody struct {
 	// Installation The installation fields to update. Only fields whose paths are listed in `updateMask` will be

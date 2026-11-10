@@ -82,7 +82,7 @@ type limiterImpl struct {
 }
 
 // Compile-time check that *limiterImpl implements Limiter.
-var _ = (Limiter)((*limiterImpl)(nil))
+var _ = Limiter((*limiterImpl)(nil))
 
 // Reserve attempts to reserve the specified number of tokens for a rate-limited operation.
 func (l *limiterImpl) Reserve(ctx context.Context, tokens int) (Reservation, error) { //nolint:ireturn

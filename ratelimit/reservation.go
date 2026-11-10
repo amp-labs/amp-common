@@ -152,7 +152,7 @@ type reservationImpl struct {
 }
 
 // Compile-time check that *reservationImpl implements Reservation.
-var _ = (Reservation)((*reservationImpl)(nil))
+var _ = Reservation((*reservationImpl)(nil))
 
 // OK returns whether the reservation is valid and can proceed.
 func (r *reservationImpl) OK() bool {

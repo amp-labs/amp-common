@@ -161,6 +161,7 @@ go test -v -run TestName ./package-name
 - **`collectable`** - Interface combining `Hashable` and `Comparable` for use in Map/Set data structures
 - **`errors`** - Error utilities with collection support
 - **`retry`** - Flexible retry mechanism with exponential backoff, jitter, and retry budgets
+- **`ratelimit`** - Rate limiter contract that enforces no limit itself: `Limiter.Reserve` returns a `Reservation` (`OK`, `Delay`, `Done(Status, ...ThrottleParams)`); `LimiterBuilder`/`ReservationBuilder` assemble them from functions (an empty `LimiterBuilder` allows every call); `WithRateLimiter`/`GetRateLimiter`/`HasRateLimiter` carry a `Limiter` in a context
 - **`validate`** - Validation interfaces (`HasValidate`, `HasValidateWithContext`) with panic recovery and Prometheus metrics
 - **`assert`** - Assertion utilities for testing
 - **`hashing`** - Hashing utilities

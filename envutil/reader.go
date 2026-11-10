@@ -149,6 +149,16 @@ func (e Reader[A]) WithErrorIfMissing(err error) Reader[A] { //nolint:ireturn
 	}
 }
 
+// WithKey returns a new reader with an alternative key set.
+func (e Reader[A]) WithKey(key string) Reader[A] { //nolint:ireturn
+	return Reader[A]{
+		key:     key,
+		present: e.present,
+		err:     e.err,
+		value:   e.value,
+	}
+}
+
 // WithDefault returns a new Reader with v as the value if missing.
 // If the value is present, returns the Reader unchanged.
 func (e Reader[A]) WithDefault(v A) Reader[A] { //nolint:ireturn

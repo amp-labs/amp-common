@@ -99,6 +99,7 @@ func invokeCallback[T any](kind string, callback func(T), value T) {
 //
 // contextcheck: the Background() fallback is only reached when the caller
 // registered the callback without a context, which Promise permits.
+//
 //nolint:contextcheck
 func invokeCallbackContext[T any](ctx context.Context, kind string, callback func(context.Context, T), value T) {
 	if callback == nil {

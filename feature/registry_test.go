@@ -28,11 +28,13 @@ func TestFlagAccessors(t *testing.T) {
 	t.Parallel()
 
 	reg := NewRegistry()
-	flag := reg.Define("accessors", Off().Percent(dimUser, 5), Description("desc"), Owner("team"))
+	flag := reg.Define("accessors", Off().Percent(dimUser, 5),
+		Description("desc"), Owner("team"), Category("billing"))
 
 	assert.Equal(t, Name("accessors"), flag.Name())
 	assert.Equal(t, "desc", flag.Description())
 	assert.Equal(t, "team", flag.Owner())
+	assert.Equal(t, "billing", flag.Category())
 	assert.True(t, flag.Default().Equal(Off().Percent(dimUser, 5)))
 	assert.True(t, flag.Current().Equal(Off().Percent(dimUser, 5)))
 	assert.False(t, flag.Overridden())
@@ -41,6 +43,7 @@ func TestFlagAccessors(t *testing.T) {
 	assert.Equal(t, Name("accessors"), info.Name)
 	assert.Equal(t, "desc", info.Description)
 	assert.Equal(t, "team", info.Owner)
+	assert.Equal(t, "billing", info.Category)
 	assert.False(t, info.Overridden)
 
 	current := flag.Current()

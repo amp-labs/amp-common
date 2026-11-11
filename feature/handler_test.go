@@ -42,18 +42,27 @@ func TestHandlerList(t *testing.T) {
 
 	reg := NewRegistry()
 	reg.Define("b", Off(), Description("bee"))
-	reg.Define("a", On(), Owner("team"))
+	reg.Define("a", On(), Owner("team"), Category("billing"))
 
 	rec := serve(t, Handler(reg), http.MethodGet, "/", "")
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "application/json", rec.Header().Get("Content-Type"))
 
+	var raw []map[string]any
+
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &raw))
+	require.Len(t, raw, 2)
+	assert.Equal(t, "billing", raw[0]["category"])
+	assert.NotContains(t, raw[1], "category", "an empty category is omitted")
+
 	infos := decode[[]Info](t, rec)
 	require.Len(t, infos, 2)
 	assert.Equal(t, Name("a"), infos[0].Name)
 	assert.Equal(t, "team", infos[0].Owner)
+	assert.Equal(t, "billing", infos[0].Category)
 	assert.Equal(t, Name("b"), infos[1].Name)
 	assert.Equal(t, "bee", infos[1].Description)
+	assert.Empty(t, infos[1].Category)
 }
 
 func TestHandlerGet(t *testing.T) {

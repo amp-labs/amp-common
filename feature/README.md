@@ -119,7 +119,8 @@ func checkout(ctx context.Context) {
 ```go
 var NewCheckout = feature.Define("new-checkout", feature.Off(),
     feature.Description("Use the rewritten checkout flow"),
-    feature.Owner("payments"))
+    feature.Owner("payments"),
+    feature.Category("checkout"))
 ```
 
 - The name is the flag's stable identity. It is also part of the hash input
@@ -129,7 +130,9 @@ var NewCheckout = feature.Define("new-checkout", feature.Off(),
 - `Define` panics if the name is empty or already defined, or if the default
   is invalid. All three are programming errors, and panicking at startup is
   the same trade-off `prometheus.MustRegister` makes.
-- `Description` and `Owner` are optional and only appear in listings.
+- `Description`, `Owner`, and `Category` are optional and only appear in
+  listings. `Category` lets a UI show related flags together. It is a label,
+  not a namespace: names must still be unique across the registry.
 
 Flags live in a `Registry`. `feature.Define` uses the package-level default
 registry, which is what most programs want. `feature.NewRegistry()` creates

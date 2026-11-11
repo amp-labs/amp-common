@@ -52,6 +52,9 @@ mux.Handle("/internal/flags/",
 - Builders: `Off()`, `On()`, `.Allow(dim, values...)`,
   `.Deny(dim, values...)`, `.Percent(dim, pct)`, `.PercentWithSalt`,
   `.WithDefault`
+- Definition metadata: `Description`, `Owner`, `Category` (a heading for
+  showing related flags together; a label, not a namespace) appear only in
+  `Info` listings and never affect evaluation
 - Evaluation order: Denied > Allowed > any Percentage (OR) > Default
 - Built-in dimensions: `Host` (hostname), `Stage` (`stage.Current`),
   `Region` (`region.Current`); programs declare the rest as `Dimension` consts

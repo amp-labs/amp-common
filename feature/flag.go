@@ -14,6 +14,7 @@ type Flag struct {
 	name        Name
 	description string
 	owner       string
+	category    string
 	dfl         Rollout
 	registry    *Registry
 	state       atomic.Pointer[compiled]
@@ -27,6 +28,7 @@ type Info struct {
 	Name        Name    `json:"name"`
 	Description string  `json:"description,omitempty"`
 	Owner       string  `json:"owner,omitempty"`
+	Category    string  `json:"category,omitempty"`
 	Default     Rollout `json:"default"`
 	Current     Rollout `json:"current"`
 	Overridden  bool    `json:"overridden"`
@@ -46,6 +48,15 @@ func Owner(text string) FlagOption {
 	}
 }
 
+// Category files the flag under a heading so that listings can show related
+// flags together. It is a label only: it does not scope the name, which must
+// still be unique in the registry, and it plays no part in evaluation.
+func Category(text string) FlagOption {
+	return func(f *Flag) {
+		f.category = text
+	}
+}
+
 // Name returns the flag's name.
 func (f *Flag) Name() Name {
 	return f.name
@@ -59,6 +70,11 @@ func (f *Flag) Description() string {
 // Owner returns the owner attached with the Owner option.
 func (f *Flag) Owner() string {
 	return f.owner
+}
+
+// Category returns the category attached with the Category option.
+func (f *Flag) Category() string {
+	return f.category
 }
 
 // Default returns the rollout defined in code.
@@ -84,6 +100,7 @@ func (f *Flag) Info() Info {
 		Name:        f.name,
 		Description: f.description,
 		Owner:       f.owner,
+		Category:    f.category,
 		Default:     f.dfl.clone(),
 		Current:     state.rollout.clone(),
 		Overridden:  state.overridden,

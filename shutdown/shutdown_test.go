@@ -399,3 +399,46 @@ func (w *logWatcher) Write(p []byte) (int, error) {
 
 	return w.out.Write(p)
 }
+
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
+func TestDrainCompleteCause(t *testing.T) {
+	hooks = nil
+	channel = nil
+
+	ctxs := SetupDrainable()
+	child, cancel := context.WithCancel(ctxs.Lifetime)
+
+	defer cancel()
+
+	Shutdown()
+	waitFor(t, ctxs.Intake.Done(), "intake to cancel")
+
+	ctxs.DrainComplete()
+
+	require.ErrorIs(t, context.Cause(ctxs.Lifetime), context.Canceled)
+	require.ErrorIs(t, context.Cause(child), context.Canceled)
+}
+
+//nolint:paralleltest // Test manipulates global state and cannot run in parallel
+func TestDrainTimeoutCause(t *testing.T) {
+	hooks = nil
+	channel = nil
+
+	t.Setenv(DrainTimeoutEnvVar, "50ms")
+
+	ctxs := SetupDrainable()
+	child, cancel := context.WithCancel(ctxs.Lifetime)
+
+	defer cancel()
+
+	Shutdown()
+	waitFor(t, ctxs.Lifetime.Done(), "the watchdog to end the drain")
+
+	require.ErrorIs(t, context.Cause(ctxs.Lifetime), ErrDrainTimeout)
+	require.ErrorIs(t, context.Cause(child), ErrDrainTimeout)
+	require.ErrorIs(t, child.Err(), context.Canceled)
+
+	// A later DrainComplete from the caller doesn't change the cause.
+	ctxs.DrainComplete()
+	require.ErrorIs(t, context.Cause(ctxs.Lifetime), ErrDrainTimeout)
+}

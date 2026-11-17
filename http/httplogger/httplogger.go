@@ -649,6 +649,7 @@ func LogRequest(
 // LogResponse logs an HTTP response with optional body content.
 // It applies configured redaction to headers and query parameters from the original request URL,
 // and includes optional body content if configured. Nil checks are performed to prevent panics.
+// When ctx carries a Connection (WithConnection), the line has a "connection" object.
 //
 // Parameters:
 //   - ctx: The context for obtaining a logger
@@ -701,12 +702,18 @@ func LogResponse(
 		details[fieldBody] = body
 	}
 
+	if conn := connectionFields(ctx); conn != nil {
+		details[fieldConnection] = conn
+	}
+
 	params.log(ctx, response, details)
 }
 
 // LogError logs an HTTP request error that occurred during RoundTrip.
 // This should be called when http.RoundTripper.RoundTrip returns an error instead of a response.
 // It logs the request context (method, URL, correlation ID) along with the error details.
+// When ctx carries a Connection (WithConnection), the line has a "connection" object, which says
+// whether the request failed before it had a connection or on which one it failed.
 //
 // Parameters:
 //   - ctx: The context for obtaining a logger
@@ -761,6 +768,10 @@ func LogError(
 
 	if err != nil {
 		details[fieldError] = err.Error()
+	}
+
+	if conn := connectionFields(ctx); conn != nil {
+		details[fieldConnection] = conn
 	}
 
 	params.log(ctx, err, details)

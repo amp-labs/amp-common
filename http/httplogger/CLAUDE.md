@@ -32,6 +32,8 @@ httplogger.LogRequest(req, nil, correlationID, params)
 - Auto-redacts sensitive headers and query params
 - Body truncation (default 256 KiB)
 - `WithArchive()` - Mark logs for long-term storage
+- `WithConnection()` - Add a `connection` object (obtained, reused, wasIdle, idleMs, remoteAddr, localAddr,
+  attempts) to response and error lines; `transport.NewLoggingTransport` records it with `net/http/httptrace`
 
 ## Gotchas
 

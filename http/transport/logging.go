@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptrace"
 
 	"github.com/amp-labs/amp-common/contexts"
 	"github.com/amp-labs/amp-common/http/httplogger"
@@ -22,6 +23,11 @@ const skipLoggingKey = contextKey("skipTransportLogging")
 //
 // Each request is assigned a unique correlation ID (UUID v7) that appears in all related log entries,
 // making it easy to trace a request through the system.
+//
+// The response and error lines also carry a "connection" object (httplogger.Connection), recorded with
+// net/http/httptrace: whether a connection was obtained, whether it was reused and had sat idle (and for how
+// long), and its remote and local addresses. The request is passed to the wrapped transport with that trace
+// added to its context.
 //
 // Parameters:
 //   - ctx: Context used to retrieve the logger via logger.Get(ctx)
@@ -209,17 +215,53 @@ func (l *loggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 	// Log the outgoing request
 	httplogger.LogRequest(request.Context(), request, nil, correlationID, l.requestParams)
 
-	// Perform the actual HTTP request
-	response, err := l.transport.RoundTrip(request)
+	// Perform the actual HTTP request, recording the connection it goes out on. httptrace.WithClientTrace
+	// composes with any trace already on the request's context, so both see the events.
+	tracer := &connTrace{}
+	tracer.trace.GetConn = tracer.getConn
+	tracer.trace.GotConn = tracer.gotConn
+
+	response, err := l.transport.RoundTrip(
+		request.WithContext(httptrace.WithClientTrace(request.Context(), &tracer.trace)))
+
+	// The response and error lines carry the connection as a "connection" object.
+	logCtx := httplogger.WithConnection(request.Context(), &tracer.conn)
+
 	if err != nil {
 		// Log the error at ERROR level
-		httplogger.LogError(request.Context(), request, err, request.Method, correlationID, request.URL, l.errorParams)
+		httplogger.LogError(logCtx, request, err, request.Method, correlationID, request.URL, l.errorParams)
 
 		return response, err
 	}
 
 	// Log the successful response at DEBUG level
-	httplogger.LogResponse(request.Context(), response, nil, request.Method, correlationID, request.URL, l.responseParams)
+	httplogger.LogResponse(logCtx, response, nil, request.Method, correlationID, request.URL, l.responseParams)
 
 	return response, err
+}
+
+// connTrace records the connection net/http used for one request through httptrace's GetConn and GotConn,
+// which net/http calls on the goroutine running RoundTrip, before RoundTrip returns.
+type connTrace struct {
+	trace httptrace.ClientTrace
+	conn  httplogger.Connection
+}
+
+// getConn starts an attempt: net/http calls it once per connection it asks for, so again when it sends the
+// request a second time after a reused connection failed. The fields of an earlier attempt are dropped.
+func (c *connTrace) getConn(string) {
+	c.conn = httplogger.Connection{Attempts: c.conn.Attempts + 1}
+}
+
+// gotConn records the connection the attempt obtained.
+func (c *connTrace) gotConn(info httptrace.GotConnInfo) {
+	c.conn.Obtained = true
+	c.conn.Reused = info.Reused
+	c.conn.WasIdle = info.WasIdle
+	c.conn.IdleTime = info.IdleTime
+
+	if info.Conn != nil {
+		c.conn.RemoteAddr = info.Conn.RemoteAddr()
+		c.conn.LocalAddr = info.Conn.LocalAddr()
+	}
 }

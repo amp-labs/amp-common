@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/amp-labs/amp-common/lazy"
 )
@@ -393,6 +394,10 @@ func getTransportInstance(ctx context.Context, cfg *config) http.RoundTripper {
 		}
 	}
 
+	if tr := providerTransportInstance(ctx, cfg); tr != nil {
+		return tr
+	}
+
 	if cfg.AmpersandDNS {
 		if cfg.PublicOnly {
 			return getTransportInstanceAmpersandDNSPubOnly(ctx, cfg)
@@ -521,4 +526,57 @@ func getTransportInstanceAmpersandDNSPubOnly(ctx context.Context, cfg *config) h
 	default:
 		return pooledTransportAmpersandDNSNoDNSCachePubOnly.Get(ctx)
 	}
+}
+
+// providerTransportKey identifies a provider's own transport: the provider and the options that
+// pick among the shared transports.
+type providerTransportKey struct {
+	provider                 string
+	disableConnectionPooling bool
+	enableDNSCache           bool
+	insecureTLS              bool
+	disableCompression       bool
+	ampersandDNS             bool
+	publicOnly               bool
+}
+
+// providerTransports holds a lazily created transport for each providerTransportKey seen. The
+// transport is nil for a provider with none of its own variables set, which uses the shared ones.
+var providerTransports sync.Map // map[providerTransportKey]*lazy.OfCtx[*http.Transport]
+
+// providerTransportInstance returns the transport of cfg's provider when any of the transport
+// variables is set for that provider, created once per process for each combination of options.
+// It returns nil when cfg names no provider or the provider has none of its own variables set.
+func providerTransportInstance(ctx context.Context, cfg *config) *http.Transport {
+	if cfg.Provider == "" {
+		return nil
+	}
+
+	key := providerTransportKey{
+		provider:                 cfg.Provider,
+		disableConnectionPooling: cfg.DisableConnectionPooling,
+		enableDNSCache:           cfg.EnableDNSCache,
+		insecureTLS:              cfg.InsecureTLS,
+		disableCompression:       cfg.DisableCompression,
+		ampersandDNS:             cfg.AmpersandDNS,
+		publicOnly:               cfg.PublicOnly,
+	}
+
+	instance, found := providerTransports.Load(key)
+	if !found {
+		created := *cfg
+
+		instance, _ = providerTransports.LoadOrStore(key, lazy.NewCtx[*http.Transport](
+			func(ctx context.Context) *http.Transport {
+				if !hasProviderSettings(ctx, created.Provider) {
+					return nil
+				}
+
+				return create(ctx, &created)
+			}))
+	}
+
+	lazyTransport, _ := instance.(*lazy.OfCtx[*http.Transport])
+
+	return lazyTransport.Get(ctx)
 }

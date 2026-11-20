@@ -59,7 +59,6 @@ jobs:
         with:
           config: ./.testcoverage.yml
           profile: cover.out
-          local-prefix: github.com/amp-labs/server
           threshold-file: 0
           threshold-package: 0
           threshold-total: 0

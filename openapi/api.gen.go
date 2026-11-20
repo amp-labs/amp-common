@@ -2620,10 +2620,11 @@ type IntegrationSubscribeObject struct {
 	Destination            string                  `json:"destination"`
 
 	// InheritFieldsAndMapping If true, the integration will inherit the fields and mapping from the read object.
-	InheritFieldsAndMapping bool         `json:"inheritFieldsAndMapping,omitempty"`
-	ObjectName              string       `json:"objectName"`
-	OtherEvents             *OtherEvents `json:"otherEvents,omitempty"`
-	UpdateEvent             *UpdateEvent `json:"updateEvent,omitempty"`
+	InheritFieldsAndMapping bool                        `json:"inheritFieldsAndMapping,omitempty"`
+	ObjectName              string                      `json:"objectName"`
+	OtherEvents             *OtherEvents                `json:"otherEvents,omitempty"`
+	RequiredFields          *[]IntegrationFieldExistent `json:"requiredFields,omitempty"`
+	UpdateEvent             *UpdateEvent                `json:"updateEvent,omitempty"`
 }
 
 // IntegrationWrite defines model for IntegrationWrite.

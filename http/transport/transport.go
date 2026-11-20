@@ -23,19 +23,34 @@
 //   - AmpersandDNS: Route DNS through the Ampersand DNS dialer (blocks private DNS names and IPs)
 //   - InsecureTLS: Skip TLS certificate verification (use only for testing)
 //   - WithTransportOverride: Provide a custom transport implementation
+//   - WithProvider: Name the provider the requests go to, for per-provider settings (see below)
 //
 // # Environment Variables
 //
 // The following environment variables can be used to configure transport behavior:
 //
 //   - HTTP_TRANSPORT_PREFER_POOLED: Enable connection pooling by default (default: true)
-//   - HTTP_TRANSPORT_MAX_IDLE_CONNS: Maximum idle connections (default: 100)
+//   - HTTP_TRANSPORT_MAX_IDLE_CONNS: Maximum idle connections across all hosts (default: 100)
+//   - HTTP_TRANSPORT_MAX_IDLE_CONNS_PER_HOST: Maximum idle connections to each host (default: 2)
 //   - HTTP_TRANSPORT_IDLE_CONN_TIMEOUT: Idle connection timeout (default: 90s)
 //   - HTTP_TRANSPORT_TLS_HANDSHAKE_TIMEOUT: TLS handshake timeout (default: 10s)
 //   - HTTP_TRANSPORT_EXPECT_CONTINUE_TIMEOUT: Expect-Continue timeout (default: 1s)
+//   - HTTP_TRANSPORT_DISABLE_HTTP2: Turn HTTP/2 off (default: true)
 //   - HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2: Force HTTP/2 attempts (default: false)
 //   - HTTP_TRANSPORT_DIAL_TIMEOUT: Connection dial timeout (default: 30s)
 //   - HTTP_TRANSPORT_DIAL_KEEPALIVE: TCP keep-alive duration (default: 30s)
+//
+// # Per-Provider Settings
+//
+// Each variable above can also be set for one provider, by appending an underscore and the
+// provider's name uppercased (any character other than a letter or a digit becomes an underscore).
+// A transport obtained with WithProvider("accuLynx") reads HTTP_TRANSPORT_MAX_IDLE_CONNS_PER_HOST_ACCULYNX
+// first, then HTTP_TRANSPORT_MAX_IDLE_CONNS_PER_HOST, then the default.
+//
+// net/http applies a transport's settings to every host it talks to, so a provider with any of its
+// own variables set (other than HTTP_TRANSPORT_PREFER_POOLED) gets a transport, and so a connection
+// pool, of its own. Get creates it once per process. A provider with none set uses the shared
+// transport, as a transport obtained without WithProvider does.
 //
 // Transports using the AmpersandDNS option are additionally configurable via the
 // AMP_DNS_* environment variables (see dns_env.go): AMP_DNS_RESOLVERS, AMP_DNS_LOGGING,
@@ -64,37 +79,18 @@ func New(ctx context.Context, options ...Option) *http.Transport {
 // It reads environment variables for fine-tuning transport parameters and applies
 // the configuration options (connection pooling, DNS caching, TLS settings).
 func create(ctx context.Context, cfg *config) *http.Transport {
-	maxIdleConns := envutil.Int(ctx, "HTTP_TRANSPORT_MAX_IDLE_CONNS",
-		envutil.Default(defaultMaxIdleConns)).
-		ValueOrElse(defaultMaxIdleConns)
+	provider := cfg.Provider
 
-	idleConnTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_IDLE_CONN_TIMEOUT",
-		envutil.Default(defaultIdleConnTimeout)).
-		ValueOrElse(defaultIdleConnTimeout)
-
-	tlsHandshakeTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_TLS_HANDSHAKE_TIMEOUT",
-		envutil.Default(defaultTLSHandshakeTimeout)).
-		ValueOrElse(defaultTLSHandshakeTimeout)
-
-	expectContinueTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_EXPECT_CONTINUE_TIMEOUT",
-		envutil.Default(defaultExpectContinueTimeout)).
-		ValueOrElse(defaultExpectContinueTimeout)
-
-	disableHTTP2 := envutil.Bool(ctx, "HTTP_TRANSPORT_DISABLE_HTTP2",
-		envutil.Default(true)).
-		ValueOrElse(true)
-
-	forceAttemptHTTP2 := envutil.Bool(ctx, "HTTP_TRANSPORT_FORCE_ATTEMPT_HTTP2",
-		envutil.Default(defaultForceAttemptHTTP2)).
-		ValueOrElse(defaultForceAttemptHTTP2)
-
-	dialTimeout := envutil.Duration(ctx, "HTTP_TRANSPORT_DIAL_TIMEOUT",
-		envutil.Default(defaultTransportDialTimeout)).
-		ValueOrElse(defaultTransportDialTimeout)
-
-	keepAlive := envutil.Duration(ctx, "HTTP_TRANSPORT_DIAL_KEEPALIVE",
-		envutil.Default(defaultKeepAlive)).
-		ValueOrElse(defaultKeepAlive)
+	maxIdleConns := setting(ctx, envutil.Int[int], envMaxIdleConns, provider, defaultMaxIdleConns)
+	maxIdleConnsPerHost := setting(ctx, envutil.Int[int], envMaxIdleConnsPerHost, provider, defaultMaxIdleConnsPerHost)
+	idleConnTimeout := setting(ctx, envutil.Duration, envIdleConnTimeout, provider, defaultIdleConnTimeout)
+	tlsHandshakeTimeout := setting(ctx, envutil.Duration, envTLSHandshakeTimeout, provider, defaultTLSHandshakeTimeout)
+	expectContinueTimeout := setting(ctx, envutil.Duration, envExpectContinueTimeout, provider,
+		defaultExpectContinueTimeout)
+	disableHTTP2 := setting(ctx, envutil.Bool, envDisableHTTP2, provider, defaultDisableHTTP2)
+	forceAttemptHTTP2 := setting(ctx, envutil.Bool, envForceAttemptHTTP2, provider, defaultForceAttemptHTTP2)
+	dialTimeout := setting(ctx, envutil.Duration, envDialTimeout, provider, defaultTransportDialTimeout)
+	keepAlive := setting(ctx, envutil.Duration, envDialKeepAlive, provider, defaultKeepAlive)
 
 	transport := &http.Transport{
 		DialContext: defaultTransportDialContext(&net.Dialer{
@@ -103,6 +99,7 @@ func create(ctx context.Context, cfg *config) *http.Transport {
 		}),
 		ForceAttemptHTTP2:     forceAttemptHTTP2,
 		MaxIdleConns:          maxIdleConns,
+		MaxIdleConnsPerHost:   maxIdleConnsPerHost,
 		IdleConnTimeout:       idleConnTimeout,
 		TLSHandshakeTimeout:   tlsHandshakeTimeout,
 		ExpectContinueTimeout: expectContinueTimeout,

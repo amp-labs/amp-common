@@ -160,7 +160,36 @@ const (
 	ActionRedactPartialTruncate
 	// ActionDelete indicates that the header should be removed entirely from the output.
 	ActionDelete
+	// ActionFingerprint indicates that the value should be replaced with its fingerprint
+	// (see Fingerprint), so logs can show whether two values were the same without showing
+	// either. It needs a key in the context (see WithFingerprintKey); without one the value
+	// is fully redacted.
+	ActionFingerprint
 )
+
+// redactedMarker replaces a fully redacted value.
+const redactedMarker = "[redacted]"
+
+// redactValue returns what to log in place of value for action, and false if the value
+// should be left out entirely.
+func redactValue(ctx context.Context, action Action, partialLen int, value string) (string, bool) {
+	switch action {
+	case ActionKeep:
+		return value, true
+	case ActionRedactFully:
+		return redactedMarker, true
+	case ActionRedactPartialWithMask:
+		return PartiallyRedactString(value, partialLen, false), true
+	case ActionRedactPartialTruncate:
+		return PartiallyRedactString(value, partialLen, true), true
+	case ActionDelete:
+		return "", false
+	case ActionFingerprint:
+		return Fingerprint(ctx, value), true
+	default:
+		return value, true // Default to keeping the value
+	}
+}
 
 // Func is a callback function that determines how to redact a given key-value pair.
 // It receives the key and value, and returns:
@@ -232,19 +261,8 @@ func Headers(ctx context.Context, headers http.Header, redact Func) http.Header 
 		for _, val := range hdrs {
 			action, partialLen := redact(ctx, key, val)
 
-			switch action {
-			case ActionKeep:
-				redacted.Add(key, val)
-			case ActionRedactFully:
-				redacted.Add(key, "[redacted]")
-			case ActionRedactPartialWithMask:
-				redacted.Add(key, PartiallyRedactString(val, partialLen, false))
-			case ActionRedactPartialTruncate:
-				redacted.Add(key, PartiallyRedactString(val, partialLen, true))
-			case ActionDelete:
-				// Do not add this header
-			default:
-				redacted.Add(key, val) // Default to keeping the header
+			if out, keep := redactValue(ctx, action, partialLen, val); keep {
+				redacted.Add(key, out)
 			}
 		}
 	}
@@ -295,19 +313,8 @@ func URLValues(ctx context.Context, values url.Values, redact Func) url.Values {
 		for _, val := range vals {
 			action, partialLen := redact(ctx, key, val)
 
-			switch action {
-			case ActionKeep:
-				redacted.Add(key, val)
-			case ActionRedactFully:
-				redacted.Add(key, "[redacted]")
-			case ActionRedactPartialWithMask:
-				redacted.Add(key, PartiallyRedactString(val, partialLen, false))
-			case ActionRedactPartialTruncate:
-				redacted.Add(key, PartiallyRedactString(val, partialLen, true))
-			case ActionDelete:
-				// Do not add this value
-			default:
-				redacted.Add(key, val) // Default to keeping the value
+			if out, keep := redactValue(ctx, action, partialLen, val); keep {
+				redacted.Add(key, out)
 			}
 		}
 	}
@@ -351,14 +358,10 @@ func Body(ctx context.Context, body *printable.Payload, redact BodyFunc) (*print
 		return body.Clone(), nil
 	case ActionRedactFully:
 		// Replace entire content with redaction marker
-		// Preserve original Length but update TruncatedLength to reflect new content size
-		redactedText := "[redacted]"
-
-		return &printable.Payload{
-			Content:         redactedText,
-			Length:          body.Length,
-			TruncatedLength: int64(len(redactedText)),
-		}, nil
+		return replacedPayload(body, redactedMarker), nil
+	case ActionFingerprint:
+		// Replace entire content with its fingerprint
+		return replacedPayload(body, Fingerprint(ctx, body.Content)), nil
 	case ActionRedactPartialWithMask:
 		// Show first N characters, replace rest with asterisks
 		return PartiallyRedactPayload(body, partialLen, false)
@@ -371,5 +374,16 @@ func Body(ctx context.Context, body *printable.Payload, redact BodyFunc) (*print
 	default:
 		// Default to keeping the body if action is unknown
 		return body.Clone(), nil
+	}
+}
+
+// replacedPayload returns a payload whose content is text in place of body's content. It keeps
+// the original Length, so logs still show the body's real size, and sets TruncatedLength to the
+// new content's size.
+func replacedPayload(body *printable.Payload, text string) *printable.Payload {
+	return &printable.Payload{
+		Content:         text,
+		Length:          body.Length,
+		TruncatedLength: int64(len(text)),
 	}
 }

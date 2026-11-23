@@ -814,12 +814,16 @@ func (e SelectedFieldsAutoConfig) Valid() bool {
 
 // Defines values for UpdateConnectionRequestUpdateMask.
 const (
-	UpdateConnectionRequestUpdateMaskApiKey                    UpdateConnectionRequestUpdateMask = "apiKey"
-	UpdateConnectionRequestUpdateMaskBasicAuth                 UpdateConnectionRequestUpdateMask = "basicAuth"
-	UpdateConnectionRequestUpdateMaskOauth2ClientCredentials   UpdateConnectionRequestUpdateMask = "oauth2ClientCredentials"
-	UpdateConnectionRequestUpdateMaskOauth2PasswordCredentials UpdateConnectionRequestUpdateMask = "oauth2PasswordCredentials"
-	UpdateConnectionRequestUpdateMaskProviderMetadata          UpdateConnectionRequestUpdateMask = "providerMetadata"
-	UpdateConnectionRequestUpdateMaskProviderWorkspaceRef      UpdateConnectionRequestUpdateMask = "providerWorkspaceRef"
+	UpdateConnectionRequestUpdateMaskApiKey                                UpdateConnectionRequestUpdateMask = "apiKey"
+	UpdateConnectionRequestUpdateMaskBasicAuth                             UpdateConnectionRequestUpdateMask = "basicAuth"
+	UpdateConnectionRequestUpdateMaskOauth2ClientCredentials               UpdateConnectionRequestUpdateMask = "oauth2ClientCredentials"
+	UpdateConnectionRequestUpdateMaskOauth2PasswordCredentials             UpdateConnectionRequestUpdateMask = "oauth2PasswordCredentials"
+	UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsClientId     UpdateConnectionRequestUpdateMask = "oauth2PasswordCredentials.clientId"
+	UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsClientSecret UpdateConnectionRequestUpdateMask = "oauth2PasswordCredentials.clientSecret"
+	UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsPassword     UpdateConnectionRequestUpdateMask = "oauth2PasswordCredentials.password"
+	UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsUsername     UpdateConnectionRequestUpdateMask = "oauth2PasswordCredentials.username"
+	UpdateConnectionRequestUpdateMaskProviderMetadata                      UpdateConnectionRequestUpdateMask = "providerMetadata"
+	UpdateConnectionRequestUpdateMaskProviderWorkspaceRef                  UpdateConnectionRequestUpdateMask = "providerWorkspaceRef"
 )
 
 // Valid indicates whether the value is a known member of the UpdateConnectionRequestUpdateMask enum.
@@ -832,6 +836,14 @@ func (e UpdateConnectionRequestUpdateMask) Valid() bool {
 	case UpdateConnectionRequestUpdateMaskOauth2ClientCredentials:
 		return true
 	case UpdateConnectionRequestUpdateMaskOauth2PasswordCredentials:
+		return true
+	case UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsClientId:
+		return true
+	case UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsClientSecret:
+		return true
+	case UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsPassword:
+		return true
+	case UpdateConnectionRequestUpdateMaskOauth2PasswordCredentialsUsername:
 		return true
 	case UpdateConnectionRequestUpdateMaskProviderMetadata:
 		return true
@@ -1640,12 +1652,23 @@ type ConnectionRequest struct {
 		// Scopes The scopes for the tokens.
 		Scopes *[]string `json:"scopes,omitempty"`
 	} `json:"oauth2ClientCredentials,omitempty"`
-	Oauth2PasswordCredentials *struct {
-		// ClientId The client ID to use for the connection.
-		ClientId string `json:"clientId"`
 
-		// ClientSecret The client secret to use for the connection.
-		ClientSecret string `json:"clientSecret"`
+	// Oauth2PasswordCredentials Credentials for a provider that uses the OAuth 2.0 password grant (called the resource
+	// owner password credentials grant in RFC 6749). Ampersand signs in to the provider with
+	// them before it creates the connection or saves updated credentials, so credentials that
+	// the provider rejects return a 422 response and are not saved. The username and password
+	// are kept (encrypted) so that Ampersand can sign in again when the provider's refresh
+	// token expires.
+	//
+	// To update some of a connection's credentials and keep the others (for example, a new
+	// password with the connection's current client), name only those fields in `updateMask`,
+	// such as `oauth2PasswordCredentials.password`.
+	Oauth2PasswordCredentials *struct {
+		// ClientId The client ID to use for the connection. Omit it when the provider does not require one, or to use the provider's default client.
+		ClientId *string `json:"clientId,omitempty"`
+
+		// ClientSecret The client secret to use for the connection. Omit it when the client has no secret.
+		ClientSecret *string `json:"clientSecret,omitempty"`
 
 		// Password The password to use for the connection.
 		Password string `json:"password"`
@@ -2321,12 +2344,23 @@ type GenerateConnectionRequest struct {
 		// Scopes The scopes for the tokens.
 		Scopes *[]string `json:"scopes,omitempty"`
 	} `json:"oauth2ClientCredentials,omitempty"`
-	Oauth2PasswordCredentials *struct {
-		// ClientId The client ID to use for the connection.
-		ClientId string `json:"clientId"`
 
-		// ClientSecret The client secret to use for the connection.
-		ClientSecret string `json:"clientSecret"`
+	// Oauth2PasswordCredentials Credentials for a provider that uses the OAuth 2.0 password grant (called the resource
+	// owner password credentials grant in RFC 6749). Ampersand signs in to the provider with
+	// them before it creates the connection or saves updated credentials, so credentials that
+	// the provider rejects return a 422 response and are not saved. The username and password
+	// are kept (encrypted) so that Ampersand can sign in again when the provider's refresh
+	// token expires.
+	//
+	// To update some of a connection's credentials and keep the others (for example, a new
+	// password with the connection's current client), name only those fields in `updateMask`,
+	// such as `oauth2PasswordCredentials.password`.
+	Oauth2PasswordCredentials *struct {
+		// ClientId The client ID to use for the connection. Omit it when the provider does not require one, or to use the provider's default client.
+		ClientId *string `json:"clientId,omitempty"`
+
+		// ClientSecret The client secret to use for the connection. Omit it when the client has no secret.
+		ClientSecret *string `json:"clientSecret,omitempty"`
 
 		// Password The password to use for the connection.
 		Password string `json:"password"`
@@ -2964,6 +2998,14 @@ type Oauth2Opts struct {
 	// TokenMetadataFields Fields to be used to extract token metadata from the token response.
 	TokenMetadataFields TokenMetadataFields `json:"tokenMetadataFields"`
 
+	// TokenReqBodyParams Extra parameters to send in the body of every request to the token URL
+	// (authorization code exchange, refresh, client credentials and password grants),
+	// for providers whose token endpoint needs fields beyond the OAuth 2.0 ones.
+	// Values may use catalog variables such as {{.workspace}}. A parameter here never
+	// replaces one that the grant itself sets. A client_id or client_secret here is a
+	// default that is used only when the connection has no client credentials of its own.
+	TokenReqBodyParams map[string]string `json:"tokenReqBodyParams,omitempty"`
+
 	// TokenURL The token URL.
 	TokenURL string `json:"tokenURL" validate:"required"`
 }
@@ -3596,7 +3638,9 @@ type TopicDestinationRoute struct {
 type UpdateConnectionRequest struct {
 	Connection ConnectionRequest `json:"connection"`
 
-	// UpdateMask Fields to update. Each entry must have a corresponding value in `connection`. Credential fields (`apiKey`, `basicAuth`, `oauth2ClientCredentials`, `oauth2PasswordCredentials`) must match the connection's existing auth scheme.
+	// UpdateMask Fields to update. Each entry must have a corresponding value in `connection`. Credential fields (`apiKey`, `basicAuth`, `oauth2ClientCredentials`, `oauth2PasswordCredentials`) must match the connection's existing auth scheme, and replace all of its credentials.
+	//
+	// A password grant connection can also update single credential fields: `oauth2PasswordCredentials.username`, `oauth2PasswordCredentials.password`, `oauth2PasswordCredentials.clientId` and `oauth2PasswordCredentials.clientSecret`. The fields not named keep their current values, and a named field with no value in `connection` is cleared. For example, naming `oauth2PasswordCredentials.clientId` and `oauth2PasswordCredentials.clientSecret` with no values switches the connection to the provider's default client.
 	UpdateMask []UpdateConnectionRequestUpdateMask `json:"updateMask"`
 }
 

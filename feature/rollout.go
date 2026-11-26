@@ -26,6 +26,10 @@ import (
 //
 // The builders use value receivers so that rollouts compose without aliasing;
 // only UnmarshalJSON needs a pointer.
+//
+// The required:"true" tags here and on Target and Percentage tell JSON schema
+// reflection (such as an MCP tool's input schema) which fields to list as
+// required. Decoding does not enforce them; Validate checks what it needs.
 type Rollout struct { //nolint:recvcheck // see above
 	// Denied lists subjects for which the flag is always off. Deny wins over everything else.
 	Denied []Target `json:"denied,omitempty"`
@@ -38,23 +42,23 @@ type Rollout struct { //nolint:recvcheck // see above
 	Percentages []Percentage `json:"percentages,omitempty"`
 
 	// Default is what subjects matching none of the above get.
-	Default bool `json:"default"`
+	Default bool `json:"default" required:"true"`
 }
 
 // Target matches subjects whose value for Dimension is one of Values.
 type Target struct {
-	Dimension Dimension `json:"dimension"`
-	Values    []string  `json:"values"`
+	Dimension Dimension `json:"dimension" required:"true"`
+	Values    []string  `json:"values"    required:"true"`
 }
 
 // Percentage matches subjects whose bucket falls below Percent. The bucket is
 // derived from a hash of the flag name, Salt, Dimension, and the subject's
 // value for Dimension, so it is stable across processes and over time.
 type Percentage struct {
-	Dimension Dimension `json:"dimension"`
+	Dimension Dimension `json:"dimension" required:"true"`
 
 	// Percent is in the range 0 to 100 with 0.01 granularity.
-	Percent float64 `json:"percent"`
+	Percent float64 `json:"percent" required:"true"`
 
 	// Salt changes the bucketing without renaming the flag. Bump it to reshuffle
 	// which subjects fall inside the percentage.

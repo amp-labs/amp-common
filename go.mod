@@ -3,7 +3,7 @@ module github.com/amp-labs/amp-common
 go 1.27.0
 
 require (
-	codeberg.org/miekg/dns v0.6.138
+	codeberg.org/miekg/dns v0.6.143
 	facette.io/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/JustinTimperio/gpq v1.0.0-rc4
 	github.com/OneOfOne/xxhash v1.2.8
@@ -18,7 +18,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/neilotoole/slogt v1.1.0
 	github.com/oapi-codegen/runtime v1.9.1
-	github.com/pierrec/lz4/v4 v4.1.33
+	github.com/pierrec/lz4/v4 v4.1.34
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/client_model v0.6.3
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
